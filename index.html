@@ -130,8 +130,8 @@
     <div class="page-container">
         <header class="header-card">
             <h1>Web TreeView</h1>
-            <p class="subtitle">Lightweight treeview web component with hierarchical data display, search, drag-drop, and context menus</p>
-            <span class="version-badge">v2.0.0</span>
+            <p class="subtitle">Lightweight treeview web component with hierarchical data display, search, drag-drop, selection, templates, and context menus</p>
+            <span class="version-badge" id="version-badge"></span>
         </header>
 
         <div class="cards" id="cards"></div>
@@ -149,80 +149,57 @@
         const pages = [
             {
                 href: 'examples-basic.html',
-                icon: '\uD83C\uDF33',
+                icon: '🌳',
                 title: 'Basic Usage',
-                description: 'Simple tree rendering, expand/collapse, node selection, and hierarchical data display.'
-            },
-            {
-                href: 'examples-drag-drop.html',
-                icon: '\uD83D\uDD00',
-                title: 'Drag & Drop',
-                description: 'Reorder nodes via drag-and-drop with drop zones, copy operations, and cross-tree transfers.'
-            },
-            {
-                href: 'examples-templates.html',
-                icon: '\u2728',
-                title: 'Custom Templates',
-                description: 'Customize node rendering, context menus, loading states, and empty states with template callbacks.'
+                description: 'The essentials — simple file tree, pre-expanded state, custom data mappings, large-dataset progressive rendering, expand behaviors (accordion / exclusive), and the core events at a glance.'
             },
             {
                 href: 'examples-api.html',
-                icon: '\u2699\uFE0F',
-                title: 'Programmatic API',
-                description: 'Control the tree programmatically: expand/collapse, search, scroll-to-path, and node mutations.'
-            },
-            {
-                href: 'examples-theming.html',
-                icon: '\uD83C\uDFA8',
-                title: 'Theming',
-                description: 'Customize appearance with CSS custom properties. Dark mode, compact, and custom icon styles.'
-            },
-            {
-                href: 'examples-logging.html',
-                icon: '\uD83D\uDC1B',
-                title: 'Logging & Debugging',
-                description: 'Built-in logging system with categorized debug output for development and troubleshooting.'
-            },
-            {
-                href: 'examples-performance.html',
-                icon: '\u26A1',
-                title: 'Performance Test',
-                description: 'Compare flat vs virtual scroll rendering with large datasets, timed operations, and search.'
-            },
-            {
-                href: 'examples-icons-grid.html',
-                icon: '\uD83D\uDDC2',
-                title: 'Icons & Column Grid',
-                description: 'Unified column grid, per-node icons via iconMember/iconCallback, and shouldAlignNodeIcons control.',
-                badge: 'NEW'
-            },
-            {
-                href: 'examples-ios-files.html',
-                icon: '\uD83D\uDCF1',
-                title: 'iOS Files Explorer',
-                description: 'Headless TreeController demo: custom iOS-style file browser with folder navigation, search, sort, and detail sheets.',
-                badge: 'NEW'
-            },
-            {
-                href: 'examples-ios-files-lit.html',
-                icon: '\uD83D\uDD25',
-                title: 'iOS Files (lit-html)',
-                description: 'Same iOS Files Explorer rebuilt with lit-html declarative templates instead of imperative DOM manipulation.',
-                badge: 'NEW'
+                icon: '⚙️',
+                title: 'Data & API',
+                description: 'Feeding the tree data and driving it in code — member mappings, expand/collapse, search/filter, scroll-to-path, add/remove/update nodes, and save/restore expanded state.'
             },
             {
                 href: 'examples-multiselect.html',
-                icon: '\u2611\uFE0F',
-                title: 'Multi-Select & Clipboard',
-                description: 'Ctrl+click, Shift+click range select, keyboard navigation, copy/cut/paste, and bulk tree operations.',
-                badge: 'NEW'
+                icon: '☑️',
+                title: 'Selection, Clipboard & Keyboard',
+                description: 'The three-level selection model, Ctrl/Shift multi-select, full keyboard navigation, copy/cut/paste clipboard, range-select mode, and bulk tree operations.'
             },
             {
-                href: 'examples-windows-explorer.html',
-                icon: '\uD83D\uDDC2\uFE0F',
-                title: 'Windows File Explorer',
-                description: 'A dual-pane Explorer clone where BOTH panes are <web-treeview> elements: a folder nav tree + a flat details grid, with selection, context menu, double-click-to-open, search, sort, and new/rename/delete.',
-                badge: 'NEW'
+                href: 'examples-drag-drop.html',
+                icon: '🔀',
+                title: 'Drag & Drop',
+                description: 'Reorder within a tree and transfer across trees — drop zones (above / below / child), multi-drag as a group, restricted drop positions, and drop validation.'
+            },
+            {
+                href: 'examples-templates.html',
+                icon: '✨',
+                title: 'Templates, Icons & Columns',
+                description: 'Custom node templates, status badges, per-node icons (iconMember / iconCallback), the unified column grid and icon alignment, context menus, header/footer, and empty/loading states.'
+            },
+            {
+                href: 'examples-theming.html',
+                icon: '🎨',
+                title: 'Theming',
+                description: 'Customize appearance with CSS custom properties — built-in dark mode, theme presets, a live theme editor, and the full CSS custom-property reference.'
+            },
+            {
+                href: 'examples-performance.html',
+                icon: '⚡',
+                title: 'Performance & Virtual Scrolling',
+                description: 'Flat vs virtual-scroll rendering over large datasets, with timed expand/collapse/search operations and live rendering metrics.'
+            },
+            {
+                href: 'examples-logging.html',
+                icon: '🐛',
+                title: 'Logging & Debugging',
+                description: 'Built-in logging system with categorized debug output, performance logging, and a debug information overlay for development and troubleshooting.'
+            },
+            {
+                href: 'examples-ios-files.html',
+                icon: '📱',
+                title: 'Real-World: iOS Files',
+                description: 'A headless TreeController showcase — an iOS-style file browser with folder navigation, search, sort, and detail sheets. Also available rebuilt with lit-html.'
             }
         ]
 
@@ -243,6 +220,20 @@
         }
 
         renderCards()
+
+        // Feed the floating jump-nav (examples-chapter-nav.js) from the same registry,
+        // so the index gets a quick "hop to any example" list — no extra data needed.
+        window.CHAPTER_NAV_ITEMS = pages.map(function (p) { return { label: p.title, href: p.href } })
     </script>
+
+    <!-- Version badge — sourced from package.json (vite provides named JSON exports),
+         so it never drifts from the real package version. -->
+    <script type="module">
+        import { version } from './package.json'
+        const badge = document.getElementById('version-badge')
+        if (badge) badge.textContent = `v${version}`
+    </script>
+
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

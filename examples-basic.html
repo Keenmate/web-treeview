@@ -16,22 +16,22 @@
 
         <!-- Example 1: Simple Tree -->
         <div class="card">
-            <h2>Example 1: Simple File Tree</h2>
+            <h2>BU01 · Simple File Tree</h2>
             <p>A basic tree with hierarchical data using path-based structure. Click nodes to select, click the toggle icon to expand/collapse.</p>
 
             <div class="controls">
-                <span style="align-self:center; font-size:0.85rem; color:#475569;">Indentation:</span>
+                <span class="muted">Indentation:</span>
                 <button id="indent-condensed" onclick="setIndent('condensed', this)">Condensed</button>
                 <button id="indent-compact" onclick="setIndent('compact', this)">Compact</button>
                 <button id="indent-generous" onclick="setIndent('generous', this)">Generous</button>
-                <span id="indent-readout" style="align-self:center; font-size:0.8rem; color:#64748b;"></span>
+                <span id="indent-readout" class="muted"></span>
             </div>
 
             <div class="tree-container" id="tree1-container">
                 <web-treeview id="tree1"></web-treeview>
             </div>
 
-            <p style="font-size:0.85rem; color:#475569;">
+            <p class="form-text">
                 Indent width is a single CSS variable — <code>--wtv-indent-size</code> (default <code>16px</code>),
                 the per-level step in flat mode (<code>paddingLeft = (level − 1) × --wtv-indent-size</code>). It's
                 <em>separate</em> from the toggle column (<code>--wtv-column-width</code>), so nesting density tunes
@@ -47,7 +47,7 @@
 
         <!-- Example 2: Expand Level -->
         <div class="card">
-            <h2>Example 2: Pre-expanded Tree</h2>
+            <h2>BU02 · Pre-expanded Tree</h2>
             <p>Use <code>expand-level</code> to control how many levels are expanded on initial render. This tree starts with 2 levels expanded.</p>
 
             <div class="tree-container" id="tree2-container">
@@ -57,7 +57,7 @@
 
         <!-- Example 3: Large Flat Dataset -->
         <div class="card">
-            <h2>Example 3: Large Dataset with Progressive Rendering</h2>
+            <h2>BU03 · Large Dataset with Progressive Rendering</h2>
             <p>A tree with 1000+ nodes demonstrating progressive rendering. Nodes are rendered in batches to keep the UI responsive.</p>
 
             <div class="controls">
@@ -78,7 +78,7 @@
 
         <!-- Example 4: Custom Member Mappings -->
         <div class="card">
-            <h2>Example 4: Custom Data Mappings</h2>
+            <h2>BU04 · Custom Data Mappings</h2>
             <p>Map your own data shape to the tree using <code>id-member</code>, <code>path-member</code>, and <code>display-value-member</code> attributes.</p>
 
             <div class="tree-container" id="tree4-container">
@@ -101,7 +101,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
         <!-- Example 5: Events -->
         <div class="card">
-            <h2>Example 5: Events</h2>
+            <h2>BU05 · Events</h2>
             <p>Listen to tree events: <code>node-clicked</code>, <code>focused-node-changed</code>, <code>tree-changed</code>.</p>
 
             <div class="tree-container" id="tree5-container">
@@ -112,12 +112,12 @@ element.setAttribute('display-value-member', 'label');</code></pre>
                 <p class="output-label">Event log:</p>
                 <div class="event-log" id="tree5-log"></div>
             </div>
-            <button onclick="document.getElementById('tree5-log').innerHTML = ''" class="btn-outline" style="margin-top: 0.5rem">Clear log</button>
+            <button onclick="document.getElementById('tree5-log').innerHTML = ''" class="btn-outline mt-1">Clear log</button>
         </div>
 
         <!-- NEW (rc03): Accordion Expand -->
         <div class="card">
-            <h2>Example 6: Accordion Expand (rc03)</h2>
+            <h2>BU06 · Accordion Expand</h2>
             <p>With <code>accordion-expand="true"</code>, opening one branch automatically collapses its siblings at the same level. Useful when you want only one section open at a time (e.g. file managers, settings panels). User-driven toggles honor it; programmatic <code>expandNodes()</code> calls are unaffected.</p>
 
             <div class="controls">
@@ -131,7 +131,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             <div class="tree-container">
                 <web-treeview id="tree-acc" accordion-expand="true" expand-level="1"></web-treeview>
             </div>
-            <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">
+            <p class="form-text mt-1">
                 Try expanding "src", then "public" &mdash; with accordion on, opening "public" auto-collapses "src". Untick the box and the two sections can stay open together.
             </p>
         </div>
@@ -335,5 +335,8 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             };
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

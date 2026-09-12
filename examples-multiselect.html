@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Multi-Select, Clipboard, Keyboard & Bulk Ops</title>
+    <title>TreeView - Selection, Clipboard & Keyboard</title>
     <link rel="stylesheet" href="examples-shared.css">
     <style>
+        /* Page-specific: keycap chips for keyboard-shortcut docs. */
         .kbd {
             display: inline-block;
             padding: 0.1rem 0.4rem;
@@ -16,6 +17,7 @@
             border-radius: 3px;
             box-shadow: 0 1px 0 #94a3b8;
         }
+        /* Page-specific: compact live-status bar with an inline count badge. */
         .status-bar {
             display: flex;
             gap: 1rem;
@@ -29,27 +31,11 @@
             margin-bottom: 1rem;
         }
         .status-bar .badge {
-            display: inline-block;
             padding: 0.1rem 0.5rem;
-            background: #059669;
-            color: white;
             border-radius: 10px;
             font-size: 0.8em;
-            font-weight: 600;
         }
-        .two-trees {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-        @media (max-width: 768px) {
-            .two-trees { grid-template-columns: 1fr; }
-        }
-        .tree-label {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
+        /* Page-specific: transient bulk-op result toast (shown/hidden via JS). */
         .bulk-result {
             margin-top: 0.5rem;
             padding: 0.5rem 0.75rem;
@@ -69,13 +55,13 @@
     <div class="container">
         <header>
             <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Multi-Select, Clipboard, Keyboard & Bulk Ops</h1>
+            <h1>Selection, Clipboard & Keyboard</h1>
             <p class="subtitle">Ctrl+click, Shift+click, keyboard navigation, copy/cut/paste, and batch tree mutations</p>
         </header>
 
         <!-- Global clickBehavior setting -->
         <div class="card">
-            <h2>Click Behavior</h2>
+            <h2>SL01 · Click Behavior</h2>
             <p>Controls what happens when you click a node. This setting applies to all trees on this page and persists across reloads.</p>
             <div class="controls">
                 <label>
@@ -93,11 +79,11 @@
             </div>
         </div>
 
-        <!-- NEW (rc03): Three-Level Selection + Checkboxes -->
+        <!-- Three-Level Selection + Checkboxes -->
         <div class="card">
-            <h2>Three-Level Selection Model (rc03)</h2>
+            <h2>SL02 · Three-Level Selection Model</h2>
             <p>The library tracks three independent kinds of selection. Choose which combination fits your UI:</p>
-            <ul style="margin: 0 0 1rem 1.5rem; padding: 0;">
+            <ul>
                 <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focused-node-changed</code>.</li>
                 <li><strong>highlightedPaths</strong> &mdash; multi-select set (Ctrl/Shift+click). Surfaces as <code>highlight-change</code>. Drives the highlight CSS class.</li>
                 <li><strong>selectedPaths</strong> &mdash; data state for checkboxes. Surfaces as <code>selection-change</code>. Independent from focus/highlight unless <code>shouldShowCheckboxes</code> is off (then highlight mirrors into it).</li>
@@ -130,9 +116,9 @@
                 <button class="secondary" onclick="document.getElementById('three-tree').clearSelection()">Clear checked</button>
             </div>
 
-            <div class="two-trees">
+            <div class="grid" style="--grid-min: 280px">
                 <div>
-                    <div class="tree-label">Tree</div>
+                    <div class="demo-label">Tree</div>
                     <div class="tree-container">
                         <web-treeview id="three-tree"
                             selection-mode="multi"
@@ -144,21 +130,21 @@
                     </div>
                 </div>
                 <div>
-                    <div class="tree-label">Live state</div>
-                    <div class="output" style="margin: 0;">
+                    <div class="demo-label">Live state</div>
+                    <div class="output">
                         <p class="output-label">focusedNode</p>
                         <pre id="three-focused">(none)</pre>
-                        <p class="output-label" style="margin-top: 0.5rem;">highlightedPaths (Ctrl/Shift+click)</p>
+                        <p class="output-label mt-1">highlightedPaths (Ctrl/Shift+click)</p>
                         <pre id="three-highlight">(none)</pre>
-                        <p class="output-label" style="margin-top: 0.5rem;">selectedPaths (checkbox data state)</p>
+                        <p class="output-label mt-1">selectedPaths (checkbox data state)</p>
                         <pre id="three-selected">(none)</pre>
                     </div>
                 </div>
             </div>
 
-            <div class="note" style="margin-top: 1rem;">
-                <p style="margin: 0 0 0.25rem; font-weight: 600;">Try it</p>
-                <ul style="margin: 0; padding: 0 0 0 1.5rem; font-size: 0.875rem;">
+            <div class="note">
+                <div class="note-title">Try it</div>
+                <ul>
                     <li>Click a row &rarr; it focuses; the highlight set replaces with that one path.</li>
                     <li>Ctrl+click a couple more rows &rarr; highlight grows; focused stays at the last clicked.</li>
                     <li>Click a checkbox &rarr; only <code>selectedPaths</code> changes (independent of focus/highlight).</li>
@@ -168,9 +154,9 @@
             </div>
         </div>
 
-        <!-- Example 1: Multi-Select -->
+        <!-- Multi-Select -->
         <div class="card">
-            <h2>Example 1: Multi-Select</h2>
+            <h2>SL03 · Multi-Select</h2>
             <p>
                 <span class="kbd">Click</span> to select a single node.
                 <span class="kbd">Ctrl+Click</span> to toggle individual nodes.
@@ -199,9 +185,9 @@
             </div>
         </div>
 
-        <!-- Example 2: Keyboard Navigation -->
+        <!-- Keyboard Navigation -->
         <div class="card">
-            <h2>Example 2: Keyboard Navigation</h2>
+            <h2>SL04 · Keyboard Navigation</h2>
             <p>Click any node to give the tree focus, then use keyboard shortcuts:</p>
 
             <div class="note">
@@ -236,9 +222,9 @@
             </div>
         </div>
 
-        <!-- Example 3: Clipboard (cross-tree) -->
+        <!-- Clipboard (cross-tree) -->
         <div class="card">
-            <h2>Example 3: Clipboard (Copy / Cut / Paste)</h2>
+            <h2>SL05 · Clipboard (Copy / Cut / Paste)</h2>
             <p>
                 Select nodes in the left tree, then <span class="kbd">Ctrl+C</span> to copy or <span class="kbd">Ctrl+X</span> to cut.
                 Click a target node in the right tree, then <span class="kbd">Ctrl+V</span> to paste.
@@ -250,9 +236,9 @@
                 <span id="clipboard-info"></span>
             </div>
 
-            <div class="two-trees">
+            <div class="grid" style="--grid-min: 280px">
                 <div>
-                    <div class="tree-label">Source tree</div>
+                    <div class="demo-label">Source tree</div>
                     <div class="tree-container tree-container-sm">
                         <web-treeview id="tree3a" expand-level="2" tree-id="source" highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
                     </div>
@@ -263,7 +249,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="tree-label">Target tree</div>
+                    <div class="demo-label">Target tree</div>
                     <div class="tree-container tree-container-sm">
                         <web-treeview id="tree3b" expand-level="2" tree-id="target" highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
                     </div>
@@ -279,9 +265,9 @@
             </div>
         </div>
 
-        <!-- Example 4: Bulk Operations -->
+        <!-- Bulk Operations -->
         <div class="card">
-            <h2>Example 4: Bulk Operations</h2>
+            <h2>SL06 · Bulk Operations</h2>
             <p>Batch mutations on the tree: insert, replace, or delete entire branches in a single operation.</p>
 
             <div class="tree-container" id="tree4-container">
@@ -304,9 +290,9 @@
             </div>
         </div>
 
-        <!-- Example 5: Range Selection Modes -->
+        <!-- Range Selection Modes -->
         <div class="card">
-            <h2>Example 5: Range Selection Mode</h2>
+            <h2>SL07 · Range Selection Mode</h2>
             <p>
                 Compare <code>visual</code> vs <code>logical</code> range selection. In <strong>visual</strong> mode (default),
                 Shift+click selects all visible flat nodes between the two clicks. In <strong>logical</strong> mode,
@@ -333,7 +319,7 @@
                 <web-treeview id="tree5" expand-level="1" highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
             </div>
 
-            <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">
+            <p class="form-text mt-1">
                 Try: click "src", then Shift+click "README.md". In visual mode, only visible nodes are selected.
                 In logical mode, collapsed children are also included.
             </p>
@@ -429,7 +415,7 @@
         customElements.whenDefined('web-treeview').then(() => {
             const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
 
-            // ── New (rc03) three-level selection tree ─────────────────────
+            // ── Three-level selection tree ────────────────────────────────
             const threeTree = document.getElementById('three-tree');
             Object.assign(threeTree, treeConfig);
             threeTree.data = fileTree;
@@ -612,5 +598,8 @@
             applyClickBehavior(saved);
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

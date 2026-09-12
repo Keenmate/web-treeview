@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Test - Web Treeview</title>
+    <title>TreeView - Performance & Virtual Scrolling</title>
     <link rel="stylesheet" href="examples-shared.css">
     <style>
-        /* Rendering mode toggle */
+        /* Page-specific: rendering-mode toggle cards */
         .mode-toggle {
             display: flex;
             gap: 1rem;
@@ -26,7 +26,7 @@
             background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(6, 95, 70, 0.1) 100%);
         }
         .toggle-option input { display: none; }
-        .toggle-label {
+        .toggle-option .toggle-title {
             display: block;
             font-size: 1.25rem;
             font-weight: 600;
@@ -39,7 +39,7 @@
             color: #718096;
         }
 
-        /* Mode-specific options row */
+        /* Page-specific: mode-specific options row */
         .mode-options {
             display: flex;
             gap: 1rem;
@@ -58,7 +58,7 @@
             border-radius: 4px; font-size: 0.875rem;
         }
 
-        /* Metrics */
+        /* Page-specific: performance metric readouts */
         .metrics { display: flex; gap: 1rem; flex-wrap: wrap; }
         .metric {
             background: #f7fafc;
@@ -81,7 +81,7 @@
         .metric .value { display: block; font-size: 1.5rem; font-weight: 600; }
         .metric .label { display: block; font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; }
 
-        /* Tree controls row */
+        /* Page-specific: tree controls + timed-update readouts */
         .tree-controls {
             margin-bottom: 1rem;
             display: flex;
@@ -103,7 +103,7 @@
         button.active { background: #48bb78; }
         button.active:hover { background: #38a169; }
 
-        /* Search bar */
+        /* Page-specific: search bar */
         .search-bar {
             display: flex;
             align-items: center;
@@ -143,7 +143,7 @@
         }
         .search-nav-btn:hover { background: #edf2f7; color: #059669; }
 
-        /* Virtual scroll container override */
+        /* Page-specific: virtual-scroll container overrides */
         .tree-container-vs {
             max-height: none;
             overflow: visible;
@@ -154,31 +154,28 @@
             overflow-x: visible;
             overflow-y: auto;
         }
-
-        ol { padding-left: 1.5rem; margin-bottom: 1rem; }
-        ol li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Performance Test</h1>
-            <p class="subtitle">Compare flat vs virtual scroll rendering with large datasets</p>
+            <h1>Performance & Virtual Scrolling</h1>
+            <p class="subtitle">Compare flat vs virtual scroll rendering with large datasets, and benchmark expand, update, and search timings</p>
         </header>
 
         <!-- Rendering Mode -->
         <div class="card">
-            <h2>Rendering Mode</h2>
+            <h2>PF01 · Rendering Mode</h2>
             <div class="mode-toggle" id="mode-toggle">
                 <label class="toggle-option" data-mode="flat">
                     <input type="radio" name="renderMode" value="flat">
-                    <span class="toggle-label">Flat</span>
+                    <span class="toggle-title">Flat</span>
                     <span class="toggle-desc">Centralized loop, per-node keyed reconciliation</span>
                 </label>
                 <label class="toggle-option" data-mode="virtual">
                     <input type="radio" name="renderMode" value="virtual">
-                    <span class="toggle-label">Virtual Scroll</span>
+                    <span class="toggle-title">Virtual Scroll</span>
                     <span class="toggle-desc">Flat + only renders visible nodes (~50 in DOM)</span>
                 </label>
             </div>
@@ -200,7 +197,7 @@
 
         <!-- Configuration -->
         <div class="card">
-            <h2>Configuration</h2>
+            <h2>PF02 · Configuration</h2>
             <div class="controls">
                 <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
                 <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
@@ -221,7 +218,7 @@
 
         <!-- Metrics -->
         <div class="card">
-            <h2>Performance Metrics</h2>
+            <h2>PF03 · Performance Metrics</h2>
             <div class="metrics" id="metrics">
                 <div class="metric"><span class="value" id="m-nodes">0</span><span class="label">Nodes</span></div>
                 <div class="metric"><span class="value" id="m-generate">-</span><span class="label">Generate</span></div>
@@ -233,7 +230,7 @@
 
         <!-- Tree -->
         <div class="card" id="tree-card" style="display:none">
-            <h2 id="tree-title">-</h2>
+            <h2 id="tree-title">PF04 · Results</h2>
 
             <div class="tree-controls">
                 <button onclick="timedExpandOneNode()">Expand One (timed)</button>
@@ -277,7 +274,7 @@
 
         <!-- What to Test -->
         <div class="card">
-            <h2>What to Test</h2>
+            <h2>PF05 · What to Test</h2>
             <div class="description">
                 <ol>
                     <li><strong>Initial render:</strong> Generate data with different node counts and expand levels. Compare render times between modes.</li>
@@ -782,5 +779,8 @@
         // ─── Init ────────────────────────────────────────────────────────────
         applyConfig();
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

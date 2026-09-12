@@ -137,3 +137,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Per-developer Make configuration (container runner, image name, port)
+.makefile.env

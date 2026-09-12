@@ -90,7 +90,7 @@ See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./d
 - [Accessibility](./docs/accessibility.md) — keyboard navigation, focus model, ARIA status.
 - [Release history](./CHANGELOG.md)
 
-Live HTML demos sit at the repo root: `examples-basic.html`, `examples-drag-drop.html`, `examples-multiselect.html`, `examples-templates.html`, `examples-theming.html`, `examples-performance.html`, `examples-icons-grid.html`, `examples-api.html`, `examples-logging.html`. `npm run dev` serves them on port 21111.
+Live HTML demos sit at the repo root: `examples-basic.html`, `examples-drag-drop.html`, `examples-multiselect.html`, `examples-templates.html`, `examples-theming.html`, `examples-performance.html`, `examples-api.html`, `examples-logging.html`. `npm run dev` serves them on port 21111.
 
 ## Development
 

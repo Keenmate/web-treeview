@@ -6,26 +6,7 @@
     <title>TreeView - Drag & Drop</title>
     <link rel="stylesheet" href="examples-shared.css">
     <style>
-        .tree-pair {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-        .tree-pair .tree-container {
-            min-height: 250px;
-        }
-        .tree-label {
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 0.5rem;
-        }
-        @media (max-width: 768px) {
-            .tree-pair {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Control panel styles */
+        /* Page-specific: form controls inside the DnD settings panel. */
         .controls select,
         .controls input[type="text"],
         .controls input[type="number"] {
@@ -55,7 +36,7 @@
 
         <!-- Main DnD Example with Control Panel -->
         <div class="card">
-            <h2>Drag Between Trees</h2>
+            <h2>DD01 · Drag Between Trees</h2>
             <p><strong>Source tree (left):</strong> Drag to reorganize nodes (move). Enable "Allow Ctrl+drag to copy" then hold Ctrl while dragging to copy nodes.
                 With <code>selection-mode="multi"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole highlight set moves together.
                 <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag (it's still a valid drop target).
@@ -68,7 +49,7 @@
                 <button class="btn-outline" onclick="clearLog()">Clear Log</button>
             </div>
 
-            <div class="controls" id="dnd-controls" style="align-items: center;">
+            <div class="controls" id="dnd-controls">
                 <label>
                     Source Drag Mode:
                     <select id="ctrl-drag-mode" onchange="applySettings()">
@@ -104,7 +85,7 @@
                         <input type="number" id="ctrl-max-width" value="120" min="50" max="300" onchange="applySettings()">
                     </label>
                 </span>
-                <label style="margin-left: 1rem;">
+                <label>
                     <input type="checkbox" id="ctrl-allow-copy" onchange="applySettings()">
                     Allow Ctrl+drag to copy
                 </label>
@@ -125,15 +106,15 @@
                 </label>
             </div>
 
-            <div class="tree-pair">
+            <div class="grid-2">
                 <div>
-                    <p class="tree-label">Source Tree (Reorganizable)</p>
+                    <p class="demo-label">Source Tree (Reorganizable)</p>
                     <div class="tree-container" id="source-container">
                         <web-treeview id="source-tree"></web-treeview>
                     </div>
                 </div>
                 <div>
-                    <p class="tree-label" id="target-label">Target Tree (Empty - Drop Here!)</p>
+                    <p class="demo-label" id="target-label">Target Tree (Empty - Drop Here!)</p>
                     <div class="tree-container" id="target-container">
                         <web-treeview id="target-tree"></web-treeview>
                     </div>
@@ -155,14 +136,14 @@
             </div>
         </div>
 
-        <!-- Example 2: Multi-Drag -->
+        <!-- Multi-Drag -->
         <div class="card">
-            <h2>Multi-Drag (Select Multiple &amp; Drag as Group)</h2>
+            <h2>DD02 · Multi-Drag (Select Multiple &amp; Drag as Group)</h2>
             <p>Set <code>selection-mode="multi"</code> and the tree honors OS-explorer drag semantics: Ctrl/Shift-click several rows, then drag any one of them &mdash; the whole highlight set moves together. Grabbing a row that's <strong>not</strong> in the highlight set replaces the highlight with just that row, matching how Finder / Explorer behave.</p>
 
             <div class="note">
-                <p style="margin: 0 0 0.25rem; font-weight: 600;">Try it</p>
-                <ol style="margin: 0; padding: 0 0 0 1.5rem; font-size: 0.875rem;">
+                <p class="note-title">Try it</p>
+                <ol>
                     <li><strong>Ctrl+click</strong> on three rows (e.g. Apple, Cherry, Eggplant) &mdash; you'll see them highlight.</li>
                     <li><strong>Drag any highlighted row</strong> and drop it onto another row.</li>
                     <li>The whole set lands as a group: first node lands at the requested position, the rest chain <em>after</em> it as siblings.</li>
@@ -185,18 +166,18 @@
                 <button class="btn-outline" onclick="resetMultiTree()">Reset Tree</button>
             </div>
 
-            <div class="note" style="background: #fef9c3; border-left-color: #ca8a04;">
-                <p style="margin: 0; font-size: 0.875rem;">
-                    <strong>rc03 three-level model:</strong>
+            <div class="note warning">
+                <p>
+                    <strong>Three-level model:</strong>
                     <code>focusedNode</code> (single, last click / arrow nav) &middot;
                     <code>highlightedPaths</code> (multi-select set used for drag &mdash; Ctrl/Shift-click) &middot;
                     <code>selectedPaths</code> (independent checkbox data state, visible only when checkboxes are on).
                 </p>
             </div>
 
-            <div class="tree-pair">
+            <div class="grid-2">
                 <div>
-                    <p class="tree-label">Multi-Select Tree</p>
+                    <p class="demo-label">Multi-Select Tree</p>
                     <div class="tree-container" id="multi-container">
                         <web-treeview id="multi-tree"
                             selection-mode="multi"
@@ -208,29 +189,29 @@
                     </div>
                 </div>
                 <div>
-                    <p class="tree-label">Live State</p>
-                    <div class="output" style="margin: 0;">
+                    <p class="demo-label">Live State</p>
+                    <div class="output">
                         <p class="output-label">Focused node</p>
                         <pre id="multi-focused">(none)</pre>
-                        <p class="output-label" style="margin-top: 0.5rem;">Highlighted paths (multi-select, drives drag)</p>
+                        <p class="output-label mt-1">Highlighted paths (multi-select, drives drag)</p>
                         <pre id="multi-highlight">(none)</pre>
-                        <p class="output-label" style="margin-top: 0.5rem;">Selected paths (checkbox state)</p>
+                        <p class="output-label mt-1">Selected paths (checkbox state)</p>
                         <pre id="multi-selected">(none)</pre>
-                        <p class="output-label" style="margin-top: 0.5rem;">Last drop</p>
+                        <p class="output-label mt-1">Last drop</p>
                         <pre id="multi-drop">(none)</pre>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Example 3: Restricted Drop Positions -->
+        <!-- Restricted Drop Positions -->
         <div class="card">
-            <h2>Restricted Drop Positions</h2>
+            <h2>DD03 · Restricted Drop Positions</h2>
             <p>Control which drop positions are valid per node using <code>allowedDropPositionsMember</code> (data-driven, shown below) or <code>getAllowedDropPositionsCallback</code> (runtime per-node logic). Both let the lib snap an attempted drop to the nearest allowed position. Try dragging items to different targets:</p>
 
             <div class="note">
-                <p style="margin: 0 0 0.25rem; font-weight: 600;">Node Types</p>
-                <ul style="margin: 0; padding: 0 0 0 1.5rem;">
+                <p class="note-title">Node Types</p>
+                <ul>
                     <li><strong>&#x1F5D1;&#xFE0F; Trash</strong> - Only accepts <code>child</code> drops (drop INTO, not above/below)</li>
                     <li><strong>&#x1F4C2; Projects</strong> - All positions allowed (default behavior)</li>
                     <li><strong>&#x1F4C4; Files</strong> - Only <code>before</code> and <code>after</code> (can't drop INTO a file)</li>
@@ -247,9 +228,9 @@
             </div>
         </div>
 
-        <!-- Example 3: beforeDropCallback -->
+        <!-- beforeDropCallback -->
         <div class="card">
-            <h2>Drop Validation</h2>
+            <h2>DD04 · Drop Validation</h2>
             <p>Use <code>beforeDropCallback</code> to validate or reject drops. In this example, "Important" nodes cannot be moved.</p>
 
             <div class="tree-container" id="tree5-container">
@@ -802,5 +783,8 @@
             };
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

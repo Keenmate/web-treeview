@@ -3,41 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Programmatic API</title>
+    <title>TreeView - Data & API</title>
     <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        .input-group {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .input-group input {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            flex: 1;
-            max-width: 300px;
-        }
-        .input-group input:focus {
-            outline: none;
-            border-color: #059669;
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <header>
             <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Programmatic API</h1>
-            <p class="subtitle">Control the tree programmatically: expand, collapse, search, scroll, and mutate</p>
+            <h1>Data &amp; API</h1>
+            <p class="subtitle">Feed data into the tree and drive it programmatically: expand, collapse, search, scroll, mutate, and snapshot state</p>
         </header>
 
-        <!-- Example 1: Expand / Collapse -->
+        <!-- Expand / Collapse -->
         <div class="card">
-            <h2>Example 1: Expand & Collapse</h2>
+            <h2>DA01 · Expand &amp; Collapse</h2>
             <p>Expand or collapse nodes and subtrees programmatically.</p>
 
             <div class="controls">
@@ -53,12 +32,12 @@
             </div>
         </div>
 
-        <!-- Example 2: Search -->
+        <!-- Search -->
         <div class="card">
-            <h2>Example 2: Search / Filter</h2>
+            <h2>DA02 · Search / Filter</h2>
             <p>Filter the tree by search text. Non-matching nodes are hidden, ancestors of matching nodes are auto-expanded.</p>
 
-            <div class="input-group">
+            <div class="controls">
                 <input type="text" id="search-input" placeholder="Type to search (e.g. 'test', 'config')..." oninput="onSearch(this.value)">
                 <button onclick="clearSearch()" class="btn-outline">Clear</button>
             </div>
@@ -73,9 +52,9 @@
             </div>
         </div>
 
-        <!-- Example 3: Scroll to Path -->
+        <!-- Scroll to Path -->
         <div class="card">
-            <h2>Example 3: Scroll to Path</h2>
+            <h2>DA03 · Scroll to Path</h2>
             <p>Scroll to a specific node by its path, optionally expanding ancestors and highlighting the target.</p>
 
             <div class="controls">
@@ -84,14 +63,14 @@
                 <button onclick="scrollTo('3.2')">Scroll to "CHANGELOG.md"</button>
             </div>
 
-            <div class="tree-container" id="tree3-container" style="max-height: 300px;">
+            <div class="tree-container tree-container-sm" id="tree3-container">
                 <web-treeview id="tree3"></web-treeview>
             </div>
         </div>
 
-        <!-- Example 4: Node Mutations -->
+        <!-- Node Mutations -->
         <div class="card">
-            <h2>Example 4: Add / Remove / Update Nodes</h2>
+            <h2>DA04 · Add / Remove / Update Nodes</h2>
             <p>Mutate the tree programmatically using <code>addNode</code>, <code>removeNode</code>, and <code>updateNode</code>.</p>
 
             <div class="controls">
@@ -111,9 +90,9 @@
             </div>
         </div>
 
-        <!-- Example 5: Snapshot & Restore -->
+        <!-- Snapshot & Restore -->
         <div class="card">
-            <h2>Example 5: Save & Restore Expanded State</h2>
+            <h2>DA05 · Save &amp; Restore Expanded State</h2>
             <p>Save the currently expanded paths and restore them later, e.g. after a data refresh.</p>
 
             <div class="controls">
@@ -313,5 +292,8 @@
             window.collapseAll5 = () => tree5.collapseAll();
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - window.components & Logging</title>
+    <title>TreeView - Logging & Debugging</title>
 
     <link rel="stylesheet" href="examples-shared.css">
 
     <style>
-        .controls button { margin: 0.25rem; }
-
-        /* Live registry inspector */
+        /* Page-specific: live registry inspector (dark console dump of the
+           window.components entry) + its pills/badges. */
         .registry {
             display: grid;
             grid-template-columns: max-content 1fr;
@@ -58,8 +57,8 @@
     <div class="container">
         <header>
             <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>🌐 <code>window.components</code> &amp; Logging</h1>
-            <p class="subtitle">The global component registry from <code>@keenmate/web-components-core</code> — introspection, logging controls, and the live-instance list</p>
+            <h1>Logging &amp; Debugging</h1>
+            <p class="subtitle">The global <code>window.components</code> registry, category logging controls, performance timings, and the in-tree debug overlay</p>
         </header>
 
         <div class="note warning">
@@ -71,7 +70,7 @@
 
         <!-- ── 1. The registry ─────────────────────────────────────────────── -->
         <div class="card">
-            <h2>1. The registry entry</h2>
+            <h2>LG01 · The registry entry</h2>
             <p>
                 Every KeenMate component publishes one entry via core's
                 <code>registerComponent()</code>. Below is a live view of
@@ -92,7 +91,7 @@
 
         <!-- ── 2. Logging through the registry ─────────────────────────────── -->
         <div class="card">
-            <h2>2. Logging controls — via <code>.logging</code></h2>
+            <h2>LG02 · Logging controls — via <code>.logging</code></h2>
             <p>
                 The <code>.logging</code> object is the flattened logger bundle. These
                 buttons call it directly (e.g.
@@ -116,7 +115,7 @@
                 <button onclick="onlyCategory('RENDER')">Only RENDER</button>
             </div>
 
-            <div class="grid grid-2" style="margin-top: 1rem;">
+            <div class="grid grid-2 mt-1">
                 <div class="form-group">
                     <label>Files (click / expand / collapse → UI logs)</label>
                     <div class="tree-container">
@@ -134,7 +133,7 @@
 
         <!-- ── 3. Live instances ───────────────────────────────────────────── -->
         <div class="card">
-            <h2>3. Live instances — <code>.getInstances()</code></h2>
+            <h2>LG03 · Live instances — <code>.getInstances()</code></h2>
             <p>
                 <code>getInstances()</code> returns the connected elements of this tag —
                 maintained automatically (added on connect, removed on disconnect). Add and
@@ -153,7 +152,7 @@
 
         <!-- ── 4. Performance logging (separate module) ────────────────────── -->
         <div class="card">
-            <h2>4. Performance logging</h2>
+            <h2>LG04 · Performance logging</h2>
             <p>
                 Perf logging lives in its own module (<code>enablePerfLogging</code> /
                 <code>setPerfThreshold</code>, imported from
@@ -181,7 +180,7 @@
 
         <!-- ── 5. Debug overlay ────────────────────────────────────────────── -->
         <div class="card">
-            <h2>5. Debug information overlay</h2>
+            <h2>LG05 · Debug information overlay</h2>
             <p>
                 Toggle the in-tree debug overlay (the
                 <code>should-display-debug-information</code> input) to inspect internal
@@ -200,7 +199,7 @@
 
         <!-- ── Reference ───────────────────────────────────────────────────── -->
         <div class="card">
-            <h2>📝 Log categories</h2>
+            <h2>LG06 · Log categories</h2>
             <ul>
                 <li><strong>INIT</strong> — component initialization, configuration parsing, destruction</li>
                 <li><strong>DATA</strong> — data insertion, tree building, node updates</li>
@@ -212,9 +211,9 @@
         </div>
 
         <div class="card">
-            <h2>💡 Usage</h2>
+            <h2>LG07 · Usage</h2>
             <div class="code-block">
-// No import needed at call sites — the registry is a global, populated the
+<pre><code>// No import needed at call sites — the registry is a global, populated the
 // moment the component module is loaded anywhere on the page.
 const tv = window.components['web-treeview'];
 
@@ -235,7 +234,7 @@ for (const el of tv.getInstances()) console.log(el.id, [...el.getExpandedPaths()
 // Perf logging is a SEPARATE module (not on tv.logging) — import it directly:
 import { enablePerfLogging, setPerfThreshold } from '@keenmate/web-treeview';
 enablePerfLogging();
-setPerfThreshold(5);                // only log operations taking &gt; 5ms
+setPerfThreshold(5);                // only log operations taking &gt; 5ms</code></pre>
             </div>
         </div>
     </div>
@@ -440,5 +439,8 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms
         // Keep the instance list honest even if instances change outside our buttons.
         setInterval(() => refreshRegistry(), 2000);
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

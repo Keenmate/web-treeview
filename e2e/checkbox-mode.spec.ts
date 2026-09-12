@@ -20,8 +20,14 @@ const PAGE = '/test/checkbox-mode.html';
 function tree(page: Page) {
   return page.locator('.wtv__container').first();
 }
+// The checkbox is now a <label class="wtv__checkbox"> wrapping a hidden native
+// <input> (+ .wtv__checkbox-box). Click the label; read :checked / :indeterminate
+// off the inner input (still the source of truth).
 function checkbox(page: Page, path: string): Locator {
   return tree(page).locator(`.wtv__node[data-tree-path="${path}"] .wtv__checkbox`).first();
+}
+function checkboxInput(page: Page, path: string): Locator {
+  return tree(page).locator(`.wtv__node[data-tree-path="${path}"] .wtv__checkbox input`).first();
 }
 function isIndeterminate(input: Locator): Promise<boolean> {
   return input.evaluate((el) => (el as HTMLInputElement).indeterminate);
@@ -37,21 +43,21 @@ test.describe('Checkbox mode switch', () => {
   test('indeterminate parent becomes CHECKED (not stuck at [-]) when switching cascade → independent', async ({ page }) => {
     // Cascade: check one child of Documents (1) so the parent goes indeterminate.
     await checkbox(page, '1.1').click();
-    await expect.poll(() => isIndeterminate(checkbox(page, '1'))).toBe(true);
-    await expect(checkbox(page, '1')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+    await expect(checkboxInput(page, '1')).not.toBeChecked();
 
     // Switch to independent mode (via the attribute → updateProps path).
     await page.getByTestId('mode-independent').click();
     await expect(page.getByTestId('mode')).toHaveText('independent');
 
     // The parent must LEAVE indeterminate and land fully checked.
-    await expect.poll(() => isIndeterminate(checkbox(page, '1'))).toBe(false);
-    await expect(checkbox(page, '1')).toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(false);
+    await expect(checkboxInput(page, '1')).toBeChecked();
     await expect(page.getByTestId('selection')).toContainText('1');
     // The still-checked child stays checked; the untouched sibling stays clear.
-    await expect(checkbox(page, '1.1')).toBeChecked();
-    await expect(checkbox(page, '1.2')).not.toBeChecked();
-    await expect.poll(() => isIndeterminate(checkbox(page, '1.2'))).toBe(false);
+    await expect(checkboxInput(page, '1.1')).toBeChecked();
+    await expect(checkboxInput(page, '1.2')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1.2'))).toBe(false);
   });
 
   test('switching independent → cascade re-derives the parent dash', async ({ page }) => {
@@ -59,12 +65,12 @@ test.describe('Checkbox mode switch', () => {
     await checkbox(page, '1.1').click();
 
     // Independent: parent stays unchecked, no dash.
-    await expect(checkbox(page, '1')).not.toBeChecked();
-    await expect.poll(() => isIndeterminate(checkbox(page, '1'))).toBe(false);
+    await expect(checkboxInput(page, '1')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(false);
 
     // Switch to cascade — parent now shows indeterminate from its one checked child.
     await page.getByTestId('mode-cascade').click();
     await expect(page.getByTestId('mode')).toHaveText('cascade');
-    await expect.poll(() => isIndeterminate(checkbox(page, '1'))).toBe(true);
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
   });
 });

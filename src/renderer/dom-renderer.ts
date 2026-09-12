@@ -204,9 +204,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     };
 
     // Checkbox click
-    const checkbox = target.closest('.wtv__checkbox') as HTMLInputElement;
+    const checkbox = target.closest('.wtv__checkbox') as HTMLElement;
     if (checkbox) {
       event.stopPropagation();
+      // .wtv__checkbox is a <label> wrapping a hidden native input; without this the
+      // label's default action would ALSO toggle the input, double-firing against the
+      // controller's own toggle. The controller owns checkbox state.
+      event.preventDefault();
       const nodeEl = checkbox.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
@@ -994,24 +998,35 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * Called by BOTH _createNodeElement and updateNode so a node crossing the
    * leaf↔folder line always gets the right marker. updateNode used to only touch
    * the `expanded` class when hasChildren was already true, so a node that GAINED
-   * children (e.g. a cross-tree child-drop) kept its empty --leaf-none slot (no ▼),
-   * and a folder that LOST all its children (a move out) kept a stale --expand ▼.
-   * Resetting className first clears any stale icon/expanded classes.
+   * children (e.g. a cross-tree child-drop) kept its empty --leaf-none slot (no
+   * disclosure glyph), and a folder that LOST all its children (a move out) kept a
+   * stale --expand glyph. Resetting className first clears any stale icon/expanded
+   * classes.
    */
   private _applyToggleClasses(toggle: HTMLElement, node: LTreeNode<T>): void {
     const nodeConfig = this.lastNodeConfig;
     toggle.className = 'wtv__toggle-icon';
     if (node.hasChildren) {
-      const isSwap = nodeConfig?.toggleIconMode === 'swap';
-      if (isSwap) {
-        addClasses(toggle, node.isExpanded
-          ? (nodeConfig?.collapseIconClass || 'wtv__toggle-icon--collapse')
-          : (nodeConfig?.expandIconClass || 'wtv__toggle-icon--expand'));
+      // Built-in glyph path: ONE canonical class (`--expand`) for every expandable
+      // node + the `.expanded` state marker. Rotate vs swap is a pure-CSS concern
+      // (variables.css / tree.css): rotate mode spins the glyph via
+      // --wtv-icon-rotate-*, swap mode repaints its mask to --wtv-icon-collapse.
+      //
+      // Escape-hatch path: a custom expandIconClass (e.g. FontAwesome, `fa-*`) is NOT
+      // a CSS mask, so it can't be repainted — the renderer reproduces swap itself by
+      // swapping class names (the pre-icon-set behaviour). Rotation still works because
+      // the rotate rule keys off the shared `.wtv__toggle-icon.wtv__clickable`, which
+      // every expandable toggle carries regardless of glyph class.
+      const expandIconClass = nodeConfig?.expandIconClass || 'wtv__toggle-icon--expand';
+      const usingCustomGlyph = expandIconClass !== 'wtv__toggle-icon--expand';
+      const swap = nodeConfig?.toggleIconMode === 'swap';
+      if (usingCustomGlyph && swap && node.isExpanded) {
+        addClasses(toggle, nodeConfig?.collapseIconClass || 'wtv__toggle-icon--collapse');
       } else {
-        addClasses(toggle, nodeConfig?.expandIconClass || 'wtv__toggle-icon--expand');
-        if (node.isExpanded) {
-          toggle.classList.add('expanded');
-        }
+        addClasses(toggle, expandIconClass);
+      }
+      if (node.isExpanded) {
+        toggle.classList.add('expanded');
       }
       toggle.classList.add('wtv__clickable');
     } else {
@@ -1019,6 +1034,30 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const nodeIcon = this.controller?.hasIconSupport ? this.controller.getNodeIcon(node) : null;
       addClasses(toggle, nodeIcon || nodeConfig?.leafIconClass || 'wtv__toggle-icon--leaf-none');
     }
+  }
+
+  /**
+   * Build the canonical custom checkbox: a <label> wrapping a visually-hidden native
+   * <input> plus a `.wtv__checkbox-box` span whose ::after renders the checkmark/dash
+   * mask (see tree.css). Same structure as pure-admin `.pa-checkbox` and
+   * svelte-treeview `.stv__checkbox` — one checkbox implementation across the suite,
+   * themeable via --base-icon-check / --base-icon-indeterminate. The input stays the
+   * source of truth for :checked / :indeterminate (the box is a sibling styled off it);
+   * the delegated click handler preventDefaults the label so only the controller toggles.
+   */
+  private _buildCheckbox(checked: boolean, indeterminate: boolean): HTMLLabelElement {
+    const label = document.createElement('label');
+    label.className = 'wtv__checkbox';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.tabIndex = -1;
+    input.checked = checked;
+    input.indeterminate = indeterminate;
+    const box = document.createElement('span');
+    box.className = 'wtv__checkbox-box';
+    label.appendChild(input);
+    label.appendChild(box);
+    return label;
   }
 
   private _createNodeElement(node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): HTMLElement {
@@ -1057,12 +1096,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Checkbox (between toggle and content). Rendered only when
     // shouldShowCheckboxes is true and the node is selectable.
     if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.className = 'wtv__checkbox';
-      cb.checked = snapshot.selectedPaths.has(node.path);
-      cb.indeterminate = node.visualState === 'indeterminate';
-      row.appendChild(cb);
+      row.appendChild(
+        this._buildCheckbox(
+          snapshot.selectedPaths.has(node.path),
+          node.visualState === 'indeterminate'
+        )
+      );
     }
 
     // Node content
@@ -1175,20 +1214,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Sync checkbox checked / indeterminate
     if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
-      let cb = el.querySelector('.wtv__checkbox') as HTMLInputElement | null;
-      if (!cb) {
+      let label = el.querySelector('.wtv__checkbox') as HTMLElement | null;
+      if (!label) {
         // Showed checkboxes was just toggled on — insert one.
-        cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.className = 'wtv__checkbox';
+        label = this._buildCheckbox(false, false);
         const toggle = el.querySelector('.wtv__toggle-icon');
-        toggle?.after(cb);
+        toggle?.after(label);
       }
+      const cb = label.querySelector('input') as HTMLInputElement;
       cb.checked = snapshot.selectedPaths.has(node.path);
       cb.indeterminate = node.visualState === 'indeterminate';
     } else {
-      const cb = el.querySelector('.wtv__checkbox');
-      cb?.remove();
+      const label = el.querySelector('.wtv__checkbox');
+      label?.remove();
     }
 
     // Update toggle icon — rebuild the full class list so leaf↔folder transitions

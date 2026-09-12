@@ -11,9 +11,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *   2     Music      selectable=true  selected=true
  *   2.1   Playlists  selectable=true  selected=false
  *
- * Web-treeview's checkbox is a bare `<input class="wtv__checkbox">` (no
- * wrapping label like the Svelte build), so the same locator works for both
- * `checkbox` and `checkboxLabel` in the original spec.
+ * Web-treeview's checkbox is a <label class="wtv__checkbox"> wrapping a hidden
+ * native <input> (+ .wtv__checkbox-box). `checkbox()` is the visible/clickable
+ * label; `checkboxInput()` is the inner input that holds :checked state.
  */
 
 const PAGE = '/test/member-props.html';
@@ -23,7 +23,11 @@ function nodeByPath(page: Page, path: string): Locator {
 }
 
 function checkbox(node: Locator): Locator {
-  return node.locator('> .wtv__node-row input.wtv__checkbox').first();
+  return node.locator('> .wtv__node-row .wtv__checkbox').first();
+}
+
+function checkboxInput(node: Locator): Locator {
+  return node.locator('> .wtv__node-row .wtv__checkbox input').first();
 }
 
 async function gotoFixture(page: Page) {
@@ -71,14 +75,14 @@ test.describe('isSelectableMember', () => {
 test.describe('isSelectedMember', () => {
   test('nodes with selected=true and selectable=true render their checkbox in checked state', async ({ page }) => {
     await gotoFixture(page);
-    await expect(checkbox(nodeByPath(page, '1.1'))).toBeChecked();
-    await expect(checkbox(nodeByPath(page, '2'))).toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '1.1'))).toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '2'))).toBeChecked();
   });
 
   test('nodes with selected=false render their checkbox unchecked', async ({ page }) => {
     await gotoFixture(page);
-    await expect(checkbox(nodeByPath(page, '1'))).not.toBeChecked();
-    await expect(checkbox(nodeByPath(page, '2.1'))).not.toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '1'))).not.toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '2.1'))).not.toBeChecked();
   });
 
   test('selectedPaths is seeded with every path where selected=true (incl. non-selectable)', async ({ page }) => {
@@ -96,13 +100,13 @@ test.describe('isSelectedMember', () => {
     await expect(page.getByTestId('selected-paths-count')).toHaveText('3');
 
     await checkbox(nodeByPath(page, '2.1')).click();
-    await expect(checkbox(nodeByPath(page, '2.1'))).toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '2.1'))).toBeChecked();
 
     await expect(page.getByTestId('selected-paths-count')).toHaveText('4');
     await expect(page.getByTestId('selected-paths-list')).toHaveText('1.1,1.3,2,2.1');
 
     await checkbox(nodeByPath(page, '1.1')).click();
-    await expect(checkbox(nodeByPath(page, '1.1'))).not.toBeChecked();
+    await expect(checkboxInput(nodeByPath(page, '1.1'))).not.toBeChecked();
     await expect(page.getByTestId('selected-paths-count')).toHaveText('3');
     await expect(page.getByTestId('selected-paths-list')).toHaveText('1.3,2,2.1');
   });

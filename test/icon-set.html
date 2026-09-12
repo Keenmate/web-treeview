@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — icon-set / --base-icon-* disclosure glyph</title>
+    <style>
+        main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+        .card { border: 1px solid #ccc; border-radius: 6px; padding: 0.75rem; }
+        .card h2 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+        web-treeview { display: block; }
+
+        /* Overriding the shared base chevron should re-skin the default set's glyph
+           through the shadow boundary (CSS custom properties inherit into shadow DOM). */
+        #base-icon { --base-icon-chevron: url("http://sentinel.test/chevron.svg"); }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>icon-set — one glyph variable set, reconfigured per set</h1>
+        <p>Targeted by <code>e2e/icon-set.spec.ts</code>. Every tree's root
+           (<em>Documents</em>) has children, so its collapsed toggle glyph is visible.</p>
+
+        <div class="grid">
+            <div class="card"><h2>default (chevron)</h2>
+                <web-treeview id="default" expand-level="0"></web-treeview></div>
+
+            <div class="card"><h2>icon-set="triangle"</h2>
+                <web-treeview id="triangle" icon-set="triangle" expand-level="0"></web-treeview></div>
+
+            <div class="card"><h2>icon-set="plus-minus"</h2>
+                <web-treeview id="plusminus" icon-set="plus-minus" expand-level="0"></web-treeview></div>
+
+            <div class="card"><h2>icon-set="arrow"</h2>
+                <web-treeview id="arrow" icon-set="arrow" expand-level="0"></web-treeview></div>
+
+            <div class="card"><h2>--base-icon-chevron override</h2>
+                <web-treeview id="base-icon" expand-level="0"></web-treeview></div>
+
+            <div class="card"><h2>iconSet set via JS property (reflection)</h2>
+                <web-treeview id="by-prop" expand-level="0"></web-treeview></div>
+
+            <!-- Escape hatch: a CUSTOM expand/collapse class (stand-in for FontAwesome)
+                 isn't a CSS mask, so swap mode must swap the class NAME in the renderer,
+                 and rotate mode must still rotate the custom glyph. Root is expanded
+                 (expand-level=1) so the swapped/rotated state is observable. -->
+            <div class="card"><h2>custom class + swap (escape hatch)</h2>
+                <web-treeview id="custom-swap" expand-level="1"
+                    expand-icon-class="fx-plus" collapse-icon-class="fx-minus"
+                    toggle-icon-mode="swap"></web-treeview></div>
+
+            <div class="card"><h2>custom class + rotate (escape hatch)</h2>
+                <web-treeview id="custom-rotate" expand-level="1"
+                    expand-icon-class="fx-chevron"></web-treeview></div>
+        </div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        const sampleData = [
+            { id: 1, path: '1', name: 'Documents' },
+            { id: 2, path: '1.1', name: 'Work' },
+            { id: 3, path: '1.2', name: 'Personal' },
+            { id: 4, path: '2', name: 'Downloads' }
+        ];
+
+        customElements.whenDefined('web-treeview').then(() => {
+            for (const id of ['default', 'triangle', 'plusminus', 'arrow', 'base-icon', 'by-prop', 'custom-swap', 'custom-rotate']) {
+                const t = document.getElementById(id);
+                t.idMember = 'id';
+                t.pathMember = 'path';
+                t.displayValueMember = 'name';
+                t.data = sampleData;
+            }
+            // Drive icon-set through the JS property (not the attribute) to prove
+            // reflect:true writes the attribute so the :host([icon-set]) CSS matches.
+            document.getElementById('by-prop').iconSet = 'triangle';
+        });
+    </script>
+</body>
+</html>

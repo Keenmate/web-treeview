@@ -142,7 +142,7 @@ test.describe('clearSelection', () => {
   test('loud after checkbox check: fires selection-change; clears state', async ({ page }) => {
     await goto(page);
 
-    const checkbox = page.locator('.wtv__node[data-tree-path="1.2"] input.wtv__checkbox').first();
+    const checkbox = page.locator('.wtv__node[data-tree-path="1.2"] .wtv__checkbox').first();
     await checkbox.click();
     expect(await selectionSize(page)).toBeGreaterThan(0);
 
@@ -156,7 +156,7 @@ test.describe('clearSelection', () => {
   test('silent after checkbox check: skips selection-change; clears state', async ({ page }) => {
     await goto(page);
 
-    const checkbox = page.locator('.wtv__node[data-tree-path="1.2"] input.wtv__checkbox').first();
+    const checkbox = page.locator('.wtv__node[data-tree-path="1.2"] .wtv__checkbox').first();
     await checkbox.click();
     expect(await selectionSize(page)).toBeGreaterThan(0);
 

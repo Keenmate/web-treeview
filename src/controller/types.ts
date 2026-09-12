@@ -53,6 +53,16 @@ export interface NodeCallbacks<T> {
 }
 
 export type ToggleIconMode = 'rotate' | 'swap';
+/**
+ * Which disclosure glyph the toggle shows. Selecting a set re-points the ONE
+ * --wtv-icon-* variable set (glyph + rotation) via a `:host([icon-set=…])` rule —
+ * it does NOT switch between parallel CSS class families. Concept names mirror the
+ * --base-icon-* contract: 'chevron' → --base-icon-chevron (default, parity with
+ * @keenmate/svelte-treeview), 'triangle' → --base-icon-caret-down (the pre-rc09
+ * look), 'plus-minus' → --base-icon-expand/-collapse (a swap set), 'arrow' → inline
+ * Lucide arrows (no base equivalent yet).
+ */
+export type IconSet = 'chevron' | 'triangle' | 'plus-minus' | 'arrow';
 export type ClickBehavior = 'select' | 'expand' | 'expand-and-focus';
 export type CheckboxMode = 'independent' | 'cascade';
 /**
@@ -67,7 +77,12 @@ export type CascadeSelectPolicy = 'rolled-up' | 'leaves' | 'all';
 
 export interface NodeConfig {
   clickBehavior: ClickBehavior;
+  iconSet: IconSet;
+  /** @deprecated Use `iconSet`. Kept as a per-node escape hatch: a non-default
+   *  class name is still attached to the expandable toggle. */
   expandIconClass: string;
+  /** @deprecated Glyph swap is now handled in CSS via `iconSet` + `toggleIconMode`;
+   *  this no longer selects the expanded glyph. */
   collapseIconClass: string;
   leafIconClass: string;
   toggleIconMode: ToggleIconMode;
@@ -505,7 +520,10 @@ export interface TreeControllerConfig<T> {
   highlightedNodeClass?: string | null | undefined;
   focusedNodeClass?: string | null | undefined;
   dragOverNodeClass?: string | null | undefined;
+  iconSet?: IconSet | null | undefined;
+  /** @deprecated Use `iconSet`. */
   expandIconClass?: string | null | undefined;
+  /** @deprecated Use `iconSet` + `toggleIconMode`. */
   collapseIconClass?: string | null | undefined;
   leafIconClass?: string | null | undefined;
   toggleIconMode?: ToggleIconMode | null | undefined;

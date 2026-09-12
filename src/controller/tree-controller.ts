@@ -83,6 +83,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   nodeCallbacks!: NodeCallbacks<T>;
   private _nodeConfig: NodeConfig = {
     clickBehavior: 'expand-and-focus',
+    iconSet: 'chevron',
     expandIconClass: 'wtv__toggle-icon--expand',
     collapseIconClass: 'wtv__toggle-icon--collapse',
     leafIconClass: 'wtv__toggle-icon--leaf-none',
@@ -199,6 +200,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   // Visual config
   private _clickBehavior: import('./types').ClickBehavior = 'expand-and-focus';
   private _isAccordionExpand: boolean = false;
+  private _iconSet: import('./types').IconSet = 'chevron';
   private _expandIconClass: string = 'wtv__toggle-icon--expand';
   private _collapseIconClass: string = 'wtv__toggle-icon--collapse';
   private _leafIconClass: string = 'wtv__toggle-icon--leaf-none';
@@ -472,6 +474,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   get isAccordionExpand() { return this._isAccordionExpand; }
   set isAccordionExpand(v: boolean) { this._isAccordionExpand = v; }
 
+  get iconSet() { return this._iconSet; }
+  set iconSet(v: import('./types').IconSet) { this._iconSet = v; this._updateNodeConfig(); }
+
   get expandIconClass() { return this._expandIconClass; }
   set expandIconClass(v: string) { this._expandIconClass = v; this._updateNodeConfig(); }
 
@@ -698,6 +703,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
     this._clickBehavior = props.clickBehavior ?? 'expand-and-focus';
     this._isAccordionExpand = props.isAccordionExpand ?? false;
+    this._iconSet = props.iconSet ?? 'chevron';
     this._expandIconClass = props.expandIconClass ?? 'wtv__toggle-icon--expand';
     this._collapseIconClass = props.collapseIconClass ?? 'wtv__toggle-icon--collapse';
     this._leafIconClass = props.leafIconClass ?? 'wtv__toggle-icon--leaf-none';
@@ -3274,6 +3280,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._clickBehavior = updates.clickBehavior ?? 'expand-and-focus';
     if (updates.isAccordionExpand !== undefined)
       this._isAccordionExpand = updates.isAccordionExpand ?? false;
+    if (updates.iconSet !== undefined)
+      this._iconSet = updates.iconSet ?? 'chevron';
     if (updates.expandIconClass !== undefined)
       this._expandIconClass = updates.expandIconClass ?? 'wtv__toggle-icon--expand';
     if (updates.collapseIconClass !== undefined)
@@ -3736,6 +3744,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _updateNodeConfig() {
     this._nodeConfig = {
       clickBehavior: this._clickBehavior,
+      iconSet: this._iconSet,
       expandIconClass: this._expandIconClass,
       collapseIconClass: this._collapseIconClass,
       leafIconClass: this._leafIconClass,

@@ -17,10 +17,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * Click Behavior tree uses expandLevel=2 (levels 1 & 2 visible). Multi-Select
  * tree uses expandLevel=3 (everything visible).
  *
- * Note on checkbox DOM: web-treeview renders the checkbox as a bare
- * <input type="checkbox" class="wtv__checkbox">, NOT a wrapping <label> like
- * the Svelte build. Both the label selector and input selector below point to
- * the same input element.
+ * Note on checkbox DOM: web-treeview renders a <label class="wtv__checkbox">
+ * wrapping a hidden native <input> (+ .wtv__checkbox-box). `checkboxOf()` is the
+ * visible/clickable label; `checkboxInputOf()` is the inner input (:checked state).
  */
 
 const PAGE = '/test/interaction.html';
@@ -52,7 +51,11 @@ function nodeContent(node: Locator): Locator {
 }
 
 function checkboxOf(node: Locator): Locator {
-  return node.locator('> .wtv__node-row input.wtv__checkbox').first();
+  return node.locator('> .wtv__node-row .wtv__checkbox').first();
+}
+
+function checkboxInputOf(node: Locator): Locator {
+  return node.locator('> .wtv__node-row .wtv__checkbox input').first();
 }
 
 function outputValue(card: Locator, label: string): Locator {
@@ -144,9 +147,9 @@ test.describe('Click Behavior tree', () => {
 
     // The checkbox VISUAL state is still the full canonical set: every descendant
     // is checked on screen even though the emitted projection rolls up to the root.
-    await expect(checkboxOf(nodeInCard(card, '1'))).toBeChecked();
-    await expect(checkboxOf(nodeInCard(card, '1.1'))).toBeChecked();
-    await expect(checkboxOf(nodeInCard(card, '1.2'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.1'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.2'))).toBeChecked();
   });
 
   test('independent mode: checking children does NOT auto-check parent', async ({ page }) => {
@@ -159,10 +162,10 @@ test.describe('Click Behavior tree', () => {
     await checkboxOf(nodeInCard(card, '1.1')).click();
     await checkboxOf(nodeInCard(card, '1.2')).click();
 
-    await expect(checkboxOf(nodeInCard(card, '1.1'))).toBeChecked();
-    await expect(checkboxOf(nodeInCard(card, '1.2'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.1'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.2'))).toBeChecked();
 
-    await expect(checkboxOf(nodeInCard(card, '1'))).not.toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1'))).not.toBeChecked();
 
     const selected = outputValue(card, 'Selected / Checked');
     await expect(selected).toContainText('1.1');
@@ -179,7 +182,7 @@ test.describe('Click Behavior tree', () => {
 
     await nodeContent(nodeInCard(card, '1.1')).click();
 
-    await expect(checkboxOf(nodeInCard(card, '1.1'))).toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.1'))).toBeChecked();
     await expect(outputValue(card, 'Selected / Checked')).toContainText('1.1');
 
     await expect(outputValue(card, 'Focused Node')).toHaveText('(none)');
@@ -189,7 +192,7 @@ test.describe('Click Behavior tree', () => {
     // a double-click (which the controller now consumes as a single gesture).
     await page.waitForTimeout(450);
     await nodeContent(nodeInCard(card, '1.1')).click();
-    await expect(checkboxOf(nodeInCard(card, '1.1'))).not.toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.1'))).not.toBeChecked();
   });
 
   test('shouldClickToggleCheckbox: Ctrl+click still builds multi-highlight (modifier falls through)', async ({ page }) => {
@@ -205,8 +208,8 @@ test.describe('Click Behavior tree', () => {
     await expect(outputValue(card, 'Highlighted')).toContainText('1.1');
     await expect(outputValue(card, 'Highlighted')).toContainText('1.2');
 
-    await expect(checkboxOf(nodeInCard(card, '1.1'))).not.toBeChecked();
-    await expect(checkboxOf(nodeInCard(card, '1.2'))).not.toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.1'))).not.toBeChecked();
+    await expect(checkboxInputOf(nodeInCard(card, '1.2'))).not.toBeChecked();
   });
 
   test('expand mode: clicking does NOT update focusedNode', async ({ page }) => {

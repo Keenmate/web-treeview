@@ -463,6 +463,7 @@ function mapToControllerConfig<T>(options: Partial<TreeViewConfig<T>>): TreeCont
     highlightedNodeClass: options.highlightedNodeClass,
     focusedNodeClass: options.focusedNodeClass,
     dragOverNodeClass: options.dragOverNodeClass,
+    iconSet: options.iconSet,
     expandIconClass: options.expandIconClass,
     collapseIconClass: options.collapseIconClass,
     leafIconClass: options.leafIconClass,

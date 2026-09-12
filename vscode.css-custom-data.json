@@ -233,6 +233,81 @@
       "values": []
     },
     {
+      "name": "--wtv-icon-expand",
+      "description": "Disclosure glyph mask (collapsed / the only glyph in rotate mode); chained to --base-icon-chevron. Re-pointed per icon-set.",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-collapse",
+      "description": "Disclosure glyph mask shown when expanded (swap mode only); chained to --base-icon-collapse for the plus-minus set.",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-leaf",
+      "description": "Optional leaf marker glyph mask (opt-in via leafIconClass=wtv__toggle-icon--leaf).",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-rotate-collapsed",
+      "description": "Collapsed-state rotation for the disclosure glyph (0deg for a right-pointing chevron, -90deg for a down-caret).",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-rotate-expanded",
+      "description": "Expanded-state rotation for the disclosure glyph (90deg for chevron).",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-size-glyph",
+      "description": "Disclosure glyph mask box size (default 1em).",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-check",
+      "description": "Checkmark glyph (mask) for a checked checkbox; chains to --base-icon-check.",
+      "values": []
+    },
+    {
+      "name": "--wtv-icon-indeterminate",
+      "description": "Dash glyph (mask) for a tri-state/partial checkbox; chains to --base-icon-indeterminate.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-size",
+      "description": "Checkbox box dimension (default 1.6×rem).",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-border-width",
+      "description": "Checkbox box border thickness (hairline, does not scale).",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-border-color",
+      "description": "Unchecked checkbox box border color.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-bg",
+      "description": "Unchecked checkbox box background.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-checked-bg",
+      "description": "Checked / indeterminate checkbox box background (defaults to the accent color).",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-checked-border-color",
+      "description": "Checked / indeterminate checkbox box border color.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-checkmark-color",
+      "description": "Check / dash glyph color (tints the mask).",
+      "values": []
+    },
+    {
       "name": "--wtv-glow-before-color",
       "description": "Drop-before glow indicator color",
       "values": []

@@ -177,8 +177,20 @@
   flex-shrink: 0;
 }
 
-.wtv__node .wtv__toggle-icon.expanded {
-  transform: rotate(90deg);
+/* Collapsed orientation for the expandable glyph. Per-set (each icon-set block in
+   variables.css declares its own offset — a right-pointing chevron sits at 0deg,
+   a down-pointing caret at -90deg).
+   Keyed on .wtv__toggle-icon.wtv__clickable (every expandable toggle carries it)
+   rather than --expand, so a custom escape-hatch glyph class (e.g. FontAwesome,
+   which replaces --expand) still rotates. */
+.wtv__node .wtv__toggle-icon.wtv__clickable {
+  transform: rotate(var(--wtv-icon-rotate-collapsed, 0deg));
+}
+
+/* Expanded orientation — the state marker `.expanded` is applied by the renderer
+   for BOTH rotate and swap modes (swap just doesn't rotate; see below). */
+.wtv__node .wtv__toggle-icon.wtv__clickable.expanded {
+  transform: rotate(var(--wtv-icon-rotate-expanded, 90deg));
 }
 
 .wtv__node .wtv__node-icon {
@@ -210,23 +222,74 @@
 }
 
 /* ==============================================================================
-   ICON CLASSES
-   ============================================================================== */
+   TOGGLE GLYPH RENDERING (mask-based)
+   ==============================================================================
+   The disclosure glyph is a currentColor-tinted mask, so it inherits
+   --wtv-toggle-color and theming flows through --wtv-icon-* → --base-icon-*.
+   There is ONE expandable glyph class (`--expand`) and ONE leaf glyph class
+   (`--leaf`); which picture they show is decided by the --wtv-icon-* variables,
+   reconfigured per `icon-set` (see variables.css). This replaces the old family
+   of per-set text-glyph classes (--expand-alt / --expand-plus / --expand-arrow /
+   …), which offered four parallel shapes for one slot.
 
-.wtv__toggle-icon--expand::before { content: '\25B6'; }
-.wtv__toggle-icon--collapse::before { content: '\25BC'; }
-/* Leaf marker is OPT-IN: the default leafIconClass is `--leaf-none` (no marker), so a
-   leaf row renders an empty toggle slot that still reserves --wtv-column-width, keeping
-   the leaf's label aligned under its expandable siblings. Set leafIconClass to
-   `wtv__toggle-icon--leaf` to bring back the bullet dot. Mirrors svelte-treeview. */
-.wtv__toggle-icon--leaf::before { content: '\2022'; }
+   Migration note: pre-rc09 the default was a filled ▶/▼ triangle
+   (content: '\25B6'/'\25BC'). The default is now the Lucide chevron for parity
+   with @keenmate/svelte-treeview and an exact --base-icon-chevron match. Pass
+   `icon-set="triangle"` to keep the old look. */
 
-.wtv__toggle-icon--expand-alt::before { content: '\2BC8'; }
-.wtv__toggle-icon--collapse-alt::before { content: '\2BC6'; }
-.wtv__toggle-icon--expand-plus::before { content: '+'; }
-.wtv__toggle-icon--collapse-minus::before { content: '\2212'; }
-.wtv__toggle-icon--expand-arrow::before { content: '\2192'; }
-.wtv__toggle-icon--collapse-arrow::before { content: '\2193'; }
+.wtv__toggle-icon--expand::before,
+.wtv__toggle-icon--leaf::before {
+  content: '';
+  display: inline-block;
+  width: var(--wtv-icon-size-glyph, 1em);
+  height: var(--wtv-icon-size-glyph, 1em);
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+}
+
+.wtv__toggle-icon--expand::before {
+  -webkit-mask-image: var(--wtv-icon-expand);
+          mask-image: var(--wtv-icon-expand);
+}
+
+/* Swap mode — show the collapse glyph when expanded instead of rotating. For the
+   built-in glyph the renderer keeps the single `--expand` class + `.expanded` and
+   only the pictured mask changes (below); for a custom escape-hatch glyph the
+   renderer swaps the class name itself. Either way rotation is cancelled (a swapped
+   glyph shouldn't also rotate). Gated on the swap host attribute so rotate sets are
+   unaffected. */
+:host([toggle-icon-mode="swap"]) .wtv__toggle-icon.wtv__clickable {
+  transform: none;
+}
+:host([toggle-icon-mode="swap"]) .wtv__toggle-icon--expand.expanded::before {
+  -webkit-mask-image: var(--wtv-icon-collapse);
+          mask-image: var(--wtv-icon-collapse);
+}
+
+/* Plus/minus is inherently a swap set (a rotated + or − is meaningless), so force
+   glyph-swap for it regardless of toggle-icon-mode. */
+:host([icon-set="plus-minus"]) .wtv__toggle-icon.wtv__clickable {
+  transform: none;
+}
+:host([icon-set="plus-minus"]) .wtv__toggle-icon--expand.expanded::before {
+  -webkit-mask-image: var(--wtv-icon-collapse);
+          mask-image: var(--wtv-icon-collapse);
+}
+
+/* Leaf marker is OPT-IN: the default leafIconClass is `--leaf-none` (no marker), so
+   a leaf row renders an empty toggle slot that still reserves --wtv-column-width,
+   keeping the leaf's label aligned under its expandable siblings. Set leafIconClass
+   to `wtv__toggle-icon--leaf` to bring back the bullet dot. Mirrors svelte-treeview. */
+.wtv__toggle-icon--leaf::before {
+  -webkit-mask-image: var(--wtv-icon-leaf);
+          mask-image: var(--wtv-icon-leaf);
+}
+
 .wtv__toggle-icon--leaf-none::before { content: ''; }
 
 /* ==============================================================================
@@ -861,16 +924,72 @@
    CHECKBOX
    ============================================================================== */
 
+/* Custom box-span checkbox — same structure as pure-admin `.pa-checkbox` and
+   svelte-treeview `.stv__checkbox` (a <label> wrapping a hidden native <input> + a
+   `.wtv__checkbox-box` span). One checkbox implementation across the suite, with a
+   mask-based check/dash chained to --base-icon-check / --base-icon-indeterminate. */
 .wtv__checkbox {
-  width: var(--wtv-icon-size);
-  height: var(--wtv-icon-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 var(--wtv-spacing-sm) 0 0;
   flex: 0 0 auto;
-  accent-color: var(--wtv-accent-color);
   cursor: pointer;
+  position: relative;
 }
 
-.wtv__checkbox:focus-visible {
+/* Visually-hidden native input — kept for :checked / :indeterminate state + a11y. */
+.wtv__checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.wtv__checkbox-box {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--wtv-checkbox-size);
+  height: var(--wtv-checkbox-size);
+  border: var(--wtv-checkbox-border-width) solid var(--wtv-checkbox-border-color);
+  border-radius: var(--wtv-border-radius-sm);
+  background: var(--wtv-checkbox-bg);
+}
+
+/* Checkmark / dash — a currentColor-tinted mask; fills the box, the glyph's own
+   viewBox padding keeps it inset. Hidden until :checked / :indeterminate. */
+.wtv__checkbox-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-color: var(--wtv-checkbox-checkmark-color);
+  -webkit-mask: var(--wtv-icon-check) no-repeat center / contain;
+  mask: var(--wtv-icon-check) no-repeat center / contain;
+}
+
+.wtv__checkbox:hover .wtv__checkbox-box {
+  border-color: var(--wtv-accent-color);
+}
+
+.wtv__checkbox input:checked + .wtv__checkbox-box,
+.wtv__checkbox input:indeterminate + .wtv__checkbox-box {
+  background: var(--wtv-checkbox-checked-bg);
+  border-color: var(--wtv-checkbox-checked-border-color);
+}
+
+.wtv__checkbox input:checked + .wtv__checkbox-box::after {
+  display: block;
+}
+
+.wtv__checkbox input:indeterminate + .wtv__checkbox-box::after {
+  display: block;
+  -webkit-mask-image: var(--wtv-icon-indeterminate);
+          mask-image: var(--wtv-icon-indeterminate);
+}
+
+.wtv__checkbox input:focus-visible + .wtv__checkbox-box {
   outline: 2px solid var(--wtv-accent-color);
   outline-offset: 1px;
 }

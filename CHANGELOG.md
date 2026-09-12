@@ -13,6 +13,25 @@ landed; this release closes the gap.
 
 ### Added
 
+- **`iconSet` (attr `icon-set`, default `'chevron'`) — one disclosure-glyph knob
+  chained to the shared `--base-icon-*` contract.** The toggle marker is now a
+  single mask-image glyph read from ONE variable set (`--wtv-icon-expand` /
+  `--wtv-icon-collapse` + `--wtv-icon-rotate-collapsed` / `-expanded`), and
+  `icon-set` just re-points those variables — `chevron` → `--base-icon-chevron`,
+  `triangle` → `--base-icon-caret-down`, `plus-minus` → `--base-icon-expand` /
+  `--base-icon-collapse` (a swap set), `arrow` → inline Lucide arrows. A theme that
+  reskins `--base-icon-chevron` now reskins the tree's disclosure alongside every
+  other KeenMate component. The attribute reflects to the host so the
+  `:host([icon-set])` CSS matches whether set via attribute or the JS property.
+  Replaces the old family of four parallel text-glyph classes (`--expand-alt` /
+  `--expand-plus` / `--expand-arrow` / …). Parity with `@keenmate/svelte-treeview`.
+- **Per-set glyph rotation tokens (`--wtv-icon-rotate-collapsed` /
+  `--wtv-icon-rotate-expanded`).** A base glyph won't always point the way the
+  component assumes (a caret points down, a chevron points right), so each icon-set
+  declares its own rotation offsets — same pattern as web-multiselect /
+  web-daterangepicker's `--*-icon-rotate-*`. A correctly-oriented custom glyph
+  leaves them at 0deg.
+
 - **`displayValueFallback` (attr `display-value-fallback`, default `'[N/A]'`)** —
   the text shown for a node with no resolvable display value is now configurable
   (empty renders nothing). Carried as a mutable property on the LTree
@@ -74,6 +93,31 @@ landed; this release closes the gap.
 
 ### Changed
 
+- **The checkbox is now a custom box-span control (was a native `<input>` styled with
+  `accent-color`).** It renders the same structure as pure-admin `.pa-checkbox` and
+  `@keenmate/svelte-treeview` — a `<label class="wtv__checkbox">` wrapping a
+  visually-hidden native `<input>` plus a `.wtv__checkbox-box` span — so the whole
+  KeenMate suite shares ONE checkbox implementation instead of three. The checkmark and
+  tri-state dash are `currentColor` masks chained to the shared `--base-icon-check` /
+  `--base-icon-indeterminate` contract (new `--wtv-icon-check` / `--wtv-icon-indeterminate`),
+  tinted by the new `--wtv-checkbox-checkmark-color`; a full `--wtv-checkbox-*` var set
+  (size, border, bg, checked bg/border) is now themeable. The native input stays the
+  source of truth for `:checked` / `:indeterminate` and keyboard/a11y; the delegated
+  click handler `preventDefault`s the label so only the controller toggles state. New
+  manifest entries for the two base tokens + the `--wtv-icon-*` / `--wtv-checkbox-*` vars.
+- **The default disclosure glyph is now the Lucide chevron, not the filled ▶/▼
+  triangle**, and it renders as a currentColor mask instead of a Unicode text
+  glyph (`content: '\25B6'`). This matches `@keenmate/svelte-treeview` and is an
+  exact `--base-icon-chevron` match. Pass `icon-set="triangle"` to keep the old
+  look. **Deprecated:** `expandIconClass` / `collapseIconClass` — for the built-in
+  glyph, selection and expand↔collapse swap are now handled by `icon-set` +
+  `toggleIconMode` in CSS. They remain a working **escape hatch** for a *custom*
+  glyph class (e.g. FontAwesome), which isn't a CSS mask and so can't be repainted:
+  in `swap` mode the renderer still swaps `expandIconClass` ↔ `collapseIconClass`,
+  and in `rotate` mode the custom glyph still rotates (rotation is keyed off the
+  shared `.wtv__toggle-icon.wtv__clickable`, not the built-in `--expand`, so a
+  replaced glyph class still turns). `toggleIconMode` now reflects to the host
+  attribute (needed by the swap CSS).
 - **`beforeDropCallback` migrated from its 5-arg positional form to a single
   `BeforeDropContext` object** (`{ target, dragged, position, operation, event }`,
   symmetric with `NodeDropContext`), and its return widened to accept a

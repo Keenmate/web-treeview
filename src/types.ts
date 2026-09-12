@@ -153,7 +153,12 @@ export interface TreeViewConfig<T = any> {
   /** CSS class applied to the single focused node. */
   focusedNodeClass?: string | null;
   dragOverNodeClass?: string | null;
+  /** Disclosure glyph set: 'chevron' (default) | 'triangle' | 'plus-minus' | 'arrow'.
+   *  Re-points the --wtv-icon-* variables; see IconSet in controller/types. */
+  iconSet?: 'chevron' | 'triangle' | 'plus-minus' | 'arrow' | null;
+  /** @deprecated Use `iconSet`. */
   expandIconClass?: string | null;
+  /** @deprecated Use `iconSet` + `toggleIconMode`. */
   collapseIconClass?: string | null;
   leafIconClass?: string | null;
   toggleIconMode?: 'rotate' | 'swap' | null;

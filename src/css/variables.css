@@ -170,6 +170,50 @@
   --wtv-toggle-color: var(--wtv-text-color-2);
 
   /* ==========================================================================
+     TOGGLE DISCLOSURE GLYPH — the ONE icon set
+     ==========================================================================
+     The disclosure marker is a single mask-image glyph, not a family of
+     parallel CSS classes. Picking an "icon set" (chevron / triangle /
+     plus-minus / arrow) just REPOINTS these variables via the
+     `:host([icon-set=…])` blocks in tree.css — the rendering rule never
+     changes. Concept names mirror the --base-icon-* contract 1:1, so a theme
+     that reskins --base-icon-chevron reskins every KeenMate component's
+     disclosure at once.
+
+     --wtv-icon-expand    glyph shown collapsed / the only glyph in rotate mode
+     --wtv-icon-collapse  glyph shown expanded (only consulted in swap mode)
+     --wtv-icon-leaf      optional leaf marker (default set is --leaf-none = none)
+
+     rotate-collapsed / rotate-expanded are the orientation knobs (same idea as
+     drp's --drp-nav-icon-rotate-*): a base glyph won't always point the way this
+     component assumes, so each set declares how far to rotate in each state. A
+     glyph that already points correctly leaves them at 0deg. Default = Lucide
+     chevron (points right): 0deg collapsed, 90deg expanded (spins to point down). */
+  --wtv-icon-expand: var(--base-icon-chevron, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m9 18 6-6-6-6'/></svg>"));
+  --wtv-icon-collapse: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  --wtv-icon-leaf: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><circle cx='12' cy='12' r='4'/></svg>");
+  --wtv-icon-rotate-collapsed: 0deg;
+  --wtv-icon-rotate-expanded: 90deg;
+  --wtv-icon-size-glyph: 1em;  /* mask box; scales with the toggle column's font-size */
+
+  /* Checkbox glyphs — the checkmark (checked) and dash (indeterminate/tri-state),
+     rendered as masks (see tree.css) so they inherit --wtv-checkbox-checkmark-color
+     and follow the shared --base-icon-* contract. Override either to diverge. */
+  --wtv-icon-check: var(--base-icon-check, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>"));
+  --wtv-icon-indeterminate: var(--base-icon-indeterminate, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/></svg>"));
+
+  /* ==========================================================================
+     CHECKBOX (custom box-span control — matches pure-admin / svelte-treeview)
+     ========================================================================== */
+  --wtv-checkbox-size: calc(var(--wtv-rem) * 1.6);  /* 16px */
+  --wtv-checkbox-border-width: 1.5px;               /* hairline — does not scale */
+  --wtv-checkbox-border-color: var(--base-border-color, light-dark(#adb5bd, #5a5a5a));
+  --wtv-checkbox-bg: var(--base-input-bg, light-dark(#ffffff, #1f1f1f));
+  --wtv-checkbox-checked-bg: var(--wtv-accent-color);
+  --wtv-checkbox-checked-border-color: var(--wtv-accent-color);
+  --wtv-checkbox-checkmark-color: var(--base-text-color-on-accent, #fff);
+
+  /* ==========================================================================
      DRAG & DROP GLOW INDICATORS
      ========================================================================== */
   --wtv-glow-before-color: rgba(134, 179, 152, 0.8);
@@ -270,4 +314,47 @@
      ========================================================================== */
   --wtv-dragged-opacity: 0.5;
   --wtv-cut-opacity: 0.4;
+}
+
+/* ==============================================================================
+   TOGGLE ICON SETS
+   ==============================================================================
+   Reconfigure the ONE glyph variable set (above) per selected `icon-set`. This
+   is the whole point of the design: `icon-set` is a knob that re-points
+   --wtv-icon-expand/-collapse (+ rotation), NOT a switch between four parallel
+   families of CSS classes. Each set maps to --base-icon-* concept names where
+   the contract has a match; arrow has no base equivalent, so it stays inline.
+
+   The DEFAULT (no attribute) is chevron — declared at :host above. */
+
+/* Filled triangle (web-treeview's pre-rc09 default look). The base contract has
+   only caret-up/-down (no right-pointing caret), so the collapsed ▶ is caret-down
+   rotated -90° (points right); expanded is the natural ▼ at 0°. */
+:host([icon-set="triangle"]) {
+  --wtv-icon-expand: var(--base-icon-caret-down, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 15 6 9h12z'/></svg>"));
+  --wtv-icon-collapse: var(--base-icon-caret-down, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 15 6 9h12z'/></svg>"));
+  --wtv-icon-rotate-collapsed: -90deg;
+  --wtv-icon-rotate-expanded: 0deg;
+}
+
+/* Plus / minus. In the --base-icon-* contract "expand"/"collapse" literally ARE
+   the plus/minus disclosure glyphs — exact match. Inherently a swap set (a
+   rotated + or − is meaningless), so tree.css forces glyph-swap for this set
+   regardless of toggle-icon-mode and never rotates. */
+:host([icon-set="plus-minus"]) {
+  --wtv-icon-expand: var(--base-icon-expand, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='M12 5v14'/></svg>"));
+  --wtv-icon-collapse: var(--base-icon-collapse, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/></svg>"));
+  --wtv-icon-rotate-collapsed: 0deg;
+  --wtv-icon-rotate-expanded: 0deg;
+}
+
+/* Arrow (Lucide arrow-right / arrow-down). No --base-icon-arrow-* exists yet, so
+   these stay inline; the collapsed arrow points right and rotates 90° to point
+   down when expanded (rotate set). If the base contract later adds an arrow
+   concept, chain --wtv-icon-expand to it here — nothing else changes. */
+:host([icon-set="arrow"]) {
+  --wtv-icon-expand: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='m12 5 7 7-7 7'/></svg>");
+  --wtv-icon-collapse: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14'/><path d='m19 12-7 7-7-7'/></svg>");
+  --wtv-icon-rotate-collapsed: 0deg;
+  --wtv-icon-rotate-expanded: 90deg;
 }

@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Custom Templates</title>
+    <title>TreeView - Templates, Icons &amp; Columns</title>
     <link rel="stylesheet" href="examples-shared.css">
     <style>
-        /* Custom node styles for template examples */
+        /* ── Page-specific demo styling (custom node looks, status badges,
+              context-menu demo, empty/loading states, icon-column demos) ── */
+
+        /* Custom node template look (file icon + size row) */
         .file-icon {
             display: inline-block;
             width: 20px;
@@ -18,6 +21,18 @@
             color: #94a3b8;
             font-size: 0.8rem;
         }
+        .custom-node {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            padding: 2px 0;
+        }
+        .custom-node .name {
+            font-weight: 500;
+        }
+
+        /* Status badges on nodes */
         .node-badge {
             display: inline-block;
             padding: 0.1rem 0.4rem;
@@ -30,36 +45,7 @@
         .badge-modified { background: #fef3c7; color: #92400e; }
         .badge-deleted { background: #fee2e2; color: #991b1b; }
 
-        .custom-node {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            padding: 2px 0;
-        }
-        .custom-node .name {
-            font-weight: 500;
-        }
-
-        .ctx-menu-item {
-            padding: 6px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        .ctx-menu-item:hover {
-            background: #f0fdf4;
-        }
-        .ctx-menu-item.danger:hover {
-            background: #fef2f2;
-        }
-        .ctx-menu-separator {
-            border-top: 1px solid #e2e8f0;
-            margin: 4px 0;
-        }
-
+        /* Empty / loading state templates */
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -72,7 +58,6 @@
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-
         .loading-state {
             display: flex;
             align-items: center;
@@ -92,23 +77,78 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Context-menu demo control grid (a dense two-line label layout) */
+        .ctx-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        .ctx-config label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+        }
+        .ctx-config label.inline {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+        }
+        .ctx-config .val {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .ctx-config select {
+            padding: 4px;
+        }
+
+        /* FontAwesome icon demo — column of side-by-side small trees */
+        .fa-mode-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: #64748b;
+        }
+
+        /* Icon-column / single-slider demo widget */
+        .var-demo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .var-demo label {
+            min-width: 160px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .var-demo input[type="range"] {
+            flex: 1;
+        }
+        .var-demo .val {
+            min-width: 50px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #059669;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Custom Templates</h1>
-            <p class="subtitle">Customize node rendering, context menus, loading, and empty states with callbacks</p>
+            <h1>Templates, Icons &amp; Columns</h1>
+            <p class="subtitle">Custom node rendering, context menus, loading/empty states, per-node icons, and unified column-width alignment</p>
         </header>
 
         <!-- Example 1: Node Template -->
         <div class="card">
-            <h2>Example 1: Custom Node Template</h2>
+            <h2>TP01 · Custom Node Template</h2>
             <p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. This example shows file icons and sizes.</p>
 
             <div class="tree-container" id="tree1-container">
-                <web-treeview id="tree1" toggle-icon-mode="swap" expand-icon-class="wtv__toggle-icon--expand-plus" collapse-icon-class="wtv__toggle-icon--collapse-minus"></web-treeview>
+                <web-treeview id="tree1" icon-set="plus-minus"></web-treeview>
             </div>
 
             <div class="code-block">
@@ -127,62 +167,62 @@
 
         <!-- Example 2: Node with Badges -->
         <div class="card">
-            <h2>Example 2: Status Badges</h2>
+            <h2>TP02 · Status Badges</h2>
             <p>Add dynamic badges to nodes indicating their status (new, modified, deleted).</p>
 
             <div class="tree-container" id="tree2-container">
-                <web-treeview id="tree2" expand-icon-class="wtv__toggle-icon--expand-arrow"></web-treeview>
+                <web-treeview id="tree2" icon-set="arrow"></web-treeview>
             </div>
         </div>
 
         <!-- Example 3: Context Menu -->
         <div class="card">
-            <h2>Example 3: Custom Context Menu</h2>
+            <h2>TP03 · Custom Context Menu</h2>
             <p>Right-click a node to see a multi-level context menu with nested submenus, positioned with Floating UI. The controls below tweak <code>--wtv-context-menu-*</code> CSS variables — they affect the <strong>menu</strong>, not the tree rows. Debug mode (last checkbox) is on by default so you can see changes live.</p>
 
-            <div class="controls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+            <div class="controls ctx-config">
+                <label>
                     <code>--wtv-context-menu-min-width</code>
                     <input type="range" id="ctx-min-width" min="8" max="30" step="0.5" value="15">
-                    <span id="ctx-min-width-val" style="font-size: 0.75rem; color: #64748b;">15rem</span>
+                    <span id="ctx-min-width-val" class="val">15rem</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-font-size</code>
                     <input type="range" id="ctx-font-size" min="10" max="24" step="1" value="14">
-                    <span id="ctx-font-size-val" style="font-size: 0.75rem; color: #64748b;">14px</span>
+                    <span id="ctx-font-size-val" class="val">14px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-icon-width</code>
                     <input type="range" id="ctx-icon-size" min="12" max="32" step="1" value="16">
-                    <span id="ctx-icon-size-val" style="font-size: 0.75rem; color: #64748b;">16px</span>
+                    <span id="ctx-icon-size-val" class="val">16px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-border-radius</code>
                     <input type="range" id="ctx-radius" min="0" max="16" step="1" value="4">
-                    <span id="ctx-radius-val" style="font-size: 0.75rem; color: #64748b;">4px</span>
+                    <span id="ctx-radius-val" class="val">4px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-item-gap</code>
                     <input type="range" id="ctx-gap" min="0" max="16" step="1" value="8">
-                    <span id="ctx-gap-val" style="font-size: 0.75rem; color: #64748b;">8px</span>
+                    <span id="ctx-gap-val" class="val">8px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-disabled-opacity</code>
                     <input type="range" id="ctx-disabled-opacity" min="0" max="1" step="0.05" value="0.5">
-                    <span id="ctx-disabled-opacity-val" style="font-size: 0.75rem; color: #64748b;">0.5</span>
+                    <span id="ctx-disabled-opacity-val" class="val">0.5</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-shadow</code>
-                    <select id="ctx-shadow" style="padding: 4px;">
+                    <select id="ctx-shadow">
                         <option value="0 2px 10px rgba(0,0,0,0.1)">Light</option>
                         <option value="0 4px 20px rgba(0,0,0,0.2)">Medium</option>
                         <option value="0 8px 30px rgba(0,0,0,0.3)">Heavy</option>
                         <option value="none">None</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-item-padding</code>
-                    <select id="ctx-padding" style="padding: 4px;">
+                    <select id="ctx-padding">
                         <option value="2px 8px">Tight</option>
                         <option value="4px 12px">Compact</option>
                         <option value="8px 16px" selected>Default</option>
@@ -190,51 +230,51 @@
                         <option value="16px 24px">Large</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-padding</code>
-                    <select id="ctx-menu-padding" style="padding: 4px;">
+                    <select id="ctx-menu-padding">
                         <option value="0">None</option>
                         <option value="4px 0" selected>Default</option>
                         <option value="8px 0">Large</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-border</code>
-                    <select id="ctx-border" style="padding: 4px;">
+                    <select id="ctx-border">
                         <option value="1px solid #e2e8f0" selected>Default</option>
                         <option value="2px solid #94a3b8">Thick</option>
                         <option value="1px solid #3b82f6">Accent</option>
                         <option value="none">None</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-bg</code>
                     <input type="color" id="ctx-bg" value="#ffffff">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-bg-hover</code>
                     <input type="color" id="ctx-bg-hover" value="#f1f5f9">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-text-color</code>
                     <input type="color" id="ctx-text" value="#1e293b">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-danger-color</code>
                     <input type="color" id="ctx-danger" value="#dc3545">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-divider-color</code>
                     <input type="color" id="ctx-divider" value="#e2e8f0">
                 </label>
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                <label class="inline">
                     <input type="checkbox" id="ctx-debug-menu" checked>
                     <code>Debug: keep menu open</code>
                 </label>
             </div>
 
             <div class="tree-container" id="tree3-container">
-                <web-treeview id="tree3" expand-icon-class="wtv__toggle-icon--expand-alt"></web-treeview>
+                <web-treeview id="tree3" icon-set="triangle"></web-treeview>
             </div>
 
             <div class="output">
@@ -245,18 +285,18 @@
 
         <!-- Example 3b: Custom Context Menu Item Rendering -->
         <div class="card">
-            <h2>Example 3b: Node-Aware Context Menu (renderContextMenuItemCallback)</h2>
+            <h2>TP04 · Node-Aware Context Menu</h2>
             <p>Use <code>renderContextMenuItemCallback</code> to render completely custom HTML per menu item. The callback replaces the button's inner content — you control the layout. The outer <code>&lt;button&gt;</code> with classes, <code>data-*</code> attributes, disabled state, and submenu hover behavior is still managed by the component. Debug mode is on by default so the controls below preview live.</p>
 
-            <div class="controls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+            <div class="controls ctx-config">
+                <label>
                     <code>--wtv-context-menu-min-width</code>
                     <input type="range" id="ctx3b-min-width" min="8" max="30" step="0.5" value="22">
-                    <span id="ctx3b-min-width-val" style="font-size: 0.75rem; color: #64748b;">22rem</span>
+                    <span id="ctx3b-min-width-val" class="val">22rem</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-item-padding</code>
-                    <select id="ctx3b-padding" style="padding: 4px;">
+                    <select id="ctx3b-padding">
                         <option value="2px 8px">Tight</option>
                         <option value="4px 12px">Compact</option>
                         <option value="8px 16px" selected>Default</option>
@@ -264,80 +304,80 @@
                         <option value="16px 24px">Large</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-item-gap</code>
                     <input type="range" id="ctx3b-gap" min="0" max="16" step="1" value="8">
-                    <span id="ctx3b-gap-val" style="font-size: 0.75rem; color: #64748b;">8px</span>
+                    <span id="ctx3b-gap-val" class="val">8px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-font-size</code>
                     <input type="range" id="ctx3b-font-size" min="10" max="24" step="1" value="14">
-                    <span id="ctx3b-font-size-val" style="font-size: 0.75rem; color: #64748b;">14px</span>
+                    <span id="ctx3b-font-size-val" class="val">14px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-bg</code>
                     <input type="color" id="ctx3b-bg" value="#ffffff">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-bg-hover</code>
                     <input type="color" id="ctx3b-bg-hover" value="#f1f5f9">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-text-color</code>
                     <input type="color" id="ctx3b-text" value="#1e293b">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-border-radius</code>
                     <input type="range" id="ctx3b-radius" min="0" max="16" step="1" value="4">
-                    <span id="ctx3b-radius-val" style="font-size: 0.75rem; color: #64748b;">4px</span>
+                    <span id="ctx3b-radius-val" class="val">4px</span>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-shadow</code>
-                    <select id="ctx3b-shadow" style="padding: 4px;">
+                    <select id="ctx3b-shadow">
                         <option value="0 2px 10px rgba(0,0,0,0.1)">Light</option>
                         <option value="0 4px 20px rgba(0,0,0,0.2)">Medium</option>
                         <option value="0 8px 30px rgba(0,0,0,0.3)">Heavy</option>
                         <option value="none">None</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-padding</code>
-                    <select id="ctx3b-menu-padding" style="padding: 4px;">
+                    <select id="ctx3b-menu-padding">
                         <option value="0">None</option>
                         <option value="4px 0" selected>Default</option>
                         <option value="8px 0">Large</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-border</code>
-                    <select id="ctx3b-border" style="padding: 4px;">
+                    <select id="ctx3b-border">
                         <option value="1px solid #e2e8f0" selected>Default</option>
                         <option value="2px solid #94a3b8">Thick</option>
                         <option value="1px solid #3b82f6">Accent</option>
                         <option value="none">None</option>
                     </select>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-danger-color</code>
                     <input type="color" id="ctx3b-danger" value="#dc3545">
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>--wtv-context-menu-divider-color</code>
                     <input type="color" id="ctx3b-divider" value="#e2e8f0">
                 </label>
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                <label class="inline">
                     <input type="checkbox" id="ctx3b-debug-menu" checked>
                     <code>Debug: keep menu open</code>
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem;">
+                <label>
                     <code>contextMenuYOffset</code>
                     <input type="range" id="ctx3b-y-offset" min="-50" max="50" step="1" value="-30">
-                    <span id="ctx3b-y-offset-val" style="font-size: 0.75rem; color: #64748b;">-30px</span>
+                    <span id="ctx3b-y-offset-val" class="val">-30px</span>
                 </label>
             </div>
 
             <div class="tree-container" id="tree3b-container">
-                <web-treeview id="tree3b" expand-icon-class="wtv__toggle-icon--expand-alt" style="--wtv-context-menu-min-width: 22rem;"></web-treeview>
+                <web-treeview id="tree3b" icon-set="triangle" style="--wtv-context-menu-min-width: 22rem;"></web-treeview>
             </div>
 
             <div class="output">
@@ -374,7 +414,7 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
 
         <!-- Example 4: Empty and Loading States -->
         <div class="card">
-            <h2>Example 4: Empty & Loading States</h2>
+            <h2>TP05 · Empty &amp; Loading States</h2>
             <p>Customize what appears when the tree has no data or is loading.</p>
 
             <div class="controls">
@@ -390,22 +430,22 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
 
         <!-- Example 5: Header and Footer -->
         <div class="card">
-            <h2>Example 5: Header & Footer Templates</h2>
+            <h2>TP06 · Header &amp; Footer Templates</h2>
             <p>Add custom header and footer content around the tree using <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>.</p>
 
             <div class="tree-container" id="tree5-container">
-                <web-treeview id="tree5" toggle-icon-mode="swap" expand-icon-class="wtv__toggle-icon--expand-alt" collapse-icon-class="wtv__toggle-icon--collapse-alt"></web-treeview>
+                <web-treeview id="tree5" icon-set="triangle"></web-treeview>
             </div>
         </div>
 
         <!-- Example 6: FontAwesome Icons -->
         <div class="card">
-            <h2>Example 6: FontAwesome Icons</h2>
+            <h2>TP07 · FontAwesome Icons</h2>
             <p>Use FontAwesome classes for toggle and leaf icons. Inject FA stylesheet into Shadow DOM via <code>customStylesCallback</code>.</p>
 
-            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b;">Rotate mode (chevron)</h3>
+            <div class="grid" style="--grid-min: 300px; --grid-gap: 1.5rem;">
+                <div>
+                    <h3 class="fa-mode-label">Rotate mode (chevron)</h3>
                     <div class="tree-container" id="tree6a-container">
                         <web-treeview id="tree6a"
                             expand-icon-class="fa-solid fa-chevron-right"
@@ -413,8 +453,8 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
                         </web-treeview>
                     </div>
                 </div>
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b;">Swap mode (plus/minus)</h3>
+                <div>
+                    <h3 class="fa-mode-label">Swap mode (plus/minus)</h3>
                     <div class="tree-container" id="tree6b-container">
                         <web-treeview id="tree6b"
                             toggle-icon-mode="swap"
@@ -424,8 +464,8 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
                         </web-treeview>
                     </div>
                 </div>
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b;">Swap mode (folder/file)</h3>
+                <div>
+                    <h3 class="fa-mode-label">Swap mode (folder/file)</h3>
                     <div class="tree-container" id="tree6c-container">
                         <web-treeview id="tree6c"
                             toggle-icon-mode="swap"
@@ -435,8 +475,8 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
                         </web-treeview>
                     </div>
                 </div>
-                <div style="flex: 1; min-width: 300px;">
-                    <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b;">No leaf icon (empty space)</h3>
+                <div>
+                    <h3 class="fa-mode-label">No leaf icon (empty space)</h3>
                     <div class="tree-container" id="tree6d-container">
                         <web-treeview id="tree6d"
                             toggle-icon-mode="swap"
@@ -448,7 +488,7 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
                 </div>
             </div>
 
-            <div class="code-block" style="margin-top: 1rem;">
+            <div class="code-block mt-1">
 <pre><code>// Inject FontAwesome into Shadow DOM via customStylesCallback
 tree.customStylesCallback = () =>
     `@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');`;
@@ -465,6 +505,150 @@ tree.customStylesCallback = () =>
     collapse-icon-class="fa-regular fa-folder-open"
     leaf-icon-class="fa-regular fa-file-lines"&gt;</code></pre>
             </div>
+        </div>
+
+        <!-- Global column-width control (shared across the icon/column demos below) -->
+        <div class="card">
+            <h2>TP08 · Global <code>--wtv-column-width</code></h2>
+            <p>This slider adjusts the unified column width for <strong>the icon/column demos below</strong>. Toggle, icon, and indent step all share this value.</p>
+            <div class="var-demo">
+                <label for="ic-col-slider">--wtv-column-width</label>
+                <input type="range" id="ic-col-slider" min="16" max="48" value="24" step="1">
+                <span class="val" id="ic-col-val">24px</span>
+            </div>
+        </div>
+
+        <!-- Column width alignment demo -->
+        <div class="card">
+            <h2>TP09 · Column Width Alignment</h2>
+            <p>Deep nested tree to verify vertical alignment at every level. Adjust the slider above and observe.</p>
+
+            <div class="tree-container" id="ic-tree1-wrap">
+                <web-treeview id="ic-tree1" expand-level="3"></web-treeview>
+            </div>
+
+            <div class="note">
+                <p class="note-title">What to check</p>
+                <ul>
+                    <li>Toggle icons are centered within their column</li>
+                    <li>Child labels align vertically under the parent's label</li>
+                    <li>Indent step exactly equals column width</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- iconMember -->
+        <div class="card">
+            <h2>TP10 · Per-Node Icons via <code>iconMember</code></h2>
+            <p>Each node has an <code>icon</code> field in its data containing a CSS class. The tree reads it via <code>iconMember="icon"</code>.</p>
+
+            <div class="tree-container">
+                <web-treeview id="ic-tree2" expand-level="2" icon-member="icon"></web-treeview>
+            </div>
+
+            <div class="code-block">
+<pre><code>// Data with icon field
+{ id: 1, path: '1', name: 'Documents', icon: 'icon-folder' }
+{ id: 2, path: '1.1', name: 'report.pdf', icon: 'icon-file-pdf' }
+
+// Usage
+element.iconMember = 'icon';
+// or via attribute:
+// &lt;web-treeview icon-member="icon"&gt;</code></pre>
+            </div>
+        </div>
+
+        <!-- iconCallback -->
+        <div class="card">
+            <h2>TP11 · Per-Node Icons via <code>iconCallback</code></h2>
+            <p>Dynamically resolve icon classes from node data. The callback receives the full <code>LTreeNode</code> and returns CSS class(es) or <code>null</code>.</p>
+
+            <div class="tree-container">
+                <web-treeview id="ic-tree3" expand-level="2"></web-treeview>
+            </div>
+
+            <div class="code-block">
+<pre><code>element.iconCallback = (node) => {
+  if (node.hasChildren) return 'icon-folder';
+  const ext = node.data.name.split('.').pop();
+  return extensionIconMap[ext] || 'icon-file';
+};</code></pre>
+            </div>
+        </div>
+
+        <!-- Mixed icons -->
+        <div class="card">
+            <h2>TP12 · Mixed Icons</h2>
+            <p>Some nodes have icons, some don't. Leaf nodes with an icon show it in the toggle column; those without fall back to the leaf dot. All labels stay aligned since everything shares one column.</p>
+
+            <div class="tree-container">
+                <web-treeview id="ic-tree4a" expand-level="2" icon-member="icon"></web-treeview>
+            </div>
+        </div>
+
+        <!-- renderNodeCallback still works -->
+        <div class="card">
+            <h2>TP13 · Icons + Custom <code>renderNodeCallback</code></h2>
+            <p>The icon column sits between toggle and content, so <code>renderNodeCallback</code> still renders inside <code>.wtv__node-content</code> unaffected.</p>
+
+            <div class="tree-container">
+                <web-treeview id="ic-tree5" expand-level="2"></web-treeview>
+            </div>
+        </div>
+
+        <!-- DnD still works -->
+        <div class="card">
+            <h2>TP14 · Icons + Drag &amp; Drop</h2>
+            <p>Verify drag-and-drop still works with per-node icons enabled. Try dragging nodes between positions.</p>
+
+            <div class="tree-container">
+                <web-treeview id="ic-tree6" expand-level="2" icon-member="icon" drag-drop-mode="both" drop-zone-mode="floating" drop-zone-layout="around"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Last drop:</p>
+                <pre id="ic-tree6-output">Drag a node to test</pre>
+            </div>
+        </div>
+
+        <!-- API Reference -->
+        <div class="card">
+            <h2>TP15 · Icons &amp; Columns API Reference</h2>
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Property</th><th>HTML Attr</th><th>Type</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>iconMember</code></td>
+                        <td><code>icon-member</code></td>
+                        <td><code>string | null</code></td>
+                        <td><code>undefined</code></td>
+                        <td>Data field name containing CSS class(es) for node icon</td>
+                    </tr>
+                    <tr>
+                        <td><code>iconCallback</code></td>
+                        <td>&mdash;</td>
+                        <td><code>(node) =&gt; string | null</code></td>
+                        <td><code>undefined</code></td>
+                        <td>Returns CSS class(es) for node icon (overrides iconMember)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>CSS Variable</h3>
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>--wtv-column-width</code></td>
+                        <td><code>calc(var(--wtv-rem) * 2.4)</code> (24px)</td>
+                        <td>Unified column width for toggle, icon, and indent step</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -526,11 +710,11 @@ tree.customStylesCallback = () =>
         // ── Helpers ─────────────────────────────────────────────────────
 
         const fileIcons = {
-            ts: '\uD83D\uDCDC', tsx: '\u269B\uFE0F', js: '\uD83D\uDFE8', css: '\uD83C\uDFA8',
-            json: '\u2699\uFE0F', md: '\uD83D\uDCD6', html: '\uD83C\uDF10',
-            pdf: '\uD83D\uDCC4', pptx: '\uD83D\uDCCA', txt: '\uD83D\uDCDD',
-            jpg: '\uD83D\uDDBC\uFE0F', png: '\uD83D\uDDBC\uFE0F',
-            exe: '\uD83D\uDCE6', zip: '\uD83D\uDDDC\uFE0F'
+            ts: '📜', tsx: '⚛️', js: '🟨', css: '🎨',
+            json: '⚙️', md: '📖', html: '🌐',
+            pdf: '📄', pptx: '📊', txt: '📝',
+            jpg: '🖼️', png: '🖼️',
+            exe: '📦', zip: '🗜️'
         };
 
         function getExt(name) {
@@ -540,13 +724,113 @@ tree.customStylesCallback = () =>
 
         function getIcon(name) {
             const ext = getExt(name);
-            return ext ? (fileIcons[ext] || '\uD83D\uDCC4') : '\uD83D\uDCC1';
+            return ext ? (fileIcons[ext] || '📄') : '📁';
         }
 
         const statusBadge = {
             new: '<span class="node-badge badge-new">NEW</span>',
             modified: '<span class="node-badge badge-modified">MODIFIED</span>',
             deleted: '<span class="node-badge badge-deleted">DELETED</span>'
+        };
+
+        // ── Icon-column demo data + styles (from icons-grid) ────────────
+
+        // Icon styles must be injected into Shadow DOM via customStylesCallback
+        // (light-DOM styles can't cross the shadow boundary)
+        const iconStyles = `
+            .icon-folder::before   { content: '\\1F4C1'; }
+            .icon-folder-open::before { content: '\\1F4C2'; }
+            .icon-file::before     { content: '\\1F4C4'; }
+            .icon-file-pdf::before { content: '\\1F4D5'; }
+            .icon-file-img::before { content: '\\1F5BC\\FE0E'; }
+            .icon-file-code::before { content: '\\1F4DD'; }
+            .icon-file-data::before { content: '\\1F4CA'; }
+            .icon-music::before    { content: '\\1F3B5'; }
+            .icon-video::before    { content: '\\1F3AC'; }
+            .icon-gear::before     { content: '\\2699\\FE0F'; }
+            .icon-star::before     { content: '\\2B50'; }
+            .icon-lock::before     { content: '\\1F512'; }
+            .icon-globe::before    { content: '\\1F310'; }
+            .icon-package::before  { content: '\\1F4E6'; }
+        `;
+
+        // Deep tree for alignment testing (no icons)
+        const deepTree = [
+            { id: 1,  path: '1',         name: 'Root A' },
+            { id: 2,  path: '1.1',       name: 'Level 2' },
+            { id: 3,  path: '1.1.1',     name: 'Level 3' },
+            { id: 4,  path: '1.1.1.1',   name: 'Level 4' },
+            { id: 5,  path: '1.1.1.1.1', name: 'Level 5 leaf' },
+            { id: 6,  path: '1.1.1.2',   name: 'Level 4 sibling' },
+            { id: 7,  path: '1.1.2',     name: 'Level 3 sibling' },
+            { id: 8,  path: '1.2',       name: 'Level 2 sibling' },
+            { id: 9,  path: '1.2.1',     name: 'Nested leaf' },
+            { id: 10, path: '2',         name: 'Root B' },
+            { id: 11, path: '2.1',       name: 'B child' },
+            { id: 12, path: '2.1.1',     name: 'B grandchild' },
+        ];
+
+        // File tree with icon field
+        const fileTreeWithIcons = [
+            { id: 1,  path: '1',     name: 'Documents',     icon: 'icon-folder' },
+            { id: 2,  path: '1.1',   name: 'report.pdf',    icon: 'icon-file-pdf' },
+            { id: 3,  path: '1.2',   name: 'photo.png',     icon: 'icon-file-img' },
+            { id: 4,  path: '1.3',   name: 'notes.txt',     icon: 'icon-file' },
+            { id: 5,  path: '2',     name: 'Projects',      icon: 'icon-folder' },
+            { id: 6,  path: '2.1',   name: 'web-app',       icon: 'icon-folder' },
+            { id: 7,  path: '2.1.1', name: 'index.ts',      icon: 'icon-file-code' },
+            { id: 8,  path: '2.1.2', name: 'styles.css',    icon: 'icon-file-code' },
+            { id: 9,  path: '2.1.3', name: 'package.json',  icon: 'icon-package' },
+            { id: 10, path: '2.2',   name: 'data-pipeline', icon: 'icon-folder' },
+            { id: 11, path: '2.2.1', name: 'transform.py',  icon: 'icon-file-code' },
+            { id: 12, path: '2.2.2', name: 'output.csv',    icon: 'icon-file-data' },
+            { id: 13, path: '3',     name: 'Media',         icon: 'icon-folder' },
+            { id: 14, path: '3.1',   name: 'song.mp3',      icon: 'icon-music' },
+            { id: 15, path: '3.2',   name: 'clip.mp4',      icon: 'icon-video' },
+        ];
+
+        // File tree for callback-based icons
+        const fileTreeNoIconField = [
+            { id: 1,  path: '1',     name: 'src' },
+            { id: 2,  path: '1.1',   name: 'components' },
+            { id: 3,  path: '1.1.1', name: 'Button.tsx' },
+            { id: 4,  path: '1.1.2', name: 'Modal.tsx' },
+            { id: 5,  path: '1.2',   name: 'pages' },
+            { id: 6,  path: '1.2.1', name: 'Home.tsx' },
+            { id: 7,  path: '1.3',   name: 'utils' },
+            { id: 8,  path: '1.3.1', name: 'helpers.ts' },
+            { id: 9,  path: '1.3.2', name: 'constants.ts' },
+            { id: 10, path: '2',     name: 'public' },
+            { id: 11, path: '2.1',   name: 'index.html' },
+            { id: 12, path: '2.2',   name: 'logo.png' },
+            { id: 13, path: '3',     name: 'package.json' },
+            { id: 14, path: '4',     name: 'README.md' },
+            { id: 15, path: '5',     name: '.env' },
+        ];
+
+        // Mixed data: some nodes have icons, some don't
+        const mixedIconData = [
+            { id: 1,  path: '1',     name: 'Settings',    icon: 'icon-gear' },
+            { id: 2,  path: '1.1',   name: 'General',     icon: null },
+            { id: 3,  path: '1.2',   name: 'Security',    icon: 'icon-lock' },
+            { id: 4,  path: '1.3',   name: 'Advanced',    icon: null },
+            { id: 5,  path: '2',     name: 'Favorites',   icon: 'icon-star' },
+            { id: 6,  path: '2.1',   name: 'Bookmarks',   icon: null },
+            { id: 7,  path: '2.2',   name: 'Starred',     icon: 'icon-star' },
+            { id: 8,  path: '3',     name: 'Network',     icon: 'icon-globe' },
+            { id: 9,  path: '3.1',   name: 'Proxy',       icon: null },
+            { id: 10, path: '3.2',   name: 'DNS',         icon: null },
+        ];
+
+        // Extension to icon map for callback demo
+        const extIconMap = {
+            tsx: 'icon-file-code',
+            ts: 'icon-file-code',
+            html: 'icon-globe',
+            png: 'icon-file-img',
+            json: 'icon-package',
+            md: 'icon-file',
+            env: 'icon-lock',
         };
 
         // ── Initialize ─────────────────────────────────────────────────
@@ -607,19 +891,19 @@ tree.customStylesCallback = () =>
                 output3.textContent = JSON.stringify({ action, node: node.data?.name, path: node.path }, null, 2);
             };
             tree3.contextMenuCallback = (node, close) => [
-                { id: 'open', icon: '\uD83D\uDCC2', label: 'Open', shortcut: 'O', onclick: () => logAction('open', node) },
-                { id: 'rename', icon: '\u270F\uFE0F', label: 'Rename', shortcut: 'F2', onclick: () => logAction('rename', node) },
-                { id: 'copy', icon: '\uD83D\uDCCB', label: 'Copy', children: [
-                    { id: 'copy-name', icon: '\uD83D\uDCC4', label: 'Copy Name', shortcut: 'N', onclick: () => logAction('copy-name', node) },
-                    { id: 'copy-path', icon: '\uD83D\uDCC1', label: 'Copy Path', shortcut: 'P', onclick: () => logAction('copy-path', node) },
-                    { id: 'copy-as', icon: '\uD83D\uDCE6', label: 'Copy As...', children: [
+                { id: 'open', icon: '📂', label: 'Open', shortcut: 'O', onclick: () => logAction('open', node) },
+                { id: 'rename', icon: '✏️', label: 'Rename', shortcut: 'F2', onclick: () => logAction('rename', node) },
+                { id: 'copy', icon: '📋', label: 'Copy', children: [
+                    { id: 'copy-name', icon: '📄', label: 'Copy Name', shortcut: 'N', onclick: () => logAction('copy-name', node) },
+                    { id: 'copy-path', icon: '📁', label: 'Copy Path', shortcut: 'P', onclick: () => logAction('copy-path', node) },
+                    { id: 'copy-as', icon: '📦', label: 'Copy As...', children: [
                         { id: 'copy-json', label: 'JSON', onclick: () => logAction('copy-json', node) },
                         { id: 'copy-xml', label: 'XML', onclick: () => logAction('copy-xml', node) },
                         { id: 'copy-csv', label: 'CSV', onclick: () => logAction('copy-csv', node) },
                     ]},
                 ]},
                 { divider: true },
-                { id: 'delete', icon: '\uD83D\uDDD1\uFE0F', label: 'Delete', className: 'danger', onclick: () => logAction('delete', node) },
+                { id: 'delete', icon: '🗑️', label: 'Delete', className: 'danger', onclick: () => logAction('delete', node) },
             ];
 
             // Context menu config controls — all use scoped --wtv-context-menu-* variables
@@ -809,7 +1093,7 @@ tree.customStylesCallback = () =>
             tree4.renderEmptyStateCallback = (container) => {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">\uD83C\uDF43</div>
+                        <div class="icon">🍃</div>
                         <p>No items to display</p>
                         <p style="font-size: 0.85rem">Add some data to get started</p>
                     </div>
@@ -849,7 +1133,7 @@ tree.customStylesCallback = () =>
             tree5.renderHeaderCallback = (container) => {
                 container.innerHTML = `
                     <div style="padding: 8px 12px; background: #ecfdf5; border-bottom: 1px solid #d1fae5; font-size: 0.85rem; color: #065f46; display: flex; align-items: center; gap: 6px;">
-                        <span>\uD83D\uDCC1</span>
+                        <span>📁</span>
                         <strong>File Browser</strong>
                         <span style="margin-left: auto; color: #6ee7b7;">${menuTree.length} items</span>
                     </div>
@@ -864,7 +1148,7 @@ tree.customStylesCallback = () =>
                 `;
             };
 
-            // Tree 6a/6b/6c: FontAwesome Icons
+            // Tree 6a/6b/6c/6d: FontAwesome Icons
             const faStylesCallback = () =>
                 `@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');`;
 
@@ -883,7 +1167,103 @@ tree.customStylesCallback = () =>
             initFaTree('tree6b');
             initFaTree('tree6c');
             initFaTree('tree6d');
+
+            // ── Icon-column / unified column-width demos ────────────────
+
+            // Tree ic-1: Column alignment (no icons, just indent check)
+            const icTree1 = document.getElementById('ic-tree1');
+            icTree1.data = deepTree;
+            icTree1.displayValueMember = 'name';
+
+            // Column width slider (applies to the icon/column demo trees below)
+            const slider = document.getElementById('ic-col-slider');
+            const valSpan = document.getElementById('ic-col-val');
+            const icTrees = () => [
+                icTree1,
+                document.getElementById('ic-tree2'),
+                document.getElementById('ic-tree3'),
+                document.getElementById('ic-tree4a'),
+                document.getElementById('ic-tree5'),
+                document.getElementById('ic-tree6'),
+            ];
+            const applyColWidth = (px) => {
+                for (const tv of icTrees()) {
+                    if (tv) tv.style.setProperty('--wtv-column-width', px + 'px');
+                }
+            };
+            const stored = localStorage.getItem('tv-demo-column-width');
+            if (stored) {
+                slider.value = stored;
+                valSpan.textContent = stored + 'px';
+                applyColWidth(stored);
+            }
+            slider.addEventListener('input', () => {
+                const px = slider.value;
+                valSpan.textContent = px + 'px';
+                localStorage.setItem('tv-demo-column-width', px);
+                applyColWidth(px);
+            });
+
+            // Tree ic-2: iconMember
+            const icTree2 = document.getElementById('ic-tree2');
+            icTree2.customStylesCallback = () => iconStyles;
+            icTree2.data = fileTreeWithIcons;
+            icTree2.displayValueMember = 'name';
+
+            // Tree ic-3: iconCallback
+            const icTree3 = document.getElementById('ic-tree3');
+            icTree3.customStylesCallback = () => iconStyles;
+            icTree3.data = fileTreeNoIconField;
+            icTree3.displayValueMember = 'name';
+            icTree3.iconCallback = (node) => {
+                if (node.hasChildren) return 'icon-folder';
+                const ext = (node.data.name || '').split('.').pop();
+                return extIconMap[ext] || 'icon-file';
+            };
+
+            // Tree ic-4a: mixed icons
+            const icTree4a = document.getElementById('ic-tree4a');
+            icTree4a.customStylesCallback = () => iconStyles;
+            icTree4a.data = mixedIconData;
+            icTree4a.displayValueMember = 'name';
+
+            // Tree ic-5: renderNodeCallback + iconMember
+            const icTree5 = document.getElementById('ic-tree5');
+            icTree5.customStylesCallback = () => iconStyles;
+            icTree5.data = fileTreeWithIcons;
+            icTree5.displayValueMember = 'name';
+            icTree5.iconMember = 'icon';
+            icTree5.renderNodeCallback = (node, container) => {
+                const childCount = node.children ? Object.keys(node.children).length : 0;
+                const badge = node.hasChildren ? `<span style="background:#059669;color:#fff;padding:0 6px;border-radius:10px;font-size:0.7rem;margin-left:8px">${childCount || '?'}</span>` : '';
+                container.innerHTML = `<span style="font-weight:500">${node.data.name}</span>${badge}<span style="color:#999;margin-left:auto;font-size:0.75rem">${node.path}</span>`;
+            };
+
+            // Tree ic-6: DnD + icons
+            const icTree6 = document.getElementById('ic-tree6');
+            icTree6.customStylesCallback = () => iconStyles;
+            icTree6.data = fileTreeWithIcons;
+            icTree6.displayValueMember = 'name';
+            icTree6.onNodeDrop = (ctx) => {
+                const dropNode = ctx.target?.node ?? null;
+                const draggedNode = ctx.source?.node ?? null;
+                const position = ctx.position;
+                const operation = ctx.operation;
+                const event = ctx.event;
+                document.getElementById('ic-tree6-output').textContent = JSON.stringify({
+                    dragged: draggedNode.data?.name,
+                    droppedOn: dropNode?.data?.name ?? '(root)',
+                    position,
+                    operation
+                }, null, 2);
+            };
+
+            // Apply any stored column width to the freshly-wired icon trees too
+            if (stored) applyColWidth(stored);
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

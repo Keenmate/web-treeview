@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theming Examples - TreeView</title>
+    <title>TreeView - Theming</title>
 
     <!-- Shared example styles -->
     <link rel="stylesheet" href="examples-shared.css">
 
-    <!-- Page-specific styles -->
+    <!-- Page-specific styles: theme presets (demo content) + gallery/editor layout -->
     <style>
-        /* Override container width for theming page */
-        .container {
-            max-width: 1400px;
-        }
-
         /* Theme grid layout */
         .theme-grid {
             display: grid;
@@ -107,6 +102,10 @@
             --wtv-glow-before-color: rgba(0, 255, 255, 0.8);
             --wtv-glow-after-color: rgba(255, 0, 255, 0.8);
             --wtv-glow-child-color: rgba(255, 255, 0, 0.8);
+
+            /* Custom disclosure glyph — one --base-icon-chevron swap re-skins the
+               whole tree's toggle (double-chevron to match the neon energy). */
+            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 17 5-5-5-5'/><path d='m13 17 5-5-5-5'/></svg>");
         }
 
         /* Audi Corporate Theme */
@@ -162,6 +161,9 @@
             --wtv-border-radius-sm: 12px;
             --wtv-border-radius-lg: 20px;
             --wtv-context-menu-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+            /* Soft rounded disclosure glyph (circle-chevron) to match the pill shapes. */
+            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m10 8 4 4-4 4'/></svg>");
         }
 
         /* Sharp/Minimal Theme */
@@ -186,6 +188,9 @@
             --wtv-border-radius-lg: 0;
             --wtv-context-menu-shadow: none;
             --wtv-context-menu-border: 2px solid #000000;
+
+            /* Hard geometric disclosure glyph (filled square-chevron) for the brutalist look. */
+            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M19 2a3 3 0 0 1 3 3v14a3 3 0 0 1 -3 3h-14a3 3 0 0 1 -3 -3v-14a3 3 0 0 1 3 -3zm-10.387 6.21a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3zm5 0a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3z'/></svg>");
         }
 
         /* Material Design Theme */
@@ -208,6 +213,15 @@
             --wtv-border-radius-sm: 4px;
             --wtv-border-radius-lg: 4px;
             --wtv-context-menu-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+            /* Custom glyph + rotation RE-MAP. Material's indicator is a PRE-ORIENTED
+               downward caret (arrow_drop_down), so we hand the toggle a down-caret and
+               re-map the rotation tokens (collapsed points it right, expanded leaves it
+               down) instead of the default right-chevron 0deg→90deg. Same escape hatch as
+               icon-set="triangle", done here purely through the --base-* / --wtv- contract. */
+            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z'/></svg>");
+            --wtv-icon-rotate-collapsed: -90deg;
+            --wtv-icon-rotate-expanded: 0deg;
         }
 
         /* Glassmorphism Theme */
@@ -259,13 +273,6 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        .form-text {
-            display: block;
-            margin-top: 0.25rem;
-            font-size: 0.75rem;
-            opacity: 0.7;
-        }
-
         /* Live theme editor */
         .color-row {
             display: flex;
@@ -301,14 +308,14 @@
 
         <!-- NEW (rc03): theme prop + built-in dark mode -->
         <div class="card">
-            <h2>Built-in Dark Mode (rc03)</h2>
+            <h2>TH01 · Built-in Dark Mode</h2>
             <p>Three signals flip the tree's surface between light and dark, applied in order of precedence (highest first):</p>
             <ol style="margin: 0 0 1rem 1.5rem; padding: 0; font-size: 0.9rem;">
                 <li><code>theme="dark"</code> / <code>theme="light"</code> attribute on the <code>&lt;web-treeview&gt;</code> &mdash; per-instance override, beats everything else.</li>
                 <li>OS preference via <code>@media (prefers-color-scheme: dark)</code> &mdash; auto-flips when the user's OS is in dark mode.</li>
                 <li>Library defaults &mdash; light, with <code>#1a1a1a</code> as the dark fallback when a signal does flip.</li>
             </ol>
-            <p style="font-size: 0.875rem;">Each block re-declares <code>--wtv-bg-color</code>, <code>--wtv-text-color</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
+            <p>Each block re-declares <code>--wtv-bg-color</code>, <code>--wtv-text-color</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
 
             <div class="controls">
                 <label>
@@ -327,7 +334,7 @@
                         <option value="dark">dark (force)</option>
                     </select>
                 </label>
-                <span style="font-size: 0.85rem; color: #64748b;">
+                <span class="muted">
                     Tree B follows your OS preference. Toggle your OS dark mode to see it flip.
                 </span>
             </div>
@@ -347,12 +354,12 @@
         </div>
 
         <!-- Theme Examples -->
-        <h2 style="margin-bottom: 1.5rem;">Theme Examples</h2>
+        <h2>TH02 · Theme Examples</h2>
 
         <div class="theme-grid">
             <!-- Default Theme -->
             <div class="theme-card" style="background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <h2>Default</h2>
+                <h3>Default</h3>
                 <p>Out-of-the-box appearance with no variable overrides</p>
                 <div class="form-group">
                     <label>Project Files</label>
@@ -365,7 +372,7 @@
 
             <!-- Dark Mode Theme -->
             <div class="theme-card dark-theme">
-                <h2>Dark Mode</h2>
+                <h3>Dark Mode</h3>
                 <p>High contrast dark theme for low-light environments</p>
                 <div class="form-group">
                     <label>Project Files</label>
@@ -378,20 +385,20 @@
 
             <!-- Neon/Cyberpunk Theme -->
             <div class="theme-card neon-theme">
-                <h2>Neon/Cyberpunk</h2>
+                <h3>Neon/Cyberpunk</h3>
                 <p>Bright neon colors with glowing effects</p>
                 <div class="form-group">
                     <label>Project Files</label>
                     <div class="tree-container" style="border-color: #ff00ff; background: #1a0a1a;">
                         <web-treeview id="neon-mode"></web-treeview>
                     </div>
-                    <span class="form-text">Cyan and magenta with glowing shadows</span>
+                    <span class="form-text">Cyan and magenta with glowing shadows &middot; double-chevron toggle via <code>--base-icon-chevron</code></span>
                 </div>
             </div>
 
             <!-- Audi Corporate Theme -->
             <div class="theme-card audi-theme">
-                <h2>Audi Corporate</h2>
+                <h3>Audi Corporate</h3>
                 <p>Clean, minimal corporate styling with subtle borders</p>
                 <div class="form-group">
                     <label>Project Files</label>
@@ -404,46 +411,46 @@
 
             <!-- Rounded/Soft Theme -->
             <div class="theme-card rounded-theme">
-                <h2>Rounded/Soft</h2>
+                <h3>Rounded/Soft</h3>
                 <p>Large border-radius with soft shadows and pastel colors</p>
                 <div class="form-group">
                     <label>Project Files</label>
                     <div class="tree-container" style="border-radius: 16px;">
                         <web-treeview id="rounded-mode"></web-treeview>
                     </div>
-                    <span class="form-text">Warm gradient background with pink accents</span>
+                    <span class="form-text">Warm gradient background with pink accents &middot; soft circle-chevron toggle via <code>--base-icon-chevron</code></span>
                 </div>
             </div>
 
             <!-- Sharp/Minimal Theme -->
             <div class="theme-card sharp-theme">
-                <h2>Sharp/Minimal</h2>
+                <h3>Sharp/Minimal</h3>
                 <p>No border-radius, flat design, pure black and white</p>
                 <div class="form-group">
                     <label>Project Files</label>
                     <div class="tree-container" style="border: 2px solid #000000; border-radius: 0;">
                         <web-treeview id="sharp-mode"></web-treeview>
                     </div>
-                    <span class="form-text">Brutalist design with sharp edges</span>
+                    <span class="form-text">Brutalist design with sharp edges &middot; filled square-chevron toggle via <code>--base-icon-chevron</code></span>
                 </div>
             </div>
 
             <!-- Material Design Theme -->
             <div class="theme-card material-theme">
-                <h2>Material Design</h2>
+                <h3>Material Design</h3>
                 <p>Elevation shadows, vibrant colors, standard radius</p>
                 <div class="form-group">
                     <label>Project Files</label>
                     <div class="tree-container" style="border-color: transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
                         <web-treeview id="material-mode"></web-treeview>
                     </div>
-                    <span class="form-text">Google Material Design principles</span>
+                    <span class="form-text">Google Material Design principles &middot; pre-oriented down-caret with <code>--wtv-icon-rotate-*</code> re-map</span>
                 </div>
             </div>
 
             <!-- Glassmorphism Theme -->
             <div class="theme-card glass-theme">
-                <h2>Glassmorphism</h2>
+                <h3>Glassmorphism</h3>
                 <p>Frosted glass effect with backdrop blur and transparency</p>
                 <div class="form-group">
                     <label>Project Files</label>
@@ -457,7 +464,7 @@
 
         <!-- Live Theme Editor -->
         <div class="card">
-            <h2>Live Theme Editor</h2>
+            <h2>TH03 · Live Theme Editor</h2>
             <p>Adjust CSS custom properties in real time using the color pickers.</p>
 
             <div class="grid-2">
@@ -503,9 +510,36 @@
             </div>
         </div>
 
+        <!-- Icon Set & Icon Reskin -->
+        <div class="card">
+            <h2>TH04 · Toggle Icon Set &amp; Icon Reskin</h2>
+            <p>The disclosure glyph is driven by CSS custom properties. Switch between the built-in <code>iconSet</code> presets, or reskin the chevron globally through the shared <code>--base-icon-chevron</code> contract &mdash; the same override a design system applies across every KeenMate component at once.</p>
+
+            <div class="controls">
+                <label>
+                    Icon set:
+                    <select id="icon-set-select">
+                        <option value="chevron">chevron (default)</option>
+                        <option value="triangle">triangle</option>
+                        <option value="plus-minus">plus-minus</option>
+                        <option value="arrow">arrow</option>
+                    </select>
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="brand-icon-toggle">
+                    Reskin chevron via <code>--base-icon-chevron</code>
+                </label>
+            </div>
+
+            <div class="tree-container" id="tree-icons-container">
+                <web-treeview id="tree-icons" expand-level="1"></web-treeview>
+            </div>
+            <p class="form-text">Setting <code>--base-icon-chevron</code> on the host flows into <code>--wtv-icon-expand</code> through the shadow boundary, so the whole tree's chevron swaps to a custom mask. <code>plus-minus</code> is a swap set (distinct expand/collapse glyphs); the others rotate a single glyph.</p>
+        </div>
+
         <!-- CSS Variables Reference -->
         <div class="card">
-            <h2>CSS Custom Properties Reference</h2>
+            <h2>TH05 · CSS Custom Properties Reference</h2>
             <p>Two layers of CSS custom properties are available. <code>--base-*</code> variables come from the design system and cascade to all components. <code>--wtv-*</code> variables are treeview-specific and reference <code>--base-*</code> with hardcoded fallbacks.</p>
 
             <div class="code-block">
@@ -663,7 +697,30 @@
                 input.addEventListener('change', updateLiveTheme);
             }
             transitionInput.addEventListener('input', updateLiveTheme);
+
+            // Icon set + icon reskin
+            const iconTree = initTree('tree-icons', { expandLevel: 1 });
+            const iconSetSelect = document.getElementById('icon-set-select');
+            if (iconSetSelect) {
+                // One enum knob that re-points the --wtv-icon-* variables.
+                // (chevron | triangle | plus-minus | arrow — plus-minus is a swap set.)
+                iconSetSelect.addEventListener('change', (e) => { iconTree.iconSet = e.target.value; });
+            }
+            // Reskin the disclosure glyph via the shared --base-icon-* contract: setting
+            // --base-icon-chevron on the host flows into --wtv-icon-expand through the
+            // shadow boundary, so the whole tree's chevron swaps to a custom mask.
+            const brandChevron =
+                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M8 5l11 7-11 7z'/></svg>\")";
+            const brandToggle = document.getElementById('brand-icon-toggle');
+            if (brandToggle) {
+                brandToggle.addEventListener('change', (e) => {
+                    iconTree.style.setProperty('--base-icon-chevron', e.target.checked ? brandChevron : '');
+                });
+            }
         });
     </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

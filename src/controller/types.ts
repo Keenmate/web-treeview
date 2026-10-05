@@ -89,6 +89,7 @@ export interface NodeConfig {
   highlightedNodeClass: string | null | undefined;
   focusedNodeClass: string | null | undefined;
   dragOverNodeClass: string | null | undefined;
+  draggedNodeClass: string | null | undefined;
   dragDropMode: DragDropMode;
   dropZoneMode: 'floating' | 'glow';
   dropZoneLayout: 'around' | 'above' | 'below' | 'wave' | 'wave2';
@@ -520,6 +521,7 @@ export interface TreeControllerConfig<T> {
   highlightedNodeClass?: string | null | undefined;
   focusedNodeClass?: string | null | undefined;
   dragOverNodeClass?: string | null | undefined;
+  draggedNodeClass?: string | null | undefined;
   iconSet?: IconSet | null | undefined;
   /** @deprecated Use `iconSet`. */
   expandIconClass?: string | null | undefined;
@@ -547,6 +549,10 @@ export interface TreeControllerConfig<T> {
 export interface TreeControllerSnapshot<T> {
   flatNodesToRender: LTreeNode<T>[];
   draggedNodePath: string | null;
+  /** Every TRAVELING path in the active drag — the complete placement manifest (lead +
+   *  multi-drag members + their descendants, minus leave-behind holes) — so the dragged visual
+   *  dims the whole set, not just the roots. Empty when no drag is in progress. */
+  draggedPaths: string[];
   isDragInProgress: boolean;
   hoveredNodeForDropPath: string | null;
   activeDropPosition: DropPosition | null;

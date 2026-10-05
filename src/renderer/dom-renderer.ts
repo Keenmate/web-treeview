@@ -204,19 +204,33 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     };
 
     // Checkbox click
-    const checkbox = target.closest('.wtv__checkbox') as HTMLElement;
+    const checkbox = target.closest('.wtv__checkbox') as HTMLInputElement | null;
     if (checkbox) {
       event.stopPropagation();
-      // .wtv__checkbox is a <label> wrapping a hidden native input; without this the
-      // label's default action would ALSO toggle the input, double-firing against the
-      // controller's own toggle. The controller owns checkbox state.
-      event.preventDefault();
       const nodeEl = checkbox.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
         const node = this.controller.getNodeByPath(path);
         if (node) {
+          // .wtv__checkbox is the styled native <input> itself. We deliberately DON'T
+          // preventDefault: on a reused input the browser's canceled-activation steps
+          // fire LATE (after microtasks) and would restore .checked to its pre-click
+          // value, clobbering our write. Letting the native toggle stand means no
+          // cancellation + no restore. The controller still owns state — onCheckboxToggle
+          // re-syncs the box via its synchronous refresh, and the microtask below
+          // re-asserts the authoritative value so a VETOING beforeCheckboxToggleCallback
+          // (which refreshes nothing) still snaps the native toggle back.
           this.controller.nodeCallbacks.onCheckboxToggle(node, { skipFocus: false });
+          queueMicrotask(() => {
+            const fresh = this.controller?.getNodeByPath(path);
+            if (fresh) {
+              this._syncCheckboxState(
+                checkbox,
+                fresh.isSelected,
+                fresh.visualState === 'indeterminate'
+              );
+            }
+          });
           return;
         }
       }
@@ -1037,27 +1051,41 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   /**
-   * Build the canonical custom checkbox: a <label> wrapping a visually-hidden native
-   * <input> plus a `.wtv__checkbox-box` span whose ::after renders the checkmark/dash
-   * mask (see tree.css). Same structure as pure-admin `.pa-checkbox` and
-   * svelte-treeview `.stv__checkbox` — one checkbox implementation across the suite,
-   * themeable via --base-icon-check / --base-icon-indeterminate. The input stays the
-   * source of truth for :checked / :indeterminate (the box is a sibling styled off it);
-   * the delegated click handler preventDefaults the label so only the controller toggles.
+   * Build the canonical checkbox: a single styled native <input class="wtv__checkbox">
+   * whose ::after renders the checkmark/dash mask (see tree.css). The <input> IS the
+   * box (appearance:none) — the same single-element contract as web-multiselect's
+   * .ms__checkbox and svelte-treeview's .stv__checkbox, themeable via --base-icon-check
+   * / --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked="mixed"
+   * (NOT the native .indeterminate DOM property) so it survives the diff reconciler +
+   * virtual-scroll recycling. The delegated click handler preventDefaults so only the
+   * controller toggles the state.
    */
-  private _buildCheckbox(checked: boolean, indeterminate: boolean): HTMLLabelElement {
-    const label = document.createElement('label');
-    label.className = 'wtv__checkbox';
+  private _buildCheckbox(checked: boolean, indeterminate: boolean): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'checkbox';
+    input.className = 'wtv__checkbox';
     input.tabIndex = -1;
-    input.checked = checked;
-    input.indeterminate = indeterminate;
-    const box = document.createElement('span');
-    box.className = 'wtv__checkbox-box';
-    label.appendChild(input);
-    label.appendChild(box);
-    return label;
+    this._syncCheckboxState(input, checked, indeterminate);
+    return input;
+  }
+
+  /**
+   * Apply checked / indeterminate to a .wtv__checkbox <input>. Indeterminate wins:
+   * it shows the dash (modifier class + aria-checked="mixed") and leaves the native
+   * `checked` false so the dash glyph, not the tick, renders.
+   */
+  private _syncCheckboxState(
+    input: HTMLInputElement,
+    checked: boolean,
+    indeterminate: boolean
+  ): void {
+    input.classList.toggle('wtv__checkbox--indeterminate', indeterminate);
+    input.checked = checked && !indeterminate;
+    if (indeterminate) {
+      input.setAttribute('aria-checked', 'mixed');
+    } else {
+      input.removeAttribute('aria-checked');
+    }
   }
 
   private _createNodeElement(node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): HTMLElement {
@@ -1212,21 +1240,26 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
 
-    // Sync checkbox checked / indeterminate
+    // Sync checkbox checked / indeterminate. The .wtv__checkbox IS the <input>
+    // now (single-element contract) — indeterminate is a modifier class, not the
+    // native .indeterminate property, so it survives the diff reconciler + virtual
+    // scroll recycling.
     if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
-      let label = el.querySelector('.wtv__checkbox') as HTMLElement | null;
-      if (!label) {
+      let cb = el.querySelector('.wtv__checkbox') as HTMLInputElement | null;
+      if (!cb) {
         // Showed checkboxes was just toggled on — insert one.
-        label = this._buildCheckbox(false, false);
+        cb = this._buildCheckbox(false, false);
         const toggle = el.querySelector('.wtv__toggle-icon');
-        toggle?.after(label);
+        toggle?.after(cb);
       }
-      const cb = label.querySelector('input') as HTMLInputElement;
-      cb.checked = snapshot.selectedPaths.has(node.path);
-      cb.indeterminate = node.visualState === 'indeterminate';
+      this._syncCheckboxState(
+        cb,
+        snapshot.selectedPaths.has(node.path),
+        node.visualState === 'indeterminate'
+      );
     } else {
-      const label = el.querySelector('.wtv__checkbox');
-      label?.remove();
+      const cb = el.querySelector('.wtv__checkbox');
+      cb?.remove();
     }
 
     // Update toggle icon — rebuild the full class list so leaf↔folder transitions
@@ -1284,13 +1317,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const content = el.querySelector('.wtv__node-content') as HTMLElement;
       if (!content) continue;
 
-      // Clear previous drag classes
+      // Clear previous drag classes. draggedNodeClass, when set, REPLACES the built-in
+      // --dragged visual; remove both so a config switch (custom↔default) can't leave a stale one.
+      const draggedClass = this.lastNodeConfig?.draggedNodeClass || 'wtv__node-content--dragged';
       content.classList.remove('wtv__node-content--dragged');
+      if (this.lastNodeConfig?.draggedNodeClass) content.classList.remove(this.lastNodeConfig.draggedNodeClass);
       content.classList.remove('wtv__node-content--glow-before', 'wtv__node-content--glow-after', 'wtv__node-content--glow-child', 'wtv__node-content--drop-copy');
 
-      // Dragged node style
-      if (path === snapshot.draggedNodePath) {
-        content.classList.add('wtv__node-content--dragged');
+      // Dragged node style (custom class wins over the built-in modifier). Applied to
+      // EVERY top-level path in the drag, so a multi-drag dims the whole set, not just the lead.
+      if (path && snapshot.draggedPaths.includes(path)) {
+        content.classList.add(draggedClass);
       }
 
       // Glow mode indicators on hovered node

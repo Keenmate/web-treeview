@@ -20,17 +20,18 @@ const PAGE = '/test/checkbox-mode.html';
 function tree(page: Page) {
   return page.locator('.wtv__container').first();
 }
-// The checkbox is now a <label class="wtv__checkbox"> wrapping a hidden native
-// <input> (+ .wtv__checkbox-box). Click the label; read :checked / :indeterminate
-// off the inner input (still the source of truth).
+// The checkbox is now a single styled <input class="wtv__checkbox"> — the input IS
+// the box, so checkbox and checkboxInput resolve to the same element. Indeterminate
+// is a modifier class + aria-checked="mixed" (NOT the native .indeterminate prop) so
+// it survives the diff reconciler + virtual scroll.
 function checkbox(page: Page, path: string): Locator {
   return tree(page).locator(`.wtv__node[data-tree-path="${path}"] .wtv__checkbox`).first();
 }
 function checkboxInput(page: Page, path: string): Locator {
-  return tree(page).locator(`.wtv__node[data-tree-path="${path}"] .wtv__checkbox input`).first();
+  return checkbox(page, path);
 }
 function isIndeterminate(input: Locator): Promise<boolean> {
-  return input.evaluate((el) => (el as HTMLInputElement).indeterminate);
+  return input.evaluate((el) => el.classList.contains('wtv__checkbox--indeterminate'));
 }
 
 test.describe('Checkbox mode switch', () => {

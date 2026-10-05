@@ -273,18 +273,33 @@
       "values": []
     },
     {
+      "name": "--wtv-icon-check-size",
+      "description": "mask-size of the check/dash glyph inside the box; chains to --base-icon-check-size (default 68%).",
+      "values": []
+    },
+    {
       "name": "--wtv-checkbox-size",
       "description": "Checkbox box dimension (default 1.6×rem).",
       "values": []
     },
     {
+      "name": "--wtv-checkbox-scale",
+      "description": "Box/border/radius scale via calc (shared --base-checkbox-scale contract, no transform).",
+      "values": []
+    },
+    {
       "name": "--wtv-checkbox-border-width",
-      "description": "Checkbox box border thickness (hairline, does not scale).",
+      "description": "Checkbox box border thickness (hairline; multiplied by --wtv-checkbox-scale).",
       "values": []
     },
     {
       "name": "--wtv-checkbox-border-color",
-      "description": "Unchecked checkbox box border color.",
+      "description": "Unchecked checkbox box border color; chains to --base-checkbox-border-color.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-border-radius",
+      "description": "Checkbox box corner radius (flat 0.3×rem, scaled by --wtv-checkbox-scale).",
       "values": []
     },
     {
@@ -303,8 +318,28 @@
       "values": []
     },
     {
+      "name": "--wtv-checkbox-checked-bg-hover",
+      "description": "Checked / indeterminate checkbox background on hover (accent hover step).",
+      "values": []
+    },
+    {
       "name": "--wtv-checkbox-checkmark-color",
       "description": "Check / dash glyph color (tints the mask).",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-focus-ring-width",
+      "description": "Focus-ring thickness for a keyboard-focused checkbox.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-focus-ring-color",
+      "description": "Focus-ring color for a keyboard-focused checkbox.",
+      "values": []
+    },
+    {
+      "name": "--wtv-checkbox-focus-ring",
+      "description": "Composed focus-ring box-shadow for a keyboard-focused checkbox.",
       "values": []
     },
     {

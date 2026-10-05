@@ -398,7 +398,7 @@
 
 .wtv__node-content--dragged {
   opacity: var(--wtv-dragged-opacity);
-  transform: scale(0.95);
+  transform: scale(var(--wtv-dragged-scale, 0.95));
   /* Anchor the shrink to the left edge. This class lands on .wtv__node-content,
      which is flex:1 (fills the row minus the toggle/indent), so a default center
      origin would pull the content's left edge — and its highlight background —
@@ -924,74 +924,99 @@
    CHECKBOX
    ============================================================================== */
 
-/* Custom box-span checkbox — same structure as pure-admin `.pa-checkbox` and
-   svelte-treeview `.stv__checkbox` (a <label> wrapping a hidden native <input> + a
-   `.wtv__checkbox-box` span). One checkbox implementation across the suite, with a
-   mask-based check/dash chained to --base-icon-check / --base-icon-indeterminate. */
+/* Styled native checkbox — the canonical KeenMate render contract, shared
+   byte-for-byte (modulo prefix) with web-multiselect's .ms__checkbox and
+   svelte-treeview's .stv__checkbox: the <input> ITSELF is the box
+   (appearance:none), the tick / dash is an ::after mask, and the indeterminate
+   state is a MODIFIER CLASS (.wtv__checkbox--indeterminate) + aria-checked="mixed"
+   — NOT the native .indeterminate DOM property — so it survives the flat diff
+   reconciler + virtual-scroll recycling and emits the same DOM as the siblings.
+   See base-css-variables → "Checkbox render method". */
 .wtv__checkbox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 var(--wtv-spacing-sm) 0 0;
-  flex: 0 0 auto;
-  cursor: pointer;
-  position: relative;
-}
-
-/* Visually-hidden native input — kept for :checked / :indeterminate state + a11y. */
-.wtv__checkbox input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.wtv__checkbox-box {
-  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* border-box so the declared size IS the rendered outer size (matches a native
+     input) and the scaled border grows INWARD rather than enlarging the box.
+     Part of the shared --base-checkbox-scale contract. */
+  box-sizing: border-box;
   flex-shrink: 0;
-  width: var(--wtv-checkbox-size);
-  height: var(--wtv-checkbox-size);
-  border: var(--wtv-checkbox-border-width) solid var(--wtv-checkbox-border-color);
-  border-radius: var(--wtv-border-radius-sm);
+  position: relative;
+  margin: 0 var(--wtv-spacing-sm) 0 0;
+  cursor: pointer;
+  /* Box, border AND radius scaled via calc (shared --base-checkbox-scale
+     contract) — NOT a CSS transform. calc keeps all three proportional without
+     promoting the box to its own compositing layer, so the masked glyph never
+     pixel-snaps and stays crisp + centered at any scale. */
+  width: calc(var(--wtv-checkbox-size) * var(--wtv-checkbox-scale));
+  height: calc(var(--wtv-checkbox-size) * var(--wtv-checkbox-scale));
+  border: calc(var(--wtv-checkbox-border-width) * var(--wtv-checkbox-scale)) solid var(--wtv-checkbox-border-color);
+  border-radius: calc(var(--wtv-checkbox-border-radius) * var(--wtv-checkbox-scale));
   background: var(--wtv-checkbox-bg);
+  transition: background var(--wtv-transition-speed), border-color var(--wtv-transition-speed);
 }
 
-/* Checkmark / dash — a currentColor-tinted mask; fills the box, the glyph's own
-   viewBox padding keeps it inset. Hidden until :checked / :indeterminate. */
-.wtv__checkbox-box::after {
+/* Checkmark / dash — a tinted mask following --wtv-icon-check → the shared
+   --base-icon-check contract. Hidden until checked / indeterminate. Masked at
+   center / --wtv-icon-check-size over the full box, no transform, so it stays
+   optically centered on every row. */
+.wtv__checkbox::after {
   content: '';
   position: absolute;
   inset: 0;
   display: none;
   background-color: var(--wtv-checkbox-checkmark-color);
-  -webkit-mask: var(--wtv-icon-check) no-repeat center / contain;
-  mask: var(--wtv-icon-check) no-repeat center / contain;
+  -webkit-mask: var(--wtv-icon-check) no-repeat center / var(--wtv-icon-check-size);
+  mask: var(--wtv-icon-check) no-repeat center / var(--wtv-icon-check-size);
 }
 
-.wtv__checkbox:hover .wtv__checkbox-box {
+/* Hover */
+.wtv__checkbox:hover:not(:disabled) {
   border-color: var(--wtv-accent-color);
 }
 
-.wtv__checkbox input:checked + .wtv__checkbox-box,
-.wtv__checkbox input:indeterminate + .wtv__checkbox-box {
+/* Checked */
+.wtv__checkbox:checked {
   background: var(--wtv-checkbox-checked-bg);
   border-color: var(--wtv-checkbox-checked-border-color);
 }
 
-.wtv__checkbox input:checked + .wtv__checkbox-box::after {
+.wtv__checkbox:checked::after {
   display: block;
 }
 
-.wtv__checkbox input:indeterminate + .wtv__checkbox-box::after {
+/* Indeterminate (tristate) — cascade checkbox-mode: a partially-selected branch.
+   Filled like checked but with a dash. Rendered from a MODIFIER CLASS (not the
+   native :indeterminate property) so it survives the diff reconciler + virtual
+   scroll and matches the web / svelte siblings. */
+.wtv__checkbox--indeterminate {
+  background: var(--wtv-checkbox-checked-bg);
+  border-color: var(--wtv-checkbox-checked-border-color);
+}
+
+.wtv__checkbox--indeterminate::after {
   display: block;
   -webkit-mask-image: var(--wtv-icon-indeterminate);
           mask-image: var(--wtv-icon-indeterminate);
 }
 
-.wtv__checkbox input:focus-visible + .wtv__checkbox-box {
-  outline: 2px solid var(--wtv-accent-color);
-  outline-offset: 1px;
+/* Checked / indeterminate + hover → deepen to the accent's hover step (ms parity) */
+.wtv__checkbox:checked:hover:not(:disabled),
+.wtv__checkbox--indeterminate:hover:not(:disabled) {
+  background: var(--wtv-checkbox-checked-bg-hover);
+  border-color: var(--wtv-checkbox-checked-bg-hover);
+}
+
+/* Focus ring */
+.wtv__checkbox:focus-visible {
+  outline: none;
+  box-shadow: var(--wtv-checkbox-focus-ring);
+}
+
+/* Disabled */
+.wtv__checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* ==============================================================================

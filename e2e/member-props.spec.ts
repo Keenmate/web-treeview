@@ -11,9 +11,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *   2     Music      selectable=true  selected=true
  *   2.1   Playlists  selectable=true  selected=false
  *
- * Web-treeview's checkbox is a <label class="wtv__checkbox"> wrapping a hidden
- * native <input> (+ .wtv__checkbox-box). `checkbox()` is the visible/clickable
- * label; `checkboxInput()` is the inner input that holds :checked state.
+ * Web-treeview's checkbox is a single styled <input class="wtv__checkbox"> — the
+ * input IS the box, so `checkbox()` and `checkboxInput()` resolve to the same
+ * element (:checked state read off it).
  */
 
 const PAGE = '/test/member-props.html';
@@ -27,7 +27,8 @@ function checkbox(node: Locator): Locator {
 }
 
 function checkboxInput(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__checkbox input').first();
+  // Single-element contract: the input IS the .wtv__checkbox.
+  return checkbox(node);
 }
 
 async function gotoFixture(page: Page) {

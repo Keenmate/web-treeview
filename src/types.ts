@@ -153,6 +153,11 @@ export interface TreeViewConfig<T = any> {
   /** CSS class applied to the single focused node. */
   focusedNodeClass?: string | null;
   dragOverNodeClass?: string | null;
+  /** CSS class for the dragged source row (the dimmed node left in place while its ghost
+   *  follows the pointer). When set, REPLACES the built-in `.wtv__node-content--dragged`
+   *  visual (opacity + left-anchored scale). Tune the default via `--wtv-dragged-opacity` /
+   *  `--wtv-dragged-scale` instead of replacing it. Mirrors `highlightedNodeClass`. */
+  draggedNodeClass?: string | null;
   /** Disclosure glyph set: 'chevron' (default) | 'triangle' | 'plus-minus' | 'arrow'.
    *  Re-points the --wtv-icon-* variables; see IconSet in controller/types. */
   iconSet?: 'chevron' | 'triangle' | 'plus-minus' | 'arrow' | null;

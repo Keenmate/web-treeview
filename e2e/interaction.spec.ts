@@ -17,9 +17,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * Click Behavior tree uses expandLevel=2 (levels 1 & 2 visible). Multi-Select
  * tree uses expandLevel=3 (everything visible).
  *
- * Note on checkbox DOM: web-treeview renders a <label class="wtv__checkbox">
- * wrapping a hidden native <input> (+ .wtv__checkbox-box). `checkboxOf()` is the
- * visible/clickable label; `checkboxInputOf()` is the inner input (:checked state).
+ * Note on checkbox DOM: web-treeview renders a single styled <input
+ * class="wtv__checkbox"> — the input IS the box, so `checkboxOf()` and
+ * `checkboxInputOf()` resolve to the same element (:checked state read off it).
  */
 
 const PAGE = '/test/interaction.html';
@@ -55,7 +55,8 @@ function checkboxOf(node: Locator): Locator {
 }
 
 function checkboxInputOf(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__checkbox input').first();
+  // Single-element contract: the input IS the .wtv__checkbox.
+  return checkboxOf(node);
 }
 
 function outputValue(card: Locator, label: string): Locator {

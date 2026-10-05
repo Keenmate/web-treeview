@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Checkbox render unified onto the canonical single styled `<input>` contract**
+  (parity with `@keenmate/web-multiselect` 2.x + `@keenmate/svelte-treeview`). The
+  old `<label>` wrapping a visually-hidden native `<input>` + a `.wtv__checkbox-box`
+  span is gone; `.wtv__checkbox` IS the styled `<input>` now (`appearance: none`,
+  `box-sizing: border-box`), the tick/dash is an `::after` mask, and the box, border
+  AND radius scale via `calc(… * var(--wtv-checkbox-scale))` off the shared
+  `--base-checkbox-scale` knob — **no `transform`**, so the masked glyph never
+  pixel-snaps and stays centered at any scale. The indeterminate (tri-state) state is
+  now a **modifier class `.wtv__checkbox--indeterminate` + `aria-checked="mixed"`**
+  instead of the native `.indeterminate` DOM property, so it survives the flat diff
+  reconciler + virtual-scroll row recycling (the old imperative `cb.indeterminate`
+  write was re-applied every reconcile and lost on recycle). Same DOM output as the
+  sibling components (modulo the `wtv__` prefix).
+- New checkbox variables consumed from the shared contract: `--wtv-checkbox-scale`
+  (→ `--base-checkbox-scale`), `--wtv-icon-check-size` (→ `--base-icon-check-size`,
+  default 68%), `--wtv-checkbox-border-radius`, `--wtv-checkbox-checked-bg-hover`,
+  `--wtv-checkbox-focus-ring*`; `--wtv-checkbox-border-color` now chains to the
+  dedicated `--base-checkbox-border-color` (a stronger mid-gray than the generic
+  `--base-border-color`).
+
+### Added
+
+- **`draggedNodeClass?: string` — replace the dragged source row's visual with your
+  own class, plus `--wtv-dragged-scale` to tune the built-in one.** Completes the
+  class-override family alongside `highlightedNodeClass` / `focusedNodeClass` /
+  `dragOverNodeClass`: when set it REPLACES the built-in `.wtv__node-content--dragged`
+  look on the dimmed row left in place during a drag (the renderer adds the custom
+  class instead of the modifier, so they don't stack). To merely tune the default,
+  the shrink is now `scale(var(--wtv-dragged-scale, 0.95))` (companion to the existing
+  `--wtv-dragged-opacity`), still left-anchored via `transform-origin: left center`.
+  Exposed as the `dragged-node-class` attribute + `draggedNodeClass` option/property,
+  through `createTreeView` + `updateProps`. Mirrors `@keenmate/svelte-treeview`
+  (`draggedNodeClass` + `--stv-dragged-scale`).
+- **The dragged visual now dims every TRAVELING node — the whole multi-drag set AND every
+  dragged subtree's descendants — not just the lead.** Previously only the grabbed node got
+  the `.wtv__node-content--dragged` / `draggedNodeClass` look. The render snapshot gains
+  `draggedPaths: string[]` (the complete placement manifest — lead + members + descendants,
+  minus leave-behind holes) and `_updateDragClasses` applies the class to every node whose
+  path is in it. Mirrors `@keenmate/svelte-treeview` (`controller.draggedPaths`); unlike the
+  recursive Svelte renderer, this flat renderer already tested membership per rendered node,
+  so only the stored set changed.
+
 ## [2.0.0-rc09] - 2026-08-14
 
 Parity sync with **`@keenmate/svelte-treeview` rc13 + rc14**: the remaining

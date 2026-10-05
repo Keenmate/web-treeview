@@ -91,6 +91,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     highlightedNodeClass: undefined,
     focusedNodeClass: undefined,
     dragOverNodeClass: undefined,
+    draggedNodeClass: undefined,
     dragDropMode: 'none',
     dropZoneMode: 'glow',
     dropZoneLayout: 'around',
@@ -208,6 +209,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _highlightedNodeClass: string | null | undefined = undefined;
   private _focusedNodeClass: string | null | undefined = undefined;
   private _dragOverNodeClass: string | null | undefined = undefined;
+  private _draggedNodeClass: string | null | undefined = undefined;
   private _dropZoneMode: 'floating' | 'glow' = 'glow';
   private _dropZoneLayout: 'around' | 'above' | 'below' | 'wave' | 'wave2' = 'around';
   private _dropZoneStart: number | string = 33;
@@ -244,6 +246,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   // Drag and drop state
   private _draggedNode: LTreeNode<any> | null = null;
+  // Every TRAVELING path in the active drag — the complete placement manifest (lead +
+  // multi-drag members + their descendants, minus any leave-behind holes) — so the dragged
+  // visual dims the whole set, not just the roots. Empty when no drag is in progress.
+  private _draggedPaths: string[] = [];
   private _isDragInProgress: boolean = false;
   private _hoveredNodeForDrop: LTreeNode<any> | null = null;
   private _activeDropPosition: DropPosition | null = null;
@@ -495,6 +501,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   get dragOverNodeClass() { return this._dragOverNodeClass; }
   set dragOverNodeClass(v: string | null | undefined) { this._dragOverNodeClass = v; this._updateNodeConfig(); }
 
+  get draggedNodeClass() { return this._draggedNodeClass; }
+  set draggedNodeClass(v: string | null | undefined) { this._draggedNodeClass = v; this._updateNodeConfig(); }
+
   get dropZoneMode() { return this._dropZoneMode; }
   set dropZoneMode(v: 'floating' | 'glow') { this._dropZoneMode = v; this._updateNodeConfig(); }
 
@@ -711,6 +720,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._highlightedNodeClass = props.highlightedNodeClass;
     this._focusedNodeClass = props.focusedNodeClass;
     this._dragOverNodeClass = props.dragOverNodeClass;
+    this._draggedNodeClass = props.draggedNodeClass;
     this._dropZoneMode = props.dropZoneMode ?? 'glow';
     this._dropZoneLayout = props.dropZoneLayout ?? 'around';
     this._dropZoneStart = props.dropZoneStart ?? 33;
@@ -3296,6 +3306,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._focusedNodeClass = updates.focusedNodeClass;
     if (updates.dragOverNodeClass !== undefined)
       this._dragOverNodeClass = updates.dragOverNodeClass;
+    if (updates.draggedNodeClass !== undefined)
+      this._draggedNodeClass = updates.draggedNodeClass;
     if (updates.dropZoneMode !== undefined)
       this._dropZoneMode = updates.dropZoneMode ?? 'glow';
     if (updates.dropZoneLayout !== undefined)
@@ -3487,6 +3499,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     return {
       flatNodesToRender: this.flatNodesToRender,
       draggedNodePath: this._draggedNode?.path ?? null,
+      draggedPaths: this._draggedPaths,
       isDragInProgress: this._isDragInProgress,
       hoveredNodeForDropPath: this._hoveredNodeForDrop?.path ?? null,
       activeDropPosition: this._activeDropPosition,
@@ -3752,6 +3765,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       highlightedNodeClass: this._highlightedNodeClass,
       focusedNodeClass: this._focusedNodeClass,
       dragOverNodeClass: this._dragOverNodeClass,
+      draggedNodeClass: this._draggedNodeClass,
       dragDropMode: this._dragDropMode,
       dropZoneMode: this._dropZoneMode,
       dropZoneLayout: this._dropZoneLayout,
@@ -3983,6 +3997,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     // override keeps its holes; a plain drag is completed so whole subtrees copy.
     const placementManifest =
       this._dragSetOverride ?? this._completeManifest(draggedRefs.map((r) => r.path));
+    // Dim every traveling node (roots + descendants, minus any leave-behind holes), not just
+    // the roots — otherwise a dragged folder's children wouldn't dim.
+    this._draggedPaths = placementManifest;
     setDragSet(this._treeId, draggedRefs.map((r) => r.path), placementManifest);
     // ALSO stash it in the dataTransfer: the module-level dragSet is cleared on the
     // source's dragend, which can fire BEFORE the target's drop under synthetic DnD.
@@ -4088,6 +4105,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     dragLogger.debug('_resetDragState');
     this._isDragInProgress = false;
     this._draggedNode = null;
+    this._draggedPaths = [];
     this._hoveredNodeForDrop = null;
     this._activeDropPosition = null;
     this._isDropPlaceholderActive = false;
@@ -4499,6 +4517,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this.touchTimer = setTimeout(() => {
       this.touchDragState.isDragging = true;
       this._draggedNode = node;
+      // Complete manifest so a touch-dragged folder dims its whole subtree, matching desktop.
+      this._draggedPaths = this._completeManifest([node.path]);
       this._isDragInProgress = true;
       dragLogger.debug(`Touch drag started: ${node.path}`);
       this.createGhostElement(node, touch.clientX, touch.clientY);

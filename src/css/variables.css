@@ -201,17 +201,41 @@
      and follow the shared --base-icon-* contract. Override either to diverge. */
   --wtv-icon-check: var(--base-icon-check, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>"));
   --wtv-icon-indeterminate: var(--base-icon-indeterminate, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/></svg>"));
+  /* mask-size of the check/dash glyph INSIDE the checkbox box. Defaults to the
+     shared --base-icon-check-size (the SAME knob pure-admin's .pa-checkbox and
+     ms read), so a theme rescales the mark once for every KeenMate checkbox;
+     68% assumes a Lucide glyph that fills its viewBox edge-to-edge. */
+  --wtv-icon-check-size: var(--base-icon-check-size, 68%);
 
   /* ==========================================================================
-     CHECKBOX (custom box-span control — matches pure-admin / svelte-treeview)
+     CHECKBOX — styled native <input>, canonical KeenMate render contract
+     (single-element model shared with web-multiselect / svelte-treeview: the
+     <input> IS the box, appearance:none; box/border/radius scale via calc on
+     --base-checkbox-scale — NO transform; indeterminate = modifier class).
      ========================================================================== */
+  /* Box dimensions aligned with web-multiselect (--ms-checkbox-*): 1.6rem box,
+     1px border, flat 0.3rem radius — so a KeenMate checkbox is the same size in
+     every component. (Radius is flat 0.3, NOT --wtv-border-radius-sm, matching
+     ms — a theme's sm radius shouldn't reshape the small checkbox.) */
   --wtv-checkbox-size: calc(var(--wtv-rem) * 1.6);  /* 16px */
-  --wtv-checkbox-border-width: 1.5px;               /* hairline — does not scale */
-  --wtv-checkbox-border-color: var(--base-border-color, light-dark(#adb5bd, #5a5a5a));
+  /* Box scale — the shared --base-checkbox-scale contract (base-css-variables).
+     Applied to width/height/border/radius via calc (see tree.css), NOT a CSS
+     transform, so the masked tick/dash stays crisp + centered at any scale. */
+  --wtv-checkbox-scale: var(--base-checkbox-scale, 1);
+  --wtv-checkbox-border-width: 1px;                 /* hairline */
+  /* Dedicated --base-checkbox-border-color (ms parity): a stronger mid-gray than
+     the faint generic --base-border-color so the box reads as a real control. */
+  --wtv-checkbox-border-color: var(--base-checkbox-border-color, light-dark(#8f8f8f, #5a5a5a));
+  --wtv-checkbox-border-radius: calc(0.3 * var(--wtv-rem));
   --wtv-checkbox-bg: var(--base-input-bg, light-dark(#ffffff, #1f1f1f));
   --wtv-checkbox-checked-bg: var(--wtv-accent-color);
   --wtv-checkbox-checked-border-color: var(--wtv-accent-color);
+  /* Checked-box hover deepens to the accent's hover step (ms parity). */
+  --wtv-checkbox-checked-bg-hover: var(--wtv-accent-color-hover);
   --wtv-checkbox-checkmark-color: var(--base-text-color-on-accent, #fff);
+  --wtv-checkbox-focus-ring-width: 2px;
+  --wtv-checkbox-focus-ring-color: color-mix(in srgb, var(--wtv-accent-color) 25%, transparent);
+  --wtv-checkbox-focus-ring: 0 0 0 var(--wtv-checkbox-focus-ring-width) var(--wtv-checkbox-focus-ring-color);
 
   /* ==========================================================================
      DRAG & DROP GLOW INDICATORS
@@ -313,6 +337,9 @@
      MISC
      ========================================================================== */
   --wtv-dragged-opacity: 0.5;
+  /* Scale of the dimmed dragged source row; anchored left (transform-origin in tree.css),
+     set to 1 to disable the shrink. Mirrors --stv-dragged-scale. */
+  --wtv-dragged-scale: 0.95;
   --wtv-cut-opacity: 0.4;
 }
 

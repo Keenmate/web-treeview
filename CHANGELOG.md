@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Empty drop-zone no longer forces a horizontal scrollbar when a drag hovers an empty tree.** The engaged `.wtv__empty-zone--active` state applied `transform: scale(1.01)`; a `scale()` on a container-width element grows it symmetrically past both edges (~1% of the width → ~3px here), and because the tree body (`.wtv__tree`) must keep `overflow: visible` so per-node drop-zone glows can paint outside, that spill can't be clipped — it propagated up as a `scrollWidth` overrun and any ancestor with `overflow-x: auto` (e.g. a demo's `.tree-container`) showed a horizontal scrollbar. The default `--wtv-empty-zone-hover-scale` is now `1` (no growth; the box-shadow glow + solid border + intensified background already signal "engaged"), and `.wtv__empty-zone` gained `box-sizing: border-box` so its 2px dashed border is drawn inside the width. Consumers who want a grow-on-hover and control their own overflow can still opt in via `--wtv-empty-zone-hover-scale`.
+
+### Changed
+
+- **Empty drop-zone engaged state is now fully tokenized and aligned with svelte-treeview.** The hover/active values that previously lived only as inline fallbacks in `tree.css` were promoted to real custom properties — `--wtv-empty-zone-hover-bg`, `--wtv-empty-zone-hover-border-color`, `--wtv-empty-zone-hover-shadow`, `--wtv-empty-zone-hover-scale` — declared in `variables.css` and documented in `component-variables.manifest.json` + `vscode.css-custom-data.json`, so the engaged state is themeable through the same documented surface as the resting state. Defaults were brought up to match `@keenmate/svelte-treeview`'s `--stv-drop-placeholder-hover-*` family (background `accent 28%`, glow `0 0 0 4px / 30%`), and the zone gained `cursor: pointer`. The matching `box-sizing` + scale fix was ported to svelte-treeview as well so both packages behave identically.
+
+### Internal
+
+- **Example pages: control state now persists across reloads via a shared helper.** New `examples-controls-store.js` (ported from `@keenmate/web-multiselect`, namespaced `web-treeview:examples:controls:<page>`) restores every `.controls` input/select from localStorage, replays each control's `change`/`input` so the page's own listeners re-apply the config, and saves on subsequent changes; buttons are ignored so action buttons never auto-replay. Wired into 10 pages (interaction, basic, data, search, tooltips, context-menu, theming, plus custom-layout/responsive/logging where it no-ops until an input/select is added); `drag-drop` and `performance` keep their existing bespoke persistence.
+- **Example pages: IN01 consolidated into a single "click behavior" picker + new interaction demos.** IN01 now drives one tree with all eight controls (click-behavior, selection-mode, highlighted/focused style, show-checkboxes, checkbox-mode, `click-toggles-checkbox`, clear-all) and a focused/highlighted/selected readout trio — one-to-one with svelte-treeview's interaction demo; its initial state matches the component defaults (checkboxes off, independent) except for the unavoidable demo conveniences (multi-select, a visible highlight/focus class). BU01 gained live `--wtv-indent-size` / `--wtv-column-width` / `--wtv-node-padding` sliders + a derived root-gap readout, and BU02 a live `expand-level` field. The shared `examples-shared.css` absorbed the `.display-sliders` and `.css-readout` utilities so pages carry no bespoke layout CSS.
+
 ## [2.0.0-rc06] - 2026-10-08 [PUBLISHED]
 
 First published prerelease since rc05 — consolidates the entire unpublished

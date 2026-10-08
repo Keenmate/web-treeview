@@ -724,6 +724,7 @@
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample Data ──────────────────────────────────────────────────
 
@@ -877,6 +878,9 @@
                 // Keep the base panel class, swap only the theme-token class.
                 wrap.className = 'tc-panel' + (theme ? ' ' + theme : '');
             };
+
+            // Persist .controls across reloads (shared helper — parity with web-multiselect).
+            persistControls('theming');
         });
     </script>
 

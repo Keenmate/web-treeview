@@ -449,6 +449,10 @@
 
 /* Empty zone — drop target shown in empty trees during drag */
 .wtv__empty-zone {
+  /* border-box so the dashed border is drawn INSIDE the zone's width — otherwise
+     a full-width zone + 2px border overruns the container and triggers a
+     horizontal scrollbar on any ancestor with overflow-x other than visible. */
+  box-sizing: border-box;
   border: var(--wtv-empty-zone-border) !important;
   background: var(--wtv-empty-zone-bg) !important;
   border-radius: var(--wtv-empty-zone-radius);
@@ -456,6 +460,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all var(--wtv-transition-speed) ease;
 }
 
@@ -470,14 +475,22 @@
 /* Engaged feedback — signals the empty drop zone is interactive. `:hover` covers
    plain mouse-over; the `--active` modifier covers a DRAG hovering the zone (an
    in-flight HTML5 drag suppresses `:hover`), toggled by the controller's
-   isDropPlaceholderActive. (svelte-treeview rc13) */
+   isDropPlaceholderActive. (svelte-treeview rc13)
+
+   The pop is the box-shadow glow + solid border + intensified background — all
+   paint-only, so they never affect layout. The scale defaults to 1 (no growth):
+   a `scale()` on a container-width zone grows it symmetrically past both edges
+   (~1% of the width), and because the tree body must keep `overflow: visible`
+   for per-node drop-zone glows, that spill can't be clipped and instead surfaces
+   as a horizontal scrollbar on an ancestor. Consumers who want a grow-on-hover
+   and control their own overflow can opt in via --wtv-empty-zone-hover-scale. */
 .wtv__empty-zone:hover,
 .wtv__empty-zone--active {
   border-style: solid !important;
-  border-color: var(--wtv-empty-zone-hover-border-color, var(--wtv-accent-color)) !important;
-  background: var(--wtv-empty-zone-hover-bg, color-mix(in srgb, var(--wtv-accent-color) 12%, transparent)) !important;
-  box-shadow: var(--wtv-empty-zone-hover-shadow, 0 0 0 3px color-mix(in srgb, var(--wtv-accent-color) 20%, transparent));
-  transform: scale(var(--wtv-empty-zone-hover-scale, 1.01));
+  border-color: var(--wtv-empty-zone-hover-border-color) !important;
+  background: var(--wtv-empty-zone-hover-bg) !important;
+  box-shadow: var(--wtv-empty-zone-hover-shadow);
+  transform: scale(var(--wtv-empty-zone-hover-scale, 1));
 }
 
 /* Whole-tree drop zone (shouldEnableTreeDropZone): while a drag hovers the tree the

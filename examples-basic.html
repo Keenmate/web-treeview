@@ -5,26 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TreeView - Basic Usage</title>
     <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        /* Live spacing readout for BU01 — a wrap of labelled chips showing the
-           measured pieces that compose a row's left offset. */
-        .css-readout {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            margin: 0.25rem 0 1rem;
-        }
-        .css-readout code {
-            font-size: 0.78rem;
-        }
-        .css-readout code b {
-            color: #2b6cb0;
-            font-weight: 700;
-        }
-        .css-readout code.is-gap b {
-            color: #b7791f;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -40,10 +20,24 @@
             <p>A basic tree with hierarchical data using path-based structure. Click nodes to select, click the toggle icon to expand/collapse.</p>
 
             <div class="controls">
-                <span class="muted">Indentation:</span>
-                <button id="indent-condensed" onclick="setIndent('condensed', this)">Condensed</button>
-                <button id="indent-compact" onclick="setIndent('compact', this)">Compact</button>
-                <button id="indent-generous" onclick="setIndent('generous', this)">Generous</button>
+                <span class="muted">Display:</span>
+                <button id="indent-condensed" onclick="applyPreset('condensed', this)">Condensed</button>
+                <button id="indent-compact" onclick="applyPreset('compact', this)">Compact</button>
+                <button id="indent-generous" onclick="applyPreset('generous', this)">Generous</button>
+            </div>
+
+            <div class="display-sliders">
+                <label for="sl-indent">--wtv-indent-size</label>
+                <input type="range" id="sl-indent" min="0" max="48" step="1" value="32">
+                <output id="out-indent">32px</output>
+
+                <label for="sl-column">--wtv-column-width</label>
+                <input type="range" id="sl-column" min="0" max="48" step="1" value="24">
+                <output id="out-column">24px</output>
+
+                <label for="sl-padding">--wtv-node-padding (left)</label>
+                <input type="range" id="sl-padding" min="0" max="24" step="1" value="8">
+                <output id="out-padding">8px</output>
             </div>
 
             <div id="indent-readout" class="css-readout"></div>
@@ -80,6 +74,12 @@
         <div class="card">
             <h2>BU02 · Pre-expanded Tree</h2>
             <p>Use <code>expand-level</code> to control how many levels are expanded on initial render. This tree starts with 2 levels expanded.</p>
+
+            <div class="controls">
+                <label for="tree2-expand-level">expand-level:</label>
+                <input type="number" id="tree2-expand-level" min="0" max="10" step="1" value="2" style="width:5rem">
+                <span class="muted">levels expanded (0 = roots only)</span>
+            </div>
 
             <div class="tree-container" id="tree2-container">
                 <web-treeview id="tree2" expand-level="2"></web-treeview>
@@ -170,6 +170,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample Data ──────────────────────────────────────────────────
 
@@ -269,48 +270,58 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             tree1.displayValueMember = 'name';
             tree1.expandLevel = 1;
 
-            // Indentation demo: --wtv-indent-size is the per-level indent knob.
-            // Setting it inline on the host element inherits into the Shadow DOM
-            // and overrides the stylesheet default; rows re-flow with no re-render.
-            const INDENT_PRESETS = { condensed: '8px', compact: '16px', generous: '32px' };
+            // Display demo: three sliders drive the CSS knobs that compose a row's
+            // left offset. --wtv-indent-size is the per-level indent; --wtv-column-width
+            // is the fixed toggle gutter reserved on every row; --wtv-node-padding's
+            // horizontal part is the content's left pad. Setting them inline on the host
+            // inherits into the Shadow DOM and overrides the stylesheet default, so rows
+            // re-flow with no re-render. Presets just snap all three sliders at once.
+            const slIndent = document.getElementById('sl-indent');
+            const slColumn = document.getElementById('sl-column');
+            const slPadding = document.getElementById('sl-padding');
+            const PRESETS = {
+                condensed: { indent: 8,  column: 16, padding: 4 },
+                compact:   { indent: 16, column: 20, padding: 6 },
+                generous:  { indent: 32, column: 24, padding: 8 }
+            };
 
-            // Measure the actual spacing pieces from the rendered shadow DOM so the
-            // readout shows the FULL left-offset composition, not just the knob the
-            // buttons move. The root gap (toggle gutter + content padding) is fixed;
-            // only the per-level indent step scales with --wtv-indent-size.
-            function measureSpacing(retries = 12) {
-                const root = tree1.shadowRoot;
-                const toggle = root && root.querySelector('.wtv__toggle-icon');
-                const content = root && root.querySelector('.wtv__node-content');
-                const n1 = root && root.querySelector('.wtv__node[data-tree-path="1"]');
-                const n2 = root && root.querySelector('.wtv__node[data-tree-path="1.1"]');
-                if (!toggle || !content || !n1 || !n2) {
-                    if (retries > 0) requestAnimationFrame(() => measureSpacing(retries - 1));
-                    return;
-                }
-                const px = (v) => `${Math.round(parseFloat(v))}px`;
-                const colW = getComputedStyle(toggle).width;
-                const padL = getComputedStyle(content).paddingLeft;
-                const step = parseFloat(getComputedStyle(n2).paddingLeft) - parseFloat(getComputedStyle(n1).paddingLeft);
-                const rootGap = parseFloat(colW) + parseFloat(padL);
+            // Push the three slider values onto the host as inline CSS variables and
+            // refresh the readout (including the derived root gap = column + left pad).
+            function applySliders() {
+                const indent = +slIndent.value;
+                const column = +slColumn.value;
+                const padding = +slPadding.value;
+                tree1.style.setProperty('--wtv-indent-size', `${indent}px`);
+                tree1.style.setProperty('--wtv-column-width', `${column}px`);
+                // Only the horizontal (left/right) part — keep the vertical pad intact.
+                tree1.style.setProperty('--wtv-node-padding', `var(--wtv-spacing-sm) ${padding}px`);
+                document.getElementById('out-indent').textContent = `${indent}px`;
+                document.getElementById('out-column').textContent = `${column}px`;
+                document.getElementById('out-padding').textContent = `${padding}px`;
                 document.getElementById('indent-readout').innerHTML = [
-                    `<code>--wtv-indent-size: <b>${px(step)}</b></code>`,
-                    `<code>--wtv-column-width: <b>${px(colW)}</b></code>`,
-                    `<code>--wtv-node-padding (left): <b>${px(padL)}</b></code>`,
-                    `<code class="is-gap">root gap (gutter + padding): <b>${px(rootGap)}</b></code>`
+                    `<code>--wtv-indent-size: <b>${indent}px</b></code>`,
+                    `<code>--wtv-column-width: <b>${column}px</b></code>`,
+                    `<code>--wtv-node-padding (left): <b>${padding}px</b></code>`,
+                    `<code class="is-gap">root gap (gutter + padding): <b>${column + padding}px</b></code>`
                 ].join('');
             }
 
-            window.setIndent = (preset, btn) => {
-                const value = INDENT_PRESETS[preset];
-                tree1.style.setProperty('--wtv-indent-size', value);
+            for (const sl of [slIndent, slColumn, slPadding]) {
+                sl.addEventListener('input', applySliders);
+            }
+
+            window.applyPreset = (preset, btn) => {
+                const p = PRESETS[preset];
+                slIndent.value = p.indent;
+                slColumn.value = p.column;
+                slPadding.value = p.padding;
                 for (const id of ['indent-condensed', 'indent-compact', 'indent-generous']) {
                     document.getElementById(id).classList.toggle('secondary', document.getElementById(id) !== btn);
                 }
-                requestAnimationFrame(() => measureSpacing());
+                applySliders();
             };
-            // Start on the default (compact / 16px).
-            setIndent('compact', document.getElementById('indent-compact'));
+            // Start on the stated defaults (indent 32 / column 24 / pad 8 → root gap 32 = Generous).
+            window.applyPreset('generous', document.getElementById('indent-generous'));
 
             tree1.addEventListener('node-clicked', (e) => {
                 const node = e.detail.node;
@@ -330,6 +341,13 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             tree2.idMember = 'id';
             tree2.pathMember = 'path';
             tree2.displayValueMember = 'name';
+
+            // Live expand-level control: the number field re-drives expandLevel, which
+            // re-expands the tree from the root down to the requested depth.
+            document.getElementById('tree2-expand-level').addEventListener('input', (e) => {
+                const level = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+                tree2.expandLevel = level;
+            });
 
             // Tree 3: Large dataset (starts empty)
             const tree3 = document.getElementById('tree3');
@@ -392,6 +410,9 @@ element.setAttribute('display-value-member', 'label');</code></pre>
                 if (on) accTree.setAttribute('accordion-expand', 'true');
                 else accTree.removeAttribute('accordion-expand');
             };
+
+            // Persist .controls across reloads (shared helper — parity with web-multiselect).
+            persistControls('basic');
         });
     </script>
 

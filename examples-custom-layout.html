@@ -584,6 +584,7 @@ node.data; node.path; node.hasChildren;</code></pre>
 <!-- ==================================================================== -->
 <script type="module">
     import '/src/index.ts';
+    import { persistControls } from './examples-controls-store.js';
 
     // ── Sample data ──────────────────────────────────────────────────
     const fileTree = [
@@ -746,6 +747,9 @@ node.data; node.path; node.hasChildren;</code></pre>
         ['is-chevron', 'is-triangle', 'is-plusminus', 'is-arrow'].forEach(id => initTree(id));
         ['fa-a', 'fa-b', 'fa-c', 'fa-d'].forEach(id => initTree(id, el => { el.customStylesCallback = faStylesCallback; }));
     });
+
+    // Persist .controls across reloads (shared helper — parity with web-multiselect).
+    persistControls('custom-layout');
 </script>
 
 <!-- ==================================================================== -->

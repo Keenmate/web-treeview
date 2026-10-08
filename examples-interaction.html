@@ -102,6 +102,21 @@
                         <option value="demo-focused-ring">Ring (full outline)</option>
                     </select>
                 </label>
+                <label>
+                    <input type="checkbox" id="in1-show-checkboxes">
+                    Show checkboxes
+                </label>
+                <label>
+                    Checkbox mode:
+                    <select id="in1-checkbox-mode">
+                        <option value="independent" selected>independent (each node standalone)</option>
+                        <option value="cascade">cascade (parent toggles children)</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" id="in1-click-toggles">
+                    Click row toggles checkbox
+                </label>
                 <button class="secondary" id="in1-clear">Clear all</button>
             </div>
 
@@ -123,17 +138,25 @@
                         <pre id="in1-focused">(none)</pre>
                         <p class="output-label mt-1">highlightedPaths (Ctrl/Shift+click)</p>
                         <pre id="in1-highlight">(none)</pre>
+                        <p class="output-label mt-1">selectedPaths (checkboxes) &mdash; <span id="in1-selected-count">0</span></p>
+                        <pre id="in1-selected">(none)</pre>
                     </div>
                 </div>
             </div>
 
             <div class="note">
                 <div class="note-title">How the styles stack</div>
-                <p style="margin-bottom:0">
+                <p>
                     <strong>Highlighted</strong> applies to every row in the highlight set.
                     <strong>Focused</strong> is additive &mdash; it stacks on top, only on the single focused row.
                     After a plain click the same row is both. After a Shift+click range, the intermediate rows are
                     highlighted only while the last-clicked row is highlighted <em>and</em> focused.
+                </p>
+                <p style="margin-bottom:0">
+                    <strong>Checkboxes</strong> are a separate channel &mdash; <code>selectedPaths</code>, independent of
+                    highlight/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
+                    partial branches); <code>independent</code> toggles one node. With <code>click-toggles-checkbox</code> on,
+                    a plain row click flips that node's checkbox instead of just focusing the row.
                 </p>
             </div>
         </div>
@@ -236,6 +259,8 @@
                 <em>behaves</em>; <code>cascade-select-policy</code> controls which paths the selection
                 <em>emits</em> (what <code>getSelectedPaths()</code> / the <code>selection-change</code> event report).
                 Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
+                (The <code>click-toggles-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
+                the IN01 picker above.)
             </p>
 
             <div class="controls">
@@ -418,6 +443,7 @@ function restoreFromUrl(nodePath) {
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample data ──────────────────────────────────────────────────
         const fileTree = [
@@ -506,6 +532,12 @@ function restoreFromUrl(nodePath) {
                 document.getElementById('in1-highlight').textContent =
                     paths.length ? paths.join(', ') : '(none)';
             });
+            in1.addEventListener('selection-change', () => {
+                const paths = [...in1.getSelectedPaths()].sort();
+                document.getElementById('in1-selected-count').textContent = paths.length;
+                document.getElementById('in1-selected').textContent =
+                    paths.length ? paths.join(', ') : '(none)';
+            });
 
             document.getElementById('in1-click-behavior').addEventListener('change', (e) => {
                 in1.setAttribute('click-behavior', e.target.value);
@@ -520,9 +552,21 @@ function restoreFromUrl(nodePath) {
                 if (e.target.value) in1.setAttribute('focused-node-class', e.target.value);
                 else in1.removeAttribute('focused-node-class');
             });
+            document.getElementById('in1-show-checkboxes').addEventListener('change', (e) => {
+                if (e.target.checked) in1.setAttribute('show-checkboxes', 'true');
+                else in1.removeAttribute('show-checkboxes');
+            });
+            document.getElementById('in1-checkbox-mode').addEventListener('change', (e) => {
+                in1.setAttribute('checkbox-mode', e.target.value);
+            });
+            document.getElementById('in1-click-toggles').addEventListener('change', (e) => {
+                if (e.target.checked) in1.setAttribute('click-toggles-checkbox', 'true');
+                else in1.removeAttribute('click-toggles-checkbox');
+            });
             document.getElementById('in1-clear').addEventListener('click', () => {
                 in1.clearHighlight();
                 in1.clearFocus();
+                in1.clearSelection();
             });
 
             // ── IN02 · Multi-Select ───────────────────────────────────────
@@ -735,6 +779,12 @@ function restoreFromUrl(nodePath) {
                 updateBulkOutput();
                 document.getElementById('in6-bulk-result').style.display = 'none';
             });
+
+            // Persist every .controls input/select on this page across reloads, then
+            // re-apply the saved config by replaying each control's change handler.
+            // Call last — after all pickers + listeners are wired. (Shared helper,
+            // standard across example pages — parity with web-multiselect.)
+            persistControls('interaction');
         });
     </script>
 

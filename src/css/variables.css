@@ -356,7 +356,16 @@
   --wtv-tree-min-height: calc(6 * var(--wtv-rem));                   /* 60px — min height for empty/loading states */
   --wtv-empty-zone-border: 2px dashed var(--wtv-accent-color);
   --wtv-empty-zone-bg: color-mix(in srgb, var(--wtv-accent-color) 10%, transparent);
-  --wtv-empty-zone-radius: var(--wtv-border-radius-lg);
+  --wtv-empty-zone-radius: var(--wtv-border-radius-lg);               /* 8px — matches svelte-treeview's 0.8rem */
+  /* Engaged state (:hover + --active), token-for-token with svelte-treeview's
+     --stv-drop-placeholder-hover-* family so one theme drives both packages.
+     hover-scale defaults to 1 on purpose — a scale() on a container-width zone
+     spills past both edges and surfaces as a horizontal scrollbar; opt in only if
+     you control the surrounding overflow. */
+  --wtv-empty-zone-hover-bg: color-mix(in srgb, var(--wtv-accent-color) 28%, transparent);
+  --wtv-empty-zone-hover-border-color: var(--wtv-accent-color);
+  --wtv-empty-zone-hover-shadow: 0 0 0 4px color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
+  --wtv-empty-zone-hover-scale: 1;
 
   /* ==========================================================================
      Z-INDEX LAYERS

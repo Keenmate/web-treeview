@@ -709,7 +709,27 @@
     },
     {
       "name": "--wtv-empty-zone-radius",
-      "description": "Empty tree drop zone border radius",
+      "description": "Empty tree drop zone border radius (8px)",
+      "values": []
+    },
+    {
+      "name": "--wtv-empty-zone-hover-bg",
+      "description": "Empty drop zone background when engaged (hover / drag-over)",
+      "values": []
+    },
+    {
+      "name": "--wtv-empty-zone-hover-border-color",
+      "description": "Empty drop zone border color when engaged",
+      "values": []
+    },
+    {
+      "name": "--wtv-empty-zone-hover-shadow",
+      "description": "Empty drop zone glow when engaged (box-shadow)",
+      "values": []
+    },
+    {
+      "name": "--wtv-empty-zone-hover-scale",
+      "description": "Empty drop zone scale when engaged (default 1; >1 can cause horizontal overflow)",
       "values": []
     },
     {

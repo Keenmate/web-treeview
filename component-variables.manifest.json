@@ -189,7 +189,11 @@
     { "name": "wtv-tree-min-height", "category": "empty", "usage": "Min height for empty and loading states (60px)" },
     { "name": "wtv-empty-zone-border", "category": "empty", "usage": "Empty tree drop zone border" },
     { "name": "wtv-empty-zone-bg", "category": "empty", "usage": "Empty tree drop zone background" },
-    { "name": "wtv-empty-zone-radius", "category": "empty", "usage": "Empty tree drop zone border radius" },
+    { "name": "wtv-empty-zone-radius", "category": "empty", "usage": "Empty tree drop zone border radius (8px)" },
+    { "name": "wtv-empty-zone-hover-bg", "category": "empty", "usage": "Empty drop zone background when engaged (hover / drag-over)" },
+    { "name": "wtv-empty-zone-hover-border-color", "category": "empty", "usage": "Empty drop zone border color when engaged" },
+    { "name": "wtv-empty-zone-hover-shadow", "category": "empty", "usage": "Empty drop zone glow when engaged (box-shadow)" },
+    { "name": "wtv-empty-zone-hover-scale", "category": "empty", "usage": "Empty drop zone scale when engaged (default 1; >1 can cause horizontal overflow)" },
 
     { "name": "wtv-z-index-dropdown", "category": "z-index", "usage": "Context menu z-index (1000)" },
     { "name": "wtv-z-index-ghost", "category": "z-index", "usage": "Drag ghost z-index (10000)" },

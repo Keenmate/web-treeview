@@ -287,6 +287,7 @@ tree.displayValueMember = 'label';</code></pre>
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample data ──────────────────────────────────────────────────
 
@@ -534,6 +535,9 @@ tree.displayValueMember = 'label';</code></pre>
             ds07.idMember = 'categoryId';
             ds07.pathMember = 'categoryPath';
             ds07.displayValueMember = 'label';
+
+            // Persist .controls across reloads (shared helper — parity with web-multiselect).
+            persistControls('data');
         });
     </script>
 

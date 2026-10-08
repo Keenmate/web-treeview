@@ -291,6 +291,7 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
 
 <script type="module">
     import '/src/index.ts';
+    import { persistControls } from './examples-controls-store.js';
 
     // ── ISCO-ish sample data: 4 levels, dot-separated paths. Long titles on purpose
     //    so overflow/narrow behaviours are visible. value = ISCO code, label = title.
@@ -440,6 +441,9 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
         document.getElementById('rs03-ellipsis').classList.add('active');
         paintRs01(rs01Box.getBoundingClientRect().width);
         applyRs02(rs02Box.getBoundingClientRect().width);
+
+        // Persist .controls across reloads (shared helper — parity with web-multiselect).
+        persistControls('responsive');
     });
 </script>
 <script type="module" src="examples-copy-link.js"></script>

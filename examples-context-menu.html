@@ -461,6 +461,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample Data ─────────────────────────────────────────────────
 
@@ -717,6 +718,9 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             document.getElementById('cm7-debug').addEventListener('change', (e) => {
                 cm7.shouldDisplayContextMenuInDebugMode = e.target.checked;
             });
+
+            // Persist .controls across reloads (shared helper — parity with web-multiselect).
+            persistControls('context-menu');
         });
     </script>
 

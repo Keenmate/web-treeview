@@ -258,6 +258,7 @@ tree.getSearchValueCallback = (node) =>
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample data ──────────────────────────────────────────────────
 
@@ -494,6 +495,9 @@ tree.getSearchValueCallback = (node) =>
                 sf03input.value = '';
                 sf03out.textContent = 'Type to search';
             };
+
+            // Persist .controls across reloads (shared helper — parity with web-multiselect).
+            persistControls('search');
         });
     </script>
 

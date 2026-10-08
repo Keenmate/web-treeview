@@ -88,6 +88,7 @@
 
     <script type="module">
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
 
         // ── Sample data (icon + desc enrich the tooltips) ────────────────
         const data = [
@@ -162,6 +163,9 @@
             if (t) tree.setAttribute('theme', t); else tree.removeAttribute('theme');
             activate(btn);
         };
+
+        // Persist .controls across reloads (shared helper — parity with web-multiselect).
+        persistControls('tooltips');
     </script>
     <script type="module" src="examples-copy-link.js"></script>
     <script type="module" src="examples-chapter-nav.js"></script>

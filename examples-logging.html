@@ -242,6 +242,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
     <script type="module">
         // Importing the module runs registerComponent() → window.components is populated.
         import '/src/index.ts';
+        import { persistControls } from './examples-controls-store.js';
         // Perf logging is a separate free-function API (not part of .logging).
         import { enablePerfLogging, disablePerfLogging, setPerfThreshold } from '/src/index.ts';
 
@@ -438,7 +439,10 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
 
         // Keep the instance list honest even if instances change outside our buttons.
         setInterval(() => refreshRegistry(), 2000);
-    </script>
+
+        // Persist .controls across reloads (shared helper — parity with web-multiselect).
+        persistControls('logging');
+</script>
 
     <script type="module" src="examples-copy-link.js"></script>
     <script type="module" src="examples-chapter-nav.js"></script>

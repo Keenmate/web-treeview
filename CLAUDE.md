@@ -117,8 +117,20 @@ All mounted `<web-treeview>` elements are tracked in a `Set` and exposed via `ge
 
 ## Dependencies
 
-- **Runtime**: `@floating-ui/dom` (context menu positioning)
+- **Runtime**: `@floating-ui/dom` (context menu positioning); `@keenmate/web-components-core` (`/positioning` → `createTooltip` for node tooltips; shared with web-multiselect)
 - **Dev**: Vite, TypeScript, vite-plugin-dts, rimraf
+
+## Node tooltips (hover/focus)
+
+`show-node-tooltips` + `getNodeTooltipCallback(node) => string | HTMLElement | null` (text or rich element — the analog of svelte-treeview's `tooltip` snippet). Each row's tooltip is created via the shared **`createTooltip`** core primitive (same one web-multiselect uses), portaled into the shadow container, Floating-UI positioned. The renderer (`dom-renderer.ts`) keeps a per-row `tooltips: Map<key, TooltipHandle>` — created in `_createNodeElement`, refreshed in `_updateNodeElement` (so content tracks `_rev`), destroyed on row removal / `_renderEmpty` / `_fullRender` / `destroy`. Options: `tooltip-placement` (`top-start`), `tooltip-delay` (`{show:400,hide:100}`), `tooltip-offset` (`8`), `tooltip-follow-cursor`. Surface `.wtv__tooltip` / `--visible` uses the shared `--base-tooltip-*` tokens → identical to svelte-treeview's `.stv__tooltip` + ms's option tooltip under one theme. Size: `--wtv-tooltip-*` (auto/shrink by default capped by `-max-width`; set `-width` for a fixed box + `-max-width:none`, or `-min-width` for a floor). Demo `examples-tooltips.html`; e2e `test/tooltip.html` + `e2e/tooltip.spec.ts`.
+
+## Render context (device + node state)
+
+The render callbacks receive a `NodeRenderContext` as their LAST arg — `renderNodeCallback(node, el, ctx)`, `renderIconCallback(node, value, el, ctx)`. ctx = { deviceClass: 'mobile'|'tablet'|'desktop', container: {width,height}, isExpanded, isSelected, isHighlighted, isFocused, level, hasChildren }. device/container come from `@keenmate/web-components-core/environment` (`classifyDevice` + `observeEnvironment`/`observeElementSize`, set up in the renderer's `mount`, torn down in `destroy`); a device-class FLIP forces `_fullRender`, container size updates silently (virtual-scroll-first). Built by `_buildRenderContext(node, snapshot)`; node-state from node + snapshot. Back-compat (extra arg ignored). Parity with svelte-treeview's NodeRenderContext. Requires core ≥ rc10. e2e `test/render-context.html` + `e2e/render-context.spec.ts`.
+
+## Per-node icons (every node)
+
+`iconMember` / `iconCallback` resolve a per-node icon VALUE; it renders as a dedicated `.wtv__node-icon` element on EVERY node (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot anymore (so branches get icons and the toggle keeps its chevron). Default render is `<i class="wtv__node-icon {value}">` (FontAwesome-friendly); override with `renderIconCallback(node, value, iconEl)` for SVG/unicode/markup. COLOR via `iconColorMember` / `iconColorCallback` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); `renderIconCallback` lives on RendererConfig (like renderNodeCallback) and a post-data assignment triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `customStylesCallback`.
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 

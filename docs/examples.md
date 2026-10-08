@@ -125,7 +125,7 @@ tree.beforeCheckboxToggleCallback = (node, checked, affectedPaths) => {
 };
 ```
 
-See `examples-multiselect.html` for interactive demos.
+See `examples-interaction.html` for interactive demos.
 
 ## Clipboard
 
@@ -343,4 +343,4 @@ const tree = new WebTreeView(element, options, customRenderer);
 tree.setRenderer(customRenderer);
 ```
 
-See `examples-templates.html` for a complete custom renderer pattern.
+See `examples-custom-layout.html` for a complete custom renderer pattern.

@@ -296,6 +296,105 @@
         .color-row code {
             font-size: 0.75rem;
         }
+
+        /* ──────────────────────────────────────────────────────────────────
+           TC01 · Shared --base-* contract (theme comparison)
+           Each .tc-theme-* class is a full --base-* token set extracted
+           verbatim from a @keenmate/pure-admin-theme-* package. They are set
+           on a WRAPPER around the <web-treeview> and inherit through the
+           Shadow DOM — nothing is styled per-component, only the shared token
+           layer changes. (Token names verified against src/css/variables.css.)
+           ────────────────────────────────────────────────────────────────── */
+        .tc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .tc-panel {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--base-border-color, #e2e8f0);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--base-main-bg, #ffffff);
+        }
+
+        .tc-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--base-text-color-1, #111827);
+            border-bottom: 1px solid var(--base-border-color, #e2e8f0);
+            background: var(--base-elevated-bg, #f8f9fa);
+        }
+
+        .tc-panel-badge {
+            font-weight: 500;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            color: var(--base-text-color-on-accent, #fff);
+            background: var(--base-accent-color, #3b82f6);
+        }
+
+        .tc-panel-body {
+            padding: 0.75rem;
+            flex: 1;
+        }
+
+        /* ── Dracula (dark · purple) — from @keenmate/pure-admin-theme-dracula ── */
+        .tc-theme-dracula {
+            color-scheme: dark;
+            --base-accent-color: #bd93f9;
+            --base-accent-color-hover: #d4b9fb;
+            --base-accent-color-light: rgba(189, 147, 249, 0.15);
+            --base-text-color-1: #f8f8f2;
+            --base-text-color-3: #6272a4;
+            --base-text-color-on-accent: #1a1a2e;
+            --base-main-bg: #2d2f3d;
+            --base-elevated-bg: #343746;
+            --base-hover-bg: #343746;
+            --base-active-bg: #44475a;
+            --base-border-color: #44475a;
+            --base-checkbox-border-color: #44475a;
+            --base-input-bg: #282a36;
+            --base-dropdown-bg: #2d2f3d;
+            --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            --base-tooltip-bg: #343746;
+            --base-tooltip-text-color: #f8f8f2;
+            --base-danger-color: #ff5555;
+            --base-success-color: #50fa7b;
+        }
+
+        /* ── Corporate (dark slate · blue) — from @keenmate/pure-admin-theme-corporate ── */
+        .tc-theme-corporate {
+            color-scheme: dark;
+            --base-accent-color: #0ea5e9;
+            --base-accent-color-hover: #0284c7;
+            --base-accent-color-light: rgba(14, 165, 233, 0.12);
+            --base-text-color-1: #f1f5f9;
+            --base-text-color-3: #94a3b8;
+            --base-text-color-on-accent: #ffffff;
+            --base-main-bg: #1e293b;
+            --base-elevated-bg: #334155;
+            --base-hover-bg: #334155;
+            --base-active-bg: #475569;
+            --base-border-color: #475569;
+            --base-checkbox-border-color: #64748b;
+            --base-input-bg: #334155;
+            --base-dropdown-bg: #1e293b;
+            --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            --base-tooltip-bg: #475569;
+            --base-tooltip-text-color: #f1f5f9;
+            --base-danger-color: #ef4444;
+            --base-success-color: #10b981;
+        }
     </style>
 </head>
 <body>
@@ -575,6 +674,52 @@
 --wtv-transition-speed /* = 150ms */</code></pre>
             </div>
         </div>
+
+        <!-- TC01 · Shared --base-* contract (theme comparison with svelte-treeview) -->
+        <div class="card">
+            <h2>TC01 &middot; Shared <code>--base-*</code> contract</h2>
+            <p>Three <code>&lt;web-treeview&gt;</code> instances, <strong>identical markup and data</strong>, reskinned purely by swapping the shared <code>--base-*</code> design tokens &mdash; the same contract every KeenMate component reads (<code>web-multiselect</code>, <code>web-daterangepicker</code>, <code>svelte-treeview</code>&hellip;). Nothing below is styled per-component: only the token layer on the wrapper changes, so accent, surfaces, text hierarchy, borders, hover and the checkbox/chevron glyphs all track together. Each theme is a <code>--base-*</code> set extracted verbatim from a <code>@keenmate/pure-admin-theme-*</code> package.</p>
+
+            <div class="tc-grid">
+                <div class="tc-panel">
+                    <header class="tc-panel-head">Component defaults <span class="tc-panel-badge">light</span></header>
+                    <div class="tc-panel-body">
+                        <web-treeview id="tc-default" expand-level="2"></web-treeview>
+                    </div>
+                </div>
+                <div class="tc-panel tc-theme-dracula">
+                    <header class="tc-panel-head">Dracula <span class="tc-panel-badge">dark &middot; purple</span></header>
+                    <div class="tc-panel-body">
+                        <web-treeview id="tc-dracula" expand-level="2"></web-treeview>
+                    </div>
+                </div>
+                <div class="tc-panel tc-theme-corporate">
+                    <header class="tc-panel-head">Corporate <span class="tc-panel-badge">dark &middot; blue</span></header>
+                    <div class="tc-panel-body">
+                        <web-treeview id="tc-corporate" expand-level="2"></web-treeview>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <label>
+                    Playground theme:
+                    <select id="tc-theme-select" onchange="applyTcPlaygroundTheme()">
+                        <option value="">Component defaults (light)</option>
+                        <option value="tc-theme-dracula">Dracula (dark &middot; purple)</option>
+                        <option value="tc-theme-corporate" selected>Corporate (dark &middot; blue)</option>
+                    </select>
+                </label>
+                <span class="muted">Swaps the <code>--base-*</code> token set on one playground tree &mdash; same markup, instant reskin.</span>
+            </div>
+
+            <div class="tc-panel tc-theme-corporate" id="tc-playground-wrap">
+                <header class="tc-panel-head">Playground <span class="tc-panel-badge">live</span></header>
+                <div class="tc-panel-body">
+                    <web-treeview id="tc-playground" expand-level="2"></web-treeview>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -717,6 +862,21 @@
                     iconTree.style.setProperty('--base-icon-chevron', e.target.checked ? brandChevron : '');
                 });
             }
+
+            // TC01 · Shared --base-* contract — same data, three token sets.
+            // The theme classes live on the WRAPPER (.tc-theme-*) in <style>; the
+            // tree inherits the --base-* tokens through the Shadow DOM.
+            initTree('tc-default');
+            initTree('tc-dracula');
+            initTree('tc-corporate');
+            initTree('tc-playground');
+
+            window.applyTcPlaygroundTheme = function () {
+                const theme = document.getElementById('tc-theme-select').value;
+                const wrap = document.getElementById('tc-playground-wrap');
+                // Keep the base panel class, swap only the theme-token class.
+                wrap.className = 'tc-panel' + (theme ? ' ' + theme : '');
+            };
         });
     </script>
 

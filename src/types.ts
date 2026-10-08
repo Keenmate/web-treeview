@@ -42,7 +42,8 @@ export type {
   BeforePasteContext,
   BeforeDropContext,
   DragStartContext,
-  DropGroup
+  DropGroup,
+  NodeRenderContext
 } from './controller/types';
 
 // Re-export clipboard types
@@ -77,7 +78,8 @@ import type {
   BeforePasteContext,
   BeforeDropContext,
   DragStartContext,
-  DropGroup
+  DropGroup,
+  NodeRenderContext
 } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { RenderStats } from './renderer/render-coordinator';
@@ -158,6 +160,27 @@ export interface TreeViewConfig<T = any> {
    *  visual (opacity + left-anchored scale). Tune the default via `--wtv-dragged-opacity` /
    *  `--wtv-dragged-scale` instead of replacing it. Mirrors `highlightedNodeClass`. */
   draggedNodeClass?: string | null;
+  /** Enable hover/focus tooltips on node rows (the direct analog of web-multiselect's
+   *  option tooltips). Content from `getNodeTooltipCallback`; no content ⇒ no tooltip.
+   *  Portaled + Floating-UI positioned (shared core createTooltip), themed via
+   *  `--base-tooltip-*`. Parity with svelte-treeview's `shouldShowNodeTooltips`. */
+  shouldShowNodeTooltips?: boolean;
+  /** Tooltip content for a node — plain text OR a built `HTMLElement` for rich content
+   *  (the wtv analog of svelte-treeview's `tooltip` snippet). Return null/empty to skip. */
+  getNodeTooltipCallback?: (node: LTreeNode<T>) => string | HTMLElement | null | undefined;
+  /** Tooltip placement relative to the row. Default `'top-start'`. */
+  tooltipPlacement?:
+    | 'top' | 'top-start' | 'top-end'
+    | 'right' | 'right-start' | 'right-end'
+    | 'bottom' | 'bottom-start' | 'bottom-end'
+    | 'left' | 'left-start' | 'left-end'
+    | null;
+  /** Show/hide delay(s), ms. Default `{ show: 400, hide: 100 }`. */
+  tooltipDelay?: number | { show?: number; hide?: number } | null;
+  /** Gap from the row (or cursor), px. Default `8`. */
+  tooltipOffset?: number | null;
+  /** Anchor the tooltip to the pointer instead of the row. Default `false`. */
+  tooltipFollowCursor?: boolean | null;
   /** Disclosure glyph set: 'chevron' (default) | 'triangle' | 'plus-minus' | 'arrow'.
    *  Re-points the --wtv-icon-* variables; see IconSet in controller/types. */
   iconSet?: 'chevron' | 'triangle' | 'plus-minus' | 'arrow' | null;
@@ -170,9 +193,20 @@ export interface TreeViewConfig<T = any> {
   scrollHighlightTimeout?: number | null;
   scrollHighlightClass?: string | null;
 
-  // Per-node icons
+  // Per-node icons — rendered as a dedicated .wtv__node-icon element on EVERY node
+  // (branch + leaf). VALUE from iconMember/iconCallback (default <i class={value}>,
+  // FontAwesome-friendly); override the render with renderIconCallback. COLOR from
+  // iconColorMember/iconColorCallback. shouldAlignNodeIcons reserves the icon column.
   iconMember?: string | null;
   iconCallback?: (node: LTreeNode<T>) => string | null;
+  /** Per-node icon COLOR from a data key (applied to the icon element). */
+  iconColorMember?: string | null;
+  /** Per-node icon COLOR from a callback (overrides iconColorMember). */
+  iconColorCallback?: (node: LTreeNode<T>) => string | null;
+  /** Custom per-node icon renderer. Receives (node, resolvedValue, iconEl, ctx) to populate —
+   *  for inline SVG, unicode, or custom markup. ctx is the NodeRenderContext (device + container
+   *  + live node state). Wins over the default class-based `<i>`. */
+  renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
   shouldAlignNodeIcons?: boolean | null;
 
   // Data-driven per-row class hooks
@@ -348,7 +382,7 @@ export interface TreeViewConfig<T = any> {
   renderCompleteCallback?: (stats: RenderStats) => void;
 
   // Render callbacks (for DomRenderer)
-  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement) => void;
+  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement, ctx: NodeRenderContext) => void;
   renderEmptyStateCallback?: (container: HTMLElement) => void;
   /** Fallback text for an empty tree when no renderEmptyStateCallback is given. Default "No data". */
   noDataText?: string | null;

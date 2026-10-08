@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeView - Context Menu</title>
+    <link rel="stylesheet" href="examples-shared.css">
+    <style>
+        /* Context-menu CSS-variable control grid (two-line labels) */
+        .ctx-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        .ctx-config label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+        }
+        .ctx-config label.inline {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+        }
+        .ctx-config .val {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .ctx-config select { padding: 4px; }
+
+        /* Offset number inputs (CM01 + CM06) */
+        .offset-inputs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        .offset-inputs label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+        .offset-inputs input[type="number"] { width: 72px; padding: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">&larr; Back to Examples</a>
+            <h1>Context Menu</h1>
+            <p class="subtitle">Right-click menus: callback + custom-render approaches, submenus, offsets, theming</p>
+        </header>
+
+        <div class="note">
+            <p class="note-title">Positioning is handled by Floating UI</p>
+            <p>The menu and its submenus are placed by <a href="https://floating-ui.com/" target="_blank" rel="noopener"><code>@floating-ui/dom</code></a> (a runtime dependency). It uses <code>computePosition</code> with <code>offset</code>, <code>flip</code>, and <code>shift</code> middleware so the menu stays inside the viewport — submenus flip to the left edge when there's no room on the right, and <code>autoUpdate</code> keeps everything anchored on scroll/resize. The <code>contextMenuXOffset</code>/<code>contextMenuYOffset</code> props feed into the root menu's offset from the cursor.</p>
+        </div>
+
+        <!-- CM01 · Callback Approach -->
+        <div class="card">
+            <h2>CM01 · Callback Approach</h2>
+            <p>Right-click any node. The web-treeview analog of svelte-treeview's <code>getContextMenuItemsCallback</code> is <code>contextMenuCallback(node, close) =&gt; ContextMenuEntry[]</code>. This demo shows shortcuts, a nested submenu, a named divider, <code>className="danger"</code>, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item.</p>
+
+            <div class="controls">
+                <label class="inline">
+                    <input type="checkbox" id="cm1-debug">
+                    Debug Mode (menu appears at a fixed position)
+                </label>
+                <div class="offset-inputs">
+                    <label>X Offset <input type="number" id="cm1-x" value="8"> <span class="muted">px</span></label>
+                    <label>Y Offset <input type="number" id="cm1-y" value="0"> <span class="muted">px</span></label>
+                </div>
+                <button class="secondary" id="cm1-clear">Clear Log</button>
+            </div>
+
+            <div class="tree-container" id="cm1-container">
+                <web-treeview id="cm1-tree" icon-set="triangle"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Activity Log:</p>
+                <pre id="cm1-log">Right-click a node to see the context menu</pre>
+            </div>
+
+            <div class="code-block mt-1">
+<pre><code>tree.contextMenuCallback = (node, close) =&gt; {
+    const isFolder = node.data?.type === 'folder';
+    const isReadonly = node.data?.readonly;
+    const entries = [];
+
+    if (isFolder) {
+        entries.push({ icon: '📄', label: 'New File',  shortcut: 'N',       onclick: () =&gt; { log(`New file in "${node.data.name}"`); close(); } });
+        entries.push({ icon: '📁', label: 'New Folder', shortcut: 'Shift+N', onclick: () =&gt; { log(`New folder in "${node.data.name}"`); close(); } });
+        entries.push({ divider: true });
+    }
+
+    entries.push({ icon: '📋', label: 'Copy',  shortcut: 'C', onclick: () =&gt; { log(`Copied "${node.data.name}"`); close(); } });
+    entries.push({ icon: '✂️', label: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onclick: () =&gt; { log(`Cut "${node.data.name}"`); close(); } });
+    entries.push({ icon: '📥', label: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onclick: () =&gt; { log(`Paste into "${node.data.name}"`); close(); } });
+
+    entries.push({ icon: '📤', label: 'Export As...', children: [
+        { label: 'JSON', shortcut: 'J', onclick: () =&gt; { log('…as JSON'); close(); } },
+        { label: 'XML',  shortcut: 'X', onclick: () =&gt; { log('…as XML');  close(); } },
+        { label: 'CSV',  shortcut: 'C', onclick: () =&gt; { log('…as CSV');  close(); } },
+    ]});
+
+    entries.push({ divider: true, label: 'Danger zone' });
+    entries.push({ icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () =&gt; { log('rename'); close(); } });
+    entries.push({ icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () =&gt; { log('delete'); close(); } });
+    entries.push({ icon: '🔒', label: 'Read-only file', isDisabled: true, isVisible: !!isReadonly });
+    return entries;
+};</code></pre>
+            </div>
+        </div>
+
+        <!-- CM02 · Custom Item Render -->
+        <div class="card">
+            <h2>CM02 · Custom Item Render</h2>
+            <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback(item, node, container)</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>container</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer <code>&lt;button&gt;</code> (classes, <code>data-*</code> attrs, disabled state, submenu hover) stays component-managed. Debug mode is on so the controls below preview live.</p>
+
+            <div class="controls ctx-config">
+                <label>
+                    <code>--wtv-context-menu-min-width</code>
+                    <input type="range" id="cm2-min-width" min="8" max="30" step="0.5" value="22">
+                    <span id="cm2-min-width-val" class="val">22rem</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-item-gap</code>
+                    <input type="range" id="cm2-gap" min="0" max="16" step="1" value="8">
+                    <span id="cm2-gap-val" class="val">8px</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-item-padding</code>
+                    <select id="cm2-padding">
+                        <option value="2px 8px">Tight</option>
+                        <option value="4px 12px">Compact</option>
+                        <option value="8px 16px" selected>Default</option>
+                        <option value="12px 20px">Spacious</option>
+                    </select>
+                </label>
+                <label class="inline">
+                    <input type="checkbox" id="cm2-debug" checked>
+                    <code>Debug: keep menu open</code>
+                </label>
+            </div>
+
+            <div class="tree-container" id="cm2-container">
+                <web-treeview id="cm2-tree" icon-set="triangle" style="--wtv-context-menu-min-width: 22rem;"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Action:</p>
+                <pre id="cm2-log">Right-click a person to see a rich context menu</pre>
+            </div>
+
+            <div class="code-block mt-1">
+<pre><code>// Customize specific items; leave the rest to default rendering.
+//   container populated  → custom rendering
+//   container left empty → default icon + label + shortcut
+tree.renderContextMenuItemCallback = (item, node, container) =&gt; {
+    const d = node.data;
+    if (item.id === 'profile') {
+        const initials = d.name.split(' ').map(w =&gt; w[0]).join('');
+        container.innerHTML = `
+            &lt;span class="avatar"&gt;${initials}&lt;/span&gt;
+            &lt;span class="info"&gt;&lt;span&gt;${d.name}&lt;/span&gt;&lt;span class="role"&gt;${d.role}&lt;/span&gt;&lt;/span&gt;`;
+        return;
+    }
+    if (item.id === 'invoices') {
+        container.innerHTML = `
+            &lt;span class="wtv__context-menu-icon"&gt;🧾&lt;/span&gt;
+            &lt;span class="wtv__context-menu-label"&gt;Invoices&lt;/span&gt;
+            &lt;span class="count-chip"&gt;${d.invoiceCount}&lt;/span&gt;`;
+        return;
+    }
+    // no innerHTML set → default rendering for this item
+};</code></pre>
+            </div>
+        </div>
+
+        <!-- CM03 · Context Menu Callback API -->
+        <div class="card">
+            <h2>CM03 · Context Menu Callback API</h2>
+            <p>Provide <code>contextMenuCallback</code> to build menu entries dynamically per node. It receives the <code>LTreeNode</code> and a <code>close()</code> function and returns a <code>ContextMenuEntry[]</code>.</p>
+
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Property</th><th>HTML Attr</th><th>Type</th><th>Default</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>contextMenuCallback</code></td>
+                        <td>&mdash;</td>
+                        <td><code>(node, close) =&gt; ContextMenuEntry[]</code></td>
+                        <td><code>undefined</code></td>
+                        <td>Builds the menu entries for a node. Return <code>[]</code> to show nothing.</td>
+                    </tr>
+                    <tr>
+                        <td><code>shouldDisplayContextMenuInDebugMode</code></td>
+                        <td>&mdash;</td>
+                        <td><code>boolean</code></td>
+                        <td><code>false</code></td>
+                        <td>Show the menu at a fixed position (200px right, 100px down from the tree container) for dev/testing.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-block mt-1">
+<pre><code>import type { ContextMenuEntry } from '@keenmate/web-treeview';
+
+tree.contextMenuCallback = (node, close) =&gt; [
+    { label: 'Copy', icon: '📋', shortcut: 'C',
+      onclick: () =&gt; { copy(node); close(); } },
+    { label: 'Edit', icon: '✏️',
+      onclick: () =&gt; { edit(node); close(); } },
+    { label: 'Export As...', icon: '📤', children: [
+        { label: 'JSON', shortcut: 'J', onclick: () =&gt; { exportAs(node, 'json'); close(); } },
+        { label: 'XML',  shortcut: 'X', onclick: () =&gt; { exportAs(node, 'xml');  close(); } },
+    ]},
+    { divider: true, label: 'Danger zone' },
+    { label: 'Delete', className: 'danger', isDisabled: node.data.readonly,
+      onclick: () =&gt; { del(node); close(); } },
+];</code></pre>
+            </div>
+        </div>
+
+        <!-- CM04 · Per-Item Render API -->
+        <div class="card">
+            <h2>CM04 · Per-Item Render API</h2>
+            <p><code>renderContextMenuItemCallback</code> runs once per item before default rendering. If it adds child nodes to <code>container</code> (the item's <code>&lt;button&gt;</code>), that markup is kept; otherwise the component falls back to the default icon + label + shortcut layout. Dividers are never passed to this callback.</p>
+
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>renderContextMenuItemCallback</code></td>
+                        <td><code>(item: ContextMenuItem, node: LTreeNode, container: HTMLElement) =&gt; void</code></td>
+                        <td>Custom render for one menu item. Fill <code>container</code> to override, leave empty to fall through to default.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <p class="note-title">Reusable inner classes</p>
+                <p>When you build custom markup, reuse <code>.wtv__context-menu-icon</code>, <code>.wtv__context-menu-label</code>, and <code>.wtv__context-menu-shortcut</code> so your items inherit the same alignment and theming as default items.</p>
+            </div>
+        </div>
+
+        <!-- CM05 · ContextMenuEntry / ContextMenuDivider Types -->
+        <div class="card">
+            <h2>CM05 · ContextMenuEntry Types</h2>
+            <p>The unified entry type: an entry is either a <code>ContextMenuItem</code> or a <code>ContextMenuDivider</code>.</p>
+
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>id</code></td><td><code>string</code></td><td>Optional stable id (emitted as <code>data-item-id</code>; handy for <code>renderContextMenuItemCallback</code> branching).</td></tr>
+                    <tr><td><code>label</code></td><td><code>string</code></td><td>Display text (required for items).</td></tr>
+                    <tr><td><code>icon</code></td><td><code>string</code></td><td>Emoji / text / CSS-class icon shown before the label.</td></tr>
+                    <tr><td><code>shortcut</code></td><td><code>string</code></td><td>Keyboard shortcut hint (right-aligned, muted).</td></tr>
+                    <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td>Greys the item out and blocks clicks.</td></tr>
+                    <tr><td><code>isVisible</code></td><td><code>boolean</code></td><td><code>false</code> skips rendering the item entirely.</td></tr>
+                    <tr><td><code>className</code></td><td><code>string</code></td><td>Extra CSS class (e.g. <code>"danger"</code> for red styling).</td></tr>
+                    <tr><td><code>shouldCloseOnClick</code></td><td><code>boolean</code></td><td>rc06 per-item opt-out. Defaults to <code>true</code> (activating an item dismisses the menu). Set <code>false</code> for incremental actions; your handler then dismisses via the <code>close</code> callback.</td></tr>
+                    <tr><td><code>onclick</code></td><td><code>() =&gt; void | Promise&lt;void&gt;</code></td><td>Click handler. Parent items with <code>children</code> may omit it.</td></tr>
+                    <tr><td><code>children</code></td><td><code>ContextMenuEntry[]</code></td><td>Nested submenu entries (open on hover).</td></tr>
+                </tbody>
+            </table>
+
+            <h3>ContextMenuDivider</h3>
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>divider</code></td><td><code>true</code></td><td>Type discriminator for divider entries.</td></tr>
+                    <tr><td><code>label</code></td><td><code>string</code></td><td>Optional named divider: <code>──── [label] ────</code>.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="code-block mt-1">
+<pre><code>interface ContextMenuDivider {
+  divider: true;
+  label?: string;            // named: ──── [label] ────
+}
+
+interface ContextMenuItem {
+  id?: string;
+  label: string;
+  icon?: string;
+  shortcut?: string;
+  isDisabled?: boolean;
+  isVisible?: boolean;       // false = skip rendering
+  className?: string;        // e.g. "danger"
+  shouldCloseOnClick?: boolean; // rc06 — default true
+  onclick?: () =&gt; void | Promise&lt;void&gt;;
+  children?: ContextMenuEntry[];
+}
+
+type ContextMenuEntry = ContextMenuItem | ContextMenuDivider;</code></pre>
+            </div>
+        </div>
+
+        <!-- CM06 · Menu Position Offset -->
+        <div class="card">
+            <h2>CM06 · Menu Position Offset</h2>
+            <p>Nudge the menu relative to the cursor with <code>contextMenuXOffset</code> (default <code>8</code>) and <code>contextMenuYOffset</code> (default <code>0</code>). Drag the sliders, then right-click a node to see where the menu lands.</p>
+
+            <div class="controls ctx-config">
+                <label>
+                    <code>contextMenuXOffset</code>
+                    <input type="range" id="cm6-x" min="-60" max="60" step="1" value="8">
+                    <span id="cm6-x-val" class="val">8px</span>
+                </label>
+                <label>
+                    <code>contextMenuYOffset</code>
+                    <input type="range" id="cm6-y" min="-60" max="60" step="1" value="0">
+                    <span id="cm6-y-val" class="val">0px</span>
+                </label>
+                <label class="inline">
+                    <input type="checkbox" id="cm6-debug">
+                    <code>shouldDisplayContextMenuInDebugMode</code>
+                </label>
+            </div>
+
+            <div class="tree-container" id="cm6-container">
+                <web-treeview id="cm6-tree" icon-set="triangle"></web-treeview>
+            </div>
+
+            <div class="code-block mt-1">
+<pre><code>tree.contextMenuCallback = getContextMenu;
+tree.contextMenuXOffset = 8;   // px right of the cursor (default)
+tree.contextMenuYOffset = 0;   // px below the cursor (default)
+
+// or declaratively:
+// &lt;web-treeview context-menu-x-offset="8" context-menu-y-offset="0"&gt;</code></pre>
+            </div>
+        </div>
+
+        <!-- CM07 · CSS Customization -->
+        <div class="card">
+            <h2>CM07 · CSS Customization</h2>
+            <p>The context menu is styled through <code>--wtv-context-menu-*</code> custom properties (set on the host element or inline). Drag the controls — they re-style the <strong>menu</strong>, not the tree rows. Debug mode is on so changes preview live.</p>
+
+            <div class="controls ctx-config">
+                <label>
+                    <code>--wtv-context-menu-min-width</code>
+                    <input type="range" id="cm7-min-width" min="8" max="30" step="0.5" value="15">
+                    <span id="cm7-min-width-val" class="val">15rem</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-font-size</code>
+                    <input type="range" id="cm7-font-size" min="10" max="24" step="1" value="14">
+                    <span id="cm7-font-size-val" class="val">14px</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-icon-width</code>
+                    <input type="range" id="cm7-icon-size" min="12" max="32" step="1" value="16">
+                    <span id="cm7-icon-size-val" class="val">16px</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-border-radius</code>
+                    <input type="range" id="cm7-radius" min="0" max="16" step="1" value="4">
+                    <span id="cm7-radius-val" class="val">4px</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-item-gap</code>
+                    <input type="range" id="cm7-gap" min="0" max="16" step="1" value="8">
+                    <span id="cm7-gap-val" class="val">8px</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-disabled-opacity</code>
+                    <input type="range" id="cm7-disabled-opacity" min="0" max="1" step="0.05" value="0.5">
+                    <span id="cm7-disabled-opacity-val" class="val">0.5</span>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-shadow</code>
+                    <select id="cm7-shadow">
+                        <option value="0 2px 10px rgba(0,0,0,0.1)">Light</option>
+                        <option value="0 4px 20px rgba(0,0,0,0.2)">Medium</option>
+                        <option value="0 8px 30px rgba(0,0,0,0.3)">Heavy</option>
+                        <option value="none">None</option>
+                    </select>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-item-padding</code>
+                    <select id="cm7-padding">
+                        <option value="2px 8px">Tight</option>
+                        <option value="4px 12px">Compact</option>
+                        <option value="8px 16px" selected>Default</option>
+                        <option value="12px 20px">Spacious</option>
+                        <option value="16px 24px">Large</option>
+                    </select>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-padding</code>
+                    <select id="cm7-menu-padding">
+                        <option value="0">None</option>
+                        <option value="4px 0" selected>Default</option>
+                        <option value="8px 0">Large</option>
+                    </select>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-border</code>
+                    <select id="cm7-border">
+                        <option value="1px solid #e2e8f0" selected>Default</option>
+                        <option value="2px solid #94a3b8">Thick</option>
+                        <option value="1px solid #3b82f6">Accent</option>
+                        <option value="none">None</option>
+                    </select>
+                </label>
+                <label>
+                    <code>--wtv-context-menu-bg</code>
+                    <input type="color" id="cm7-bg" value="#ffffff">
+                </label>
+                <label>
+                    <code>--wtv-context-menu-bg-hover</code>
+                    <input type="color" id="cm7-bg-hover" value="#f1f5f9">
+                </label>
+                <label>
+                    <code>--wtv-context-menu-text-color</code>
+                    <input type="color" id="cm7-text" value="#1e293b">
+                </label>
+                <label>
+                    <code>--wtv-context-menu-danger-color</code>
+                    <input type="color" id="cm7-danger" value="#dc3545">
+                </label>
+                <label>
+                    <code>--wtv-context-menu-divider-color</code>
+                    <input type="color" id="cm7-divider" value="#e2e8f0">
+                </label>
+                <label class="inline">
+                    <input type="checkbox" id="cm7-debug" checked>
+                    <code>Debug: keep menu open</code>
+                </label>
+            </div>
+
+            <div class="tree-container" id="cm7-container">
+                <web-treeview id="cm7-tree" icon-set="triangle"></web-treeview>
+            </div>
+
+            <h3>CSS Classes</h3>
+            <table class="reference-table">
+                <thead>
+                    <tr><th>Class</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>.wtv__context-menu</code></td><td>The menu container</td></tr>
+                    <tr><td><code>.wtv__context-submenu</code></td><td>A nested submenu container (also carries <code>.wtv__context-menu</code>)</td></tr>
+                    <tr><td><code>.wtv__context-menu-item</code></td><td>Each menu item <code>&lt;button&gt;</code></td></tr>
+                    <tr><td><code>.wtv__context-menu-item--disabled</code></td><td>Disabled menu items</td></tr>
+                    <tr><td><code>.wtv__context-menu-item--has-children</code></td><td>Items that open a submenu</td></tr>
+                    <tr><td><code>.wtv__context-menu-icon</code></td><td>Icon span</td></tr>
+                    <tr><td><code>.wtv__context-menu-label</code></td><td>Label text span</td></tr>
+                    <tr><td><code>.wtv__context-menu-shortcut</code></td><td>Right-aligned shortcut hint</td></tr>
+                    <tr><td><code>.wtv__context-menu-arrow</code></td><td>Submenu arrow indicator (▸)</td></tr>
+                    <tr><td><code>.wtv__context-menu-divider</code></td><td>Divider line</td></tr>
+                    <tr><td><code>.wtv__context-menu-divider--named</code></td><td>Named divider with a centered label</td></tr>
+                    <tr><td><code>.danger</code></td><td>Danger-styled item (red text, via <code>className</code>)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        // ── Sample Data ─────────────────────────────────────────────────
+
+        // Folder/file data with type + readonly (CM01 / CM06 / CM07)
+        const fileTree = [
+            { id: 1, path: '1',     name: 'Documents',     type: 'folder' },
+            { id: 2, path: '1.1',   name: 'Reports',       type: 'folder' },
+            { id: 3, path: '1.1.1', name: 'Q1 Report.pdf', type: 'file' },
+            { id: 4, path: '1.1.2', name: 'Q2 Report.pdf', type: 'file', readonly: true },
+            { id: 5, path: '1.2',   name: 'Notes.txt',     type: 'file' },
+            { id: 6, path: '2',     name: 'Images',        type: 'folder' },
+            { id: 7, path: '2.1',   name: 'Photo.jpg',     type: 'file' },
+            { id: 8, path: '2.2',   name: 'Logo.png',      type: 'file' },
+        ];
+
+        // Team data with role / email / invoiceCount (CM02 node-aware render)
+        const teamTree = [
+            { id: 1, path: '1',   name: 'Engineering',      role: 'department', email: null, invoiceCount: 12 },
+            { id: 2, path: '1.1', name: 'Josef Novák',      role: 'lead',       email: 'josef@company.cz', invoiceCount: 5 },
+            { id: 3, path: '1.2', name: 'Marie Dvořáková',  role: 'developer',  email: 'marie@company.cz', invoiceCount: 3 },
+            { id: 4, path: '1.3', name: 'Tomáš Procházka',  role: 'developer',  email: 'tomas@company.cz', invoiceCount: 0 },
+            { id: 5, path: '2',   name: 'Sales',            role: 'department', email: null, invoiceCount: 24 },
+            { id: 6, path: '2.1', name: 'Eva Svobodová',    role: 'lead',       email: 'eva@company.cz',   invoiceCount: 8 },
+            { id: 7, path: '2.2', name: 'Petr Černý',       role: 'sales',      email: 'petr@company.cz',  invoiceCount: 16 },
+            { id: 8, path: '3',   name: 'Design',           role: 'department', email: null, invoiceCount: 7 },
+            { id: 9, path: '3.1', name: 'Anna Králová',     role: 'designer',   email: 'anna@company.cz',  invoiceCount: 7 },
+        ];
+
+        const roleColors = { lead: '#8b5cf6', developer: '#3b82f6', sales: '#f59e0b', designer: '#ec4899', department: '#6b7280' };
+
+        const now = () => new Date().toLocaleTimeString();
+
+        customElements.whenDefined('web-treeview').then(() => {
+
+            // Shared config helper
+            const configure = (el, data) => {
+                el.data = data;
+                el.idMember = 'id';
+                el.pathMember = 'path';
+                el.displayValueMember = 'name';
+                el.expandLevel = 3;
+            };
+
+            // ── CM01 · Callback approach ────────────────────────────────
+            const cm1 = document.getElementById('cm1-tree');
+            configure(cm1, fileTree);
+
+            const cm1LogEl = document.getElementById('cm1-log');
+            let cm1Lines = [];
+            const cm1Log = (msg) => {
+                cm1Lines = [...cm1Lines.slice(-9), `${now()} - ${msg}`];
+                cm1LogEl.textContent = cm1Lines.join('\n');
+            };
+            document.getElementById('cm1-clear').addEventListener('click', () => {
+                cm1Lines = [];
+                cm1LogEl.textContent = 'Right-click a node to see the context menu';
+            });
+
+            cm1.contextMenuCallback = (node, close) => {
+                const d = node.data || {};
+                const isFolder = d.type === 'folder';
+                const isReadonly = !!d.readonly;
+                const entries = [];
+
+                if (isFolder) {
+                    entries.push({ icon: '📄', label: 'New File',   shortcut: 'N',       onclick: () => { cm1Log(`New file in "${d.name}"`); close(); } });
+                    entries.push({ icon: '📁', label: 'New Folder', shortcut: 'Shift+N', onclick: () => { cm1Log(`New folder in "${d.name}"`); close(); } });
+                    entries.push({ divider: true });
+                }
+
+                entries.push({ icon: '📋', label: 'Copy',  shortcut: 'C', onclick: () => { cm1Log(`Copied "${d.name}"`); close(); } });
+                entries.push({ icon: '✂️', label: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onclick: () => { cm1Log(`Cut "${d.name}"`); close(); } });
+                entries.push({ icon: '📥', label: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onclick: () => { cm1Log(`Paste into "${d.name}"`); close(); } });
+
+                entries.push({ icon: '📤', label: 'Export As...', children: [
+                    { label: 'JSON', shortcut: 'J', onclick: () => { cm1Log(`Export "${d.name}" as JSON`); close(); } },
+                    { label: 'XML',  shortcut: 'X', onclick: () => { cm1Log(`Export "${d.name}" as XML`);  close(); } },
+                    { label: 'CSV',  shortcut: 'C', onclick: () => { cm1Log(`Export "${d.name}" as CSV`);  close(); } },
+                ]});
+
+                entries.push({ divider: true, label: 'Danger zone' });
+                entries.push({ icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () => { cm1Log(`Rename "${d.name}"`); close(); } });
+                entries.push({ icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () => { cm1Log(`Delete "${d.name}"`); close(); } });
+                entries.push({ icon: '🔒', label: 'Read-only file', isDisabled: true, isVisible: isReadonly });
+                return entries;
+            };
+
+            document.getElementById('cm1-debug').addEventListener('change', (e) => {
+                cm1.shouldDisplayContextMenuInDebugMode = e.target.checked;
+            });
+            document.getElementById('cm1-x').addEventListener('input', (e) => {
+                cm1.contextMenuXOffset = Number(e.target.value);
+            });
+            document.getElementById('cm1-y').addEventListener('input', (e) => {
+                cm1.contextMenuYOffset = Number(e.target.value);
+            });
+
+            // ── CM02 · Custom item render ───────────────────────────────
+            const cm2 = document.getElementById('cm2-tree');
+            configure(cm2, teamTree);
+            cm2.expandLevel = 2;
+            cm2.contextMenuYOffset = -30;
+            cm2.shouldDisplayContextMenuInDebugMode = true;
+
+            const cm2LogEl = document.getElementById('cm2-log');
+            const cm2Log = (action, node) => {
+                cm2LogEl.textContent = JSON.stringify({ action, name: node.data?.name, role: node.data?.role }, null, 2);
+            };
+
+            cm2.contextMenuCallback = (node, close) => {
+                const d = node.data;
+                const isDept = d.role === 'department';
+                const items = [
+                    { id: 'profile', icon: '👤', label: isDept ? `View ${d.name} team` : `${d.name}'s profile`, onclick: () => { cm2Log('profile', node); close(); } },
+                ];
+                if (!isDept && d.email) {
+                    items.push({ id: 'email', icon: '📧', label: `Email ${d.name}`, shortcut: 'E', onclick: () => { cm2Log('email', node); close(); } });
+                }
+                if (d.invoiceCount > 0) {
+                    items.push({ id: 'invoices', label: 'Invoices', shortcut: 'I', onclick: () => { cm2Log('invoices', node); close(); } });
+                }
+                if (!isDept) {
+                    if (d.role !== 'lead') {
+                        items.push({ id: 'promote', icon: '⬆️', label: 'Promote', onclick: () => { cm2Log('promote', node); close(); } });
+                    }
+                    items.push(
+                        { divider: true, label: 'Danger zone' },
+                        { id: 'remove', icon: '🗑️', label: `Remove ${d.name}`, className: 'danger', onclick: () => { cm2Log('remove', node); close(); } },
+                    );
+                }
+                return items;
+            };
+
+            cm2.renderContextMenuItemCallback = (item, node, container) => {
+                const d = node.data;
+                const color = roleColors[d.role] || '#6b7280';
+
+                if (item.id === 'profile') {
+                    const initials = d.name.split(' ').map(w => w[0]).join('');
+                    container.innerHTML = `
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: ${color}; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 600; flex-shrink: 0;">${initials}</span>
+                        <span style="display: flex; flex-direction: column; gap: 1px;">
+                            <span>${d.name}</span>
+                            <span style="font-size: 0.75em; color: ${color}; font-weight: 500;">${d.role}</span>
+                        </span>`;
+                    return;
+                }
+                if (item.id === 'invoices') {
+                    const count = d.invoiceCount;
+                    const chipColor = count > 5 ? '#dc3545' : count > 0 ? '#f59e0b' : '#6b7280';
+                    container.innerHTML = `
+                        <span class="wtv__context-menu-icon">🧾</span>
+                        <span class="wtv__context-menu-label">Invoices</span>
+                        <span style="background: ${chipColor}; color: white; font-size: 0.7em; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;">${count}</span>`;
+                    return;
+                }
+                // everything else: leave container empty → default rendering
+            };
+
+            // CM02 live CSS-variable controls
+            const setVar2 = (name, value) => cm2.style.setProperty(name, value);
+            const cm2Ranges = [
+                ['cm2-min-width', '--wtv-context-menu-min-width', 'rem'],
+                ['cm2-gap',       '--wtv-context-menu-item-gap',  'px'],
+            ];
+            for (const [id, varName, unit] of cm2Ranges) {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    document.getElementById(id + '-val').textContent = e.target.value + unit;
+                    setVar2(varName, e.target.value + unit);
+                });
+            }
+            document.getElementById('cm2-padding').addEventListener('change', (e) => setVar2('--wtv-context-menu-item-padding', e.target.value));
+            document.getElementById('cm2-debug').addEventListener('change', (e) => {
+                cm2.shouldDisplayContextMenuInDebugMode = e.target.checked;
+            });
+
+            // ── CM06 · Menu position offset ─────────────────────────────
+            const cm6 = document.getElementById('cm6-tree');
+            configure(cm6, fileTree);
+            cm6.contextMenuCallback = (node, close) => [
+                { icon: '📂', label: 'Open',   shortcut: 'O',  onclick: () => close() },
+                { icon: '✏️', label: 'Rename', shortcut: 'F2', onclick: () => close() },
+                { divider: true },
+                { icon: '🗑️', label: 'Delete', className: 'danger', onclick: () => close() },
+            ];
+            document.getElementById('cm6-x').addEventListener('input', (e) => {
+                const v = Number(e.target.value);
+                document.getElementById('cm6-x-val').textContent = v + 'px';
+                cm6.contextMenuXOffset = v;
+            });
+            document.getElementById('cm6-y').addEventListener('input', (e) => {
+                const v = Number(e.target.value);
+                document.getElementById('cm6-y-val').textContent = v + 'px';
+                cm6.contextMenuYOffset = v;
+            });
+            document.getElementById('cm6-debug').addEventListener('change', (e) => {
+                cm6.shouldDisplayContextMenuInDebugMode = e.target.checked;
+            });
+
+            // ── CM07 · CSS customization ────────────────────────────────
+            const cm7 = document.getElementById('cm7-tree');
+            configure(cm7, fileTree);
+            cm7.shouldDisplayContextMenuInDebugMode = true;
+            cm7.contextMenuCallback = (node, close) => {
+                const d = node.data || {};
+                const isReadonly = !!d.readonly;
+                return [
+                    { icon: '📂', label: 'Open',   shortcut: 'O',  onclick: () => close() },
+                    { icon: '📋', label: 'Copy',   shortcut: 'C',  onclick: () => close() },
+                    { icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () => close() },
+                    { icon: '📤', label: 'Export As...', children: [
+                        { label: 'JSON', onclick: () => close() },
+                        { label: 'XML',  onclick: () => close() },
+                    ]},
+                    { divider: true, label: 'Danger zone' },
+                    { icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () => close() },
+                ];
+            };
+
+            const setVar7 = (name, value) => cm7.style.setProperty(name, value);
+            const cm7Ranges = [
+                ['cm7-min-width',        '--wtv-context-menu-min-width',        'rem'],
+                ['cm7-font-size',        '--wtv-context-menu-font-size',        'px'],
+                ['cm7-icon-size',        '--wtv-context-menu-icon-width',       'px'],
+                ['cm7-radius',           '--wtv-context-menu-border-radius',    'px'],
+                ['cm7-gap',              '--wtv-context-menu-item-gap',         'px'],
+                ['cm7-disabled-opacity', '--wtv-context-menu-disabled-opacity', ''],
+            ];
+            for (const [id, varName, unit] of cm7Ranges) {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    document.getElementById(id + '-val').textContent = e.target.value + unit;
+                    setVar7(varName, e.target.value + unit);
+                });
+            }
+            const cm7Selects = [
+                ['cm7-shadow',       '--wtv-context-menu-shadow'],
+                ['cm7-padding',      '--wtv-context-menu-item-padding'],
+                ['cm7-menu-padding', '--wtv-context-menu-padding'],
+                ['cm7-border',       '--wtv-context-menu-border'],
+            ];
+            for (const [id, varName] of cm7Selects) {
+                document.getElementById(id).addEventListener('change', (e) => setVar7(varName, e.target.value));
+            }
+            const cm7Colors = [
+                ['cm7-bg',       '--wtv-context-menu-bg'],
+                ['cm7-bg-hover', '--wtv-context-menu-bg-hover'],
+                ['cm7-text',     '--wtv-context-menu-text-color'],
+                ['cm7-danger',   '--wtv-context-menu-danger-color'],
+                ['cm7-divider',  '--wtv-context-menu-divider-color'],
+            ];
+            for (const [id, varName] of cm7Colors) {
+                document.getElementById(id).addEventListener('input', (e) => setVar7(varName, e.target.value));
+            }
+            document.getElementById('cm7-debug').addEventListener('change', (e) => {
+                cm7.shouldDisplayContextMenuInDebugMode = e.target.checked;
+            });
+        });
+    </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
+</body>
+</html>

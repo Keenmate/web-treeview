@@ -164,7 +164,22 @@
     },
     {
       "name": "--wtv-node-transition",
-      "description": "Node content transition (set to 'none' to disable hover animation)",
+      "description": "Node content (row) transition. Default none = instant hover; set e.g. 'background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease' to animate",
+      "values": []
+    },
+    {
+      "name": "--wtv-node-icon-color",
+      "description": "Per-node icon color (default currentColor; overridden by a per-node iconColor / iconColorMember)",
+      "values": []
+    },
+    {
+      "name": "--wtv-node-icon-margin-right",
+      "description": "Gap between the per-node icon and the label",
+      "values": []
+    },
+    {
+      "name": "--wtv-node-icon-width",
+      "description": "Reserved icon-column width when shouldAlignNodeIcons is on",
       "values": []
     },
     {
@@ -499,12 +514,67 @@
     },
     {
       "name": "--wtv-dragged-opacity",
-      "description": "Opacity of dragged node (0.5)",
+      "description": "Opacity of dragged node(s) (0.5)",
+      "values": []
+    },
+    {
+      "name": "--wtv-dragged-scale",
+      "description": "Scale of the dimmed dragged node(s), left-anchored (0.95; set 1 to disable)",
       "values": []
     },
     {
       "name": "--wtv-cut-opacity",
       "description": "Opacity of cut nodes pending paste (0.4)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-bg",
+      "description": "Node tooltip background (→ --base-tooltip-bg)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-color",
+      "description": "Node tooltip text color (→ --base-tooltip-text-color)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-padding",
+      "description": "Node tooltip padding",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-border-radius",
+      "description": "Node tooltip corner radius",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-font-size",
+      "description": "Node tooltip font size",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-width",
+      "description": "Node tooltip width (auto = shrink-to-content; set a length for a fixed box + max-width:none)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-min-width",
+      "description": "Node tooltip minimum width (0 = none; a floor that still grows up to max-width)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-max-width",
+      "description": "Node tooltip max width (wrap point; set none when using a fixed width)",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-shadow",
+      "description": "Node tooltip drop shadow",
+      "values": []
+    },
+    {
+      "name": "--wtv-tooltip-z-index",
+      "description": "Node tooltip stacking order (10000)",
       "values": []
     },
     {

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeView - Tooltips</title>
+    <link rel="stylesheet" href="examples-shared.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">&larr; Back to Examples</a>
+            <h1>Tooltips</h1>
+            <p class="subtitle">
+                Hover/focus node tooltips — the direct analog of
+                <code>@keenmate/web-multiselect</code>'s option tooltips, built on the shared
+                <code>createTooltip</code> core primitive and themed through the same
+                <code>--base-tooltip-*</code> tokens.
+            </p>
+        </header>
+
+        <!-- TT01 · Plain-text tooltips -->
+        <div class="card">
+            <h2>TT01 · Plain-text tooltips</h2>
+            <p>
+                Set <code>show-node-tooltips</code> and a <code>getNodeTooltipCallback</code> that
+                returns a <strong>string</strong>. The tooltip is portaled out of the tree, positioned
+                with Floating UI, and shows on hover <em>and</em> keyboard focus. Rows whose callback
+                returns an empty string get no tooltip.
+            </p>
+
+            <div class="controls">
+                <span class="muted">Placement:</span>
+                <button onclick="setPlacement('top-start', this)" id="pl-top-start">top-start</button>
+                <button onclick="setPlacement('right', this)" id="pl-right">right</button>
+                <button onclick="setPlacement('bottom', this)" id="pl-bottom">bottom</button>
+                <label style="margin-left:1rem">
+                    <input type="checkbox" id="follow" onchange="toggleFollow(this)"> follow cursor
+                </label>
+            </div>
+
+            <div class="tree-container" id="tree1-container">
+                <web-treeview id="tree1" expand-level="3" show-node-tooltips></web-treeview>
+            </div>
+
+            <p class="form-text">
+                <code>getNodeTooltipCallback(node) =&gt; string | HTMLElement | null</code>. Return
+                <code>null</code> / empty to skip a row. Tune timing with <code>tooltip-delay</code>
+                (default <code>{ show: 400, hide: 100 }</code>), <code>tooltip-placement</code> and
+                <code>tooltip-offset</code>.
+            </p>
+        </div>
+
+        <!-- TT02 · Rich (HTML) tooltips -->
+        <div class="card">
+            <h2>TT02 · Rich HTML tooltips</h2>
+            <p>
+                Return a built <code>HTMLElement</code> from the callback for rich content (the
+                web-component analog of svelte-treeview's <code>tooltip</code> snippet). Here each
+                tooltip shows an icon + title, a description line, and the node path.
+            </p>
+
+            <div class="tree-container" id="tree2-container">
+                <web-treeview id="tree2" expand-level="3" show-node-tooltips tooltip-placement="right-start"></web-treeview>
+            </div>
+        </div>
+
+        <!-- TT03 · Theme reaction -->
+        <div class="card">
+            <h2>TT03 · Theme reaction</h2>
+            <p>
+                The tooltip surface reads the shared <code>--base-tooltip-*</code> tokens (with a
+                light/dark fallback), so it retints with the component theme. Flip the theme and hover
+                a row — the tooltip follows, identical to how web-multiselect's option tooltip renders.
+            </p>
+
+            <div class="controls">
+                <button onclick="setTheme('', this)" id="th-auto">Auto</button>
+                <button onclick="setTheme('light', this)" id="th-light">Light</button>
+                <button onclick="setTheme('dark', this)" id="th-dark">Dark</button>
+            </div>
+
+            <div class="tree-container" id="tree3-container">
+                <web-treeview id="tree3" expand-level="2" show-node-tooltips></web-treeview>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        // ── Sample data (icon + desc enrich the tooltips) ────────────────
+        const data = [
+            { id: 'fruits', path: '1', name: 'Fruits', icon: '🍎', desc: 'Sweet, edible plant fruits' },
+            { id: 'apple', path: '1.1', name: 'Apple', icon: '🍏', desc: 'Crisp orchard fruit' },
+            { id: 'banana', path: '1.2', name: 'Banana', icon: '🍌', desc: 'Potassium-rich berry' },
+            { id: 'citrus', path: '1.3', name: 'Citrus', icon: '🍊', desc: 'Tangy, high in vitamin C' },
+            { id: 'orange', path: '1.3.1', name: 'Orange', icon: '🍊', desc: 'Juicy citrus staple' },
+            { id: 'lemon', path: '1.3.2', name: 'Lemon', icon: '🍋', desc: '' /* no tooltip */ },
+            { id: 'veg', path: '2', name: 'Vegetables', icon: '🥦', desc: 'Edible plants & roots' },
+            { id: 'carrot', path: '2.1', name: 'Carrot', icon: '🥕', desc: 'Crunchy orange root' },
+            { id: 'potato', path: '2.2', name: 'Potato', icon: '🥔', desc: 'Starchy tuber' }
+        ];
+        const byPath = (p) => data.find(d => d.path === p);
+
+        customElements.whenDefined('web-treeview').then(() => {
+            const tree1 = document.getElementById('tree1');
+            const tree2 = document.getElementById('tree2');
+            const tree3 = document.getElementById('tree3');
+
+            const common = {
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name',
+                iconMember: 'icon'
+            };
+
+            // TT01 — plain text (empty desc → no tooltip)
+            Object.assign(tree1, common, {
+                data,
+                tooltipDelay: 150,
+                getNodeTooltipCallback: (node) => node.data?.desc ?? null
+            });
+
+            // TT02 — rich HTML element
+            Object.assign(tree2, common, {
+                data,
+                getNodeTooltipCallback: (node) => {
+                    const d = node.data;
+                    if (!d) return null;
+                    const el = document.createElement('div');
+                    el.style.display = 'flex';
+                    el.style.flexDirection = 'column';
+                    el.style.gap = '2px';
+                    el.innerHTML =
+                        `<strong>${d.icon} ${d.name}</strong>` +
+                        `<span style="opacity:.85">${d.desc || '—'}</span>` +
+                        `<span style="opacity:.6;font-size:.85em">path ${d.path}</span>`;
+                    return el;
+                }
+            });
+
+            // TT03 — theme reaction
+            Object.assign(tree3, common, {
+                data,
+                getNodeTooltipCallback: (node) => node.data?.desc || node.data?.name || null
+            });
+
+            setPlacement('top-start', document.getElementById('pl-top-start'));
+            setTheme('', document.getElementById('th-auto'));
+        });
+
+        // ── Controls ─────────────────────────────────────────────────────
+        function activate(btn) {
+            if (!btn) return;
+            // Convention (see examples-basic.html): active button is default-styled,
+            // the others get `.secondary`.
+            for (const sib of btn.parentElement.querySelectorAll('button')) sib.classList.toggle('secondary', sib !== btn);
+        }
+        window.setPlacement = (p, btn) => { document.getElementById('tree1').tooltipPlacement = p; activate(btn); };
+        window.toggleFollow = (cb) => { document.getElementById('tree1').tooltipFollowCursor = cb.checked; };
+        window.setTheme = (t, btn) => {
+            const tree = document.getElementById('tree3');
+            if (t) tree.setAttribute('theme', t); else tree.removeAttribute('theme');
+            activate(btn);
+        };
+    </script>
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
+</body>
+</html>

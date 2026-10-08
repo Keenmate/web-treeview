@@ -40,7 +40,10 @@ export type {
   NodeTransformContext,
   BeforeCopyContext,
   BeforeDeleteContext,
-  BeforePasteContext
+  BeforePasteContext,
+  TooltipPlacement,
+  TooltipDelay,
+  NodeRenderContext
 } from './controller/types';
 
 // Clipboard

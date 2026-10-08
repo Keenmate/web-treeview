@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeView - Data Structure</title>
+    <link rel="stylesheet" href="examples-shared.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">&larr; Back to Examples</a>
+            <h1>Data Structure</h1>
+            <p class="subtitle">Path-based hierarchy, display-value fallback, custom separators, branch &amp; node operations, and member mapping</p>
+        </header>
+
+        <!-- DS01 · Path-Based Data Structure -->
+        <div class="card">
+            <h2>DS01 · Path-Based Data Structure</h2>
+            <p>The tree builds its hierarchy from <strong>materialized path strings</strong>. Each item carries a unique path that encodes its position: <code>'1'</code> is a root, <code>'1.1'</code> a child of <code>'1'</code>, <code>'1.1.2'</code> a grandchild. The <code>pathMember</code> tells the tree which property holds the path.</p>
+
+            <div class="grid" style="--grid-min: 320px">
+                <div>
+                    <div class="code-block">
+<pre><code>// Each item's path encodes its position
+const data = [
+  { id: 1, path: '1',     name: 'Root' },
+  { id: 2, path: '1.1',   name: 'Child 1' },
+  { id: 3, path: '1.2',   name: 'Child 2' },
+  { id: 4, path: '1.1.1', name: 'Grandchild' }
+];
+
+tree.data = data;
+tree.idMember = 'id';
+tree.pathMember = 'path';
+tree.displayValueMember = 'name';</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="tree-container tree-container-sm" id="ds01-container">
+                        <web-treeview id="ds01" expand-level="3"></web-treeview>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note">
+                <p class="note-title">How paths work</p>
+                <ul style="margin:0;padding-left:1.25rem">
+                    <li><strong>Path "1"</strong> &mdash; a root node</li>
+                    <li><strong>Path "1.1"</strong> &mdash; a child of "1"</li>
+                    <li><strong>Path "1.1.1"</strong> &mdash; a child of "1.1" (grandchild of "1")</li>
+                    <li>The separator (default <code>.</code>) splits a path into segments; the number of segments is the node's level.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DS02 · Display Value Fallback -->
+        <div class="card">
+            <h2>DS02 · Display Value Fallback</h2>
+            <p>A node's label resolves in order: <code>displayValueMember</code> &rarr; <code>displayValueCallback</code> &rarr; <code>displayValueFallback</code>. When a tree configures neither a member nor a callback (or a node has no data for that member), the <strong><code>display-value-fallback</code></strong> text is shown instead. Default is <code>"[N/A]"</code>; set it to <code>""</code> to render nothing.</p>
+
+            <div class="controls">
+                <label>Fallback text:
+                    <input type="text" id="ds02-fallback" value="(no name)" placeholder="[N/A]">
+                </label>
+                <span class="muted">Type here &mdash; the right-hand tree updates live.</span>
+            </div>
+
+            <div class="grid" style="--grid-min: 320px">
+                <div>
+                    <p class="output-label">With <code>display-value-member="name"</code></p>
+                    <div class="tree-container tree-container-sm" id="ds02a-container">
+                        <web-treeview id="ds02a" expand-level="3"></web-treeview>
+                    </div>
+                </div>
+                <div>
+                    <p class="output-label">No member &rarr; fallback</p>
+                    <div class="tree-container tree-container-sm" id="ds02b-container">
+                        <web-treeview id="ds02b" expand-level="3"></web-treeview>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-block">
+<pre><code>// No displayValueMember and no callback → every label uses the fallback
+tree.idMember = 'id';
+tree.pathMember = 'path';
+tree.setAttribute('display-value-fallback', '(no name)');</code></pre>
+            </div>
+        </div>
+
+        <!-- DS03 · Custom Path Separators -->
+        <div class="card">
+            <h2>DS03 · Custom Path Separators</h2>
+            <p>Set <code>tree-path-separator</code> (property <code>treePathSeparator</code>) to change the delimiter between path segments. Handy when your identifiers already contain dots, or when mirroring real file paths / namespaces.</p>
+
+            <div class="grid" style="--grid-min: 320px">
+                <div>
+                    <p class="output-label">Slash separator <code>"/"</code> (file paths)</p>
+                    <div class="tree-container tree-container-sm" id="ds03a-container">
+                        <web-treeview id="ds03a" tree-path-separator="/" expand-level="3"></web-treeview>
+                    </div>
+                    <div class="code-block">
+<pre><code>tree.treePathSeparator = '/';
+tree.data = [
+  { id: 1, path: 'home',               name: '/home' },
+  { id: 2, path: 'home/user',          name: '/home/user' },
+  { id: 3, path: 'home/user/docs',     name: '/home/user/docs' }
+];</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <p class="output-label">Double-colon separator <code>"::"</code> (namespaces)</p>
+                    <div class="tree-container tree-container-sm" id="ds03b-container">
+                        <web-treeview id="ds03b" tree-path-separator="::" expand-level="3"></web-treeview>
+                    </div>
+                    <div class="code-block">
+<pre><code>tree.treePathSeparator = '::';
+tree.data = [
+  { id: 1, path: 'App',                name: 'App' },
+  { id: 2, path: 'App::Services',      name: 'App::Services' },
+  { id: 3, path: 'App::Services::Auth', name: 'App::Services::Auth' }
+];</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DS04 · Branch Operations -->
+        <div class="card">
+            <h2>DS04 · Branch Operations</h2>
+            <p><code>insertBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>deleteBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
+
+            <div class="controls">
+                <button onclick="insertTeam()">Insert branch under "Engineering"</button>
+                <button onclick="replaceEng()" class="secondary">Replace "Engineering" subtree</button>
+                <button onclick="clearDesign()" class="btn-outline">Clear "Design" children</button>
+                <button onclick="deleteSales()" class="btn-danger">Delete "Sales" branch</button>
+                <button onclick="resetBranch()" class="btn-outline">Reset</button>
+            </div>
+
+            <div class="tree-container" id="ds04-container">
+                <web-treeview id="ds04" expand-level="3"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Operation log:</p>
+                <pre id="ds04-output">Run a branch operation</pre>
+            </div>
+
+            <div class="code-block">
+<pre><code>// insertBranch(parentPath, data)  → { success, count }
+// replaceBranch(parentPath, data) → { success, removed, added }
+// deleteBranch(path, keepParent?) → { success, count }
+
+const res = tree.insertBranch('1.1', [
+  { id: 101, path: '1.1.9',   name: 'New Team' },
+  { id: 102, path: '1.1.9.1', name: 'Member A' }
+]);
+// deleteBranch('3')          → remove "Sales" and all descendants
+// deleteBranch('1.2', true)  → clear children, keep the "Design" node</code></pre>
+            </div>
+        </div>
+
+        <!-- DS05 · Add / Remove / Update Nodes -->
+        <div class="card">
+            <h2>DS05 · Add / Remove / Update Nodes</h2>
+            <p>Single-node mutations: <code>addNode(parentPath, data, pathSegment?)</code>, <code>removeNode(path, includeDescendants?)</code>, and <code>updateNode(path, dataUpdates)</code>. Each patches the tree in place.</p>
+
+            <div class="controls">
+                <button onclick="addTask()">Add Task</button>
+                <button onclick="removeLast()" class="btn-danger">Remove Last Task</button>
+                <button onclick="renameRoot()">Rename Root</button>
+                <button onclick="resetNodes()" class="btn-outline">Reset</button>
+            </div>
+
+            <div class="tree-container" id="ds05-container">
+                <web-treeview id="ds05" expand-level="2"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Current data:</p>
+                <pre id="ds05-output"></pre>
+            </div>
+
+            <div class="code-block">
+<pre><code>tree.addNode('1', { id: 9, path: '1.9', name: 'New Task' });
+tree.updateNode('1', { name: 'Renamed Root' });
+tree.removeNode('1.3');                 // remove a single leaf
+tree.removeNode('1', true);             // remove a node and its descendants</code></pre>
+            </div>
+        </div>
+
+        <!-- DS06 · Save & Restore Expanded State -->
+        <div class="card">
+            <h2>DS06 · Save &amp; Restore Expanded State</h2>
+            <p>Capture which branches are open with <code>getExpandedPaths()</code> and re-apply them later with <code>setExpandedPaths(paths)</code> &mdash; e.g. to preserve a user's view across a data refresh.</p>
+
+            <div class="controls">
+                <button onclick="saveState()">Save Expanded State</button>
+                <button onclick="restoreState()">Restore State</button>
+                <button onclick="collapseAll6()" class="btn-outline">Collapse All</button>
+            </div>
+
+            <div class="tree-container" id="ds06-container">
+                <web-treeview id="ds06" expand-level="2"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Saved state:</p>
+                <pre id="ds06-output">No state saved yet</pre>
+            </div>
+        </div>
+
+        <!-- DS07 · Required Props & Member Mapping -->
+        <div class="card">
+            <h2>DS07 · Required Props &amp; Member Mapping</h2>
+            <p>Map your own data shape onto the tree by naming the properties that hold the id, path, and label. Only these three have sensible defaults; everything else the tree derives from the path automatically.</p>
+
+            <table class="reference-table">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Attribute</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="is-highlight">
+                        <td><code>data</code></td>
+                        <td>&mdash; (set as JS property)</td>
+                        <td><code>[]</code></td>
+                        <td>Array of data items to display in the tree</td>
+                    </tr>
+                    <tr>
+                        <td><code>idMember</code></td>
+                        <td><code>id-member</code></td>
+                        <td><code>'id'</code></td>
+                        <td>Property name for the unique identifier</td>
+                    </tr>
+                    <tr>
+                        <td><code>pathMember</code></td>
+                        <td><code>path-member</code></td>
+                        <td><code>'path'</code></td>
+                        <td>Property name for the materialized hierarchy path</td>
+                    </tr>
+                    <tr>
+                        <td><code>displayValueMember</code></td>
+                        <td><code>display-value-member</code></td>
+                        <td><code>'displayValue'</code></td>
+                        <td>Property name for the node label</td>
+                    </tr>
+                    <tr>
+                        <td><code>displayValueFallback</code></td>
+                        <td><code>display-value-fallback</code></td>
+                        <td><code>'[N/A]'</code></td>
+                        <td>Label shown when no display value resolves (see DS02)</td>
+                    </tr>
+                    <tr>
+                        <td><code>treePathSeparator</code></td>
+                        <td><code>tree-path-separator</code></td>
+                        <td><code>'.'</code></td>
+                        <td>Delimiter between path segments (see DS03)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-block">
+<pre><code>// Your data can use any property names
+const data = [
+  { categoryId: 1, categoryPath: '1',   label: 'Electronics' },
+  { categoryId: 2, categoryPath: '1.1', label: 'Phones' }
+];
+
+tree.data = data;
+tree.idMember = 'categoryId';
+tree.pathMember = 'categoryPath';
+tree.displayValueMember = 'label';</code></pre>
+            </div>
+
+            <div class="tree-container tree-container-sm" id="ds07-container">
+                <web-treeview id="ds07" expand-level="1"></web-treeview>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        // ── Sample data ──────────────────────────────────────────────────
+
+        const simpleTree = [
+            { id: 1, path: '1', name: 'Root' },
+            { id: 2, path: '1.1', name: 'Child 1' },
+            { id: 3, path: '1.2', name: 'Child 2' },
+            { id: 4, path: '1.1.1', name: 'Grandchild' }
+        ];
+
+        const slashData = [
+            { id: 1, path: 'home', name: '/home' },
+            { id: 2, path: 'home/user', name: '/home/user' },
+            { id: 3, path: 'home/user/documents', name: '/home/user/documents' },
+            { id: 4, path: 'home/user/downloads', name: '/home/user/downloads' },
+            { id: 5, path: 'var', name: '/var' },
+            { id: 6, path: 'var/log', name: '/var/log' }
+        ];
+
+        const colonData = [
+            { id: 1, path: 'App', name: 'App' },
+            { id: 2, path: 'App::Services', name: 'App::Services' },
+            { id: 3, path: 'App::Services::Auth', name: 'App::Services::Auth' },
+            { id: 4, path: 'App::Models', name: 'App::Models' },
+            { id: 5, path: 'App::Models::User', name: 'App::Models::User' }
+        ];
+
+        function createOrgChart() {
+            return [
+                { id: 1, path: '1', name: 'Company' },
+                { id: 2, path: '1.1', name: 'Engineering' },
+                { id: 3, path: '1.1.1', name: 'Frontend' },
+                { id: 4, path: '1.1.2', name: 'Backend' },
+                { id: 5, path: '1.2', name: 'Design' },
+                { id: 6, path: '1.2.1', name: 'UX' },
+                { id: 7, path: '1.2.2', name: 'Visual' },
+                { id: 8, path: '2', name: 'Operations' },
+                { id: 9, path: '2.1', name: 'HR' },
+                { id: 10, path: '2.2', name: 'Finance' },
+                { id: 11, path: '3', name: 'Sales' },
+                { id: 12, path: '3.1', name: 'Enterprise' },
+                { id: 13, path: '3.2', name: 'SMB' }
+            ];
+        }
+
+        function createTasks() {
+            return [
+                { id: 1, path: '1', name: 'Tasks' },
+                { id: 2, path: '1.1', name: 'Buy groceries' },
+                { id: 3, path: '1.2', name: 'Clean house' },
+                { id: 4, path: '1.3', name: 'Walk the dog' },
+                { id: 5, path: '2', name: 'Done' },
+                { id: 6, path: '2.1', name: 'Submit report' }
+            ];
+        }
+
+        const categories = [
+            { categoryId: 1, categoryPath: '1', label: 'Electronics' },
+            { categoryId: 2, categoryPath: '1.1', label: 'Phones' },
+            { categoryId: 3, categoryPath: '1.2', label: 'Laptops' },
+            { categoryId: 4, categoryPath: '2', label: 'Clothing' },
+            { categoryId: 5, categoryPath: '2.1', label: 'Men' },
+            { categoryId: 6, categoryPath: '2.2', label: 'Women' }
+        ];
+
+        const projectTree = createOrgChart();
+
+        // ── State ────────────────────────────────────────────────────────
+        let branchData = createOrgChart();
+        let nextBranchId = 200;
+
+        let taskData = createTasks();
+        let nextTaskId = 7;
+
+        let savedExpandedPaths = null;
+
+        // ── Init ───────────────────────────────────────────────────────────
+        customElements.whenDefined('web-treeview').then(() => {
+
+            // DS01
+            const ds01 = document.getElementById('ds01');
+            ds01.data = simpleTree;
+            ds01.idMember = 'id';
+            ds01.pathMember = 'path';
+            ds01.displayValueMember = 'name';
+
+            // DS02a — with member
+            const ds02a = document.getElementById('ds02a');
+            ds02a.data = simpleTree;
+            ds02a.idMember = 'id';
+            ds02a.pathMember = 'path';
+            ds02a.displayValueMember = 'name';
+
+            // DS02b — no member, uses fallback (live-editable)
+            const ds02b = document.getElementById('ds02b');
+            ds02b.idMember = 'id';
+            ds02b.pathMember = 'path';
+            ds02b.setAttribute('display-value-fallback', '(no name)');
+            ds02b.data = simpleTree;
+
+            const fallbackInput = document.getElementById('ds02-fallback');
+            fallbackInput.addEventListener('input', () => {
+                ds02b.setAttribute('display-value-fallback', fallbackInput.value);
+                // re-apply data so every node label re-resolves
+                ds02b.data = [...simpleTree];
+            });
+
+            // DS03a — slash separator
+            const ds03a = document.getElementById('ds03a');
+            ds03a.idMember = 'id';
+            ds03a.pathMember = 'path';
+            ds03a.displayValueMember = 'name';
+            ds03a.treePathSeparator = '/';
+            ds03a.data = slashData;
+
+            // DS03b — double-colon separator
+            const ds03b = document.getElementById('ds03b');
+            ds03b.idMember = 'id';
+            ds03b.pathMember = 'path';
+            ds03b.displayValueMember = 'name';
+            ds03b.treePathSeparator = '::';
+            ds03b.data = colonData;
+
+            // DS04 — branch operations
+            const ds04 = document.getElementById('ds04');
+            ds04.idMember = 'id';
+            ds04.pathMember = 'path';
+            ds04.displayValueMember = 'name';
+            ds04.data = branchData;
+
+            const ds04out = document.getElementById('ds04-output');
+            const logBranch = (msg) => { ds04out.textContent = msg; };
+
+            window.insertTeam = () => {
+                const base = `1.1.${nextBranchId}`;
+                const nodes = [
+                    { id: nextBranchId++, path: base, name: 'New Team' },
+                    { id: nextBranchId++, path: `${base}.1`, name: 'Member A' },
+                    { id: nextBranchId++, path: `${base}.2`, name: 'Member B' }
+                ];
+                const res = ds04.insertBranch('1.1', nodes);
+                ds04.expandNodes('1.1');
+                logBranch(`insertBranch('1.1', 3 nodes) → ${JSON.stringify(res)}`);
+            };
+
+            window.replaceEng = () => {
+                const nodes = [
+                    { id: nextBranchId++, path: '1.1', name: 'Engineering (rebuilt)' },
+                    { id: nextBranchId++, path: '1.1.1', name: 'Platform' },
+                    { id: nextBranchId++, path: '1.1.2', name: 'Infrastructure' },
+                    { id: nextBranchId++, path: '1.1.3', name: 'Mobile' }
+                ];
+                const res = ds04.replaceBranch('1.1', nodes);
+                ds04.expandNodes('1.1');
+                logBranch(`replaceBranch('1.1', 4 nodes) → ${JSON.stringify(res)}`);
+            };
+
+            window.clearDesign = () => {
+                const res = ds04.deleteBranch('1.2', true);
+                logBranch(`deleteBranch('1.2', keepParent=true) → ${JSON.stringify(res)}`);
+            };
+
+            window.deleteSales = () => {
+                const res = ds04.deleteBranch('3');
+                logBranch(`deleteBranch('3') → ${JSON.stringify(res)}`);
+            };
+
+            window.resetBranch = () => {
+                branchData = createOrgChart();
+                nextBranchId = 200;
+                ds04.data = branchData;
+                logBranch('Reset to initial org chart');
+            };
+
+            // DS05 — single-node mutations
+            const ds05 = document.getElementById('ds05');
+            ds05.idMember = 'id';
+            ds05.pathMember = 'path';
+            ds05.displayValueMember = 'name';
+            ds05.data = taskData;
+
+            const ds05out = document.getElementById('ds05-output');
+            const dumpTasks = () => { ds05out.textContent = JSON.stringify(taskData, null, 2); };
+            dumpTasks();
+
+            window.addTask = () => {
+                const node = { id: nextTaskId, path: `1.${nextTaskId}`, name: `New Task ${nextTaskId}` };
+                ds05.addNode('1', node);
+                taskData.push(node);
+                nextTaskId++;
+                dumpTasks();
+            };
+
+            window.removeLast = () => {
+                const children = taskData.filter(d => d.path.startsWith('1.') && d.path.split('.').length === 2);
+                if (children.length === 0) return;
+                const last = children[children.length - 1];
+                ds05.removeNode(last.path);
+                taskData = taskData.filter(d => d.id !== last.id);
+                dumpTasks();
+            };
+
+            window.renameRoot = () => {
+                const newName = `Tasks (renamed ${new Date().toLocaleTimeString()})`;
+                ds05.updateNode('1', { name: newName });
+                const root = taskData.find(d => d.path === '1');
+                if (root) root.name = newName;
+                dumpTasks();
+            };
+
+            window.resetNodes = () => {
+                taskData = createTasks();
+                nextTaskId = 7;
+                ds05.data = taskData;
+                dumpTasks();
+            };
+
+            // DS06 — save/restore expanded state
+            const ds06 = document.getElementById('ds06');
+            ds06.idMember = 'id';
+            ds06.pathMember = 'path';
+            ds06.displayValueMember = 'name';
+            ds06.data = projectTree;
+
+            const ds06out = document.getElementById('ds06-output');
+
+            window.saveState = () => {
+                savedExpandedPaths = ds06.getExpandedPaths();
+                ds06out.textContent =
+                    `Saved ${savedExpandedPaths.length} expanded path(s):\n` +
+                    savedExpandedPaths.map(p => `  - "${p}"`).join('\n');
+            };
+            window.restoreState = () => {
+                if (savedExpandedPaths) {
+                    ds06.setExpandedPaths(savedExpandedPaths);
+                } else {
+                    ds06out.textContent = 'No state saved yet — click "Save" first';
+                }
+            };
+            window.collapseAll6 = () => ds06.collapseAll();
+
+            // DS07 — custom member mapping
+            const ds07 = document.getElementById('ds07');
+            ds07.data = categories;
+            ds07.idMember = 'categoryId';
+            ds07.pathMember = 'categoryPath';
+            ds07.displayValueMember = 'label';
+        });
+    </script>
+
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@
 
 import type { TreeController } from '../controller/tree-controller';
 import type { LTreeNode } from '../ltree/ltree-node';
+import type { NodeRenderContext } from '../controller/types';
 
 export interface TreeViewRenderer<T = any> {
   /** Mount the renderer into a container, subscribing to controller state changes. */
@@ -20,8 +21,13 @@ export interface RendererConfig<T> {
   /** Per-instance theme. Renderer forwards as `data-theme` on the `.wtv__container`.
    *  See `dark-mode.css` for the cascade. */
   theme?: 'dark' | 'light' | null;
-  /** Custom node content renderer. Receives the node and a container element to populate. */
-  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement) => void;
+  /** Custom node content renderer. Receives the node, a container element to populate,
+   *  and the NodeRenderContext (device + container + live node state). */
+  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement, ctx: NodeRenderContext) => void;
+  /** Custom per-node icon renderer. Receives the node, the resolved icon VALUE
+   *  (from iconMember/iconCallback), the `.wtv__node-icon` element to populate, and the
+   *  NodeRenderContext. Wins over the default `<i class="wtv__node-icon {value}">`. */
+  renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
   /** Informational display when the tree has no data (e.g. "No items to display"). */
   renderEmptyStateCallback?: (container: HTMLElement) => void;
   /** Fallback text for an empty tree when no renderEmptyStateCallback is given. Default "No data". */

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — render context</title>
+    <style>
+        main { max-width: 900px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
+        .tree { width: 340px; border: 1px solid #ccc; }
+        web-treeview { display: block; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>render context</h1>
+        <p>Targeted by <code>e2e/render-context.spec.ts</code>. renderIconCallback stamps the
+           NodeRenderContext fields onto the <code>.wtv__node-icon</code> element's attributes.</p>
+        <div class="tree"><web-treeview id="tree" expand-level="3" icon-member="icon" selection-mode="multi" show-checkboxes></web-treeview></div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+        const data = [
+            { id: 1, path: '1', name: 'Root', icon: 'dot' },
+            { id: 2, path: '1.1', name: 'Child', icon: 'dot' },
+            { id: 3, path: '1.1.1', name: 'Leaf', icon: 'dot' }
+        ];
+        customElements.whenDefined('web-treeview').then(() => {
+            Object.assign(document.getElementById('tree'), {
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name', data,
+                renderIconCallback: (_node, _value, iconEl, ctx) => {
+                    iconEl.setAttribute('data-testid', 'ctx');
+                    iconEl.setAttribute('data-device', ctx.deviceClass);
+                    iconEl.setAttribute('data-level', String(ctx.level));
+                    iconEl.setAttribute('data-haschildren', String(ctx.hasChildren));
+                    iconEl.setAttribute('data-expanded', String(ctx.isExpanded));
+                    iconEl.setAttribute('data-selected', String(ctx.isSelected));
+                    iconEl.setAttribute('data-highlighted', String(ctx.isHighlighted));
+                    iconEl.setAttribute('data-focused', String(ctx.isFocused));
+                    iconEl.setAttribute('data-cw', String(ctx.container.width));
+                    iconEl.textContent = '•';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

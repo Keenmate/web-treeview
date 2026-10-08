@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TreeView - Basic Usage</title>
     <link rel="stylesheet" href="examples-shared.css">
+    <style>
+        /* Live spacing readout for BU01 — a wrap of labelled chips showing the
+           measured pieces that compose a row's left offset. */
+        .css-readout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin: 0.25rem 0 1rem;
+        }
+        .css-readout code {
+            font-size: 0.78rem;
+        }
+        .css-readout code b {
+            color: #2b6cb0;
+            font-weight: 700;
+        }
+        .css-readout code.is-gap b {
+            color: #b7791f;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -24,20 +44,31 @@
                 <button id="indent-condensed" onclick="setIndent('condensed', this)">Condensed</button>
                 <button id="indent-compact" onclick="setIndent('compact', this)">Compact</button>
                 <button id="indent-generous" onclick="setIndent('generous', this)">Generous</button>
-                <span id="indent-readout" class="muted"></span>
             </div>
+
+            <div id="indent-readout" class="css-readout"></div>
 
             <div class="tree-container" id="tree1-container">
                 <web-treeview id="tree1"></web-treeview>
             </div>
 
-            <p class="form-text">
-                Indent width is a single CSS variable — <code>--wtv-indent-size</code> (default <code>16px</code>),
-                the per-level step in flat mode (<code>paddingLeft = (level − 1) × --wtv-indent-size</code>). It's
-                <em>separate</em> from the toggle column (<code>--wtv-column-width</code>), so nesting density tunes
-                independently. The buttons set it inline on the <code>&lt;web-treeview&gt;</code> element; custom
-                properties inherit through the Shadow DOM, so the rows re-flow instantly.
-            </p>
+            <div class="note">
+                <p class="note-title">What makes a row's left offset</p>
+                <p style="margin-bottom:0.5rem">
+                    A row sits in by <b>toggle gutter + content padding + (level − 1) × indent</b>. The
+                    indentation buttons only move <code>--wtv-indent-size</code> — multiplied by
+                    <code>(level − 1)</code>, so at the <em>root</em> that's × 0 and the root rows never move.
+                    The fixed part left of every label (highlighted amber above) is the <strong>toggle column</strong>
+                    (<code>--wtv-column-width</code>, reserved on every row so leaf labels align under branch
+                    labels) plus the content's left <code>--wtv-node-padding</code> — independent of indent.
+                </p>
+                <p style="margin-bottom:0">
+                    To tighten the root gap, lower <code>--wtv-column-width</code> (and/or
+                    <code>--wtv-node-padding</code>); to change nesting density, use <code>--wtv-indent-size</code>.
+                    All inherit through the Shadow DOM when set inline on <code>&lt;web-treeview&gt;</code>, so rows
+                    re-flow instantly.
+                </p>
+            </div>
 
             <div class="output">
                 <p class="output-label">Selected node:</p>
@@ -242,13 +273,41 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             // Setting it inline on the host element inherits into the Shadow DOM
             // and overrides the stylesheet default; rows re-flow with no re-render.
             const INDENT_PRESETS = { condensed: '8px', compact: '16px', generous: '32px' };
+
+            // Measure the actual spacing pieces from the rendered shadow DOM so the
+            // readout shows the FULL left-offset composition, not just the knob the
+            // buttons move. The root gap (toggle gutter + content padding) is fixed;
+            // only the per-level indent step scales with --wtv-indent-size.
+            function measureSpacing(retries = 12) {
+                const root = tree1.shadowRoot;
+                const toggle = root && root.querySelector('.wtv__toggle-icon');
+                const content = root && root.querySelector('.wtv__node-content');
+                const n1 = root && root.querySelector('.wtv__node[data-tree-path="1"]');
+                const n2 = root && root.querySelector('.wtv__node[data-tree-path="1.1"]');
+                if (!toggle || !content || !n1 || !n2) {
+                    if (retries > 0) requestAnimationFrame(() => measureSpacing(retries - 1));
+                    return;
+                }
+                const px = (v) => `${Math.round(parseFloat(v))}px`;
+                const colW = getComputedStyle(toggle).width;
+                const padL = getComputedStyle(content).paddingLeft;
+                const step = parseFloat(getComputedStyle(n2).paddingLeft) - parseFloat(getComputedStyle(n1).paddingLeft);
+                const rootGap = parseFloat(colW) + parseFloat(padL);
+                document.getElementById('indent-readout').innerHTML = [
+                    `<code>--wtv-indent-size: <b>${px(step)}</b></code>`,
+                    `<code>--wtv-column-width: <b>${px(colW)}</b></code>`,
+                    `<code>--wtv-node-padding (left): <b>${px(padL)}</b></code>`,
+                    `<code class="is-gap">root gap (gutter + padding): <b>${px(rootGap)}</b></code>`
+                ].join('');
+            }
+
             window.setIndent = (preset, btn) => {
                 const value = INDENT_PRESETS[preset];
                 tree1.style.setProperty('--wtv-indent-size', value);
-                document.getElementById('indent-readout').textContent = `--wtv-indent-size: ${value}`;
                 for (const id of ['indent-condensed', 'indent-compact', 'indent-generous']) {
                     document.getElementById(id).classList.toggle('secondary', document.getElementById(id) !== btn);
                 }
+                requestAnimationFrame(() => measureSpacing());
             };
             // Start on the default (compact / 16px).
             setIndent('compact', document.getElementById('indent-compact'));

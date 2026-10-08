@@ -7,30 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
+## [2.0.0-rc06] - 2026-10-08 [PUBLISHED]
 
-- **Checkbox render unified onto the canonical single styled `<input>` contract**
-  (parity with `@keenmate/web-multiselect` 2.x + `@keenmate/svelte-treeview`). The
-  old `<label>` wrapping a visually-hidden native `<input>` + a `.wtv__checkbox-box`
-  span is gone; `.wtv__checkbox` IS the styled `<input>` now (`appearance: none`,
-  `box-sizing: border-box`), the tick/dash is an `::after` mask, and the box, border
-  AND radius scale via `calc(… * var(--wtv-checkbox-scale))` off the shared
-  `--base-checkbox-scale` knob — **no `transform`**, so the masked glyph never
-  pixel-snaps and stays centered at any scale. The indeterminate (tri-state) state is
-  now a **modifier class `.wtv__checkbox--indeterminate` + `aria-checked="mixed"`**
-  instead of the native `.indeterminate` DOM property, so it survives the flat diff
-  reconciler + virtual-scroll row recycling (the old imperative `cb.indeterminate`
-  write was re-applied every reconcile and lost on recycle). Same DOM output as the
-  sibling components (modulo the `wtv__` prefix).
-- New checkbox variables consumed from the shared contract: `--wtv-checkbox-scale`
-  (→ `--base-checkbox-scale`), `--wtv-icon-check-size` (→ `--base-icon-check-size`,
-  default 68%), `--wtv-checkbox-border-radius`, `--wtv-checkbox-checked-bg-hover`,
-  `--wtv-checkbox-focus-ring*`; `--wtv-checkbox-border-color` now chains to the
-  dedicated `--base-checkbox-border-color` (a stronger mid-gray than the generic
-  `--base-border-color`).
+First published prerelease since rc05 — consolidates the entire unpublished
+development window (the former rc06–rc09 drafts) into one release. It spans the
+`@keenmate/svelte-treeview` rc11–rc14 parity waves, the migration onto
+`@keenmate/web-components-core` (`BlissElement` + the reactive input model), and a
+large clipboard / drag-and-drop / selection / render-context overhaul.
 
 ### Added
 
+- **The render callbacks now receive a `NodeRenderContext` as their last argument — adapt to device/space + live node state.** `renderNodeCallback(node, el, ctx)` and `renderIconCallback(node, value, el, ctx)` get `ctx: NodeRenderContext = { deviceClass: 'mobile'|'tablet'|'desktop', container: { width, height }, isExpanded, isSelected, isHighlighted, isFocused, level, hasChildren }`. `deviceClass`/`container` come from **`@keenmate/web-components-core/environment`** (`classifyDevice` + `observeEnvironment`/`observeElementSize`); a device-class FLIP triggers a re-render, container size updates silently (web-treeview is virtual-scroll-first — re-painting all rows per resize frame is wrong). Node-state fields mirror the node at render time and re-render through the diff reconciler (collapse → `ctx.isExpanded` flips). Backward compatible (extra arg ignored by existing callbacks). Exported type `NodeRenderContext` (plus `TooltipPlacement`/`TooltipDelay`, which were missing from the public export). Parity with svelte-treeview. Guarded by `e2e/render-context.spec.ts` + fixture `test/render-context.html`.
+- **Per-node icons now render on EVERY node (branch + leaf) as a dedicated `.wtv__node-icon`
+  element — no longer folded into the leaf toggle slot — with color + a custom render hook.**
+  Previously `iconMember`/`iconCallback` only affected LEAF nodes and replaced the leaf's toggle
+  glyph, so branches (incl. managers with reports) got no type icon and `.wtv__node-icon` /
+  `shouldAlignNodeIcons` were vestigial. Now the resolved VALUE renders as `<i class="wtv__node-icon
+  {value}">` (FontAwesome-friendly) on every node, between the toggle/checkbox and the label, and the
+  branch toggle keeps its chevron. New: **`iconColorMember` / `iconColorCallback`** (per-node color,
+  applied inline; or `--wtv-node-icon-color`, default `currentColor`) and **`renderIconCallback(node,
+  value, iconEl)`** for inline SVG / unicode / custom markup (wins over the default `<i>`).
+  `shouldAlignNodeIcons` now actually reserves the column (`--wtv-node-icon-width`). Parity with
+  svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback`/`icon`
+  snippet. Guarded by `e2e/node-icons.spec.ts` + fixture `test/node-icons.html`.
+- **`--wtv-node-transition` default flipped to `none` (instant hover).** The row
+  (`.wtv__node-content`) transition was already a variable, but defaulted to an animated
+  `background` + `box-shadow` fade over `--wtv-transition-speed`, so the hover highlight
+  trailed the cursor down the list (sluggish). Hover is now instant by default; restore the
+  fade with `--wtv-node-transition: background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease`.
+  Parity with svelte-treeview's new `--stv-node-content-transition` (default `none`).
+- **Hover/focus node tooltips — `show-node-tooltips` + `getNodeTooltipCallback`, parity
+  with `@keenmate/svelte-treeview`'s node tooltips and `@keenmate/web-multiselect`'s option
+  tooltips.** Set `show-node-tooltips` (attr) / `shouldShowNodeTooltips` (prop) and a
+  `getNodeTooltipCallback(node) => string | HTMLElement | null` — a **string** for plain text
+  or a built **`HTMLElement`** for rich content (the web-component analog of svelte-treeview's
+  `tooltip` snippet); empty/null ⇒ no tooltip for that row. Each row's tooltip is created via the
+  shared **`createTooltip` core primitive** (`@keenmate/web-components-core/positioning`, the same
+  one web-multiselect uses) — portaled into the shadow container, Floating-UI positioned with
+  `autoUpdate`, shown on `mouseenter`/`focusin`, hidden on `mouseleave`/`focusout`. The renderer
+  manages a per-row handle map (created in `_createNodeElement`, refreshed in `_updateNodeElement`
+  so content tracks a rename/`_rev` bump, destroyed when the row leaves the diff / virtual window).
+  Options: `tooltip-placement` (default `top-start`), `tooltip-delay` (default `{ show: 400, hide: 100 }`),
+  `tooltip-offset` (default `8`), `tooltip-follow-cursor`. The surface (`.wtv__tooltip` / `--visible`)
+  uses the **same shared `--base-tooltip-*` tokens and defaults as web-multiselect's option tooltip
+  and svelte-treeview's `.stv__tooltip`** (`--wtv-tooltip-bg`/`-color`/`-padding`/`-border-radius`/
+  `-font-size`/`-width`/`-min-width`/`-max-width`/`-shadow`/`-z-index`; width is `auto`/shrink-to-content
+  by default, set `--wtv-tooltip-width` for a fixed box), each with a hardcoded fallback, so under one
+  KeenMate theme all three render an identical tooltip. New `TooltipPlacement` / `TooltipDelay` types. Demo `examples-tooltips.html`
+  (dedicated page, mirroring ms's); guarded by `e2e/tooltip.spec.ts` + fixture `test/tooltip.html`.
 - **`draggedNodeClass?: string` — replace the dragged source row's visual with your
   own class, plus `--wtv-dragged-scale` to tune the built-in one.** Completes the
   class-override family alongside `highlightedNodeClass` / `focusedNodeClass` /
@@ -50,15 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   path is in it. Mirrors `@keenmate/svelte-treeview` (`controller.draggedPaths`); unlike the
   recursive Svelte renderer, this flat renderer already tested membership per rendered node,
   so only the stored set changed.
-
-## [2.0.0-rc09] - 2026-08-14
-
-Parity sync with **`@keenmate/svelte-treeview` rc13 + rc14**: the remaining
-clipboard/drag overhaul items plus the rc14 feature set. Most of rc13 had already
-landed; this release closes the gap.
-
-### Added
-
 - **`iconSet` (attr `icon-set`, default `'chevron'`) — one disclosure-glyph knob
   chained to the shared `--base-icon-*` contract.** The toggle marker is now a
   single mask-image glyph read from ONE variable set (`--wtv-icon-expand` /
@@ -77,7 +92,6 @@ landed; this release closes the gap.
   declares its own rotation offsets — same pattern as web-multiselect /
   web-daterangepicker's `--*-icon-rotate-*`. A correctly-oriented custom glyph
   leaves them at 0deg.
-
 - **`displayValueFallback` (attr `display-value-fallback`, default `'[N/A]'`)** —
   the text shown for a node with no resolvable display value is now configurable
   (empty renders nothing). Carried as a mutable property on the LTree
@@ -136,21 +150,72 @@ landed; this release closes the gap.
 - **Drop-zone engaged feedback** — the empty drop zone lights up on hover AND while a
   drag hovers it (`.wtv__empty-zone--active`, since an in-flight HTML5 drag suppresses
   `:hover`).
+- **Expand/collapse now logs under the `UI` category.** `toggleNodeExpanded`
+  (`controller/tree-controller.ts`) gains a `uiLogger.debug("Node expanded/collapsed:
+  <path>", …)` line — clicking a node's toggle chevron previously produced no
+  category log at all (only `TREEVIEW:PERF` timing, and only when perf logging was
+  on), so the logging demo's promise that expand/collapse yields logs was untrue.
+  The blocked-toggle collapsibility gate still returns before the log, so a
+  no-op toggle correctly logs nothing.
+- **`examples-logging.html` rebuilt around the `window.components` registry**, to
+  match `@keenmate/web-multiselect`'s reworked page: a live registry inspector for
+  `window.components['web-treeview']` (version / config / logging pills /
+  `getInstances()` count), logging controls driven through the flattened
+  `.logging` bundle, and an add/remove live-instance demo with a cross-instance
+  fan-out. Fixes a stale reference: the missing **`INDEX`** category (search
+  indexing) is now listed and gets its own "Only INDEX" button — the page had only
+  5 of the 6 `TREEVIEW:*` categories. Perf logging and the debug overlay are kept
+  as their own cards, labelled as a separate module (perf is not part of the
+  `.logging` bundle).
+- **All example pages audited against the current API and corrected.** Swept the
+  root `examples-*.html` + `examples/vanilla.html` for stale attributes, enums,
+  properties, methods, events, and code snippets. Fixes: `deselectAll()` (never a
+  method) → `clearSelection()` in `examples-multiselect.html` (3×) and
+  `examples-drag-drop.html` (2×); a dead `selected-node-changed` listener +
+  `e.detail.selectedNode` → `focused-node-changed` + `e.detail.focusedNode` in
+  `examples/vanilla.html` (and the same stale event name in `examples-basic.html`
+  prose); `node.childrenCount` (not on `LTreeNode`) → `Object.keys(node.children).length`
+  in `examples-icons-grid.html`; and three non-existent CSS variables in
+  `examples-theming.html` (`--wtv-glow-above-color`/`--wtv-glow-below-color` →
+  `--wtv-glow-before-color`/`--wtv-glow-after-color`; the inert `--wtv-border-radius-md`
+  removed — the component only reads `-sm`/`-lg`).
+- **Built-in Delete** — `deleteNodes(paths?)` (defaults to the current selection: highlight set, else focused node), the `beforeDeleteCallback(ctx)` interceptor (narrow via `string[]` / block via `false`), and the `onDelete(ctx)` event (fires with PRE-REMOVAL node snapshots). Wired to the `Delete` key (and `Shift+Delete` = cut, `Ctrl/Shift+Insert` CUA aliases) in the renderer keydown handler.
+- **`onTreeKeydown(ctx)` interceptor** — `ctx = { event, focusedNode, highlightedNodes, controller }`; return `true` to suppress the default navigation + built-in shortcuts. Runs BEFORE the built-in shortcut handling.
+- **`shouldHandleKeyboardShortcuts`** (default `true`) — opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc-cancel-cut shortcuts. (Kept default-on so existing web-treeview demos don't regress; svelte-treeview defaults this off.)
+- **`'self'` drag-drop mode** — `DragDropMode` gains `'self'` (was `'none' | 'cross' | 'both'`), the same-tree-only mode svelte-treeview already had: dragging is enabled but `isDropAllowedByMode` rejects any drop whose dragged node originated in another tree (the mirror of `'cross'`, which rejects same-tree drops). Set via the `drag-drop-mode` attribute / `dragDropMode` prop. Regression in `e2e/drag-drop.spec.ts` ("drag-drop-mode same-tree gate": `'self'` allows a same-tree drop, `'cross'` rejects it).
+- **Deep clipboard, at full svelte-treeview parity** — a module-level cross-tree registry (`registerClipboardTree` / `unregisterClipboardTree` / `getClipboardTree`) so a cross-tree CUT removes the originals from the source tree; `nodeOutputTransformationCallback(data, ctx)` / `nodeInputTransformationCallback(data, ctx)` per-node transforms (the input transform returning `null` SKIPS a node — skipping a root skips its subtree); a per-entry self-paste guard (paste into self/descendant skips just that entry, not the batch); leaf-aware paste (a `'child'` paste onto a node that disallows `'child'` is redirected beside it, honoring `getAllowedDropPositionsCallback`); the `uniqueName(base, taken, suffix?)` collision-free naming helper; `shouldAutoHandlePaste` (default `true`; `false` forwards the cleaned entries via `PasteResult.entries`); and `setDragSet` / `getDragSet` so cross-tree multi-drag can expose the full set via `ctx.dragged`.
+- **Empty-tree paste** — `shouldShowDropPlaceholderWhenEmpty` keeps the empty drop zone visible whenever the tree is empty (not only during a drag) and makes it focusable + focus-on-hover/pointerdown, so a Ctrl/Cmd+V pastes into an empty tree (paste targets the focused node, or the root when none).
+- **`noDataText`** — configurable fallback text for an empty tree (was a hardcoded `"No data"`), used when no `renderEmptyStateCallback` is given.
+- **New context types exported**: `NodeRef`, `NodeEventContext`, `NodeDragContext`, `NodeDropContext`, `ClipboardEventContext`, `SelectionChangeContext`, `TreeKeydownContext`, `NodeTransformContext`, `BeforeCopyContext`, `BeforeDeleteContext`, `BeforePasteContext`, plus the `ClipboardSourceTree` interface and the clipboard registry / drag-set / `uniqueName` functions.
+- **`ContextMenuItem.shouldCloseOnClick?: boolean` (default `true`) — per-item opt-out of the context-menu auto-close**: the callback menu already auto-closed after a leaf item was activated (the right default for one-shot commands). Some items act *incrementally* — a toggle, a counter, a multi-step action — and want the menu to stay open. Setting `shouldCloseOnClick: false` suppresses the auto-close for that entry; the handler then owns dismissal via the `close` callback passed to `contextMenuCallback(node, close)`. Implemented in `dom-renderer.ts` by gating the leaf-item click close on `item.shouldCloseOnClick !== false` (the click handler now also awaits an async `onclick` in a `try/finally`, matching svelte-treeview). The shortcut-key path activates items via `el.click()`, so it inherits the same gate. `/test/context-menu.html` gains a "Bump (stays open)" item; `e2e/context-menu.spec.ts` asserts the menu survives repeated clicks and a normal item still dismisses afterward.
+- **Data-driven per-row class hooks `nodeClass?: (node) => string` and `nodeContentClass?: (node) => string`**: previously the only per-row class hooks were *state* classes (`highlightedNodeClass` / `focusedNodeClass` / `dragOverNodeClass`) — there was no way to tag a row from its own data (`is-folder` / `is-file`, a status colour, a grid class) without `[data-tree-path]` selectors. The two callbacks run per node and return class(es) applied to `.wtv__node` (`nodeClass`) and `.wtv__node-content` (`nodeContentClass`). Plumbed through `NodeConfig` and applied in both the diff reconciler's create and update paths via a new `_applyCustomNodeClasses` helper that tracks the previously-applied classes in `data-*` attributes, so a re-render removes stale classes before adding new ones (the reconciler reuses row elements). Wired end-to-end on the web component (JS-only callback props + `_scheduleUpdate`) and through `mapToControllerConfig`. New `/test/feature-port.html` + `e2e/feature-port.spec.ts` assert the classes land on the right elements, by data.
+- **Public `onNodeDoubleClick?: (node) => void` event + `node-double-click` DOM event — a real double-click notification, reliable under the flat diff reconciler**: there was no public double-click event, and the native `dblclick` listener only toggled expand in `select` mode (no callback). The native `dblclick` is unreliable here because the first click bumps `_rev` and the reconciler patches the row out from under the browser. Replaced with manual detection in the controller (`detectDoubleClick` — last path + timestamp, 400ms window), called by the renderer for every genuine plain UI click. Fires `onNodeDoubleClick` for every `clickBehavior`; `select` mode additionally keeps the expand/collapse-on-double. On a detected double the second click is consumed so the gesture reads as a single open, not a re-toggle. Surfaced as a `node-double-click` `CustomEvent` on the element.
+- **Public `onCopy` / `onCut` / `onPaste` events — post-operation clipboard notifications**: `copyNodes` / `cutNodes` / `pasteNodes` existed but fired nothing on completion. Added `onCopy(paths)` / `onCut(paths)` (fired with the affected source paths after the operation succeeds) and `onPaste(result)` (fired with the `PasteResult`) on the controller, forwarded as web-component callback props and `copy` / `cut` / `paste` `CustomEvent`s. Covered by `e2e/feature-port.spec.ts`.
+- **`beforeCopyCallback` / `beforeCutCallback` / `beforePasteCallback` clipboard interceptors — the *before* half of the clipboard surface, symmetric with the new `on*` events**: `beforeCopyCallback(ctx)` / `beforeCutCallback(ctx)` run before the operation and can return `false` to block it or a `string[]` to override which paths are copied/cut; `beforePasteCallback(ctx)` runs before a paste and can return `false` to block or `{ targetPath?, position? }` to redirect it. Applied in the controller's `copyNodes` / `cutNodes` / `pasteNodes`, forwarded through `mapToControllerConfig` and exposed as web-component callback props. This brings web-treeview's clipboard to full parity with `@keenmate/svelte-treeview` (rewrite/block before, react after). Covered by `e2e/feature-port.spec.ts` (a `beforeCopy` path override and a `beforePaste` block).
+- **`.wtv__node-content--highlight-glow` built-in highlight flavor** (parity with `@keenmate/svelte-treeview`'s `.stv__node-content--highlight-glow`). A fifth opt-in highlight class joining bold / border / brackets — a tinted background plus an accent-colored soft `box-shadow` glow ring. Pass it via the `highlighted-node-class` attribute / `highlightedNodeClass` config. (The Svelte build also ships a `--highlight-fill` variant; web-treeview doesn't yet — tracked separately as it needs a dedicated `--wtv-highlight-bg` token.)
 
 ### Changed
 
-- **The checkbox is now a custom box-span control (was a native `<input>` styled with
-  `accent-color`).** It renders the same structure as pure-admin `.pa-checkbox` and
-  `@keenmate/svelte-treeview` — a `<label class="wtv__checkbox">` wrapping a
-  visually-hidden native `<input>` plus a `.wtv__checkbox-box` span — so the whole
-  KeenMate suite shares ONE checkbox implementation instead of three. The checkmark and
-  tri-state dash are `currentColor` masks chained to the shared `--base-icon-check` /
-  `--base-icon-indeterminate` contract (new `--wtv-icon-check` / `--wtv-icon-indeterminate`),
-  tinted by the new `--wtv-checkbox-checkmark-color`; a full `--wtv-checkbox-*` var set
-  (size, border, bg, checked bg/border) is now themeable. The native input stays the
-  source of truth for `:checked` / `:indeterminate` and keyboard/a11y; the delegated
-  click handler `preventDefault`s the label so only the controller toggles state. New
-  manifest entries for the two base tokens + the `--wtv-icon-*` / `--wtv-checkbox-*` vars.
+- **Bumped `@keenmate/web-components-core` `1.0.0-rc01` → `1.0.0-rc10` (pinned exact).** The rc01→rc10 diff is purely additive — no exports removed or renamed, and the symbols web-treeview already used (`createTooltip`, `createLoggers`, `registerComponent`) are byte-identical. rc10 adds the `environment` module (`classifyDevice`/`observeEnvironment`/`observeElementSize` + `DeviceClass`/`ElementSize`), now used to source the `NodeRenderContext` device/container (see Added), plus `overlay` and presentation primitives (unused for now).
+- **Checkbox render unified onto the canonical single styled `<input>` contract**
+  (parity with `@keenmate/web-multiselect` 2.x + `@keenmate/svelte-treeview`). There
+  is no `<label>` wrapping a visually-hidden native `<input>` + a `.wtv__checkbox-box`
+  span; `.wtv__checkbox` IS the styled `<input>` now (`appearance: none`,
+  `box-sizing: border-box`), the tick/dash is an `::after` mask, and the box, border
+  AND radius scale via `calc(… * var(--wtv-checkbox-scale))` off the shared
+  `--base-checkbox-scale` knob — **no `transform`**, so the masked glyph never
+  pixel-snaps and stays centered at any scale. The indeterminate (tri-state) state is
+  now a **modifier class `.wtv__checkbox--indeterminate` + `aria-checked="mixed"`**
+  instead of the native `.indeterminate` DOM property, so it survives the flat diff
+  reconciler + virtual-scroll row recycling (the old imperative `cb.indeterminate`
+  write was re-applied every reconcile and lost on recycle). Same DOM output as the
+  sibling components (modulo the `wtv__` prefix).
+- New checkbox variables consumed from the shared contract: `--wtv-checkbox-scale`
+  (→ `--base-checkbox-scale`), `--wtv-icon-check-size` (→ `--base-icon-check-size`,
+  default 68%), `--wtv-checkbox-border-radius`, `--wtv-checkbox-checked-bg-hover`,
+  `--wtv-checkbox-focus-ring*`; `--wtv-checkbox-border-color` now chains to the
+  dedicated `--base-checkbox-border-color` (a stronger mid-gray than the generic
+  `--base-border-color`).
 - **The default disclosure glyph is now the Lucide chevron, not the filled ▶/▼
   triangle**, and it renders as a currentColor mask instead of a Unicode text
   glyph (`content: '\25B6'`). This matches `@keenmate/svelte-treeview` and is an
@@ -181,35 +246,6 @@ landed; this release closes the gap.
   fully-checked node (= the new `'all'` policy); they now default to the minimal
   cover. Pass `cascadeSelectPolicy="all"` to restore. **Breaking** for cascade
   consumers.
-
-### Fixed
-
-- **Touch drag-and-drop under touch environments (most visibly Chrome DevTools
-  device emulation).** The native `draggable` attr swallowed the synthetic
-  `touchmove`/`touchend` stream (Chrome tried to hand the gesture to its
-  mouse-driven HTML5 drag engine), freezing the drag mid-flight. On `touchstart` the
-  node's `draggable` is now toggled off synchronously and restored on
-  `touchend`/`touchcancel`. Scoped to touch, so mouse-drag is unaffected.
-
-### Notes
-
-- Virtual-scroll uniform-row-height (svelte-treeview rc14's `flatGap` fix) is **N/A**
-  here: web-treeview is virtual-scroll-first and already enforces uniform rows
-  (single-line label truncation + `min-height`), with no per-row level-transition
-  margin in flat mode. No change required.
-
-## [2.0.0-rc08] - 2026-08-04
-
-Migrated onto **`@keenmate/web-components-core`** (`BlissElement` + the reactive
-input model), following `@keenmate/web-multiselect` and
-`@keenmate/web-daterangepicker`. The `WebTreeView` engine (`treeview.ts`,
-`controller/`, `renderer/`, `ltree/`) and ALL CSS are UNCHANGED — only the
-custom-element plumbing was replaced (the one deliberate engine touch is a
-debug-only log line on expand/collapse; see Added). No consumer-facing
-attribute/event/method changes.
-
-### Changed
-
 - **`web-component.ts`: the hand-coded plumbing is gone.** The `ATTRIBUTE_TABLE`,
   `JS_CALLBACK_FIELDS`, `observedAttributes`, `attributeChangedCallback`,
   `readAttrValue`, the `_scheduleUpdate` microtask batcher, and ~100
@@ -242,45 +278,26 @@ attribute/event/method changes.
   JetBrains editor-integration generators. `npm run build` now runs `cem analyze`
   first; the manifest (`custom-elements.json`), `web-types.json`, and the VS Code
   custom-data files ship from the `static inputs` / `static events` tables
-  (67 attributes / 13 events).
-- **Depends on `@keenmate/web-components-core@1.0.0-rc01`** (exact pin).
-  `@floating-ui/dom` and `flexsearch` stay direct dependencies (the engine keeps
-  its own positioning + search).
-
-### Added
-
-- **Expand/collapse now logs under the `UI` category.** `toggleNodeExpanded`
-  (`controller/tree-controller.ts`) gains a `uiLogger.debug("Node expanded/collapsed:
-  <path>", …)` line — clicking a node's toggle chevron previously produced no
-  category log at all (only `TREEVIEW:PERF` timing, and only when perf logging was
-  on), so the logging demo's promise that expand/collapse yields logs was untrue.
-  The blocked-toggle collapsibility gate still returns before the log, so a
-  no-op toggle correctly logs nothing.
-- **`examples-logging.html` rebuilt around the `window.components` registry**, to
-  match `@keenmate/web-multiselect`'s reworked page: a live registry inspector for
-  `window.components['web-treeview']` (version / config / logging pills /
-  `getInstances()` count), logging controls driven through the flattened
-  `.logging` bundle, and an add/remove live-instance demo with a cross-instance
-  fan-out. Fixes a stale reference: the missing **`INDEX`** category (search
-  indexing) is now listed and gets its own "Only INDEX" button — the page had only
-  5 of the 6 `TREEVIEW:*` categories. Perf logging and the debug overlay are kept
-  as their own cards, labelled as a separate module (perf is not part of the
-  `.logging` bundle).
-- **All example pages audited against the current API and corrected.** Swept the
-  root `examples-*.html` + `examples/vanilla.html` for stale attributes, enums,
-  properties, methods, events, and code snippets. Fixes: `deselectAll()` (never a
-  method) → `clearSelection()` in `examples-multiselect.html` (3×) and
-  `examples-drag-drop.html` (2×); a dead `selected-node-changed` listener +
-  `e.detail.selectedNode` → `focused-node-changed` + `e.detail.focusedNode` in
-  `examples/vanilla.html` (and the same stale event name in `examples-basic.html`
-  prose); `node.childrenCount` (not on `LTreeNode`) → `Object.keys(node.children).length`
-  in `examples-icons-grid.html`; and three non-existent CSS variables in
-  `examples-theming.html` (`--wtv-glow-above-color`/`--wtv-glow-below-color` →
-  `--wtv-glow-before-color`/`--wtv-glow-after-color`; the inert `--wtv-border-radius-md`
-  removed — the component only reads `-sm`/`-lg`).
+  (67 attributes / 13 events). `@floating-ui/dom` and `flexsearch` stay direct
+  dependencies (the engine keeps its own positioning + search).
+- **All fire-and-forget event callbacks now take ONE context object and use the `on*` naming** (was positional, mixed naming). `nodeClickedCallback(node)` → `onNodeClick(ctx)`, `nodeDragStartCallback(node, event)` → `onNodeDragStart(ctx)`, `nodeDragOverCallback(node, event)` → `onNodeDragOver(ctx)`, `nodeDropCallback(dropNode, draggedNode, position, event, operation)` → `onNodeDrop(ctx)`, `selectionChangeCallback(nodes, paths)` → `onSelectionChange(ctx)`, `highlightChangeCallback(paths, nodes)` → `onHighlightChange(ctx)`. `onNodeDoubleClick`, `onCopy`, `onCut` also switch from positional args to a ctx object. The shared shape is `NodeRef<T> = { path, node, parent, siblings }` (built by `controller.nodeRef()`), so a handler gets the node's live parent + siblings without a `getNodeByPath(parentPath)` round-trip. `onNodeDrop`'s `NodeDropContext` carries `{ source, target, dragged, dropped, position, operation, event }` — `dragged` is the full top-level set (a drop fires once even for a multi-drag) and `dropped` is the nodes the library placed (null cross-tree / when `shouldAutoHandle*` is false).
+- **The clipboard interceptors take a context object too**: `beforeCopyCallback(ctx)` / `beforeCutCallback(ctx)` receive `{ operation, paths, nodes }`; `beforePasteCallback(ctx)` receives `{ operation, target: { path, node }, entries }` (was `(targetPath, operation, entries)`). Return shapes unchanged.
+- **`PasteResult.pastedCount` is renamed `count`**, and gains `skipped` (entries dropped by the paste transform or the self-paste guard). `beforePasteCallback` returning `false` now fires `onPaste` with the blocked `{ success: false, count: 0 }` result (mirrors svelte-treeview).
+- **DOM `CustomEvent` details mirror the ctx objects**: `highlight-change` / `selection-change` detail is now `{ paths, nodes }` (was `{ highlightedPaths, highlightedNodes }` / `{ selectedPaths, selectedNodes }`); `node-drop` detail is the `NodeDropContext`; `copy` / `cut` detail is `{ operation, paths, nodes }`; `node-clicked` / `node-double-click` detail is a `NodeRef` (so `.node` still resolves).
+- **Indent step is now its own knob, decoupled from the toggle column.** The flat-mode per-level indent (`paddingLeft = (level − 1) × step`) previously read `--wtv-column-width` — the same variable that sizes the toggle/icon gutter — so nesting density couldn't be tuned without also resizing the twistie column, and the effective 24px/level ran wide. The indent now reads `--wtv-indent-size` (repurposed from a dead alias that pointed back at `--wtv-column-width` and was never consumed), defaulting to `16px`. Set `--wtv-indent-size` alone to tune density (mirrors svelte-treeview's `--stv-node-indent-per-level`). The `/examples/basic` "Simple File Tree" card gains Condensed / Compact / Generous indentation buttons demoing it.
+- **No default marker on leaf nodes.** The default `leafIconClass` is now `wtv__toggle-icon--leaf-none` (empty marker) instead of `wtv__toggle-icon--leaf` (the `•` bullet dot) — a leaf now renders an empty toggle slot that still reserves `--wtv-column-width`, so its label stays aligned under its expandable siblings. The bullet is still available by explicitly setting `leafIconClass="wtv__toggle-icon--leaf"`. Mirrors svelte-treeview. (Indent math was already `(level − 1) × column-width` and the leaf slot was already full-width, so no realignment was needed on this side.)
+- **`--wtv-node-height` is now a live row-height knob, and labels truncate with an ellipsis.** The token was declared (`32px`) but consumed nowhere — row height was emergent from padding + line-height, and `.wtv__node-label` had no `white-space`/`overflow`, so long labels WRAPPED. Since web-treeview is the virtual-scroll package (translateY math assumes uniform `index × rowHeight`), a wrapping row silently desynced the scroll position. Now `.wtv__node-content` gets `min-height: var(--wtv-node-height)` (+ `min-width: 0` so the flex label can shrink) and `.wtv__node-label` gets `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`. Rows stay a uniform height regardless of label length; override the label hook + raise `--wtv-node-height` for multi-line rows. (svelte-treeview intentionally leaves `.stv__node-label` a bare hook because it isn't virtual-scroll-first, and it never had a node-height token — that token was a web-treeview-only leftover.)
+- **A rapid double-click on the same row no longer toggles twice** (consequence of the new double-click detection): in `expand` / `expand-and-focus` modes two clicks within 400ms previously expanded then collapsed (and a fast re-click on a checkbox row toggled it back); the second click is now consumed as part of a double-click gesture and fires `onNodeDoubleClick` instead. Distinct single clicks (>400ms apart) toggle as before. Three `e2e/interaction.spec.ts` cases that re-clicked the same row to assert a toggle were updated to space the clicks past the double-click window. Mirrors `@keenmate/svelte-treeview`.
 
 ### Fixed
 
+- **`displayValueFallback` now actually shows when the display member is absent — and no longer crashes the sort.** `getNodeDisplayValue` returned `getField(node.data, displayValueMember)` verbatim even when that field was missing, so a node with no value yielded `undefined`. That (a) skipped the documented member → callback → fallback resolution order, and (b) threw `Cannot read properties of undefined (reading 'localeCompare')` in the display-value sort tiebreak (`src/ltree/ltree.ts`). Because `displayValueMember` defaults to `'displayValue'`, ANY data lacking that exact field hit it — i.e. the rc06 `displayValueFallback` feature was effectively dead for the common case. A missing member now falls through to the callback/fallback (never `undefined`); `getNodeSearchValue` got the identical guard so the indexer can't hit it either. Regression-covered by a new "Display Value Fallback" card in `test/data.html` + `e2e/data.spec.ts`.
+- **Touch drag-and-drop under touch environments (most visibly Chrome DevTools
+  device emulation).** The native `draggable` attr swallowed the synthetic
+  `touchmove`/`touchend` stream (Chrome tried to hand the gesture to its
+  mouse-driven HTML5 drag engine), freezing the drag mid-flight. On `touchstart` the
+  node's `draggable` is now toggled off synchronously and restored on
+  `touchend`/`touchcancel`. Scoped to touch, so mouse-drag is unaffected.
 - **`drop-zone-start` silently dropped the `px`/`%` string form (migration regression).**
   The config contract is `number | string` ("a number is a percentage of node
   width; a string is used as-is"), and the old property setter passed strings
@@ -294,29 +311,9 @@ attribute/event/method changes.
   "off / internal / self / …"; the actual values are `none` (off), `self`, `cross`,
   `both`. Corrected the `InputDef` description (feeds `custom-elements.json` /
   web-types).
-
-## [2.0.0-rc07] - 2026-07-05
-
-Structural parity port of the `@keenmate/svelte-treeview` rc11–rc13 wave: every
-event/callback signature is synchronized to a single context object, plus built-in
-Delete, an `onTreeKeydown` interceptor, empty-tree paste, and the deep clipboard
-machinery (cross-tree cut, transforms, per-entry skip).
-
-### Changed
-
-- **All fire-and-forget event callbacks now take ONE context object and use the `on*` naming** (was positional, mixed naming). `nodeClickedCallback(node)` → `onNodeClick(ctx)`, `nodeDragStartCallback(node, event)` → `onNodeDragStart(ctx)`, `nodeDragOverCallback(node, event)` → `onNodeDragOver(ctx)`, `nodeDropCallback(dropNode, draggedNode, position, event, operation)` → `onNodeDrop(ctx)`, `selectionChangeCallback(nodes, paths)` → `onSelectionChange(ctx)`, `highlightChangeCallback(paths, nodes)` → `onHighlightChange(ctx)`. `onNodeDoubleClick`, `onCopy`, `onCut` also switch from positional args to a ctx object. The shared shape is `NodeRef<T> = { path, node, parent, siblings }` (built by `controller.nodeRef()`), so a handler gets the node's live parent + siblings without a `getNodeByPath(parentPath)` round-trip. `onNodeDrop`'s `NodeDropContext` carries `{ source, target, dragged, dropped, position, operation, event }` — `dragged` is the full top-level set (a drop fires once even for a multi-drag) and `dropped` is the nodes the library placed (null cross-tree / when `shouldAutoHandle*` is false). `beforeDropCallback` is DELIBERATELY left 5-arg positional (the drop pair is asymmetric).
-- **The clipboard interceptors take a context object too**: `beforeCopyCallback(ctx)` / `beforeCutCallback(ctx)` receive `{ operation, paths, nodes }`; `beforePasteCallback(ctx)` receives `{ operation, target: { path, node }, entries }` (was `(targetPath, operation, entries)`). Return shapes unchanged.
-- **`PasteResult.pastedCount` is renamed `count`**, and gains `skipped` (entries dropped by the paste transform or the self-paste guard). `beforePasteCallback` returning `false` now fires `onPaste` with the blocked `{ success: false, count: 0 }` result (mirrors svelte-treeview).
-- **DOM `CustomEvent` details mirror the ctx objects**: `highlight-change` / `selection-change` detail is now `{ paths, nodes }` (was `{ highlightedPaths, highlightedNodes }` / `{ selectedPaths, selectedNodes }`); `node-drop` detail is the `NodeDropContext`; `copy` / `cut` detail is `{ operation, paths, nodes }`; `node-clicked` / `node-double-click` detail is a `NodeRef` (so `.node` still resolves).
-- **Indent step is now its own knob, decoupled from the toggle column.** The flat-mode per-level indent (`paddingLeft = (level − 1) × step`) previously read `--wtv-column-width` — the same variable that sizes the toggle/icon gutter — so nesting density couldn't be tuned without also resizing the twistie column, and the effective 24px/level ran wide. The indent now reads `--wtv-indent-size` (repurposed from a dead alias that pointed back at `--wtv-column-width` and was never consumed), defaulting to `16px`. Set `--wtv-indent-size` alone to tune density (mirrors svelte-treeview's `--stv-node-indent-per-level`). The `/examples/basic` "Simple File Tree" card gains Condensed / Compact / Generous indentation buttons demoing it.
-- **No default marker on leaf nodes.** The default `leafIconClass` is now `wtv__toggle-icon--leaf-none` (empty marker) instead of `wtv__toggle-icon--leaf` (the `•` bullet dot) — a leaf now renders an empty toggle slot that still reserves `--wtv-column-width`, so its label stays aligned under its expandable siblings. The bullet is still available by explicitly setting `leafIconClass="wtv__toggle-icon--leaf"`. Mirrors svelte-treeview. (Indent math was already `(level − 1) × column-width` and the leaf slot was already full-width, so no realignment was needed on this side.)
-- **`--wtv-node-height` is now a live row-height knob, and labels truncate with an ellipsis.** The token was declared (`32px`) but consumed nowhere — row height was emergent from padding + line-height, and `.wtv__node-label` had no `white-space`/`overflow`, so long labels WRAPPED. Since web-treeview is the virtual-scroll package (translateY math assumes uniform `index × rowHeight`), a wrapping row silently desynced the scroll position. Now `.wtv__node-content` gets `min-height: var(--wtv-node-height)` (+ `min-width: 0` so the flex label can shrink) and `.wtv__node-label` gets `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`. Rows stay a uniform height regardless of label length; override the label hook + raise `--wtv-node-height` for multi-line rows. (svelte-treeview intentionally leaves `.stv__node-label` a bare hook because it isn't virtual-scroll-first, and it never had a node-height token — that token was a web-treeview-only leftover.)
-
-### Fixed
-
-- **Every property/attribute change rebuilt the entire tree, even purely cosmetic ones (A2 value-compare guard).** `buildConfig()` has no per-key dirty tracking — it resends EVERY set member + callback on any change — so `updateProps`'s recreation guard, a presence check (`updates.X !== undefined`), fired a full LTree teardown + `insertArray` (fresh node objects) on changes that touched nothing structural (a theme class, a cosmetic prop). The guard now compares each incoming value against the one baked into the live tree (`changed(next, current)`) and only recreates on a REAL change; references are stable across resends (`buildConfig` copies stored fields, it doesn't rebuild closures), so identity compare is sound for callbacks and string compare for members. This closes the perf half of the state-preservation issue above — cosmetic changes now cost nothing. Regression-covered by the "A2 guard" block in `e2e/state-persistence.spec.ts` (a same-value resend recreates NOTHING; a genuine change still does, asserted via the init logger's "Recreating LTree" line). **Sub-fix exposed by A2:** `expandLevel` is baked into the LTree's construction closure and was only ever *applied* as a side-effect of the (previously constant) recreation, so once cosmetic recreations stopped, a runtime `expandLevel` change did nothing. It's now tracked on the controller (`_expandLevel`), a real change forces the recreation explicitly, and — unlike a member change, which PRESERVES expansion — an explicit `expandLevel` change RE-SEEDS expansion at the new level (skips `_reapplyExpanded`). Covered by the `expandLevel=0/3` cases in `e2e/basic.spec.ts`.
+- **Every property/attribute change rebuilt the entire tree, even purely cosmetic ones (A2 value-compare guard).** `buildConfig()` has no per-key dirty tracking — it resends EVERY set member + callback on any change — so `updateProps`'s recreation guard, a presence check (`updates.X !== undefined`), fired a full LTree teardown + `insertArray` (fresh node objects) on changes that touched nothing structural (a theme class, a cosmetic prop). The guard now compares each incoming value against the one baked into the live tree (`changed(next, current)`) and only recreates on a REAL change; references are stable across resends (`buildConfig` copies stored fields, it doesn't rebuild closures), so identity compare is sound for callbacks and string compare for members. This closes the perf half of the state-preservation issue below — cosmetic changes now cost nothing. Regression-covered by the "A2 guard" block in `e2e/state-persistence.spec.ts` (a same-value resend recreates NOTHING; a genuine change still does, asserted via the init logger's "Recreating LTree" line). **Sub-fix exposed by A2:** `expandLevel` is baked into the LTree's construction closure and was only ever *applied* as a side-effect of the (previously constant) recreation, so once cosmetic recreations stopped, a runtime `expandLevel` change did nothing. It's now tracked on the controller (`_expandLevel`), a real change forces the recreation explicitly, and — unlike a member change, which PRESERVES expansion — an explicit `expandLevel` change RE-SEEDS expansion at the new level (skips `_reapplyExpanded`). Covered by the `expandLevel=0/3` cases in `e2e/basic.spec.ts`.
 - **Setting `sortCallback` at runtime was silently ignored.** Its property setter (`web-component.ts`) assigned the field but — unlike every other member/callback setter — never called `_scheduleUpdate()`, so the new sorter never reached the controller and the tree kept its old order. Added the missing `_scheduleUpdate()`; a fresh `sortCallback` reference is a real change under the A2 guard, so it now recreates the tree and re-sorts.
-- **Changing any property/attribute at runtime silently reset the highlight set, checkbox selection, and expansion to their defaults.** Every config change resends the full config (`buildConfig()` → `treeview.update(...)`), whose member keys re-trigger `insertArray` — a full data re-insert that creates fresh node objects. Runtime state that lived ON the nodes (`isHighlighted`, `isSelected`, `visualState`, `isExpanded`) was wiped by that re-insert, so e.g. toggling a theme or a cosmetic prop after the user had highlighted/checked/expanded rows lost their state. Fixed web-grid-style by moving the source of truth off the nodes: the renderer now reads highlight + checkbox `checked` straight from the controller-owned `snapshot.highlightedPaths` / `snapshot.selectedPaths` (which survive the re-insert); `_reapplyRuntimeSelection()` re-applies the selection set onto the fresh nodes' `isSelected` and recomputes cascade `visualState` after every `insertArray`; and expansion (consumed by the LTree's own flattening, so it stays on the node) is captured before the re-insert (`_collectExpandedPaths`) and restored after (`_reapplyExpanded`). Regression-covered by `e2e/state-persistence.spec.ts`. (The wasteful re-insert on cosmetic changes is now ALSO eliminated — see the A2 value-compare guard below.)
+- **Changing any property/attribute at runtime silently reset the highlight set, checkbox selection, and expansion to their defaults.** Every config change resends the full config (`buildConfig()` → `treeview.update(...)`), whose member keys re-trigger `insertArray` — a full data re-insert that creates fresh node objects. Runtime state that lived ON the nodes (`isHighlighted`, `isSelected`, `visualState`, `isExpanded`) was wiped by that re-insert, so e.g. toggling a theme or a cosmetic prop after the user had highlighted/checked/expanded rows lost their state. Fixed web-grid-style by moving the source of truth off the nodes: the renderer now reads highlight + checkbox `checked` straight from the controller-owned `snapshot.highlightedPaths` / `snapshot.selectedPaths` (which survive the re-insert); `_reapplyRuntimeSelection()` re-applies the selection set onto the fresh nodes' `isSelected` and recomputes cascade `visualState` after every `insertArray`; and expansion (consumed by the LTree's own flattening, so it stays on the node) is captured before the re-insert (`_collectExpandedPaths`) and restored after (`_reapplyExpanded`). Regression-covered by `e2e/state-persistence.spec.ts`. (The wasteful re-insert on cosmetic changes is now ALSO eliminated — see the A2 value-compare guard above.)
 - **Switching `checkboxMode` at runtime left an indeterminate parent stuck at `[-]`.** The setter / `updateProps` just assigned the field without re-deriving visual state. Ported `_reconcileVisualStatesForMode()` from svelte-treeview (switching to `independent` PROMOTES an indeterminate node to fully checked; switching to `cascade` recomputes the parent dashes) and wired it into both the setter and the `updateProps` checkboxMode branch. Combined with the state-preservation fix above, the switch now sticks across the config-triggered re-insert. Regression in `e2e/checkbox-mode.spec.ts`.
 - **A desktop drag could drop onto a node with `isDropAllowed=false`.** web-treeview only enforced the per-node opt-out on the touch path; the desktop `dragOver` / `drop` / internal handlers + the glow-zone drop only checked the drag *mode*. Added the `node.isDropAllowed` gate to every desktop path, matching svelte-treeview. Regression in `e2e/drag-drop.spec.ts` (no-drop-node section).
 - **A node crossing the leaf↔folder line kept a stale toggle marker.** Dropping/adding a child onto a leaf left it showing an empty leaf slot (no ▼) instead of an expand arrow, and moving/deleting the last child out of a folder left a phantom ▼ on the now-empty node. Two causes, both fixed: (1) `updateNode` only ever flipped the `expanded` class of a node that was *already* a folder — it never rebuilt the marker when `hasChildren` changed (create built it correctly, so create-vs-update had diverged); extracted a single `_applyToggleClasses(toggle, node)` helper that rebuilds the class from `hasChildren`, called by both create and update. (2) The reconcile-skip check re-rendered a node only when its `data-rev` or `data-expanded` changed, but `hasChildren` isn't captured by `_rev` (adding/removing a child doesn't bump the *parent's* `_rev`), so the transition was skipped before `updateNode` even ran; `hasChildren` is now tracked as a `data-has-children` attribute and included in the skip check, exactly like `data-expanded`. Regression-covered in `e2e/branch-operations.spec.ts` (leaf→folder via insertBranch, folder→leaf via deleteBranch keepParent).
@@ -326,19 +323,9 @@ machinery (cross-tree cut, transforms, per-entry skip).
 - **Dragging a node shoved its row (and highlight background) rightward, looking like a phantom indent.** `.wtv__node-content--dragged` applies `transform: scale(0.95)`, but web-treeview lands that class on the FULL-WIDTH `.wtv__node` (it drags the outer element; svelte-treeview scales the content-sized `.stv__node-content` instead). With the default center transform-origin, shrinking a full-width row pulls its left edge — and its gray highlight — inward by ~2.5% of the tree width on drag start. Added `transform-origin: left center` so the lift/dim shrink stays anchored at the left and the row no longer moves horizontally. (The visible "missing toggles" alongside it was the empty leaf toggle slots — leaves reserve the `--wtv-column-width` gutter but render no marker since the default `leafIconClass` is `--leaf-none` — made obvious by the rightward shove; folders keep their arrows throughout a drag.)
 - **Floating drop zones and glow snap-zones rendered as unstyled text piled at the row start.** The `wtv__` BEM rename updated the CSS selectors (`.wtv__drop-zones--<layout>`, `.wtv__drop-zone--<pos>`, `.wtv__node-content--glow-<pos>`) but three class-emitting sites in `dom-renderer.ts` still produced the OLD flat names (`wtv-drop-zones-<layout>`, `wtv-drop-<pos>`, `wtv-glow-<pos>`). With no matching selector each `.wtv__drop-zone` kept only its base `position: absolute` with no offsets — collapsing all three zones onto 0,0 of the fixed overlay and losing their background colors — while the glow indicator was added under a name its own removal call never cleared. Emitters realigned to the BEM names; a full class-inventory audit (both directions) confirms no other stale `wtv-*` class strings remain.
 
-### Added
-
-- **Built-in Delete** — `deleteNodes(paths?)` (defaults to the current selection: highlight set, else focused node), the `beforeDeleteCallback(ctx)` interceptor (narrow via `string[]` / block via `false`), and the `onDelete(ctx)` event (fires with PRE-REMOVAL node snapshots). Wired to the `Delete` key (and `Shift+Delete` = cut, `Ctrl/Shift+Insert` CUA aliases) in the renderer keydown handler.
-- **`onTreeKeydown(ctx)` interceptor** — `ctx = { event, focusedNode, highlightedNodes, controller }`; return `true` to suppress the default navigation + built-in shortcuts. Runs BEFORE the built-in shortcut handling.
-- **`shouldHandleKeyboardShortcuts`** (default `true`) — opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc-cancel-cut shortcuts. (Kept default-on so existing web-treeview demos don't regress; svelte-treeview defaults this off.)
-- **`'self'` drag-drop mode** — `DragDropMode` gains `'self'` (was `'none' | 'cross' | 'both'`), the same-tree-only mode svelte-treeview already had: dragging is enabled but `isDropAllowedByMode` rejects any drop whose dragged node originated in another tree (the mirror of `'cross'`, which rejects same-tree drops). Set via the `drag-drop-mode` attribute / `dragDropMode` prop. Regression in `e2e/drag-drop.spec.ts` ("drag-drop-mode same-tree gate": `'self'` allows a same-tree drop, `'cross'` rejects it).
-- **Deep clipboard, at full svelte-treeview parity** — a module-level cross-tree registry (`registerClipboardTree` / `unregisterClipboardTree` / `getClipboardTree`) so a cross-tree CUT removes the originals from the source tree; `copyNodeTransformationCallback(data, ctx)` / `pasteNodeTransformationCallback(data, ctx)` per-node transforms (paste transform returning `null` SKIPS a node — skipping a root skips its subtree); a per-entry self-paste guard (paste into self/descendant skips just that entry, not the batch); leaf-aware paste (a `'child'` paste onto a node that disallows `'child'` is redirected beside it, honoring `getAllowedDropPositionsCallback`); the `uniqueName(base, taken, suffix?)` collision-free naming helper; `shouldAutoHandlePaste` (default `true`; `false` forwards the cleaned entries via `PasteResult.entries`); and `setDragSet` / `getDragSet` so cross-tree multi-drag can expose the full set via `ctx.dragged`.
-- **Empty-tree paste** — `shouldShowDropPlaceholderWhenEmpty` keeps the empty drop zone visible whenever the tree is empty (not only during a drag) and makes it focusable + focus-on-hover/pointerdown, so a Ctrl/Cmd+V pastes into an empty tree (paste targets the focused node, or the root when none).
-- **`noDataText`** — configurable fallback text for an empty tree (was a hardcoded `"No data"`), used when no `renderEmptyStateCallback` is given.
-- **New context types exported**: `NodeRef`, `NodeEventContext`, `NodeDragContext`, `NodeDropContext`, `ClipboardEventContext`, `SelectionChangeContext`, `TreeKeydownContext`, `NodeTransformContext`, `BeforeCopyContext`, `BeforeDeleteContext`, `BeforePasteContext`, plus the `ClipboardSourceTree` interface and the clipboard registry / drag-set / `uniqueName` functions.
-
 ### Internal
 
+- **Example pages consolidated into `@keenmate/svelte-treeview`'s topic taxonomy.** The root demos were reorganized to mirror the sibling package, one page per topic with coded sections (BU/DS/SF/IN/DD/IC/TT/CM/CL/TE/RS/TH/PF/LG), live control panels, and the shared floating chapter-nav: `examples-api.html` → **`examples-data.html`** + **`examples-search.html`**; `examples-multiselect.html` → **`examples-interaction.html`**; `examples-templates.html` → **`examples-context-menu.html`** + **`examples-custom-layout.html`** (the two `examples-ios-files*.html` variants merged into one CL section with a Vanilla ⇆ lit-html renderer toggle over a shared headless `TreeController`); NEW **`examples-responsive.html`** (the rc06 `NodeRenderContext` — resizable-container + device-adaptive demos) and NEW **`examples-tree-editor.html`** (add/remove/rename/reorder + clipboard workbench); a `TC01` theme-comparison section folded into `examples-theming.html`. `index.html`'s card registry and the README/`docs/examples.md` pointers were rewired to the new set. BU01 (basic) now renders the full row-offset composition — toggle gutter (`--wtv-column-width`) + content padding + per-level indent — so the fixed root gap is legible and clearly separate from `--wtv-indent-size`. Every page now draws its layout from the single shared `examples-shared.css` (aligned with `@keenmate/web-multiselect`'s), with page-level `<style>` reserved for genuinely demo-specific markup; the shared sheet gained the `form` / `.form-actions` / `.demo-area > button` helpers and a uniform `.controls select` / `input` style so control panels read the same everywhere.
 - New e2e fixture `/test/clipboard-extended.html` + `e2e/clipboard-extended.spec.ts` covering Delete (key + API + `beforeDelete` block), the paste-transform null-skip + `skipped` count, and the `onTreeKeydown` suppression. Existing `/test/*` fixtures and specs updated to the ctx-object signatures.
 - **CSS custom-property cleanup.** `--wtv-node-padding` is now actually wired onto `.wtv__node-content` (it mirrors svelte-treeview's `--stv-node-content-padding`, which *is* consumed there — web-treeview declared it but never used it; pixels unchanged, left stays `0` so the highlight hugs the label). Removed 7 dead tokens with no consumer and no used svelte-treeview counterpart: `--wtv-border` (+ its now-orphaned `--wtv-border-width-base`), `--wtv-toggle-size` (a redundant alias of `--wtv-column-width`), `--wtv-transition-normal`, `--wtv-easing`, `--wtv-border-radius-md`, `--wtv-font-size-base`. A both-directions token/class audit now reports no remaining phantom variables.
 - `examples-drag-drop.html` now hands each tree a `structuredClone` of its seed-data const (instead of the const itself), so in-place tree mutations can't pollute the shared literal and a hot-module reload — which re-runs interaction state but not the const literals — starts clean.
@@ -346,21 +333,12 @@ machinery (cross-tree cut, transforms, per-entry skip).
 - **`examples-drag-drop.html` "Drag Between Trees" panel brought to svelte-treeview parity** — adds the Selection-mode (single/multi), Built-in-keyboard-shortcuts, and Show-drop-zone-when-empty controls; wires cross-tree clipboard (paste transform with `uniqueName`, self-paste redirect, copy/cut/paste/delete logging), live source/target highlight readouts, multi-drag cross-tree fan-out via `ctx.dragged`, and a 🔒-pinned (`isDraggable:false`) node (wired before `.data` so the stored flag is correct).
 - New e2e coverage: `e2e/checkbox-mode.spec.ts` + `/test/checkbox-mode.html`, `e2e/state-persistence.spec.ts` (now also the A2-guard block — cosmetic resends don't recreate, genuine changes do), a no-drop-node section + a `drag-drop-mode` same-tree gate (`self`/`cross`) in `e2e/drag-drop.spec.ts`, and leaf↔folder toggle-transition tests in `e2e/branch-operations.spec.ts`.
 
-## [2.0.0-rc06] - 2026-06-29
+### Notes
 
-Parity port of four features that landed in `@keenmate/svelte-treeview` rc12.
-
-### Added
-
-- **`ContextMenuItem.shouldCloseOnClick?: boolean` (default `true`) — per-item opt-out of the context-menu auto-close**: the callback menu already auto-closed after a leaf item was activated (the right default for one-shot commands). Some items act *incrementally* — a toggle, a counter, a multi-step action — and want the menu to stay open. Setting `shouldCloseOnClick: false` suppresses the auto-close for that entry; the handler then owns dismissal via the `close` callback passed to `contextMenuCallback(node, close)`. Implemented in `dom-renderer.ts` by gating the leaf-item click close on `item.shouldCloseOnClick !== false` (the click handler now also awaits an async `onclick` in a `try/finally`, matching svelte-treeview). The shortcut-key path activates items via `el.click()`, so it inherits the same gate. `/test/context-menu.html` gains a "Bump (stays open)" item; `e2e/context-menu.spec.ts` asserts the menu survives repeated clicks and a normal item still dismisses afterward.
-- **Data-driven per-row class hooks `nodeClass?: (node) => string` and `nodeContentClass?: (node) => string`**: previously the only per-row class hooks were *state* classes (`highlightedNodeClass` / `focusedNodeClass` / `dragOverNodeClass`) — there was no way to tag a row from its own data (`is-folder` / `is-file`, a status colour, a grid class) without `[data-tree-path]` selectors. The two callbacks run per node and return class(es) applied to `.wtv__node` (`nodeClass`) and `.wtv__node-content` (`nodeContentClass`). Plumbed through `NodeConfig` and applied in both the diff reconciler's create and update paths via a new `_applyCustomNodeClasses` helper that tracks the previously-applied classes in `data-*` attributes, so a re-render removes stale classes before adding new ones (the reconciler reuses row elements). Wired end-to-end on the web component (JS-only callback props + `_scheduleUpdate`) and through `mapToControllerConfig`. New `/test/feature-port.html` + `e2e/feature-port.spec.ts` assert the classes land on the right elements, by data.
-- **Public `onNodeDoubleClick?: (node) => void` event + `node-double-click` DOM event — a real double-click notification, reliable under the flat diff reconciler**: there was no public double-click event, and the native `dblclick` listener only toggled expand in `select` mode (no callback). The native `dblclick` is unreliable here because the first click bumps `_rev` and the reconciler patches the row out from under the browser. Replaced with manual detection in the controller (`detectDoubleClick` — last path + timestamp, 400ms window), called by the renderer for every genuine plain UI click. Fires `onNodeDoubleClick` for every `clickBehavior`; `select` mode additionally keeps the expand/collapse-on-double. On a detected double the second click is consumed so the gesture reads as a single open, not a re-toggle. Surfaced as a `node-double-click` `CustomEvent` on the element.
-- **Public `onCopy` / `onCut` / `onPaste` events — post-operation clipboard notifications**: `copyNodes` / `cutNodes` / `pasteNodes` existed but fired nothing on completion. Added `onCopy(paths)` / `onCut(paths)` (fired with the affected source paths after the operation succeeds) and `onPaste(result)` (fired with the `PasteResult`) on the controller, forwarded as web-component callback props and `copy` / `cut` / `paste` `CustomEvent`s. Covered by `e2e/feature-port.spec.ts`.
-- **`beforeCopyCallback` / `beforeCutCallback` / `beforePasteCallback` clipboard interceptors — the *before* half of the clipboard surface, symmetric with the new `on*` events**: `beforeCopyCallback(paths)` / `beforeCutCallback(paths)` run before the operation and can return `false` to block it or a `string[]` to override which paths are copied/cut; `beforePasteCallback(targetPath, operation, entries)` runs before a paste and can return `false` to block or `{ targetPath?, position? }` to redirect it. Applied in the controller's `copyNodes` / `cutNodes` / `pasteNodes`, forwarded through `mapToControllerConfig` and exposed as web-component callback props. This brings web-treeview's clipboard to full parity with `@keenmate/svelte-treeview` (rewrite/block before, react after). Covered by `e2e/feature-port.spec.ts` (a `beforeCopy` path override and a `beforePaste` block).
-
-### Changed
-
-- **A rapid double-click on the same row no longer toggles twice** (consequence of the new double-click detection): in `expand` / `expand-and-focus` modes two clicks within 400ms previously expanded then collapsed (and a fast re-click on a checkbox row toggled it back); the second click is now consumed as part of a double-click gesture and fires `onNodeDoubleClick` instead. Distinct single clicks (>400ms apart) toggle as before. Three `e2e/interaction.spec.ts` cases that re-clicked the same row to assert a toggle were updated to space the clicks past the double-click window. Mirrors `@keenmate/svelte-treeview`.
+- Virtual-scroll uniform-row-height (svelte-treeview rc14's `flatGap` fix) is **N/A**
+  here: web-treeview is virtual-scroll-first and already enforces uniform rows
+  (single-line label truncation + `min-height`), with no per-row level-transition
+  margin in flat mode. No change required.
 
 ## [2.0.0-rc05] - 2026-06-25 [PUBLISHED]
 

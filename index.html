@@ -151,19 +151,25 @@
                 href: 'examples-basic.html',
                 icon: '🌳',
                 title: 'Basic Usage',
-                description: 'The essentials — simple file tree, pre-expanded state, custom data mappings, large-dataset progressive rendering, expand behaviors (accordion / exclusive), and the core events at a glance.'
+                description: 'The essentials — simple file tree, pre-expanded state, custom data mappings, large-dataset progressive rendering, expand behaviors (accordion), and the core events at a glance.'
             },
             {
-                href: 'examples-api.html',
+                href: 'examples-data.html',
                 icon: '⚙️',
-                title: 'Data & API',
-                description: 'Feeding the tree data and driving it in code — member mappings, expand/collapse, search/filter, scroll-to-path, add/remove/update nodes, and save/restore expanded state.'
+                title: 'Data & Structure',
+                description: 'Feeding the tree — path-based hierarchy, display-value fallback, custom path separators, branch & node operations (insert / replace / delete, add / remove / update), save/restore state, and member mapping.'
             },
             {
-                href: 'examples-multiselect.html',
+                href: 'examples-search.html',
+                icon: '🔎',
+                title: 'Search & Filter',
+                description: 'Find and navigate — filterNodes (prune) vs searchNodes (highlight), result counter + prev/next, scroll-into-view, and the optional internal FlexSearch index.'
+            },
+            {
+                href: 'examples-interaction.html',
                 icon: '☑️',
-                title: 'Selection, Clipboard & Keyboard',
-                description: 'The three-level selection model, Ctrl/Shift multi-select, full keyboard navigation, copy/cut/paste clipboard, range-select mode, and bulk tree operations.'
+                title: 'Selection & Interaction',
+                description: 'The three-level selection model, click behavior, Ctrl/Shift multi-select, full keyboard navigation, cascade checkboxes + value policy, silent state restore, and the copy/cut/paste clipboard.'
             },
             {
                 href: 'examples-drag-drop.html',
@@ -172,16 +178,48 @@
                 description: 'Reorder within a tree and transfer across trees — drop zones (above / below / child), multi-drag as a group, restricted drop positions, and drop validation.'
             },
             {
-                href: 'examples-templates.html',
-                icon: '✨',
-                title: 'Templates, Icons & Columns',
-                description: 'Custom node templates, status badges, per-node icons (iconMember / iconCallback), the unified column grid and icon alignment, context menus, header/footer, and empty/loading states.'
+                href: 'examples-icons.html',
+                icon: '🎭',
+                title: 'Icons',
+                description: 'Per-node icons on every node (branch + leaf) — FontAwesome via iconMember + customStylesCallback, per-node color, emoji via iconCallback, and inline SVG via renderIconCallback.'
+            },
+            {
+                href: 'examples-tooltips.html',
+                icon: '💬',
+                title: 'Tooltips',
+                description: 'Hover/focus node tooltips — plain text or rich HTML content via getNodeTooltipCallback, placement / delay / follow-cursor, themed through the shared --base-tooltip-* tokens (parity with web-multiselect).'
+            },
+            {
+                href: 'examples-context-menu.html',
+                icon: '📋',
+                title: 'Context Menu',
+                description: 'Right-click menus — the callback approach (items, submenus, named dividers, disabled/hidden, per-item shouldCloseOnClick), custom item rendering, position offsets, and full CSS customization.'
+            },
+            {
+                href: 'examples-custom-layout.html',
+                icon: '🧩',
+                title: 'Custom Layouts',
+                description: 'Reshape the row — custom node templates, status badges, header/footer and empty/loading slots, toggle-icon modes & icon sets, and a headless TreeController iOS-Files browser (Vanilla ⇆ lit-html).'
+            },
+            {
+                href: 'examples-tree-editor.html',
+                icon: '✏️',
+                title: 'Tree Editor',
+                badge: 'NEW',
+                description: 'A full editing workbench — add / remove / rename / reorder via toolbar and context menu, multi-select + cross-tree clipboard, and a live state-JSON panel. Plus org-chart / file-manager / category scenarios.'
+            },
+            {
+                href: 'examples-responsive.html',
+                icon: '📐',
+                title: 'Responsive & Device-Adaptive',
+                badge: 'NEW',
+                description: 'The rc06 NodeRenderContext — render callbacks adapt rows to deviceClass and container size. Resizable-container demos, device-adaptive depth, label overflow, and the signal reference.'
             },
             {
                 href: 'examples-theming.html',
                 icon: '🎨',
                 title: 'Theming',
-                description: 'Customize appearance with CSS custom properties — built-in dark mode, theme presets, a live theme editor, and the full CSS custom-property reference.'
+                description: 'Customize appearance with CSS custom properties — built-in dark mode, theme presets, a live theme editor, the shared --base-* contract comparison, and the full CSS custom-property reference.'
             },
             {
                 href: 'examples-performance.html',
@@ -194,12 +232,6 @@
                 icon: '🐛',
                 title: 'Logging & Debugging',
                 description: 'Built-in logging system with categorized debug output, performance logging, and a debug information overlay for development and troubleshooting.'
-            },
-            {
-                href: 'examples-ios-files.html',
-                icon: '📱',
-                title: 'Real-World: iOS Files',
-                description: 'A headless TreeController showcase — an iOS-style file browser with folder navigation, search, sort, and detail sheets. Also available rebuilt with lit-html.'
             }
         ]
 

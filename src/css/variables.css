@@ -163,8 +163,17 @@
   --wtv-node-height: calc(var(--wtv-rem) * 2.4);  /* 24px */
   --wtv-icon-size: calc(var(--wtv-rem) * 1.6);    /* 16px */
 
-  /* Node transition */
-  --wtv-node-transition: background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease;
+  /* Row (.wtv__node-content) transition. Default none = instant hover (crisper; parity
+     with svelte-treeview's --stv-node-content-transition). Restore the animated fade with
+     `background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease`. */
+  --wtv-node-transition: none;
+
+  /* Per-node icon (.wtv__node-icon): color inherits the row text color by default (a
+     per-node iconColor or iconColorMember/Callback overrides it); width is the reserved
+     column used when shouldAlignNodeIcons is on. */
+  --wtv-node-icon-color: currentColor;
+  --wtv-node-icon-margin-right: var(--wtv-spacing-sm);
+  --wtv-node-icon-width: calc(1.8 * var(--wtv-rem));
 
   /* Toggle Icon */
   --wtv-toggle-color: var(--wtv-text-color-2);
@@ -285,6 +294,26 @@
   --wtv-scroll-highlight-shadow: 0 0 8px color-mix(in srgb, var(--wtv-accent-color) 40%, transparent);
 
   /* ==========================================================================
+     TOOLTIP (hover/focus node tooltip)
+     Same --base-tooltip-* chain + defaults as web-multiselect's option tooltip
+     and svelte-treeview's .stv__tooltip, so one shared theme renders all three
+     identically.
+     ========================================================================== */
+  --wtv-tooltip-bg: var(--base-tooltip-bg, var(--base-inverse-bg, light-dark(#333333, #f5f5f5)));
+  --wtv-tooltip-color: var(--base-tooltip-text-color, light-dark(#ffffff, #1a1a1a));
+  --wtv-tooltip-padding: calc(0.8 * var(--wtv-rem)) calc(1.2 * var(--wtv-rem));
+  --wtv-tooltip-border-radius: var(--wtv-border-radius-lg);
+  --wtv-tooltip-font-size: calc(var(--base-font-size-sm, 1.4) * var(--wtv-rem));
+  /* Width model: auto = shrink-to-content (capped by max-width). Set --wtv-tooltip-width
+     to a length for a fixed box (also set --wtv-tooltip-max-width: none), or
+     --wtv-tooltip-min-width for a floor that still grows up to max-width. */
+  --wtv-tooltip-width: auto;
+  --wtv-tooltip-min-width: 0;
+  --wtv-tooltip-max-width: calc(32 * var(--wtv-rem));
+  --wtv-tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --wtv-tooltip-z-index: 10000;
+
+  /* ==========================================================================
      CONTEXT MENU
      Each variable defaults to a higher-order component variable so the menu
      can be themed independently without affecting the tree itself.
@@ -294,8 +323,11 @@
   --wtv-context-menu-bg-hover: var(--wtv-hover-bg);
   --wtv-context-menu-text-color: var(--wtv-text-color);
   --wtv-context-menu-border: 1px solid var(--wtv-border-color);
-  --wtv-context-menu-border-radius: var(--wtv-border-radius-lg);
-  --wtv-context-menu-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* Match svelte-treeview's menu chrome: small radius + the shared dropdown
+     shadow token (both chain to --base-*, so under a KeenMate theme the two
+     components render an identical menu surface). */
+  --wtv-context-menu-border-radius: var(--wtv-border-radius-sm);
+  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.15));
   --wtv-context-menu-min-width: calc(var(--wtv-rem) * 15);  /* ~150px */
   --wtv-context-menu-padding: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-font-size: var(--wtv-font-size-sm);

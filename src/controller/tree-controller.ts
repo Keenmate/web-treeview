@@ -99,7 +99,15 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     dropZoneMaxWidth: 120,
     isCopyAllowed: false,
     iconMember: undefined,
+    iconColorMember: undefined,
+    shouldAlignNodeIcons: true,
     shouldShowCheckboxes: false,
+    shouldShowNodeTooltips: false,
+    getNodeTooltipCallback: undefined,
+    tooltipPlacement: 'top-start',
+    tooltipDelay: { show: 400, hide: 100 },
+    tooltipOffset: 8,
+    tooltipFollowCursor: false,
     nodeClass: undefined,
     nodeContentClass: undefined
   };
@@ -210,6 +218,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _focusedNodeClass: string | null | undefined = undefined;
   private _dragOverNodeClass: string | null | undefined = undefined;
   private _draggedNodeClass: string | null | undefined = undefined;
+  private _shouldShowNodeTooltips: boolean = false;
+  private _getNodeTooltipCallback: ((node: LTreeNode<T>) => string | HTMLElement | null | undefined) | undefined = undefined;
+  private _tooltipPlacement: import('./types').TooltipPlacement = 'top-start';
+  private _tooltipDelay: import('./types').TooltipDelay = { show: 400, hide: 100 };
+  private _tooltipOffset: number = 8;
+  private _tooltipFollowCursor: boolean = false;
   private _dropZoneMode: 'floating' | 'glow' = 'glow';
   private _dropZoneLayout: 'around' | 'above' | 'below' | 'wave' | 'wave2' = 'around';
   private _dropZoneStart: number | string = 33;
@@ -223,6 +237,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   // Per-node icons
   private _iconMember: string | null | undefined = undefined;
   private _iconCallback: ((node: LTreeNode<T>) => string | null) | undefined = undefined;
+  private _iconColorMember: string | null | undefined = undefined;
+  private _iconColorCallback: ((node: LTreeNode<T>) => string | null) | undefined = undefined;
   private _shouldAlignNodeIcons: boolean = true;
 
   // Data-driven per-row class hooks
@@ -504,6 +520,24 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   get draggedNodeClass() { return this._draggedNodeClass; }
   set draggedNodeClass(v: string | null | undefined) { this._draggedNodeClass = v; this._updateNodeConfig(); }
 
+  get shouldShowNodeTooltips() { return this._shouldShowNodeTooltips; }
+  set shouldShowNodeTooltips(v: boolean) { this._shouldShowNodeTooltips = v; this._updateNodeConfig(); }
+
+  get getNodeTooltipCallback() { return this._getNodeTooltipCallback; }
+  set getNodeTooltipCallback(v: ((node: LTreeNode<T>) => string | HTMLElement | null | undefined) | undefined) { this._getNodeTooltipCallback = v; this._updateNodeConfig(); }
+
+  get tooltipPlacement() { return this._tooltipPlacement; }
+  set tooltipPlacement(v: import('./types').TooltipPlacement) { this._tooltipPlacement = v; this._updateNodeConfig(); }
+
+  get tooltipDelay() { return this._tooltipDelay; }
+  set tooltipDelay(v: import('./types').TooltipDelay) { this._tooltipDelay = v; this._updateNodeConfig(); }
+
+  get tooltipOffset() { return this._tooltipOffset; }
+  set tooltipOffset(v: number) { this._tooltipOffset = v; this._updateNodeConfig(); }
+
+  get tooltipFollowCursor() { return this._tooltipFollowCursor; }
+  set tooltipFollowCursor(v: boolean) { this._tooltipFollowCursor = v; this._updateNodeConfig(); }
+
   get dropZoneMode() { return this._dropZoneMode; }
   set dropZoneMode(v: 'floating' | 'glow') { this._dropZoneMode = v; this._updateNodeConfig(); }
 
@@ -537,6 +571,22 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   get iconCallback() { return this._iconCallback; }
   set iconCallback(v: ((node: LTreeNode<T>) => string | null) | undefined) { this._iconCallback = v; this._updateNodeConfig(); }
+
+  get iconColorMember() { return this._iconColorMember; }
+  set iconColorMember(v: string | null | undefined) { this._iconColorMember = v; this._updateNodeConfig(); }
+
+  get iconColorCallback() { return this._iconColorCallback; }
+  set iconColorCallback(v: ((node: LTreeNode<T>) => string | null) | undefined) { this._iconColorCallback = v; this._updateNodeConfig(); }
+
+  /** Resolve a node's icon COLOR (iconColorCallback wins over iconColorMember). */
+  getNodeIconColor(node: LTreeNode<T>): string | null {
+    if (this._iconColorCallback) return this._iconColorCallback(node);
+    if (this._iconColorMember && node.data) {
+      const val = (node.data as any)[this._iconColorMember];
+      return val ? String(val) : null;
+    }
+    return null;
+  }
 
   get shouldAlignNodeIcons() { return this._shouldAlignNodeIcons; }
   set shouldAlignNodeIcons(v: boolean) { this._shouldAlignNodeIcons = v; this._updateNodeConfig(); }
@@ -721,6 +771,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._focusedNodeClass = props.focusedNodeClass;
     this._dragOverNodeClass = props.dragOverNodeClass;
     this._draggedNodeClass = props.draggedNodeClass;
+    this._shouldShowNodeTooltips = props.shouldShowNodeTooltips ?? false;
+    this._getNodeTooltipCallback = props.getNodeTooltipCallback;
+    this._tooltipPlacement = props.tooltipPlacement ?? 'top-start';
+    this._tooltipDelay = props.tooltipDelay ?? { show: 400, hide: 100 };
+    this._tooltipOffset = props.tooltipOffset ?? 8;
+    this._tooltipFollowCursor = props.tooltipFollowCursor ?? false;
     this._dropZoneMode = props.dropZoneMode ?? 'glow';
     this._dropZoneLayout = props.dropZoneLayout ?? 'around';
     this._dropZoneStart = props.dropZoneStart ?? 33;
@@ -732,6 +788,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._hasContextMenuRenderer = props.hasContextMenuRenderer ?? false;
     this._iconMember = props.iconMember ?? undefined;
     this._iconCallback = props.iconCallback;
+    this._iconColorMember = props.iconColorMember ?? undefined;
+    this._iconColorCallback = props.iconColorCallback;
     this._shouldAlignNodeIcons = props.shouldAlignNodeIcons ?? true;
     this._nodeClass = props.nodeClass;
     this._nodeContentClass = props.nodeContentClass;
@@ -3308,6 +3366,18 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._dragOverNodeClass = updates.dragOverNodeClass;
     if (updates.draggedNodeClass !== undefined)
       this._draggedNodeClass = updates.draggedNodeClass;
+    if (updates.shouldShowNodeTooltips !== undefined)
+      this._shouldShowNodeTooltips = updates.shouldShowNodeTooltips ?? false;
+    if (updates.getNodeTooltipCallback !== undefined)
+      this._getNodeTooltipCallback = updates.getNodeTooltipCallback;
+    if (updates.tooltipPlacement !== undefined)
+      this._tooltipPlacement = updates.tooltipPlacement ?? 'top-start';
+    if (updates.tooltipDelay !== undefined)
+      this._tooltipDelay = updates.tooltipDelay ?? { show: 400, hide: 100 };
+    if (updates.tooltipOffset !== undefined)
+      this._tooltipOffset = updates.tooltipOffset ?? 8;
+    if (updates.tooltipFollowCursor !== undefined)
+      this._tooltipFollowCursor = updates.tooltipFollowCursor ?? false;
     if (updates.dropZoneMode !== undefined)
       this._dropZoneMode = updates.dropZoneMode ?? 'glow';
     if (updates.dropZoneLayout !== undefined)
@@ -3358,6 +3428,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     // Per-node icons
     if (updates.iconMember !== undefined) this._iconMember = updates.iconMember ?? undefined;
     if (updates.iconCallback !== undefined) this._iconCallback = updates.iconCallback;
+    if (updates.iconColorMember !== undefined) this._iconColorMember = updates.iconColorMember ?? undefined;
+    if (updates.iconColorCallback !== undefined) this._iconColorCallback = updates.iconColorCallback;
     if (updates.shouldAlignNodeIcons !== undefined) this._shouldAlignNodeIcons = updates.shouldAlignNodeIcons ?? true;
 
     // Virtual scroll
@@ -3773,7 +3845,15 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       dropZoneMaxWidth: this._dropZoneMaxWidth,
       isCopyAllowed: this._isCopyAllowed,
       iconMember: this._iconMember,
+      iconColorMember: this._iconColorMember,
+      shouldAlignNodeIcons: this._shouldAlignNodeIcons,
       shouldShowCheckboxes: this._shouldShowCheckboxes,
+      shouldShowNodeTooltips: this._shouldShowNodeTooltips,
+      getNodeTooltipCallback: this._getNodeTooltipCallback,
+      tooltipPlacement: this._tooltipPlacement,
+      tooltipDelay: this._tooltipDelay,
+      tooltipOffset: this._tooltipOffset,
+      tooltipFollowCursor: this._tooltipFollowCursor,
       nodeClass: this._nodeClass,
       nodeContentClass: this._nodeContentClass
     };

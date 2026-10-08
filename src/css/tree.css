@@ -193,8 +193,24 @@
   transform: rotate(var(--wtv-icon-rotate-expanded, 90deg));
 }
 
+/* Dedicated per-node icon element (iconMember / iconCallback / renderIconCallback),
+   rendered on EVERY node between the toggle/checkbox and the label. Default render is
+   <i class="wtv__node-icon {value}"> (FontAwesome-friendly); color follows
+   --wtv-node-icon-color (default currentColor) or a per-node iconColor. */
 .wtv__node .wtv__node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   font-size: var(--wtv-font-size-sm);
+  margin-right: var(--wtv-node-icon-margin-right, var(--wtv-spacing-sm));
+  color: var(--wtv-node-icon-color, currentColor);
+  line-height: 1;
+}
+
+/* Reserve a fixed column so labels align even on rows with no icon (shouldAlignNodeIcons). */
+.wtv__node .wtv__node-icon--aligned {
+  width: var(--wtv-node-icon-width, calc(1.8 * var(--wtv-rem)));
 }
 
 .wtv__node .wtv__node-label {
@@ -651,6 +667,45 @@
 
 .wtv__context-menu .wtv__context-menu-divider--named::after {
   margin-left: 0;
+}
+
+/* ==============================================================================
+   NODE TOOLTIP (hover/focus)
+   Portaled into the shadow container by the shared core createTooltip; positioned
+   via Floating UI. Same shape + shared --base-tooltip-* tokens as web-multiselect's
+   option tooltip (and svelte-treeview's .stv__tooltip), so one KeenMate theme renders
+   all three identically.
+   ============================================================================== */
+.wtv__tooltip {
+  position: fixed;
+  z-index: var(--wtv-tooltip-z-index, 10000);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+
+  /* Hardcoded fallbacks (second arg) keep the tooltip legible even if it ever mounts
+     outside the shadow container where the --wtv-tooltip-* vars don't resolve. */
+  background: var(--wtv-tooltip-bg, light-dark(#333333, #f5f5f5));
+  color: var(--wtv-tooltip-color, light-dark(#ffffff, #1a1a1a));
+  padding: var(--wtv-tooltip-padding, 0.8rem 1.2rem);
+  border-radius: var(--wtv-tooltip-border-radius, 4px);
+  font-size: var(--wtv-tooltip-font-size, 1.4rem);
+  line-height: 1.5;
+  /* Width: auto (shrink-to-content) by default, capped by max-width. Set
+     --wtv-tooltip-width to a length for a FIXED box (pair with
+     --wtv-tooltip-max-width: none), or --wtv-tooltip-min-width for a floor. */
+  width: var(--wtv-tooltip-width, auto);
+  min-width: var(--wtv-tooltip-min-width, 0);
+  max-width: var(--wtv-tooltip-max-width, 32rem);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
+  pointer-events: none; /* never intercept the pointer */
+}
+
+.wtv__tooltip--visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* ==============================================================================

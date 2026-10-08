@@ -14,6 +14,16 @@ import type { TreeControllerSnapshot, NodeConfig } from '../controller/types';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition, ContextMenuItem, ContextMenuEntry } from '../ltree/types';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
+import { createTooltip, type TooltipHandle } from '@keenmate/web-components-core/positioning';
+import {
+  classifyDevice,
+  observeEnvironment,
+  observeElementSize,
+  getEnvironment,
+  type DeviceClass,
+  type ElementSize
+} from '@keenmate/web-components-core';
+import type { NodeRenderContext } from '../controller/types';
 
 /** Add space-separated class string to an element (classList.add doesn't support spaces) */
 function addClasses(el: HTMLElement, classes: string): void {
@@ -69,8 +79,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // Last snapshot for diffing
   private lastSnapshot: TreeControllerSnapshot<T> | null = null;
   private lastNodeConfig: NodeConfig | null = null;
+  // Hover/focus tooltip handles, keyed like nodeElements (id || path). Created per
+  // row via the shared core createTooltip; recreated on node update so content tracks
+  // data, destroyed when the row leaves. Mirrors web-multiselect's option tooltips.
+  private tooltips = new Map<string, TooltipHandle>();
   private _lastDragOverTarget: string = '';
   private _lastEmptyState: string = '';
+  // Responsive env for the NodeRenderContext (@keenmate/web-components-core/environment).
+  // deviceClass flips are discrete → re-render on change; container size updates silently
+  // (web-treeview is virtual-scroll-first; re-painting all rows per resize frame is wrong).
+  private _deviceClass: DeviceClass = 'desktop';
+  private _containerBox: ElementSize = { width: 0, height: 0 };
+  private _stopEnvObserve: (() => void) | null = null;
+  private _stopSizeObserve: (() => void) | null = null;
 
   mount(container: HTMLElement, controller: TreeController<T>, config: RendererConfig<T>): void {
     this.container = container;
@@ -125,6 +146,20 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Set controller container for scrollToPath
     controller.containerElement = container;
 
+    // Responsive env for NodeRenderContext. Seed synchronously so the initial render has
+    // the right device class; then observe — only a device-class FLIP forces a re-render.
+    this._deviceClass = classifyDevice(getEnvironment());
+    this._stopEnvObserve = observeEnvironment((env) => {
+      const dc = classifyDevice(env);
+      if (dc !== this._deviceClass) {
+        this._deviceClass = dc;
+        if (this.controller) this._fullRender(this.controller.getSnapshot());
+      }
+    });
+    this._stopSizeObserve = observeElementSize(container, (size) => {
+      this._containerBox = size;
+    });
+
     // Wire event delegation
     this._attachBodyListeners();
 
@@ -148,8 +183,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.footerEl.innerHTML = '';
       config.renderFooterCallback(this.footerEl);
     }
-    // Re-render nodes if renderNodeCallback changed
-    if (config.renderNodeCallback && this.controller) {
+    // Re-render nodes if renderNodeCallback / renderIconCallback changed (so a callback
+    // assigned after the initial data render re-paints the rows / icons).
+    if ((config.renderNodeCallback || config.renderIconCallback) && this.controller) {
       this._fullRender(this.controller.getSnapshot());
     }
   }
@@ -164,6 +200,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._ctxCleanupAutoUpdate?.();
     this._ctxCleanupAutoUpdate = null;
     this._removeCtxKeydownHandler();
+    this._stopEnvObserve?.();
+    this._stopSizeObserve?.();
+    this._stopEnvObserve = null;
+    this._stopSizeObserve = null;
+    this._destroyAllTooltips();
     this.nodeElements.clear();
     this.vsSpacerEl = null;
     this.vsContentEl = null;
@@ -923,6 +964,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (!newKeys.has(key)) {
         el.remove();
         this.nodeElements.delete(key);
+        this._destroyTooltip(key);
       }
     }
   }
@@ -936,6 +978,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       el.remove();
     }
     this.nodeElements.clear();
+    this._destroyAllTooltips();
 
     // Show empty zone (drop target during drag) or empty state (informational)
     const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}`;
@@ -1044,10 +1087,58 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       toggle.classList.add('wtv__clickable');
     } else {
-      // Leaf node: use per-node icon if available, otherwise fall back to leafIconClass
-      const nodeIcon = this.controller?.hasIconSupport ? this.controller.getNodeIcon(node) : null;
-      addClasses(toggle, nodeIcon || nodeConfig?.leafIconClass || 'wtv__toggle-icon--leaf-none');
+      // Leaf node: just the leaf spacer/marker. The per-node icon is NO LONGER folded
+      // into the toggle slot — it renders as a dedicated .wtv__node-icon element on every
+      // node (branch + leaf), via _applyNodeIcon. See iconMember / renderIconCallback.
+      addClasses(toggle, nodeConfig?.leafIconClass || 'wtv__toggle-icon--leaf-none');
     }
+  }
+
+  /**
+   * Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a
+   * row, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an
+   * <i> (`<i class="wtv__node-icon {value}">`, FontAwesome-friendly), overridable via
+   * renderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.
+   * Reserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content.
+   */
+  private _applyNodeIcon(row: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
+    const cfg = this.lastNodeConfig;
+    const useCallback = !!this.config.renderIconCallback;
+    const value = this.controller?.hasIconSupport ? this.controller.getNodeIcon(node) : null;
+    const color = this.controller?.getNodeIconColor ? this.controller.getNodeIconColor(node) : null;
+    const align = !!cfg?.shouldAlignNodeIcons;
+    const hasSupport = !!(this.controller?.hasIconSupport || useCallback);
+    const shouldShow = useCallback || !!value || (align && hasSupport);
+
+    let iconEl = row.querySelector(':scope > .wtv__node-icon') as HTMLElement | null;
+    if (!shouldShow) {
+      iconEl?.remove();
+      return;
+    }
+
+    // <span> for the callback path (consumer populates), <i> for the default class path.
+    const wantTag = useCallback ? 'SPAN' : 'I';
+    if (iconEl && iconEl.tagName !== wantTag) {
+      iconEl.remove();
+      iconEl = null;
+    }
+    if (!iconEl) {
+      iconEl = document.createElement(useCallback ? 'span' : 'i');
+      const content = row.querySelector(':scope > .wtv__node-content');
+      row.insertBefore(iconEl, content);
+    }
+
+    // Full className reset each time removes stale value classes (diff reconciler reuses rows).
+    const base = 'wtv__node-icon' + (align ? ' wtv__node-icon--aligned' : '');
+    if (useCallback) {
+      iconEl.className = base;
+      iconEl.innerHTML = '';
+      this.config.renderIconCallback!(node, value, iconEl, ctx);
+    } else {
+      iconEl.className = base + (value ? ' ' + value : '');
+    }
+    if (color) iconEl.style.color = color;
+    else iconEl.style.removeProperty('color');
   }
 
   /**
@@ -1174,9 +1265,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       content.classList.add('wtv__clickable');
     }
 
+    const ctx = this._buildRenderContext(node, snapshot);
+
     // Custom or default content
     if (this.config.renderNodeCallback) {
-      this.config.renderNodeCallback(node, content);
+      this.config.renderNodeCallback(node, content, ctx);
     } else {
       const label = document.createElement('span');
       label.className = 'wtv__node-label';
@@ -1187,7 +1280,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     row.appendChild(content);
     el.appendChild(row);
 
+    // Per-node icon element (between toggle/checkbox and content — inserts before content).
+    this._applyNodeIcon(row, node, ctx);
     this._applyCustomNodeClasses(el, content, node);
+    this._applyTooltip(content, node);
     return el;
   }
 
@@ -1211,6 +1307,65 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
+  /** Row key — must match _reconcileNodes' keying (id || path). */
+  private _nodeKey(node: LTreeNode<T>): string {
+    return String(node.id || node.path);
+  }
+
+  /** Build the NodeRenderContext for the render callbacks: device + container + live state. */
+  private _buildRenderContext(node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): NodeRenderContext {
+    return {
+      deviceClass: this._deviceClass,
+      container: { width: this._containerBox.width, height: this._containerBox.height },
+      isExpanded: !!node.isExpanded,
+      isSelected: snapshot.selectedPaths.has(node.path),
+      isHighlighted: snapshot.highlightedPaths.has(node.path),
+      isFocused: snapshot.focusedNode?.path === node.path,
+      level: node.level ?? 0,
+      hasChildren: !!node.hasChildren
+    };
+  }
+
+  /** Create / refresh / tear down the hover-focus tooltip for a row. The direct
+   *  analog of web-multiselect's attachOptionTooltips, built on the shared core
+   *  createTooltip (portal, autoUpdate, followCursor, data-theme inherit). Recreated
+   *  on every node update so content tracks data (rename / _rev bump); a no-op +
+   *  teardown when disabled, no callback, or empty content. Mounts into the shadow
+   *  container so it inherits the injected --wtv-tooltip-* tokens + data-theme. */
+  private _applyTooltip(triggerEl: HTMLElement | null, node: LTreeNode<T>): void {
+    const key = this._nodeKey(node);
+    this._destroyTooltip(key);
+    const cfg = this.lastNodeConfig;
+    if (!triggerEl || !cfg?.shouldShowNodeTooltips || !cfg.getNodeTooltipCallback) return;
+    const content = cfg.getNodeTooltipCallback(node);
+    if (content == null || (typeof content === 'string' && content.trim() === '')) return;
+    const handle = createTooltip({
+      trigger: triggerEl,
+      container: this.container ?? document.body,
+      content,
+      placement: cfg.tooltipPlacement,
+      offset: cfg.tooltipOffset,
+      delay: cfg.tooltipDelay,
+      followCursor: cfg.tooltipFollowCursor,
+      cssClass: 'wtv__tooltip',
+      visibleClass: 'wtv__tooltip--visible'
+    });
+    this.tooltips.set(key, handle);
+  }
+
+  private _destroyTooltip(key: string): void {
+    const h = this.tooltips.get(key);
+    if (h) {
+      h.destroy();
+      this.tooltips.delete(key);
+    }
+  }
+
+  private _destroyAllTooltips(): void {
+    for (const h of this.tooltips.values()) h.destroy();
+    this.tooltips.clear();
+  }
+
   private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): void {
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
@@ -1218,6 +1373,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     el.setAttribute('data-tree-path', node.path);
 
     const nodeConfig = this.lastNodeConfig;
+    const ctx = this._buildRenderContext(node, snapshot);
 
     // Highlight / focus / cut state — applied to the row content so the styling
     // affects only the visible row, not the children indentation area below.
@@ -1284,7 +1440,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       // Re-render content if using template
       if (this.config.renderNodeCallback) {
         content.innerHTML = '';
-        this.config.renderNodeCallback(node, content);
+        this.config.renderNodeCallback(node, content, ctx);
       } else {
         const label = content.querySelector('.wtv__node-label') as HTMLElement;
         if (label) {
@@ -1306,6 +1462,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Re-apply data-driven nodeClass / nodeContentClass (removes stale classes)
     this._applyCustomNodeClasses(el, content, node);
+    // Refresh the per-node icon (value/color track the node's data).
+    const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
+    if (row) this._applyNodeIcon(row, node, ctx);
+    // Refresh the tooltip so its content tracks the node's data.
+    this._applyTooltip(content, node);
   }
 
   // ── Drag CSS classes ────────────────────────────────────────────────
@@ -1705,6 +1866,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       el.remove();
     }
     this.nodeElements.clear();
+    this._destroyAllTooltips();
     this._onStateChange(snapshot);
   }
 

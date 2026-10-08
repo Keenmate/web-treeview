@@ -162,6 +162,23 @@ h1 {
     color: #666;
 }
 
+/* Demo form panel — a soft card wrapping a live `<form>` (form-integration
+   examples). The `.form-actions` footer holds the submit/inspect buttons, set off
+   from the field above by a top rule + spacing so the buttons never sit flush
+   against the component. */
+form {
+    background: #edf2f7;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.form-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #cbd5e0;
+}
+
 /* Controls */
 .controls {
     display: flex;
@@ -191,6 +208,22 @@ h1 {
     height: 16px;
 }
 
+/* Form controls inside a `.controls` row — selects and text/number/search inputs
+   pick up a consistent padding / border / radius so every page's control panel
+   reads the same. Width stays per-page (set inline or in a page rule) since it
+   depends on the field. */
+.controls select,
+.controls input[type="text"],
+.controls input[type="number"],
+.controls input[type="search"] {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: #fff;
+    color: #1a202c;
+}
+
 /* Demo areas — a soft panel wrapping a live component demo, optionally
    introduced by a `.demo-label`. */
 .demo-area {
@@ -205,6 +238,19 @@ h1 {
     font-weight: 600;
     color: #2d3748;
     margin-bottom: 0.5rem;
+}
+
+/* Trailing action buttons in a demo panel (e.g. "Show Selected Data") sit as
+   direct children after the component / `.output` box. Give them top spacing so
+   they don't butt up against the content above. Scoped to DIRECT children so it
+   never touches buttons nested in a `.controls` row (which lays out its own way).
+   Adjacent buttons on the same line share the margin, so they stay aligned. */
+.demo-area > button {
+    margin-top: 1rem;
+}
+
+.demo-area > button + button {
+    margin-inline-start: 0.5rem;
 }
 
 /* Tree container styling for examples — a bordered, scrollable frame around a

@@ -64,6 +64,37 @@ export type ToggleIconMode = 'rotate' | 'swap';
  */
 export type IconSet = 'chevron' | 'triangle' | 'plus-minus' | 'arrow';
 export type ClickBehavior = 'select' | 'expand' | 'expand-and-focus';
+/**
+ * Placement of a node tooltip relative to its row (same 12 values as Floating UI /
+ * the core createTooltip preset). Default `'top-start'` so the tooltip anchors to a
+ * full-width row's start edge rather than centring on it. Parity with svelte-treeview.
+ */
+export type TooltipPlacement =
+  | 'top' | 'top-start' | 'top-end'
+  | 'right' | 'right-start' | 'right-end'
+  | 'bottom' | 'bottom-start' | 'bottom-end'
+  | 'left' | 'left-start' | 'left-end';
+/** Tooltip show / hide delay, in ms. A single number sets both. */
+export type TooltipDelay = number | { show?: number; hide?: number };
+/**
+ * Context passed as the LAST argument to the render callbacks (renderNodeCallback,
+ * renderIconCallback) so they can branch on the current device / container space AND
+ * the node's live render state. `deviceClass`/`container` come from the responsive
+ * signal (@keenmate/web-components-core/environment); the rest mirror the node at
+ * render time. Parity with svelte-treeview's NodeRenderContext.
+ */
+export interface NodeRenderContext {
+  /** Device capability class from classifyDevice. */
+  deviceClass: 'mobile' | 'tablet' | 'desktop';
+  /** The tree's own container border-box, in px. */
+  container: { width: number; height: number };
+  isExpanded: boolean;
+  isSelected: boolean;
+  isHighlighted: boolean;
+  isFocused: boolean;
+  level: number;
+  hasChildren: boolean;
+}
 export type CheckboxMode = 'independent' | 'cascade';
 /**
  * Which paths the selection EMITS in cascade mode (the projection of the canonical
@@ -97,7 +128,20 @@ export interface NodeConfig {
   dropZoneMaxWidth: number;
   isCopyAllowed: boolean;
   iconMember: string | null | undefined;
+  // Per-node icon color (iconColorMember / iconColorCallback resolve it; applied to the
+  // .wtv__node-icon element). shouldAlignNodeIcons reserves the icon column so labels align.
+  iconColorMember: string | null | undefined;
+  shouldAlignNodeIcons: boolean;
   shouldShowCheckboxes: boolean;
+  // Hover/focus tooltip per node (the direct analog of web-multiselect's option
+  // tooltips). The callback returns plain text OR a built HTMLElement (the wtv analog
+  // of svelte-treeview's `tooltip` snippet). No content ⇒ no tooltip.
+  shouldShowNodeTooltips: boolean;
+  getNodeTooltipCallback: ((node: LTreeNode<any>) => string | HTMLElement | null | undefined) | undefined;
+  tooltipPlacement: TooltipPlacement;
+  tooltipDelay: TooltipDelay;
+  tooltipOffset: number;
+  tooltipFollowCursor: boolean;
   /** Data-driven per-row class hook. Applied to `.wtv__node`. */
   nodeClass?: ((node: LTreeNode<any>) => string | null | undefined) | undefined;
   /** Data-driven per-row class hook. Applied to `.wtv__node-content`. */
@@ -522,6 +566,14 @@ export interface TreeControllerConfig<T> {
   focusedNodeClass?: string | null | undefined;
   dragOverNodeClass?: string | null | undefined;
   draggedNodeClass?: string | null | undefined;
+  /** Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback). */
+  shouldShowNodeTooltips?: boolean;
+  /** Tooltip content for a node — plain text or a built HTMLElement (rich). No content ⇒ no tooltip. */
+  getNodeTooltipCallback?: (node: LTreeNode<T>) => string | HTMLElement | null | undefined;
+  tooltipPlacement?: TooltipPlacement;
+  tooltipDelay?: TooltipDelay;
+  tooltipOffset?: number;
+  tooltipFollowCursor?: boolean;
   iconSet?: IconSet | null | undefined;
   /** @deprecated Use `iconSet`. */
   expandIconClass?: string | null | undefined;
@@ -537,6 +589,10 @@ export interface TreeControllerConfig<T> {
   // Per-node icons
   iconMember?: string | null | undefined;
   iconCallback?: (node: LTreeNode<T>) => string | null;
+  /** Per-node icon COLOR from a data key (applied to the .wtv__node-icon element). */
+  iconColorMember?: string | null | undefined;
+  /** Per-node icon COLOR from a callback (overrides iconColorMember). */
+  iconColorCallback?: (node: LTreeNode<T>) => string | null;
   shouldAlignNodeIcons?: boolean | null | undefined;
 
   // Data-driven per-row class hooks

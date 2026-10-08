@@ -33,6 +33,10 @@ function insertCard(page: Page): Locator {
   return cardByHeading(page, 'Insert Result and Validation');
 }
 
+function fallbackCard(page: Page): Locator {
+  return cardByHeading(page, 'Display Value Fallback');
+}
+
 function slashTree(page: Page): Locator {
   return separatorCard(page).locator('.tree-container').nth(0);
 }
@@ -139,5 +143,23 @@ test.describe('Insert Result and Validation', () => {
       expect.arrayContaining(['Orphan (parent 2 missing)', 'Empty Path'])
     );
     expect(json.failedDetails).toHaveLength(2);
+  });
+});
+
+// ── Display Value Fallback ─────────────────────────────────────────────────
+
+test.describe('Display Value Fallback', () => {
+  test('a missing display member resolves to displayValueFallback and does not crash the sort', async ({ page }) => {
+    await gotoData(page);
+    const tree = treeInCard(fallbackCard(page));
+
+    // All three nodes render (sort tiebreak on an undefined display value used to throw).
+    await expect(nodeByPath(tree, '1')).toBeVisible();
+    await expect(nodeByPath(tree, '1.1')).toBeVisible();
+    await expect(nodeByPath(tree, '1.2')).toBeVisible();
+
+    // Every label falls back to the configured text instead of being blank/undefined.
+    await expect(nodeByPath(tree, '1')).toContainText('(no name)');
+    await expect(nodeByPath(tree, '1.1')).toContainText('(no name)');
   });
 });

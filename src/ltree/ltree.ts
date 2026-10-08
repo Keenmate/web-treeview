@@ -851,7 +851,16 @@ export function createLTree<T>(
 		},
 
 		getNodeDisplayValue(node: LTreeNode<T>): string {
-			if (!shouldCalculateDisplayValue && node.data) return getField(node.data, _displayValueMember!);
+			// Resolution order: member → callback → fallback. A configured member
+			// that is absent on this node (getField → undefined/null) must FALL
+			// THROUGH to the callback/fallback, not return undefined — otherwise the
+			// `.localeCompare` sort tiebreak crashes and `displayValueFallback` never
+			// shows (the member defaults to 'displayValue', so any data lacking that
+			// field hit this).
+			if (!shouldCalculateDisplayValue && node.data) {
+				const value = getField(node.data, _displayValueMember!);
+				if (value != null) return value;
+			}
 
 			if (this.getDisplayValueCallback) return this.getDisplayValueCallback(node);
 
@@ -859,7 +868,12 @@ export function createLTree<T>(
 		},
 
 		getNodeSearchValue(node: LTreeNode<T>): string {
-			if (!shouldCalculateSearchValue && node.data) return getField(node.data, _searchValueMember!);
+			// Same member → callback → fallback guard as getNodeDisplayValue; a
+			// missing search member must not return undefined into the indexer.
+			if (!shouldCalculateSearchValue && node.data) {
+				const value = getField(node.data, _searchValueMember!);
+				if (value != null) return value;
+			}
 
 			if (this.getSearchValueCallback) return this.getSearchValueCallback(node);
 

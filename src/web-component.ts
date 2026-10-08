@@ -97,7 +97,8 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isCollapsibleMember', attribute: 'is-collapsible-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a node can be collapsed.' },
   { configKey: 'orderMember', attribute: 'order-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name used to order sibling nodes.' },
   { configKey: 'allowedDropPositionsMember', attribute: 'allowed-drop-positions-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name listing the drop positions allowed on a node.' },
-  { configKey: 'iconMember', attribute: 'icon-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name that holds a per-node icon.' },
+  { configKey: 'iconMember', attribute: 'icon-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name that holds a per-node icon value (rendered on every node as <i class="wtv__node-icon {value}">).' },
+  { configKey: 'iconColorMember', attribute: 'icon-color-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name that holds a per-node icon color (applied to the .wtv__node-icon element).' },
 
   // ── Behavior ───────────────────────────────────────────────────────────────
   { configKey: 'expandLevel', attribute: 'expand-level', converter: toInt(), on: 'update', description: 'Depth to auto-expand on load (0 = roots only).' },
@@ -119,6 +120,13 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'focusedNodeClass', attribute: 'focused-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to the focused node.' },
   { configKey: 'dragOverNodeClass', attribute: 'drag-over-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to a node being dragged over.' },
   { configKey: 'draggedNodeClass', attribute: 'dragged-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class for the dragged source row; replaces the built-in .wtv__node-content--dragged visual.' },
+
+  // ── Node tooltips (hover/focus) ─────────────────────────────────────────────
+  { configKey: 'shouldShowNodeTooltips', attribute: 'show-node-tooltips', converter: toBool('default-false'), on: 'update', description: 'Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback).' },
+  { configKey: 'tooltipPlacement', attribute: 'tooltip-placement', converter: toEnum(['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'] as const), on: 'update', description: 'Tooltip placement relative to the row. Default top-start.' },
+  { configKey: 'tooltipDelay', attribute: 'tooltip-delay', converter: toInt(), on: 'update', type: 'number | { show?: number; hide?: number }', description: 'Show/hide delay (ms). The attribute sets both; the JS property also accepts { show, hide }. Default { show: 400, hide: 100 }.' },
+  { configKey: 'tooltipOffset', attribute: 'tooltip-offset', converter: toInt(), on: 'update', description: 'Gap from the row (or cursor), px. Default 8.' },
+  { configKey: 'tooltipFollowCursor', attribute: 'tooltip-follow-cursor', converter: toBool('default-false'), on: 'update', description: 'Anchor the tooltip to the pointer instead of the row.' },
   { configKey: 'iconSet', attribute: 'icon-set', converter: toEnum(['chevron', 'triangle', 'plus-minus', 'arrow'] as const), on: 'update', reflect: true, description: 'Disclosure glyph set: chevron (default) | triangle | plus-minus | arrow. Re-points the --wtv-icon-* variables via a :host([icon-set]) rule; reflected to the attribute so the CSS matches when set via the JS property.' },
   { configKey: 'expandIconClass', attribute: 'expand-icon-class', converter: toText({ isNullable: true }), on: 'update', description: 'DEPRECATED — use icon-set. Escape hatch: a custom class attached to the expandable toggle.' },
   { configKey: 'collapseIconClass', attribute: 'collapse-icon-class', converter: toText({ isNullable: true }), on: 'update', description: 'DEPRECATED — glyph swap is now CSS-driven (icon-set + toggle-icon-mode); no longer selects the expanded glyph.' },
@@ -185,11 +193,14 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'customStylesCallback', converter: cb(), on: 'update', type: '() => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
 
   // ── Callbacks: data shape / behavior (reactive → update) ───────────────────
-  { configKey: 'iconCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null', description: 'Compute a per-node icon (overrides iconMember).' },
+  { configKey: 'iconCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null', description: 'Compute a per-node icon value (overrides iconMember).' },
+  { configKey: 'iconColorCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null', description: 'Compute a per-node icon color (overrides iconColorMember).' },
+  { configKey: 'renderIconCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, value: string | null, iconEl: HTMLElement) => void', description: 'Custom per-node icon render (SVG / unicode / markup). Wins over the default class-based <i>.' },
   { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(items: LTreeNode[]) => LTreeNode[]', description: 'Custom sibling sort.' },
   { configKey: 'contextMenuCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, close: () => void) => ContextMenuEntry[]', description: 'Build the context-menu entries for a node.' },
   { configKey: 'nodeClass', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null | undefined', description: 'Extra class(es) for a node row.' },
   { configKey: 'nodeContentClass', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null | undefined', description: 'Extra class(es) for a node content element.' },
+  { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
 
   // ── Callbacks: render hooks (reactive → update) ────────────────────────────
   { configKey: 'renderNodeCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, container: HTMLElement) => void', description: 'Custom render for a node row.' },

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — node tooltips</title>
+    <style>
+        main { max-width: 900px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
+        .tree { width: 300px; border: 1px solid #ccc; margin-bottom: 1rem; }
+        web-treeview { display: block; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>node tooltips</h1>
+        <p>Targeted by <code>e2e/tooltip.spec.ts</code>. Two trees: callback (plain text)
+           and callback returning an HTMLElement (rich). <code>tooltip-delay=0</code> so hover
+           shows immediately. The <em>Plain</em> row (empty desc) gets no tooltip.</p>
+
+        <button id="toggle">toggle tooltips</button>
+
+        <h2>callback (text)</h2>
+        <div class="tree"><web-treeview id="text" expand-level="2" show-node-tooltips tooltip-delay="0"></web-treeview></div>
+
+        <h2>callback (HTML element)</h2>
+        <div class="tree"><web-treeview id="rich" expand-level="2" show-node-tooltips tooltip-delay="0"></web-treeview></div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        const data = [
+            { id: 1, path: '1', name: 'Fruits', desc: 'Sweet edible plant fruits' },
+            { id: 2, path: '1.1', name: 'Apple', desc: 'Crisp orchard fruit' },
+            { id: 3, path: '1.2', name: 'Plain', desc: '' }
+        ];
+
+        customElements.whenDefined('web-treeview').then(() => {
+            const text = document.getElementById('text');
+            const rich = document.getElementById('rich');
+            const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', data };
+
+            Object.assign(text, common, {
+                getNodeTooltipCallback: (node) => node.data?.desc ?? null
+            });
+            Object.assign(rich, common, {
+                getNodeTooltipCallback: (node) => {
+                    const d = node.data;
+                    if (!d) return null;
+                    const el = document.createElement('div');
+                    el.setAttribute('data-testid', 'tip-content');
+                    el.innerHTML = `<strong>${d.name}</strong><span>${d.desc}</span>`;
+                    return el;
+                }
+            });
+
+            document.getElementById('toggle').addEventListener('click', () => {
+                const on = !text.shouldShowNodeTooltips;
+                text.shouldShowNodeTooltips = on;
+                rich.shouldShowNodeTooltips = on;
+            });
+        });
+    </script>
+</body>
+</html>

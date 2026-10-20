@@ -63,8 +63,8 @@
                         Layout:
                         <select id="ctrl-layout" onchange="applySettings()">
                             <option value="around">Around (before + after/child)</option>
-                            <option value="above">Above (all 3 in row above)</option>
-                            <option value="below">Below (all 3 in row below)</option>
+                            <option value="before">Before (all 3 in a row above the node)</option>
+                            <option value="after">After (all 3 in a row below the node)</option>
                             <option value="wave">Wave (stacked vertically)</option>
                             <option value="wave2">Wave2 (diagonal pattern)</option>
                         </select>
@@ -352,7 +352,7 @@
                 const config = JSON.parse(saved);
                 if (config.dragDropModeSource) document.getElementById('ctrl-drag-mode').value = config.dragDropModeSource;
                 if (config.mode) document.getElementById('ctrl-drop-zone-mode').value = config.mode;
-                if (config.layout) document.getElementById('ctrl-layout').value = config.layout;
+                if (config.layout) document.getElementById('ctrl-layout').value = config.layout === 'above' ? 'before' : config.layout === 'below' ? 'after' : config.layout; // map pre-rename saved values
                 if (config.start !== undefined) document.getElementById('ctrl-zone-start').value = config.start;
                 if (config.maxWidth !== undefined) document.getElementById('ctrl-max-width').value = config.maxWidth;
                 if (config.isCopyAllowed !== undefined) document.getElementById('ctrl-allow-copy').checked = config.isCopyAllowed;

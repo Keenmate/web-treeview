@@ -154,6 +154,9 @@ export interface TreeViewConfig<T = any> {
   highlightedNodeClass?: string | null;
   /** CSS class applied to the single focused node. */
   focusedNodeClass?: string | null;
+  /** CSS class applied to every checked (selectedPaths) node — the checkbox is the
+   *  default signal, this is opt-in extra styling for checked rows. */
+  selectedNodeClass?: string | null;
   dragOverNodeClass?: string | null;
   /** CSS class for the dragged source row (the dimmed node left in place while its ghost
    *  follows the pointer). When set, REPLACES the built-in `.wtv__node-content--dragged`
@@ -289,7 +292,7 @@ export interface TreeViewConfig<T = any> {
   // Drag and Drop
   dragDropMode?: DragDropMode;
   dropZoneMode?: 'floating' | 'glow';
-  dropZoneLayout?: 'around' | 'above' | 'below' | 'wave' | 'wave2';
+  dropZoneLayout?: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart?: number | string;
   dropZoneMaxWidth?: number;
   isCopyAllowed?: boolean;

@@ -119,11 +119,12 @@ export interface NodeConfig {
   toggleIconMode: ToggleIconMode;
   highlightedNodeClass: string | null | undefined;
   focusedNodeClass: string | null | undefined;
+  selectedNodeClass: string | null | undefined;
   dragOverNodeClass: string | null | undefined;
   draggedNodeClass: string | null | undefined;
   dragDropMode: DragDropMode;
   dropZoneMode: 'floating' | 'glow';
-  dropZoneLayout: 'around' | 'above' | 'below' | 'wave' | 'wave2';
+  dropZoneLayout: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart: number | string;
   dropZoneMaxWidth: number;
   isCopyAllowed: boolean;
@@ -468,7 +469,7 @@ export interface TreeControllerConfig<T> {
   // DRAG AND DROP
   dragDropMode?: DragDropMode;
   dropZoneMode?: 'floating' | 'glow';
-  dropZoneLayout?: 'around' | 'above' | 'below' | 'wave' | 'wave2';
+  dropZoneLayout?: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart?: number | string;
   dropZoneMaxWidth?: number;
   isCopyAllowed?: boolean;
@@ -564,6 +565,7 @@ export interface TreeControllerConfig<T> {
   bodyClass?: string | null | undefined;
   highlightedNodeClass?: string | null | undefined;
   focusedNodeClass?: string | null | undefined;
+  selectedNodeClass?: string | null | undefined;
   dragOverNodeClass?: string | null | undefined;
   draggedNodeClass?: string | null | undefined;
   /** Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback). */

@@ -80,9 +80,14 @@
 
 /* Hover paints on the CONTENT (mirrors svelte-treeview's .stv__node-content:hover),
    so it hugs the label as a rounded, inset pill — not a flat full-width bar across
-   the whole row (indent + toggle included) as it did when it was on .wtv__node. */
+   the whole row (indent + toggle included) as it did when it was on .wtv__node.
+   Hover and selection share the BACKGROUND channel — a highlighted row keeps its
+   stronger selection tint on hover (the rule below) so the two never stack. */
 .wtv__node .wtv__node-content:hover {
   background: var(--wtv-node-bg-hover);
+}
+.wtv__node .wtv__node-content--highlighted:hover {
+  background: var(--wtv-highlighted-bg-hover);
 }
 
 /* Press feedback on the CONTENT, not the full-width outer .wtv__node — otherwise
@@ -317,22 +322,49 @@
    visible feedback without configuring `highlightedNodeClass`. The renderer
    only applies this class when NO highlightedNodeClass is set (see
    dom-renderer.ts), so the default look never fights a configured variant —
-   set a highlight class and this marker steps aside entirely. Override the
-   --wtv-highlighted-bg / --wtv-highlighted-outline variables to retint it. */
+   set a highlight class and this marker steps aside entirely.
+
+   Selection owns the BACKGROUND channel: a soft tint (--wtv-highlighted-bg ←
+   --base-highlighted-bg). It reads the shared --base-highlighted-* tokens, so one knob
+   themes the tree + web-multiselect's selected option identically. The optional
+   --wtv-highlighted-ring (← --base-highlighted-outline, default none) is drawn as
+   an INSET outline, sharing the focus ring's outline channel — the focused-default
+   rule below comes AFTER this one so the focus ring wins on a focused+selected row. */
 .wtv__node-content--highlighted {
-  background-color: var(--wtv-highlighted-bg, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
-  outline: 1px solid var(--wtv-highlighted-outline, color-mix(in srgb, var(--wtv-accent-color) 25%, transparent));
-  outline-offset: -1px;
+  background-color: var(--wtv-highlighted-bg);
+  color: var(--wtv-highlighted-text);
+  outline: var(--wtv-highlighted-ring);
+  outline-offset: var(--wtv-focused-outline-offset);
   border-radius: var(--wtv-border-radius-sm);
 }
 
 /* Always-on marker for the focused node (single, last click / arrow nav).
-   Pure CSS hook — no default styles. Apps that want a built-in focus ring
-   write their own rule and pass the class via `focusedNodeClass`. Matches
-   svelte-treeview's policy (the rc12 default outline confused consumers who
-   chose "no focus style" but still saw a ring). */
+   Pure CSS hook — no default styles, always present when focused, so apps can
+   target it directly. The VISIBLE default look lives on --focused-default below. */
 .wtv__node-content--focused {
-  /* intentionally empty */
+  /* intentionally empty — pure hook */
+}
+
+/* DEFAULT focus look — a thin INSET OUTLINE ring (the cursor channel), matching
+   web-multiselect's focused option. Reads the shared --base-focused-* tokens via
+   --wtv-focused-ring / -color / -bg. The renderer adds this class only when
+   focused AND no focusedNodeClass is set, so it steps aside the moment you
+   configure a custom focus style (mirrors the --highlighted fallback).
+   Outline + negative offset = paints inside the pill, never spills onto the
+   neighbouring row or clips at the scroll edge, no layout shift. Outline is its
+   OWN paint channel, so the box-shadow-based presets (--highlight-border /
+   --highlight-glow) and the scroll flash can't wipe it, and it layers over any
+   background tint. Set --wtv-focused-ring: none to suppress the ring while
+   keeping the hook. Mirrors svelte-treeview. */
+.wtv__node-content--focused-default {
+  outline: var(--wtv-focused-ring);
+  outline-offset: var(--wtv-focused-outline-offset);
+  color: var(--wtv-focused-text);
+}
+/* Focus bg only on a NON-highlighted row, so a focused+highlighted row keeps the
+   selection tint. */
+.wtv__node-content--focused-default:not(.wtv__node-content--highlighted) {
+  background-color: var(--wtv-focused-bg);
 }
 
 /* Opt-in highlight flavors — applied via the `highlightedNodeClass` prop. */
@@ -341,11 +373,17 @@
   color: var(--wtv-accent-color) !important;
 }
 
+/* Hairline inset ring + soft tint. Inset box-shadow (not border/outline) → no
+   layout shift, nothing bleeds onto neighbouring rows. */
 .wtv__node-content--highlight-border {
-  outline: var(--wtv-selected-border) !important;
-  outline-offset: -2px;
-  border-radius: var(--wtv-border-radius-sm) !important;
-  background: var(--wtv-selected-bg) !important;
+  background-color: var(--wtv-highlighted-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--wtv-highlight-ring-color) !important;
+}
+
+/* Explorer-style strong fill — solid-ish accent background + override text color. */
+.wtv__node-content--highlight-fill {
+  background: var(--wtv-highlight-bg) !important;
+  color: var(--wtv-highlight-color) !important;
 }
 
 .wtv__node-content--highlight-brackets {
@@ -366,14 +404,14 @@
   font-weight: bold;
 }
 
-/* Soft glow ring — tinted background plus an accent-colored outer glow.
+/* Soft ring — tint + an inset hairline + a faint INNER glow, kept inside the pill
+   so it never spills onto neighbouring rows or clips at the scroll edge.
    Parity with svelte-treeview's .stv__node-content--highlight-glow. */
 .wtv__node-content--highlight-glow {
-  background-color: color-mix(in srgb, var(--wtv-accent-color) 12%, transparent) !important;
+  background-color: var(--wtv-highlighted-bg) !important;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--wtv-accent-color) 40%, transparent),
-    0 0 8px 1px color-mix(in srgb, var(--wtv-accent-color) 35%, transparent) !important;
-  border-radius: var(--wtv-border-radius-sm) !important;
+    inset 0 0 0 1px var(--wtv-highlight-ring-color),
+    inset 0 0 6px 0 color-mix(in srgb, var(--wtv-accent-color) 20%, transparent) !important;
 }
 
 /* ==============================================================================
@@ -712,7 +750,7 @@
   max-width: var(--wtv-tooltip-max-width, 32rem);
   word-wrap: break-word;
   white-space: pre-wrap;
-  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
+  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px var(--base-shadow-color, rgba(0, 0, 0, 0.15)));
   pointer-events: none; /* never intercept the pointer */
 }
 
@@ -877,45 +915,45 @@
   transform: translateY(100%);
 }
 
-/* Layout: "above" */
-.wtv__drop-zones--above .wtv__drop-zone--before,
-.wtv__drop-zones--above .wtv__drop-zone--after,
-.wtv__drop-zones--above .wtv__drop-zone--child {
+/* Layout: "before" — all 3 zones in a row above (before) the node */
+.wtv__drop-zones--before .wtv__drop-zone--before,
+.wtv__drop-zones--before .wtv__drop-zone--after,
+.wtv__drop-zones--before .wtv__drop-zone--child {
   top: 0;
   transform: translateY(-100%);
 }
-.wtv__drop-zones--above .wtv__drop-zone--before {
+.wtv__drop-zones--before .wtv__drop-zone--before {
   left: var(--drop-zone-start, 33%);
   right: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
   border-radius: 0 0 0 0;
 }
-.wtv__drop-zones--above .wtv__drop-zone--after {
+.wtv__drop-zones--before .wtv__drop-zone--after {
   left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
   right: calc((100% - var(--drop-zone-start, 33%)) / 3);
   border-radius: 0;
 }
-.wtv__drop-zones--above .wtv__drop-zone--child {
+.wtv__drop-zones--before .wtv__drop-zone--child {
   left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
   right: 0;
   border-radius: 0;
 }
 
-/* Layout: "below" */
-.wtv__drop-zones--below .wtv__drop-zone--before,
-.wtv__drop-zones--below .wtv__drop-zone--after,
-.wtv__drop-zones--below .wtv__drop-zone--child {
+/* Layout: "after" — all 3 zones in a row below (after) the node */
+.wtv__drop-zones--after .wtv__drop-zone--before,
+.wtv__drop-zones--after .wtv__drop-zone--after,
+.wtv__drop-zones--after .wtv__drop-zone--child {
   bottom: 0;
   transform: translateY(100%);
 }
-.wtv__drop-zones--below .wtv__drop-zone--before {
+.wtv__drop-zones--after .wtv__drop-zone--before {
   left: var(--drop-zone-start, 33%);
   right: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
 }
-.wtv__drop-zones--below .wtv__drop-zone--after {
+.wtv__drop-zones--after .wtv__drop-zone--after {
   left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
   right: calc((100% - var(--drop-zone-start, 33%)) / 3);
 }
-.wtv__drop-zones--below .wtv__drop-zone--child {
+.wtv__drop-zones--after .wtv__drop-zone--child {
   left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
   right: 0;
 }
@@ -1000,6 +1038,13 @@
    — NOT the native .indeterminate DOM property — so it survives the flat diff
    reconciler + virtual-scroll recycling and emits the same DOM as the siblings.
    See base-css-variables → "Checkbox render method". */
+/* Gap between the box and the node pill lives on the PILL, not the <input>: input
+   margins get zeroed by common unlayered resets (Bootstrap reboot `input { margin: 0 }`,
+   Tailwind preflight). A div margin survives. Mirrors svelte-treeview. */
+.wtv__checkbox ~ .wtv__node-content {
+  margin-left: var(--wtv-checkbox-gap);
+}
+
 .wtv__checkbox {
   appearance: none;
   -webkit-appearance: none;
@@ -1010,7 +1055,7 @@
   box-sizing: border-box;
   flex-shrink: 0;
   position: relative;
-  margin: 0 var(--wtv-spacing-sm) 0 0;
+  margin: 0;
   cursor: pointer;
   /* Box, border AND radius scaled via calc (shared --base-checkbox-scale
      contract) — NOT a CSS transform. calc keeps all three proportional without

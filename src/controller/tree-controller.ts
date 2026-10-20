@@ -90,6 +90,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     toggleIconMode: 'rotate',
     highlightedNodeClass: undefined,
     focusedNodeClass: undefined,
+    selectedNodeClass: undefined,
     dragOverNodeClass: undefined,
     draggedNodeClass: undefined,
     dragDropMode: 'none',
@@ -216,6 +217,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _toggleIconMode: import('./types').ToggleIconMode = 'rotate';
   private _highlightedNodeClass: string | null | undefined = undefined;
   private _focusedNodeClass: string | null | undefined = undefined;
+  private _selectedNodeClass: string | null | undefined = undefined;
   private _dragOverNodeClass: string | null | undefined = undefined;
   private _draggedNodeClass: string | null | undefined = undefined;
   private _shouldShowNodeTooltips: boolean = false;
@@ -225,7 +227,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _tooltipOffset: number = 8;
   private _tooltipFollowCursor: boolean = false;
   private _dropZoneMode: 'floating' | 'glow' = 'glow';
-  private _dropZoneLayout: 'around' | 'above' | 'below' | 'wave' | 'wave2' = 'around';
+  private _dropZoneLayout: 'around' | 'before' | 'after' | 'wave' | 'wave2' = 'around';
   private _dropZoneStart: number | string = 33;
   private _dropZoneMaxWidth: number = 120;
   private _scrollHighlightTimeout: number = 4000;
@@ -429,6 +431,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   get focusedNodeClass() { return this._focusedNodeClass; }
   set focusedNodeClass(v: string | null | undefined) { this._focusedNodeClass = v; this._updateNodeConfig(); }
 
+  get selectedNodeClass() { return this._selectedNodeClass; }
+  set selectedNodeClass(v: string | null | undefined) { this._selectedNodeClass = v; this._updateNodeConfig(); }
+
   get insertResult() { return this._insertResult; }
   get searchText() { return this._searchText; }
   set searchText(v: string | null | undefined) {
@@ -542,7 +547,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   set dropZoneMode(v: 'floating' | 'glow') { this._dropZoneMode = v; this._updateNodeConfig(); }
 
   get dropZoneLayout() { return this._dropZoneLayout; }
-  set dropZoneLayout(v: 'around' | 'above' | 'below' | 'wave' | 'wave2') { this._dropZoneLayout = v; this._updateNodeConfig(); }
+  set dropZoneLayout(v: 'around' | 'before' | 'after' | 'wave' | 'wave2') { this._dropZoneLayout = v; this._updateNodeConfig(); }
 
   get dropZoneStart() { return this._dropZoneStart; }
   set dropZoneStart(v: number | string) { this._dropZoneStart = v; this._updateNodeConfig(); }
@@ -769,6 +774,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._toggleIconMode = props.toggleIconMode ?? 'rotate';
     this._highlightedNodeClass = props.highlightedNodeClass;
     this._focusedNodeClass = props.focusedNodeClass;
+    this._selectedNodeClass = props.selectedNodeClass;
     this._dragOverNodeClass = props.dragOverNodeClass;
     this._draggedNodeClass = props.draggedNodeClass;
     this._shouldShowNodeTooltips = props.shouldShowNodeTooltips ?? false;
@@ -3249,6 +3255,13 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   // ── updateProps (batch property updates) ────────────────────────────
 
   updateProps(updates: Partial<TreeControllerConfig<T>>) {
+    if ((globalThis as any).__WTV_DEBUG) {
+      const has = (k: string) => k in updates;
+      console.log('[wtv:cfg] updateProps IN',
+        'focusedNodeClass:', has('focusedNodeClass') ? JSON.stringify((updates as any).focusedNodeClass) : '(absent)',
+        '| highlightedNodeClass:', has('highlightedNodeClass') ? JSON.stringify((updates as any).highlightedNodeClass) : '(absent)',
+        '| selectedNodeClass:', has('selectedNodeClass') ? JSON.stringify((updates as any).selectedNodeClass) : '(absent)');
+    }
     // Check if any LTree-baked member mapping / structural callback changed —
     // only THAT requires tearing down and rebuilding the tree.
     //
@@ -3362,6 +3375,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._highlightedNodeClass = updates.highlightedNodeClass;
     if (updates.focusedNodeClass !== undefined)
       this._focusedNodeClass = updates.focusedNodeClass;
+    else if ((globalThis as any).__WTV_DEBUG && 'focusedNodeClass' in updates)
+      console.log('[wtv:cfg] focusedNodeClass guard SKIPPED clear — value is undefined, stays', JSON.stringify(this._focusedNodeClass));
+    if (updates.selectedNodeClass !== undefined)
+      this._selectedNodeClass = updates.selectedNodeClass;
     if (updates.dragOverNodeClass !== undefined)
       this._dragOverNodeClass = updates.dragOverNodeClass;
     if (updates.draggedNodeClass !== undefined)
@@ -3836,6 +3853,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       toggleIconMode: this._toggleIconMode,
       highlightedNodeClass: this._highlightedNodeClass,
       focusedNodeClass: this._focusedNodeClass,
+      selectedNodeClass: this._selectedNodeClass,
       dragOverNodeClass: this._dragOverNodeClass,
       draggedNodeClass: this._draggedNodeClass,
       dragDropMode: this._dragDropMode,
@@ -3857,6 +3875,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       nodeClass: this._nodeClass,
       nodeContentClass: this._nodeContentClass
     };
+    if ((globalThis as any).__WTV_DEBUG)
+      console.log('[wtv:cfg] emit config-change focusedNodeClass=', JSON.stringify(this._focusedNodeClass));
     this.emit('config-change', this._nodeConfig);
   }
 

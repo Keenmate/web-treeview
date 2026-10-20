@@ -7,7 +7,7 @@ The component publishes ~110 CSS variables. The contract follows the BlissFramew
 ```css
 /* Design system level — affects ALL components sharing the system */
 :root {
-  --base-accent-color: #8b5cf6;
+  --base-primary-color: #8b5cf6;
   --base-text-color-1: #1e293b;
   --base-border-color: #e2e8f0;
   --base-hover-bg: #f1f5f9;
@@ -16,8 +16,8 @@ The component publishes ~110 CSS variables. The contract follows the BlissFramew
 
 /* Component level — affects only this treeview instance */
 web-treeview {
-  --wtv-accent-color: #8b5cf6;   /* Overrides --base-accent-color */
-  --wtv-selected-bg: #ede9fe;
+  --wtv-accent-color: #8b5cf6;   /* Overrides --base-primary-color */
+  --wtv-highlighted-bg: #ede9fe;
   --wtv-indent-size: 1.5rem;
   --wtv-node-height: 2rem;
   --wtv-border-radius-sm: 4px;
@@ -53,11 +53,11 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-accent-color` | `--base-accent-color` \| `light-dark(#3b82f6, #60a5fa)` | Primary accent color |
-| `--wtv-accent-color-hover` | `--base-accent-color-hover` \| `light-dark(#2563eb, #3b82f6)` | Accent hover state |
+| `--wtv-accent-color` | `--base-primary-color` \| `light-dark(#3b82f6, #60a5fa)` | Primary accent color |
+| `--wtv-accent-color-hover` | `--base-primary-color-hover` \| `light-dark(#2563eb, #3b82f6)` | Accent hover state |
 | `--wtv-text-color` | `--base-text-color-1` \| `light-dark(#1e293b, #f1f5f9)` | Primary text color |
 | `--wtv-text-color-2` | `--base-text-color-3` \| `light-dark(#64748b, #94a3b8)` | Secondary / muted text |
-| `--wtv-text-color-on-accent` | `--base-text-color-on-accent` \| `#ffffff` | Text on accent backgrounds |
+| `--wtv-text-color-on-accent` | `--base-on-primary-text-color` \| `#ffffff` | Text on accent backgrounds |
 | `--wtv-bg-color` | `--base-main-bg` \| `light-dark(#fff, #1a1a1a)` | Main background |
 | `--wtv-border-color` | `--base-border-color` \| `light-dark(#e2e8f0, #3d3d3d)` | Default border color |
 | `--wtv-success-color` | `--base-success-color` \| `light-dark(#198754, #4ade80)` | Success / valid color |
@@ -70,15 +70,17 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 |----------|---------|-------------|
 | `--wtv-hover-bg` | `--base-hover-bg` \| `color-mix(text 8%, bg)` | Base hover background |
 | `--wtv-active-bg` | `--base-active-bg` \| `color-mix(text 14%, bg)` | Base active / pressed background |
-| `--wtv-selected-bg` | `--base-accent-color-light` \| `color-mix(accent 15%, transparent)` | Highlighted node background |
-| `--wtv-selected-border-color` | `= --wtv-accent-color` | Highlighted node border color |
-| `--wtv-selected-border` | `2px solid --wtv-selected-border-color` | Highlighted node border shorthand |
 | `--wtv-node-bg-hover` | `= --wtv-hover-bg` | Node hover background |
 | `--wtv-node-bg-active` | `= --wtv-active-bg` | Node active / pressed background |
 | `--wtv-node-transition` | `background 150ms, box-shadow 150ms ease` | Node content transition (set `none` to disable) |
-| `--wtv-highlighted-bg` | `color-mix(accent 10%, transparent)` | Always-on `.wtv__node-content--highlighted` fill |
-| `--wtv-highlighted-outline` | `color-mix(accent 25%, transparent)` | Always-on `.wtv__node-content--highlighted` outline |
-| `--wtv-focused-outline` | `color-mix(accent 60%, transparent)` | Always-on `.wtv__node-content--focused` outline |
+| `--wtv-highlighted-bg` | `--base-highlighted-bg` \| `color-mix(accent 10%, transparent)` | Default `.wtv__node-content--highlighted` (multi-select) background tint |
+| `--wtv-highlighted-bg-hover` | `--base-highlighted-bg-hover` \| `= --wtv-highlighted-bg` | Highlighted row background on hover |
+| `--wtv-highlighted-text` | `--base-highlighted-text-color` \| `currentColor` | Highlighted row text color |
+| `--wtv-highlighted-ring` | `--base-highlighted-outline` \| `none` | Highlighted row outline shorthand (drawn inset) |
+| `--wtv-focused-bg` | `--base-focused-bg` \| `transparent` | Focused row background (only when not highlighted) |
+| `--wtv-focused-text` | `--base-focused-text-color` \| `currentColor` | Focused row text color |
+| `--wtv-focused-ring` | `--base-focused-outline` \| `1px solid --wtv-accent-color` | Default `.wtv__node-content--focused-default` ring — outline shorthand drawn inset (`none` to suppress) |
+| `--wtv-focused-outline-offset` | `calc(-1 * var(--base-outline-width, 1px))` | Outline offset for the focus ring / highlighted border (negative = inset; follows `--base-outline-width`) |
 
 ### Border
 

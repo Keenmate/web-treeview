@@ -76,7 +76,7 @@ src/
 ### CSS Custom Properties
 All CSS variables use the `--wtv-` prefix and fall back to `--base-*` variables from the design system:
 ```css
---wtv-accent-color: var(--base-accent-color, #3b82f6);
+--wtv-accent-color: var(--base-primary-color, #3b82f6);
 --wtv-text-color: var(--base-text-color-1, #1e293b);
 --wtv-indent-size: calc(var(--wtv-rem) * 2);
 ```
@@ -122,7 +122,7 @@ All mounted `<web-treeview>` elements are tracked in a `Set` and exposed via `ge
 
 ## Node tooltips (hover/focus)
 
-`show-node-tooltips` + `getNodeTooltipCallback(node) => string | HTMLElement | null` (text or rich element — the analog of svelte-treeview's `tooltip` snippet). Each row's tooltip is created via the shared **`createTooltip`** core primitive (same one web-multiselect uses), portaled into the shadow container, Floating-UI positioned. The renderer (`dom-renderer.ts`) keeps a per-row `tooltips: Map<key, TooltipHandle>` — created in `_createNodeElement`, refreshed in `_updateNodeElement` (so content tracks `_rev`), destroyed on row removal / `_renderEmpty` / `_fullRender` / `destroy`. Options: `tooltip-placement` (`top-start`), `tooltip-delay` (`{show:400,hide:100}`), `tooltip-offset` (`8`), `tooltip-follow-cursor`. Surface `.wtv__tooltip` / `--visible` uses the shared `--base-tooltip-*` tokens → identical to svelte-treeview's `.stv__tooltip` + ms's option tooltip under one theme. Size: `--wtv-tooltip-*` (auto/shrink by default capped by `-max-width`; set `-width` for a fixed box + `-max-width:none`, or `-min-width` for a floor). Demo `examples-tooltips.html`; e2e `test/tooltip.html` + `e2e/tooltip.spec.ts`.
+`show-node-tooltips` + `getNodeTooltipCallback(node) => string | HTMLElement | null` (text or rich element — the analog of svelte-treeview's `tooltip` snippet). Each row's tooltip is created via the shared **`createTooltip`** core primitive (same one web-multiselect uses), portaled into the shadow container, Floating-UI positioned. The renderer (`dom-renderer.ts`) keeps a per-row `tooltips: Map<key, TooltipHandle>` + `tooltipRevs: Map<key, number>` — created in `_createNodeElement`, rebuilt in `_updateNodeElement` **only when the node's `_rev` changed** (content derives from `getNodeTooltipCallback(node)`, so a same-`_rev` reconcile — reposition / focus / highlight toggle — keeps the live handle), destroyed on row removal / `_renderEmpty` / `_fullRender` / `destroy`. Enable/disable, callback, placement and `tooltip-follow-cursor` changes are config-level → `_onConfigChange` → `_fullRender`, which rebuilds all tooltips. The `_rev` guard matters for `tooltip-follow-cursor`: core (≥ rc11) seeds the cursor rect on `mouseenter`, and a needless destroy+recreate mid-hover would drop that seed and pin the tooltip to the row corner. Options: `tooltip-placement` (`top-start`), `tooltip-delay` (`{show:400,hide:100}`), `tooltip-offset` (`8`), `tooltip-follow-cursor`. Surface `.wtv__tooltip` / `--visible` uses the shared `--base-tooltip-*` tokens → identical to svelte-treeview's `.stv__tooltip` + ms's option tooltip under one theme. Size: `--wtv-tooltip-*` (auto/shrink by default capped by `-max-width`; set `-width` for a fixed box + `-max-width:none`, or `-min-width` for a floor). Demo `examples-tooltips.html`; e2e `test/tooltip.html` + `e2e/tooltip.spec.ts`.
 
 ## Render context (device + node state)
 

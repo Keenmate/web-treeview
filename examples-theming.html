@@ -49,12 +49,12 @@
             --base-text-color-1: #e5e5e5;
             --base-text-color-3: #808080;
             --base-border-color: #404040;
-            --base-accent-color: #667eea;
-            --base-accent-color-hover: #7b93ff;
+            --base-primary-color: #667eea;
+            --base-primary-color-hover: #7b93ff;
             --base-hover-bg: #3a3a3a;
             --base-active-bg: #444444;
             --base-elevated-bg: #3a3a3a;
-            --base-accent-color-light: rgba(102, 126, 234, 0.15);
+            --base-primary-bg-subtle: rgba(102, 126, 234, 0.15);
 
             /* Component-specific overrides */
             --wtv-context-menu-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
@@ -89,13 +89,13 @@
             --base-text-color-1: #00ffff;
             --base-text-color-3: #ff00ff;
             --base-border-color: #ff00ff;
-            --base-accent-color: #ff00ff;
-            --base-accent-color-hover: #ff66ff;
+            --base-primary-color: #ff00ff;
+            --base-primary-color-hover: #ff66ff;
             --base-hover-bg: rgba(255, 0, 255, 0.15);
             --base-active-bg: rgba(255, 0, 255, 0.25);
             --base-elevated-bg: rgba(255, 0, 255, 0.1);
-            --base-accent-color-light: rgba(0, 255, 255, 0.15);
-            --base-text-color-on-accent: #1a0a1a;
+            --base-primary-bg-subtle: rgba(0, 255, 255, 0.15);
+            --base-on-primary-text-color: #1a0a1a;
 
             /* Component-specific overrides */
             --wtv-context-menu-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
@@ -129,11 +129,11 @@
             --base-text-color-1: #333333;
             --base-text-color-3: #666666;
             --base-border-color: #d0d0d0;
-            --base-accent-color: #bb0a30;
-            --base-accent-color-hover: #990825;
+            --base-primary-color: #bb0a30;
+            --base-primary-color-hover: #990825;
             --base-hover-bg: #f5f5f5;
             --base-elevated-bg: #f5f5f5;
-            --base-accent-color-light: rgba(187, 10, 48, 0.08);
+            --base-primary-bg-subtle: rgba(187, 10, 48, 0.08);
 
             /* Component-specific overrides */
             --wtv-border-radius-sm: 2px;
@@ -151,11 +151,11 @@
             --base-text-color-1: #5a3e36;
             --base-text-color-3: #8b6e60;
             --base-border-color: #f0d0c0;
-            --base-accent-color: #ff6b9d;
-            --base-accent-color-hover: #ff3b7a;
+            --base-primary-color: #ff6b9d;
+            --base-primary-color-hover: #ff3b7a;
             --base-hover-bg: #fff5f0;
             --base-elevated-bg: #fff5f0;
-            --base-accent-color-light: #ffe5f0;
+            --base-primary-bg-subtle: #ffe5f0;
 
             /* Component-specific overrides */
             --wtv-border-radius-sm: 12px;
@@ -177,11 +177,11 @@
             --base-text-color-1: #000000;
             --base-text-color-3: #555555;
             --base-border-color: #000000;
-            --base-accent-color: #000000;
-            --base-accent-color-hover: #333333;
+            --base-primary-color: #000000;
+            --base-primary-color-hover: #333333;
             --base-hover-bg: #f0f0f0;
             --base-elevated-bg: #f0f0f0;
-            --base-accent-color-light: #e0e0e0;
+            --base-primary-bg-subtle: #e0e0e0;
 
             /* Component-specific overrides */
             --wtv-border-radius-sm: 0;
@@ -203,11 +203,11 @@
             --base-text-color-1: #212121;
             --base-text-color-3: #757575;
             --base-border-color: transparent;
-            --base-accent-color: #1976d2;
-            --base-accent-color-hover: #1565c0;
+            --base-primary-color: #1976d2;
+            --base-primary-color-hover: #1565c0;
             --base-hover-bg: #e3f2fd;
             --base-elevated-bg: #f5f5f5;
-            --base-accent-color-light: #e3f2fd;
+            --base-primary-bg-subtle: #e3f2fd;
 
             /* Component-specific overrides */
             --wtv-border-radius-sm: 4px;
@@ -254,13 +254,13 @@
             --base-text-color-1: #ffffff;
             --base-text-color-3: rgba(255, 255, 255, 0.7);
             --base-border-color: rgba(255, 255, 255, 0.3);
-            --base-accent-color: #a5b4fc;
-            --base-accent-color-hover: #c7d2fe;
+            --base-primary-color: #a5b4fc;
+            --base-primary-color-hover: #c7d2fe;
             --base-hover-bg: rgba(255, 255, 255, 0.2);
             --base-active-bg: rgba(255, 255, 255, 0.3);
             --base-elevated-bg: rgba(255, 255, 255, 0.1);
-            --base-accent-color-light: rgba(255, 255, 255, 0.2);
-            --base-text-color-on-accent: #1e1b4b;
+            --base-primary-bg-subtle: rgba(255, 255, 255, 0.2);
+            --base-on-primary-text-color: #1e1b4b;
 
             /* Component-specific overrides */
             --wtv-context-menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -339,8 +339,8 @@
             font-size: 0.7rem;
             padding: 0.1rem 0.5rem;
             border-radius: 999px;
-            color: var(--base-text-color-on-accent, #fff);
-            background: var(--base-accent-color, #3b82f6);
+            color: var(--base-on-primary-text-color, #fff);
+            background: var(--base-primary-color, #3b82f6);
         }
 
         .tc-panel-body {
@@ -351,12 +351,12 @@
         /* ── Dracula (dark · purple) — from @keenmate/pure-admin-theme-dracula ── */
         .tc-theme-dracula {
             color-scheme: dark;
-            --base-accent-color: #bd93f9;
-            --base-accent-color-hover: #d4b9fb;
-            --base-accent-color-light: rgba(189, 147, 249, 0.15);
+            --base-primary-color: #bd93f9;
+            --base-primary-color-hover: #d4b9fb;
+            --base-primary-bg-subtle: rgba(189, 147, 249, 0.15);
             --base-text-color-1: #f8f8f2;
             --base-text-color-3: #6272a4;
-            --base-text-color-on-accent: #1a1a2e;
+            --base-on-primary-text-color: #1a1a2e;
             --base-main-bg: #2d2f3d;
             --base-elevated-bg: #343746;
             --base-hover-bg: #343746;
@@ -375,12 +375,12 @@
         /* ── Corporate (dark slate · blue) — from @keenmate/pure-admin-theme-corporate ── */
         .tc-theme-corporate {
             color-scheme: dark;
-            --base-accent-color: #0ea5e9;
-            --base-accent-color-hover: #0284c7;
-            --base-accent-color-light: rgba(14, 165, 233, 0.12);
+            --base-primary-color: #0ea5e9;
+            --base-primary-color-hover: #0284c7;
+            --base-primary-bg-subtle: rgba(14, 165, 233, 0.12);
             --base-text-color-1: #f1f5f9;
             --base-text-color-3: #94a3b8;
-            --base-text-color-on-accent: #ffffff;
+            --base-on-primary-text-color: #ffffff;
             --base-main-bg: #1e293b;
             --base-elevated-bg: #334155;
             --base-hover-bg: #334155;
@@ -645,7 +645,7 @@
 <pre><code>/* ── Design System tokens (--base-*) ── set on :root or container */
 /* These cascade to ALL components sharing the design system */
 
---base-accent-color: #3b82f6;        /* Primary accent color */
+--base-primary-color: #3b82f6;        /* Primary accent color */
 --base-text-color-1: #1e293b;          /* Primary text color */
 --base-text-color-3: #64748b;        /* Secondary text color */
 --base-main-bg: #ffffff;            /* Background color */
@@ -653,19 +653,19 @@
 --base-hover-bg: #f1f5f9;           /* Hover background */
 --base-active-bg: #e2e8f0;          /* Active/pressed background */
 --base-elevated-bg: #f8f9fa;           /* Light background */
---base-accent-color-light: #eff6ff; /* Light accent background */
+--base-primary-bg-subtle: #eff6ff; /* Light accent background */
 --base-rem: 10px;                    /* Base unit for sizing */
 
 /* ── Component tokens (--wtv-*) ── set on &lt;web-treeview&gt; */
 /* These override the design system for this component only */
 
---wtv-accent-color     /* = --base-accent-color */
+--wtv-accent-color     /* = --base-primary-color */
 --wtv-text-color       /* = --base-text-color-1 */
 --wtv-text-color-2     /* = --base-text-color-3 */
 --wtv-bg-color         /* = --base-main-bg */
 --wtv-border-color     /* = --base-border-color */
 --wtv-hover-bg         /* = --base-hover-bg */
---wtv-selected-bg      /* = --base-accent-color-light */
+--wtv-highlighted-bg   /* = --base-highlighted-bg */
 --wtv-node-height      /* = calc(--wtv-rem * 3.2) */
 --wtv-node-padding     /* = --wtv-spacing-sm --wtv-spacing-md */
 --wtv-indent-size      /* = calc(--wtv-rem * 2) */

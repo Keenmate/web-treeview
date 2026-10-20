@@ -57,9 +57,9 @@
             <p class="subtitle">Click behavior, multi-select, keyboard nav, cascade checkboxes &amp; value policy, silent state restore, clipboard</p>
         </header>
 
-        <!-- IN01 · Click Behavior -->
+        <!-- IN01 · Click Behavior & Multi-Select -->
         <div class="card">
-            <h2>IN01 · Click Behavior</h2>
+            <h2>IN01 · Click Behavior &amp; Multi-Select</h2>
             <p>
                 <code>click-behavior</code> controls what happens when you click a node;
                 <code>selection-mode</code> decides whether Ctrl/Shift+click can extend the set.
@@ -70,6 +70,15 @@
                 <li><strong>highlightedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>highlight-change</code>; styled by <code>highlighted-node-class</code>.</li>
                 <li><strong>selectedPaths</strong> &mdash; checkbox data state. Surfaces as <code>selection-change</code>.</li>
             </ul>
+            <p>
+                With <code>selection-mode="multi"</code>:
+                <span class="kbd">Click</span> picks one node,
+                <span class="kbd">Ctrl/Cmd+Click</span> toggles individual nodes,
+                <span class="kbd">Shift+Click</span> range-selects, and
+                <span class="kbd">Ctrl+A</span> selects all (click the tree first for focus).
+                <code>range-selection-mode</code> controls whether a Shift range includes collapsed children.
+                Pick a <strong>Highlighted style</strong> below and build up a set to see it on every row.
+            </p>
 
             <div class="controls">
                 <label>
@@ -90,16 +99,20 @@
                 <label>
                     Highlighted style:
                     <select id="in1-highlight-class">
+                        <option value="" selected>Default (soft tint)</option>
                         <option value="wtv__node-content--highlight-bold">Bold</option>
                         <option value="wtv__node-content--highlight-border">Border</option>
+                        <option value="wtv__node-content--highlight-brackets">Brackets</option>
+                        <option value="wtv__node-content--highlight-fill">Highlight (Explorer-style)</option>
+                        <option value="wtv__node-content--highlight-glow">Glow (soft ring)</option>
                     </select>
                 </label>
                 <label>
                     Focused style:
                     <select id="in1-focus-class">
-                        <option value="">None (invisible focus)</option>
-                        <option value="demo-focused-outline" selected>Outline (left border)</option>
-                        <option value="demo-focused-ring">Ring (full outline)</option>
+                        <option value="" selected>Default (ring)</option>
+                        <option value="demo-focused-ring">Ring (inset)</option>
+                        <option value="demo-focus-none">None</option>
                     </select>
                 </label>
                 <label>
@@ -117,6 +130,14 @@
                     <input type="checkbox" id="in1-click-toggles">
                     Click row toggles checkbox
                 </label>
+                <label>
+                    Range selection mode:
+                    <select id="in1-range-mode">
+                        <option value="visual">visual (only visible/expanded nodes)</option>
+                        <option value="logical">logical (full tree walk, incl. collapsed)</option>
+                    </select>
+                </label>
+                <button id="in1-select-specific">Highlight 1.1.1, 1.1.3, 1.2.1</button>
                 <button class="secondary" id="in1-clear">Clear all</button>
             </div>
 
@@ -126,9 +147,7 @@
                     <div class="tree-container">
                         <web-treeview id="in1-tree" expand-level="2"
                             selection-mode="multi"
-                            click-behavior="expand-and-focus"
-                            highlighted-node-class="wtv__node-content--highlight-bold"
-                            focused-node-class="demo-focused-outline"></web-treeview>
+                            click-behavior="expand-and-focus"></web-treeview>
                     </div>
                 </div>
                 <div>
@@ -136,7 +155,7 @@
                     <div class="output">
                         <p class="output-label">focusedNode</p>
                         <pre id="in1-focused">(none)</pre>
-                        <p class="output-label mt-1">highlightedPaths (Ctrl/Shift+click)</p>
+                        <p class="output-label mt-1">highlightedPaths (Ctrl/Shift+click) &mdash; <span id="in1-highlight-count">0</span></p>
                         <pre id="in1-highlight">(none)</pre>
                         <p class="output-label mt-1">selectedPaths (checkboxes) &mdash; <span id="in1-selected-count">0</span></p>
                         <pre id="in1-selected">(none)</pre>
@@ -145,64 +164,26 @@
             </div>
 
             <div class="note">
-                <div class="note-title">How the styles stack</div>
+                <div class="note-title">How the styles stack — one channel per state</div>
                 <p>
-                    <strong>Highlighted</strong> applies to every row in the highlight set.
-                    <strong>Focused</strong> is additive &mdash; it stacks on top, only on the single focused row.
-                    After a plain click the same row is both. After a Shift+click range, the intermediate rows are
-                    highlighted only while the last-clicked row is highlighted <em>and</em> focused.
+                    Each state owns a different visual channel so they compose instead of fighting:
+                    <strong>Highlighted</strong> (the set) paints the <em>background</em> as a soft tint;
+                    <strong>Focused</strong> (the single cursor row) is a thin <em>inset outline ring</em>, so it
+                    stacks cleanly on top of any background. After a plain click the same row is both (tint + ring);
+                    after a Shift+click range the intermediate rows are tinted only, while the last-clicked row is
+                    tinted <em>and</em> ringed. Each default is a fallback &mdash; pick a <em>Highlighted</em> or
+                    <em>Focused style</em> above and the built-in look steps aside.
                 </p>
-                <p style="margin-bottom:0">
+                <p>
                     <strong>Checkboxes</strong> are a separate channel &mdash; <code>selectedPaths</code>, independent of
                     highlight/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
                     partial branches); <code>independent</code> toggles one node. With <code>click-toggles-checkbox</code> on,
                     a plain row click flips that node's checkbox instead of just focusing the row.
                 </p>
-            </div>
-        </div>
-
-        <!-- IN02 · Multi-Select -->
-        <div class="card">
-            <h2>IN02 · Multi-Select</h2>
-            <p>
-                Requires <code>selection-mode="multi"</code>.
-                <span class="kbd">Click</span> selects a single node.
-                <span class="kbd">Ctrl/Cmd+Click</span> toggles individual nodes.
-                <span class="kbd">Shift+Click</span> range-selects.
-                <span class="kbd">Ctrl+A</span> selects all (click the tree first for focus).
-                <code>range-selection-mode</code> controls whether a Shift range includes collapsed children.
-            </p>
-
-            <div class="controls">
-                <label>
-                    Range selection mode:
-                    <select id="in2-range-mode">
-                        <option value="visual">visual (only visible/expanded nodes)</option>
-                        <option value="logical">logical (full tree walk, incl. collapsed)</option>
-                    </select>
-                </label>
-                <button id="in2-select-specific">Highlight 1.1.1, 1.1.3, 1.2.1</button>
-                <button class="secondary" id="in2-clear">Clear highlight</button>
-            </div>
-
-            <div class="status-bar">
-                Mode: <strong id="in2-mode">visual</strong>
-                &mdash; Highlighted: <span class="badge" id="in2-count">0</span>
-                <span id="in2-paths"></span>
-            </div>
-
-            <div class="tree-container">
-                <web-treeview id="in2-tree" expand-level="2"
-                    selection-mode="multi"
-                    highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
-            </div>
-
-            <div class="note">
-                <div class="note-title">Visual vs logical</div>
                 <p style="margin-bottom:0">
-                    Try: click <code>components</code>, then Shift+click <code>README.md</code>. In
-                    <strong>visual</strong> mode only currently-visible nodes between them are added. In
-                    <strong>logical</strong> mode the range walks the full tree in depth-first order, including
+                    <strong>Visual vs logical range</strong> &mdash; click <code>components</code>, then Shift+click
+                    <code>README.md</code>. In <strong>visual</strong> mode only currently-visible nodes between them are
+                    added; in <strong>logical</strong> mode the range walks the full tree in depth-first order, including
                     children inside collapsed parents.
                 </p>
             </div>
@@ -210,7 +191,7 @@
 
         <!-- IN03 · Keyboard Navigation -->
         <div class="card">
-            <h2>IN03 · Keyboard Navigation</h2>
+            <h2>IN02 · Keyboard Navigation</h2>
             <p>Click any node to give the tree focus, then drive it entirely from the keyboard:</p>
 
             <div class="grid" style="--grid-min: 280px">
@@ -253,7 +234,7 @@
 
         <!-- IN04 · Cascade Checkboxes & Value Policy -->
         <div class="card">
-            <h2>IN04 · Cascade Checkboxes &amp; Value Policy</h2>
+            <h2>IN03 · Cascade Checkboxes &amp; Value Policy</h2>
             <p>
                 Two orthogonal knobs. <code>checkbox-mode</code> controls how checking a branch
                 <em>behaves</em>; <code>cascade-select-policy</code> controls which paths the selection
@@ -321,7 +302,7 @@
 
         <!-- IN05 · Silent State Restore -->
         <div class="card">
-            <h2>IN05 · Silent State Restore</h2>
+            <h2>IN04 · Silent State Restore</h2>
             <p>
                 Restore tree state from URL parameters <em>without</em> firing selection callbacks. You share a
                 link like <code>?nodePath=1.2.3</code>; the page loads form data from the URL, and the tree just
@@ -372,7 +353,7 @@ function restoreFromUrl(nodePath) {
 
         <!-- IN06 · Clipboard & Bulk -->
         <div class="card">
-            <h2>IN06 · Clipboard &amp; Bulk Operations</h2>
+            <h2>IN05 · Clipboard &amp; Bulk Operations</h2>
             <p>
                 Cross-tree copy/cut/paste plus batch branch mutations. Highlight nodes in the source tree, then
                 <span class="kbd">Ctrl+C</span>/<span class="kbd">Ctrl+X</span>; click a target node in the right
@@ -507,12 +488,17 @@ function restoreFromUrl(nodePath) {
         let nextId = 1000;
         const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
 
-        // The component ships no default focus styling — apps pass their own class
-        // via focused-node-class. Because the focused row lives inside the Shadow
-        // DOM, the rule must be injected there (page <style> wouldn't reach it).
+        // The component ships a DEFAULT focus look (a 1px inset outline ring, applied
+        // when no focused-node-class is set). These are opt-in FLAVORS a demo swaps in
+        // via focused-node-class. Because the focused row lives inside the Shadow DOM,
+        // the rule must be injected there (a page <style> wouldn't reach it).
+        //   • demo-focused-ring — an INSET ring (stays inside the pill, no spill)
+        //   • demo-focus-none   — a no-op class that suppresses the built-in ring
+        //   • demo-focused-outline — inset left bar (kept for the Keyboard Navigation tree)
         const focusStyles = () => `
             .demo-focused-outline { box-shadow: inset 3px 0 0 0 var(--wtv-accent-color, #3b82f6); }
-            .demo-focused-ring { box-shadow: 0 0 0 2px var(--wtv-accent-color, #3b82f6); border-radius: 4px; }
+            .demo-focused-ring { box-shadow: inset 0 0 0 2px var(--wtv-accent-color, #3b82f6); border-radius: var(--wtv-border-radius-sm, 4px); }
+            .demo-focus-none { /* suppresses the built-in focus ring */ }
         `;
 
         customElements.whenDefined('web-treeview').then(() => {
@@ -529,6 +515,7 @@ function restoreFromUrl(nodePath) {
             });
             in1.addEventListener('highlight-change', (e) => {
                 const paths = [...e.detail.paths].sort();
+                document.getElementById('in1-highlight-count').textContent = paths.length;
                 document.getElementById('in1-highlight').textContent =
                     paths.length ? paths.join(', ') : '(none)';
             });
@@ -546,7 +533,8 @@ function restoreFromUrl(nodePath) {
                 in1.setAttribute('selection-mode', e.target.value);
             });
             document.getElementById('in1-highlight-class').addEventListener('change', (e) => {
-                in1.setAttribute('highlighted-node-class', e.target.value);
+                if (e.target.value) in1.setAttribute('highlighted-node-class', e.target.value);
+                else in1.removeAttribute('highlighted-node-class'); // '' → built-in soft tint
             });
             document.getElementById('in1-focus-class').addEventListener('change', (e) => {
                 if (e.target.value) in1.setAttribute('focused-node-class', e.target.value);
@@ -563,34 +551,20 @@ function restoreFromUrl(nodePath) {
                 if (e.target.checked) in1.setAttribute('click-toggles-checkbox', 'true');
                 else in1.removeAttribute('click-toggles-checkbox');
             });
+            document.getElementById('in1-range-mode').addEventListener('change', (e) => {
+                in1.rangeSelectionMode = e.target.value;
+                in1.clearHighlight();
+            });
+            document.getElementById('in1-select-specific').addEventListener('click', () => {
+                in1.setHighlightedPaths(['1.1.1', '1.1.3', '1.2.1']);
+            });
             document.getElementById('in1-clear').addEventListener('click', () => {
                 in1.clearHighlight();
                 in1.clearFocus();
                 in1.clearSelection();
             });
 
-            // ── IN02 · Multi-Select ───────────────────────────────────────
-            const in2 = document.getElementById('in2-tree');
-            Object.assign(in2, treeConfig);
-            in2.data = fileTree;
-
-            in2.addEventListener('highlight-change', (e) => {
-                const paths = [...e.detail.paths].sort();
-                document.getElementById('in2-count').textContent = paths.length;
-                document.getElementById('in2-paths').textContent = paths.length ? paths.join(', ') : '';
-            });
-
-            document.getElementById('in2-range-mode').addEventListener('change', (e) => {
-                in2.rangeSelectionMode = e.target.value;
-                document.getElementById('in2-mode').textContent = e.target.value;
-                in2.clearHighlight();
-            });
-            document.getElementById('in2-select-specific').addEventListener('click', () => {
-                in2.setHighlightedPaths(['1.1.1', '1.1.3', '1.2.1']);
-            });
-            document.getElementById('in2-clear').addEventListener('click', () => in2.clearHighlight());
-
-            // ── IN03 · Keyboard Navigation ────────────────────────────────
+            // ── IN02 · Keyboard Navigation ────────────────────────────────
             const in3 = document.getElementById('in3-tree');
             Object.assign(in3, treeConfig);
             in3.customStylesCallback = focusStyles;

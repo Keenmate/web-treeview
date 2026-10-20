@@ -266,7 +266,7 @@
                     <tr><td><code>addNode(parentPath, data, pathSegment?)</code></td><td>Add a new node under a parent (<code>''</code> = root). Returns <code>{ success, node, error? }</code>.</td></tr>
                     <tr><td><code>removeNode(path, includeDescendants?)</code></td><td>Remove a single node (and optionally its descendants).</td></tr>
                     <tr><td><code>updateNode(path, dataUpdates)</code></td><td>Patch a node's data in place (e.g. rename).</td></tr>
-                    <tr><td><code>moveNode(sourcePath, targetPath, position)</code></td><td>Move a node. <code>position</code> is <code>'above' | 'below' | 'child'</code>.</td></tr>
+                    <tr><td><code>moveNode(sourcePath, targetPath, position)</code></td><td>Move a node. <code>position</code> is <code>'before' | 'after' | 'child'</code>.</td></tr>
                     <tr><td><code>insertBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
                     <tr><td><code>replaceBranch(parentPath, data[])</code></td><td>Replace a parent's children with a new set.</td></tr>
                     <tr><td><code>deleteBranch(path, keepParent?)</code></td><td>Delete a whole subtree (optionally keep the parent).</td></tr>
@@ -285,7 +285,7 @@
                 <p class="note-title">orderMember + move positions</p>
                 <p>
                     Set <code>order-member="sortOrder"</code> so before/after moves keep siblings ordered. The
-                    move positions are <code>'above'</code>, <code>'below'</code>, and <code>'child'</code>
+                    move positions are <code>'before'</code>, <code>'after'</code>, and <code>'child'</code>
                     (matching svelte-treeview's DropPosition).
                 </p>
             </div>
@@ -303,7 +303,7 @@ tree.updateNode(path, { name: 'Renamed' });
 // Move among siblings
 const siblings = tree.getController().getSiblings(path);
 const i = siblings.findIndex(s =&gt; s.path === path);
-if (i &gt; 0) tree.moveNode(path, siblings[i - 1].path, 'above');
+if (i &gt; 0) tree.moveNode(path, siblings[i - 1].path, 'before');
 
 // Clipboard: copy selection, paste under a target with fresh ids
 tree.copyNodes();                       // defaults to the highlight set
@@ -556,7 +556,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
                 if (dir < 0 && i <= 0) { addLog('Already at top'); return; }
                 if (dir > 0 && i >= siblings.length - 1) { addLog('Already at bottom'); return; }
                 const target = siblings[i + dir];
-                const position = dir < 0 ? 'above' : 'below';
+                const position = dir < 0 ? 'before' : 'after';
                 const res = tree.moveNode(node.path, target.path, position);
                 if (res.success) { addLog(`Moved "${node.data?.name}" ${position} "${target.data?.name}"`); refreshState(); }
                 else showWarning(res.error || 'Move failed');

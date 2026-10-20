@@ -10,7 +10,7 @@
 
    Usage from outside Shadow DOM (set on :root or any ancestor):
      :root {
-       --base-accent-color: #10b981;
+       --base-primary-color: #10b981;
        --base-text-color-1: #111827;
      }
 
@@ -22,16 +22,16 @@
 
    Or inject styles into Shadow DOM via customStylesCallback:
      treeview.customStylesCallback = () => `:host {
-       --base-accent-color: #10b981;
+       --base-primary-color: #10b981;
      }`;
 
    --base-* variables used by this component:
-     --base-accent-color           Primary accent color
-     --base-accent-color-hover     Accent hover state
-     --base-accent-color-light     Light accent background (selection)
+     --base-primary-color           Primary accent color
+     --base-primary-color-hover     Accent hover state
+     --base-primary-bg-subtle     Light accent background (selection)
      --base-text-color-1           Primary text color
      --base-text-color-3           Secondary/muted text color
-     --base-text-color-on-accent   Text on accent backgrounds
+     --base-on-primary-text-color   Text on accent backgrounds
      --base-main-bg                Main background color
      --base-elevated-bg            Elevated/subtle surface background
      --base-hover-bg               Hover background
@@ -79,11 +79,11 @@
      against any base luminance (avoids the bare-literal fallback footgun). */
 
   /* Core Colors */
-  --wtv-accent-color: var(--base-accent-color, light-dark(#3b82f6, #60a5fa));
-  --wtv-accent-color-hover: var(--base-accent-color-hover, light-dark(#2563eb, #3b82f6));
+  --wtv-accent-color: var(--base-primary-color, light-dark(#3b82f6, #60a5fa));
+  --wtv-accent-color-hover: var(--base-primary-color-hover, light-dark(#2563eb, #3b82f6));
   --wtv-text-color: var(--base-text-color-1, light-dark(#1e293b, #f1f5f9));
   --wtv-text-color-2: var(--base-text-color-3, light-dark(#64748b, #94a3b8));
-  --wtv-text-color-on-accent: var(--base-text-color-on-accent, #ffffff);
+  --wtv-text-color-on-accent: var(--base-on-primary-text-color, #ffffff);
   --wtv-bg-color: var(--base-main-bg, light-dark(#ffffff, #1a1a1a));
   --wtv-border-color: var(--base-border-color, light-dark(#e2e8f0, #3d3d3d));
   --wtv-success-color: var(--base-success-color, light-dark(#198754, #4ade80));
@@ -96,15 +96,50 @@
     color-mix(in srgb, var(--wtv-text-color) 8%, var(--wtv-bg-color)));
   --wtv-active-bg: var(--base-active-bg,
     color-mix(in srgb, var(--wtv-text-color) 14%, var(--wtv-bg-color)));
-  --wtv-selected-bg: var(--base-accent-color-light,
-    color-mix(in srgb, var(--wtv-accent-color) 15%, transparent));
-  --wtv-selected-border-color: var(--wtv-accent-color);
 
   /* Node state aliases (DRP semantic naming) */
   --wtv-node-bg-hover: var(--wtv-hover-bg);
   --wtv-node-bg-active: var(--wtv-active-bg);
 
-  --wtv-selected-border: 2px solid var(--wtv-selected-border-color);
+
+  /* ──────────────────────────────────────────────────────────────────────
+     NODE STATE STYLING — each interactive state owns ONE visual channel so
+     they compose instead of fighting (the old mix of outset rings + outlines
+     + full-width backgrounds read as big / noisy / overlapping):
+       • hover + selection-highlight → BACKGROUND (selection wins; hover is
+         suppressed under a highlighted row so only the stronger tint shows)
+       • cursor-focus → OUTLINE: a thin INSET outline ring (outline + negative
+         outline-offset) — paints inside the pill, never spills onto neighbours
+         or the scroll edge, and is its own paint channel so the box-shadow
+         presets / scroll flash can't wipe it. Matches web-multiselect's
+         focused option.
+       • checked → the CHECKBOX only (no row treatment); style checked rows via
+         the `selectedNodeClass` prop if you want more
+     Highlight reads the shared --base-highlighted-* tokens and focus the shared
+     --base-focused-* tokens (@keenmate/base-css-variables), so ONE knob themes
+     the tree + multiselect identically; the inline fallbacks keep the tree
+     self-sufficient without the base package.
+     Each default look is a FALLBACK: set the matching *NodeClass prop and it
+     steps aside. Mirrors svelte-treeview's unified state model.
+     ────────────────────────────────────────────────────────────────────── */
+  --wtv-highlighted-bg: var(--base-highlighted-bg, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
+  --wtv-highlighted-bg-hover: var(--base-highlighted-bg-hover, var(--wtv-highlighted-bg));
+  --wtv-highlighted-text: var(--base-highlighted-text-color, currentColor);
+  /* Outline shorthand, drawn as an INSET outline (see --wtv-focused-outline-offset). */
+  --wtv-highlighted-ring: var(--base-highlighted-outline, none);
+  --wtv-focused-bg: var(--base-focused-bg, transparent);
+  --wtv-focused-text: var(--base-focused-text-color, currentColor);
+  /* Outline shorthand for the default focus ring — drawn INSET. Set `none` to
+     suppress the ring while keeping the --focused hook. */
+  --wtv-focused-ring: var(--base-focused-outline, var(--base-outline-width, 1px) solid var(--wtv-accent-color));
+  /* = −(ring width), following --base-outline-width so a thicker ring stays inset. */
+  --wtv-focused-outline-offset: calc(-1 * var(--base-outline-width, 1px));
+  /* Opt-in `--highlight-fill` flavor (Explorer-style strong fill) — only used by
+     the .wtv__node-content--highlight-fill class, not the default state. */
+  --wtv-highlight-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
+  --wtv-highlight-color: inherit;
+  /* Hairline ring used by the --highlight-border / --highlight-glow presets. */
+  --wtv-highlight-ring-color: color-mix(in srgb, var(--wtv-accent-color) 45%, transparent);
 
   /* ==========================================================================
      TYPOGRAPHY SCALE (with theme-designer integration)
@@ -227,6 +262,9 @@
      every component. (Radius is flat 0.3, NOT --wtv-border-radius-sm, matching
      ms — a theme's sm radius shouldn't reshape the small checkbox.) */
   --wtv-checkbox-size: calc(var(--wtv-rem) * 1.6);  /* 16px */
+  /* Space between the checkbox and the node pill, so a highlight tint / focus
+     ring never butts against the box. */
+  --wtv-checkbox-gap: calc(var(--wtv-rem) * 0.6);
   /* Box scale — the shared --base-checkbox-scale contract (base-css-variables).
      Applied to width/height/border/radius via calc (see tree.css), NOT a CSS
      transform, so the masked tick/dash stays crisp + centered at any scale. */
@@ -241,7 +279,7 @@
   --wtv-checkbox-checked-border-color: var(--wtv-accent-color);
   /* Checked-box hover deepens to the accent's hover step (ms parity). */
   --wtv-checkbox-checked-bg-hover: var(--wtv-accent-color-hover);
-  --wtv-checkbox-checkmark-color: var(--base-text-color-on-accent, #fff);
+  --wtv-checkbox-checkmark-color: var(--base-on-primary-text-color, #fff);
   --wtv-checkbox-focus-ring-width: 2px;
   --wtv-checkbox-focus-ring-color: color-mix(in srgb, var(--wtv-accent-color) 25%, transparent);
   --wtv-checkbox-focus-ring: 0 0 0 var(--wtv-checkbox-focus-ring-width) var(--wtv-checkbox-focus-ring-color);
@@ -287,7 +325,7 @@
 
   /* Touch ghost */
   --wtv-touch-ghost-bg: color-mix(in srgb, var(--wtv-accent-color) 90%, transparent);
-  --wtv-touch-ghost-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --wtv-touch-ghost-shadow: 0 4px 12px var(--base-shadow-color, rgba(0, 0, 0, 0.3));
 
   /* Scroll highlight */
   --wtv-scroll-highlight-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
@@ -299,7 +337,7 @@
      and svelte-treeview's .stv__tooltip, so one shared theme renders all three
      identically.
      ========================================================================== */
-  --wtv-tooltip-bg: var(--base-tooltip-bg, var(--base-inverse-bg, light-dark(#333333, #f5f5f5)));
+  --wtv-tooltip-bg: var(--base-tooltip-bg, light-dark(#333333, #f5f5f5));
   --wtv-tooltip-color: var(--base-tooltip-text-color, light-dark(#ffffff, #1a1a1a));
   --wtv-tooltip-padding: calc(0.8 * var(--wtv-rem)) calc(1.2 * var(--wtv-rem));
   --wtv-tooltip-border-radius: var(--wtv-border-radius-lg);
@@ -310,7 +348,7 @@
   --wtv-tooltip-width: auto;
   --wtv-tooltip-min-width: 0;
   --wtv-tooltip-max-width: calc(32 * var(--wtv-rem));
-  --wtv-tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --wtv-tooltip-shadow: 0 2px 8px var(--base-shadow-color, rgba(0, 0, 0, 0.15));
   --wtv-tooltip-z-index: 10000;
 
   /* ==========================================================================
@@ -327,7 +365,7 @@
      shadow token (both chain to --base-*, so under a KeenMate theme the two
      components render an identical menu surface). */
   --wtv-context-menu-border-radius: var(--wtv-border-radius-sm);
-  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.15));
+  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px var(--base-shadow-color, rgba(0, 0, 0, 0.15)));
   --wtv-context-menu-min-width: calc(var(--wtv-rem) * 15);  /* ~150px */
   --wtv-context-menu-padding: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-font-size: var(--wtv-font-size-sm);

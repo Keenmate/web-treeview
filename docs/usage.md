@@ -136,7 +136,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 |-----------|------|---------|-------------|
 | `drag-drop-mode` | `string` | `'none'` | `'none'` \| `'internal'` \| `'cross'` \| `'both'` |
 | `drop-zone-mode` | `string` | `'glow'` | `'glow'` \| `'floating'` |
-| `drop-zone-layout` | `string` | `'around'` | `'around'` \| `'above'` \| `'below'` \| `'wave'` \| `'wave2'` |
+| `drop-zone-layout` | `string` | `'around'` | `'around'` \| `'before'` (row above the node) \| `'after'` (row below the node) \| `'wave'` \| `'wave2'` |
 | `drop-zone-start` | `number\|string` | `33` | Child zone threshold (number = %, string = CSS value) |
 | `drop-zone-max-width` | `number` | — | Max drop-zone width in px |
 | `allow-copy` | `boolean` | `false` | Enable Ctrl+drag copy (config key: `isCopyAllowed`) |

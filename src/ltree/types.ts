@@ -9,7 +9,7 @@ export type Tuple<T, U> = [T, U];
 // 'cross' = cross-tree only (reject same-tree drops); 'both' = either.
 // Mirrors svelte-treeview's DragDropMode.
 export type DragDropMode = 'none' | 'self' | 'cross' | 'both';
-export type DropZoneLayout = 'around' | 'above' | 'below' | 'wave' | 'wave2';
+export type DropZoneLayout = 'around' | 'before' | 'after' | 'wave' | 'wave2';
 export type DropOperation = 'move' | 'copy';
 
 // Incremental update types

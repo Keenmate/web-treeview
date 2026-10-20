@@ -80,9 +80,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private lastSnapshot: TreeControllerSnapshot<T> | null = null;
   private lastNodeConfig: NodeConfig | null = null;
   // Hover/focus tooltip handles, keyed like nodeElements (id || path). Created per
-  // row via the shared core createTooltip; recreated on node update so content tracks
-  // data, destroyed when the row leaves. Mirrors web-multiselect's option tooltips.
+  // row via the shared core createTooltip; rebuilt only when the node's data changes
+  // (content derives from getNodeTooltipCallback(node)), destroyed when the row leaves.
+  // Mirrors web-multiselect's option tooltips.
   private tooltips = new Map<string, TooltipHandle>();
+  // The node _rev each live tooltip was built at. A reconcile pass that ISN'T a data
+  // change (virtual-scroll reposition, focus/highlight toggle) keeps the same handle,
+  // so the core createTooltip's follow-cursor rect — seeded on mouseenter — survives a
+  // stationary hover instead of being dropped by a needless destroy+recreate.
+  private tooltipRevs = new Map<string, number>();
   private _lastDragOverTarget: string = '';
   private _lastEmptyState: string = '';
   // Responsive env for the NodeRenderContext (@keenmate/web-components-core/environment).
@@ -879,6 +885,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   private _onConfigChange(nodeConfig: NodeConfig): void {
+    if ((globalThis as any).__WTV_DEBUG) console.log('[wtv:render] _onConfigChange → _fullRender, focusedNodeClass=', JSON.stringify(nodeConfig.focusedNodeClass));
     this.lastNodeConfig = nodeConfig;
     // Re-render toggle icons if icon classes changed
     if (this.controller) {
@@ -934,10 +941,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           const existingRev = el.getAttribute('data-rev');
           const existingExpanded = el.getAttribute('data-expanded');
           const existingHasChildren = el.getAttribute('data-has-children');
+          // Focus/highlight move between nodes WITHOUT bumping this node's _rev, so
+          // a row that just lost focus/highlight must still be re-rendered to drop
+          // its stale focusedNodeClass / highlightedNodeClass (see _createNodeElement).
+          const existingFocused = el.getAttribute('data-focused');
+          const existingHighlighted = el.getAttribute('data-highlighted');
           if (
             existingRev !== String(node._rev) ||
             existingExpanded !== String(!!node.isExpanded) ||
-            existingHasChildren !== String(!!node.hasChildren)
+            existingHasChildren !== String(!!node.hasChildren) ||
+            existingFocused !== String(snapshot.focusedNode?.path === node.path) ||
+            existingHighlighted !== String(snapshot.highlightedPaths.has(node.path))
           ) {
             this._updateNodeElement(el, node, snapshot);
           }
@@ -1190,6 +1204,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // so the reconcile-skip check (see updateNodes) re-renders a node that crossed
     // the leaf↔folder line and its toggle marker gets rebuilt.
     el.setAttribute('data-has-children', String(!!node.hasChildren));
+    // Focus/highlight aren't captured by _rev — moving focus/highlight to ANOTHER
+    // node doesn't bump THIS node's _rev, so the reconcile-skip check (see
+    // updateNodes) must track them as data-attributes (like data-expanded) or a row
+    // that LOSES focus/highlight is never re-rendered and keeps its stale
+    // focusedNodeClass / highlightedNodeClass.
+    el.setAttribute('data-focused', String(snapshot.focusedNode?.path === node.path));
+    el.setAttribute('data-highlighted', String(snapshot.highlightedPaths.has(node.path)));
 
     if (this.controller && node.id) {
       el.id = `${this.controller.treeId}-${node.id}`;
@@ -1255,10 +1276,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
     if (snapshot.focusedNode?.path === node.path) {
+      // `--focused` is the always-present pure hook; `--focused-default` carries the
+      // visible default (inset ring) and is a FALLBACK — only when no focusedNodeClass.
       content.classList.add('wtv__node-content--focused');
       if (nodeConfig?.focusedNodeClass) {
         content.classList.add(nodeConfig.focusedNodeClass);
+      } else {
+        content.classList.add('wtv__node-content--focused-default');
       }
+    }
+    // Checked rows carry no default row treatment (the checkbox is the signal);
+    // style them via the `selectedNodeClass` prop.
+    if (node.isSelected && nodeConfig?.selectedNodeClass) {
+      content.classList.add(nodeConfig.selectedNodeClass);
     }
 
     if (nodeConfig?.clickBehavior !== 'expand' && node.hasChildren) {
@@ -1351,6 +1381,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       visibleClass: 'wtv__tooltip--visible'
     });
     this.tooltips.set(key, handle);
+    this.tooltipRevs.set(key, node._rev);
   }
 
   private _destroyTooltip(key: string): void {
@@ -1359,11 +1390,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       h.destroy();
       this.tooltips.delete(key);
     }
+    this.tooltipRevs.delete(key);
   }
 
   private _destroyAllTooltips(): void {
     for (const h of this.tooltips.values()) h.destroy();
     this.tooltips.clear();
+    this.tooltipRevs.clear();
   }
 
   private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): void {
@@ -1391,9 +1424,22 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       const isFocused = snapshot.focusedNode?.path === node.path;
       contentEl.classList.toggle('wtv__node-content--focused', isFocused);
+      if ((globalThis as any).__WTV_DEBUG && isFocused)
+        console.log('[wtv:render] update-path focus node', node.path, 'focusedNodeClass=', JSON.stringify(nodeConfig?.focusedNodeClass), 'classesBefore=', contentEl.className);
       if (nodeConfig?.focusedNodeClass) {
         contentEl.classList.toggle(nodeConfig.focusedNodeClass, isFocused);
+        contentEl.classList.remove('wtv__node-content--focused-default');
+      } else {
+        // Default look (inset outline ring) — only when no custom focus class is configured.
+        contentEl.classList.toggle('wtv__node-content--focused-default', isFocused);
       }
+      // Checked rows: optional custom class only (checkbox is the default signal).
+      if (nodeConfig?.selectedNodeClass) {
+        contentEl.classList.toggle(nodeConfig.selectedNodeClass, !!node.isSelected);
+      }
+      // Keep the dirty-check attributes in sync (see updateNodes + _createNodeElement).
+      el.setAttribute('data-focused', String(isFocused));
+      el.setAttribute('data-highlighted', String(isHighlighted));
     }
 
     // Sync checkbox checked / indeterminate. The .wtv__checkbox IS the <input>
@@ -1465,8 +1511,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Refresh the per-node icon (value/color track the node's data).
     const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
     if (row) this._applyNodeIcon(row, node, ctx);
-    // Refresh the tooltip so its content tracks the node's data.
-    this._applyTooltip(content, node);
+    // Rebuild the tooltip ONLY when the node's data changed — its content comes
+    // from getNodeTooltipCallback(node), so a same-_rev reconcile (reposition,
+    // focus/highlight toggle) must keep the existing handle. Rebuilding every pass
+    // would drop the follow-cursor rect seeded on mouseenter (stationary-hover bug)
+    // and needlessly churn floating-ui autoUpdate + listeners. Enable/disable,
+    // callback, placement and follow-cursor changes are config-level and go through
+    // _onConfigChange → _fullRender, which rebuilds all tooltips anyway.
+    const key = this._nodeKey(node);
+    if (this.tooltipRevs.get(key) !== node._rev) {
+      this._applyTooltip(content, node);
+    }
   }
 
   // ── Drag CSS classes ────────────────────────────────────────────────

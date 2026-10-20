@@ -24,6 +24,13 @@
 
         <h2>callback (HTML element)</h2>
         <div class="tree"><web-treeview id="rich" expand-level="2" show-node-tooltips tooltip-delay="0"></web-treeview></div>
+
+        <h2>follow-cursor (stationary-hover regression, core rc11)</h2>
+        <p>Wide rows + <code>tooltip-follow-cursor</code> + a non-zero <code>tooltip-delay</code> so a
+           still "hover to read" pointer exercises the seed-on-mouseenter fix. Pre-rc11 this pinned the
+           tooltip to the row's corner; now it anchors to the cursor.</p>
+        <div class="tree" style="width: 360px"><web-treeview id="cursor" expand-level="2"
+            show-node-tooltips tooltip-follow-cursor tooltip-delay="150"></web-treeview></div>
     </main>
 
     <script type="module">
@@ -35,9 +42,17 @@
             { id: 3, path: '1.2', name: 'Plain', desc: '' }
         ];
 
+        // Wide labels so a right-side hover is clearly far from the row's left edge —
+        // lets the follow-cursor spec distinguish "tracks cursor" from "pinned to corner".
+        const wideData = [
+            { id: 1, path: '1', name: 'Hover anywhere along this deliberately wide row', desc: 'Follows the cursor' },
+            { id: 2, path: '1.1', name: 'Another wide row for pointer-tracking checks', desc: 'Also follows the cursor' }
+        ];
+
         customElements.whenDefined('web-treeview').then(() => {
             const text = document.getElementById('text');
             const rich = document.getElementById('rich');
+            const cursor = document.getElementById('cursor');
             const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', data };
 
             Object.assign(text, common, {
@@ -52,6 +67,11 @@
                     el.innerHTML = `<strong>${d.name}</strong><span>${d.desc}</span>`;
                     return el;
                 }
+            });
+
+            Object.assign(cursor, {
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name', data: wideData,
+                getNodeTooltipCallback: (node) => node.data?.desc ?? null
             });
 
             document.getElementById('toggle').addEventListener('click', () => {

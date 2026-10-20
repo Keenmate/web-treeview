@@ -79,7 +79,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
-    "@keenmate/web-components-core": "1.0.0-rc10",
+    "@keenmate/web-components-core": "^1.0.0-rc12",
     "flexsearch": "^0.8.212"
   },
   "devDependencies": {

@@ -312,6 +312,10 @@ form {
     min-height: 200px;
     max-height: 500px;
     overflow: auto;
+    /* Internal padding so a full-width row's focus ring / outline (a box-shadow that
+       paints outside the row) isn't clipped at the scroll edge — matches
+       svelte-treeview's .tree-container (1rem). */
+    padding: 1rem;
     margin-bottom: 1rem;
 }
 

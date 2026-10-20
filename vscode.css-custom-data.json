@@ -128,21 +128,6 @@
       "values": []
     },
     {
-      "name": "--wtv-selected-bg",
-      "description": "Selected node background",
-      "values": []
-    },
-    {
-      "name": "--wtv-selected-border-color",
-      "description": "Selected node border color",
-      "values": []
-    },
-    {
-      "name": "--wtv-selected-border",
-      "description": "Selected node border shorthand (2px solid accent)",
-      "values": []
-    },
-    {
       "name": "--wtv-border-width-base",
       "description": "Base border width (1px)",
       "values": []
@@ -160,6 +145,56 @@
     {
       "name": "--wtv-node-bg-active",
       "description": "Node active/pressed background (aliases tv-active-bg)",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlighted-bg",
+      "description": "Selection-highlight background tint (multi-select set); reads --base-highlighted-bg (fallback accent 10%)",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlighted-bg-hover",
+      "description": "Selection-highlight background on hover; reads --base-highlighted-bg-hover (fallback --wtv-highlighted-bg)",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlighted-text",
+      "description": "Text color of a highlighted (multi-selected) row; reads --base-highlighted-text-color (fallback currentColor)",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlighted-ring",
+      "description": "Outline shorthand for a highlighted row, drawn as an inset outline; reads --base-highlighted-outline (fallback none)",
+      "values": []
+    },
+    {
+      "name": "--wtv-focused-bg",
+      "description": "Background of the focused (cursor) row when not highlighted; reads --base-focused-bg (fallback transparent)",
+      "values": []
+    },
+    {
+      "name": "--wtv-focused-text",
+      "description": "Text color of the focused (cursor) row; reads --base-focused-text-color (fallback currentColor)",
+      "values": []
+    },
+    {
+      "name": "--wtv-focused-ring",
+      "description": "Outline shorthand for the default focus ring, drawn as an inset outline; reads --base-focused-outline (fallback 1px solid accent). Set none to suppress the ring while keeping the --focused hook",
+      "values": []
+    },
+    {
+      "name": "--wtv-focused-outline-offset",
+      "description": "Outline offset for the focus ring / highlighted border (default calc(-1 * var(--base-outline-width, 1px)) = inset)",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlight-bg",
+      "description": "Background for the opt-in .wtv__node-content--highlight-fill flavor (Explorer-style strong fill); unused by the default highlight state",
+      "values": []
+    },
+    {
+      "name": "--wtv-highlight-color",
+      "description": "Text color for the opt-in .wtv__node-content--highlight-fill flavor (default inherit)",
       "values": []
     },
     {

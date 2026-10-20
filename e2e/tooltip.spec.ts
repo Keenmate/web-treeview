@@ -48,6 +48,33 @@ test('rich: callback returning an HTMLElement renders as the tooltip body', asyn
 	await expect(tip).toContainText('Crisp orchard fruit');
 });
 
+test('follow-cursor: a stationary hover anchors the tooltip to the cursor, not the row corner', async ({ page }) => {
+	// Regression guard for the core rc11 fix (seed cursor rect on mouseenter). With a
+	// non-zero show delay and NO pointer movement after entry, pre-rc11 the follow-cursor
+	// VirtualElement had no cursor rect at show() time and fell back to the trigger rect,
+	// pinning the tooltip to the row's left/top corner. rc11 seeds it on mouseenter.
+	const content = row(page, 'cursor', '1');
+	await content.scrollIntoViewIfNeeded();
+	let box = (await content.boundingBox())!;
+	expect(box.width).toBeGreaterThan(120); // wide row → right-side hover is far from the left edge
+
+	// Enter near the RIGHT edge and hold still. hover({position}) moves once and stays put
+	// (element-relative, auto-scrolls), so the 150ms delay elapses on a stationary pointer.
+	const rightOffset = box.width - 24;
+	await content.hover({ position: { x: rightOffset, y: box.height / 2 } });
+	box = (await content.boundingBox())!; // re-measure (hover may have scrolled) → viewport coords
+	const cursorX = box.x + rightOffset;
+
+	const tip = page.locator('.wtv__tooltip.wtv__tooltip--visible');
+	await expect(tip).toBeVisible(); // survives the 150ms delay
+	const tipBox = (await tip.boundingBox())!;
+
+	// top-start + a 0-width cursor rect ⇒ the tooltip's left edge sits at ~cursorX.
+	expect(Math.abs(tipBox.x - cursorX)).toBeLessThan(48);
+	// And it must be well to the RIGHT of the row's left edge (i.e. NOT pinned to the corner).
+	expect(tipBox.x).toBeGreaterThan(box.x + 60);
+});
+
 test('disabled: no tooltip when show-node-tooltips is toggled off', async ({ page }) => {
 	await page.locator('#toggle').click(); // off
 	await row(page, 'text', '1').hover();

@@ -118,6 +118,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'bodyClass', attribute: 'body-class', converter: toText({ isNullable: true }), on: 'update', description: 'Extra class on the tree body container.' },
   { configKey: 'highlightedNodeClass', attribute: 'highlighted-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to highlighted nodes.' },
   { configKey: 'focusedNodeClass', attribute: 'focused-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to the focused node.' },
+  { configKey: 'selectedNodeClass', attribute: 'selected-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to checked (selected) nodes — opt-in extra styling; the checkbox is the default signal.' },
   { configKey: 'dragOverNodeClass', attribute: 'drag-over-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to a node being dragged over.' },
   { configKey: 'draggedNodeClass', attribute: 'dragged-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class for the dragged source row; replaces the built-in .wtv__node-content--dragged visual.' },
 
@@ -149,7 +150,7 @@ const INPUTS: readonly InputDef[] = [
   // ── Drag and drop ──────────────────────────────────────────────────────────
   { configKey: 'dragDropMode', attribute: 'drag-drop-mode', converter: toText({ isNullable: true }), on: 'update', description: 'Drag-drop mode: `none` (off), `self` (within this tree), `cross` (between trees), or `both`.' },
   { configKey: 'dropZoneMode', attribute: 'drop-zone-mode', converter: toEnum(['floating', 'glow'] as const), on: 'update', description: 'Drop-zone visual style: floating indicator or glow.' },
-  { configKey: 'dropZoneLayout', attribute: 'drop-zone-layout', converter: toEnum(['around', 'above', 'below', 'wave', 'wave2'] as const), on: 'update', description: 'Where drop zones render relative to a node.' },
+  { configKey: 'dropZoneLayout', attribute: 'drop-zone-layout', converter: toEnum(['around', 'before', 'after', 'wave', 'wave2'] as const), on: 'update', description: 'Where drop zones render relative to a node.' },
   { configKey: 'dropZoneStart', attribute: 'drop-zone-start', converter: toDropZoneStart(), on: 'update', type: 'number | string', description: 'Where drop zones begin. A number is a percentage of node width; a string is used as-is (`px` or `%`, e.g. "50px").' },
   { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toInt(), on: 'update', description: 'Maximum drop-zone width (px).' },
   { configKey: 'isCopyAllowed', attribute: 'allow-copy', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Allow the copy clipboard operation.' },
@@ -348,10 +349,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     const cfg = this.#assembleConfig() as Record<string, unknown>;
     for (const [key, value] of Object.entries(partial)) {
       if (NON_ENGINE_KEYS.has(key)) continue;
-      // null == "unset" → let the engine fall back to its default, except `theme`
-      // (passed through as null so the renderer clears it).
-      if (value === null && key !== 'theme') delete cfg[key];
-      else cfg[key] = value;
+      // Forward `null` verbatim — it is the "clear/reset" signal (SPEC §6.1).
+      // The engine resolves it per field: defaulted props via `?? default`,
+      // clearable props (node classes, focusedNode, theme) by assigning null.
+      cfg[key] = value;
     }
     this.#treeview.update(cfg as Partial<TreeViewConfig<T>>);
   }
@@ -413,17 +414,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
 
   /**
    * Build the engine config from the merged `this.config`: drop element-only
-   * keys, normalize "unset" (null) → absent (matching the old parser's undefined),
-   * and install the DOM-event bridge wrappers. Wrappers read `this.config` at
-   * CALL time so assigning a bridged callback later takes effect without
-   * rebuilding — and without ever replacing the stable wrapper the engine holds.
+   * keys (NON_ENGINE_KEYS) via core's `engineConfig`, which **preserves `null`**
+   * as the clear signal (SPEC §6.1 — the engine resolves it per field), then
+   * install the DOM-event bridge wrappers. Wrappers read `this.config` at CALL
+   * time so assigning a bridged callback later takes effect without rebuilding —
+   * and without ever replacing the stable wrapper the engine holds.
    */
   #assembleConfig(): Partial<TreeViewConfig<T>> {
-    const cfg: Record<string, unknown> = { ...this.config };
-    for (const key of NON_ENGINE_KEYS) delete cfg[key];
-    for (const key of Object.keys(cfg)) {
-      if (cfg[key] === null && key !== 'theme') delete cfg[key];
-    }
+    const cfg = this.engineConfig(NON_ENGINE_KEYS);
 
     const bridge = (key: keyof TreeViewEvents, engineKey: string, mapDetail?: (arg: any) => any): void => {
       cfg[engineKey] = (arg: any) => {

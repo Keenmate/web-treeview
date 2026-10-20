@@ -48,13 +48,8 @@
       "values": []
     },
     {
-      "name": "--wtv-font-size-base",
-      "description": "Base font (16px)",
-      "values": []
-    },
-    {
       "name": "--wtv-font-size",
-      "description": "Default font size (= tv-font-size-sm)",
+      "description": "Default font size (= --wtv-font-size-sm)",
       "values": []
     },
     {
@@ -103,6 +98,11 @@
       "values": []
     },
     {
+      "name": "--wtv-border-width",
+      "description": "Hairline stroke width of the context menu, checkbox and debug panel (→ --base-border-width, 1px)",
+      "values": []
+    },
+    {
       "name": "--wtv-success-color",
       "description": "Success/valid drop color",
       "values": []
@@ -128,23 +128,13 @@
       "values": []
     },
     {
-      "name": "--wtv-border-width-base",
-      "description": "Base border width (1px)",
-      "values": []
-    },
-    {
-      "name": "--wtv-border",
-      "description": "Full border shorthand (1px solid border-color)",
-      "values": []
-    },
-    {
       "name": "--wtv-node-bg-hover",
-      "description": "Node hover background (aliases tv-hover-bg)",
+      "description": "Node hover background (aliases --wtv-hover-bg)",
       "values": []
     },
     {
       "name": "--wtv-node-bg-active",
-      "description": "Node active/pressed background (aliases tv-active-bg)",
+      "description": "Node active/pressed background (aliases --wtv-active-bg)",
       "values": []
     },
     {
@@ -198,6 +188,11 @@
       "values": []
     },
     {
+      "name": "--wtv-highlight-ring-color",
+      "description": "Hairline ring color of the opt-in --highlight-border / --highlight-glow presets (accent 45%)",
+      "values": []
+    },
+    {
       "name": "--wtv-node-transition",
       "description": "Node content (row) transition. Default none = instant hover; set e.g. 'background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease' to animate",
       "values": []
@@ -223,28 +218,13 @@
       "values": []
     },
     {
-      "name": "--wtv-border-radius-md",
-      "description": "Medium border radius (6px)",
-      "values": []
-    },
-    {
       "name": "--wtv-border-radius-lg",
       "description": "Large border radius (8px)",
       "values": []
     },
     {
       "name": "--wtv-transition-speed",
-      "description": "Fast transition duration (150ms)",
-      "values": []
-    },
-    {
-      "name": "--wtv-transition-normal",
-      "description": "Normal transition duration (200ms)",
-      "values": []
-    },
-    {
-      "name": "--wtv-easing",
-      "description": "Default easing curve",
+      "description": "Transition duration (→ --base-duration-normal, 150ms)",
       "values": []
     },
     {
@@ -254,7 +234,7 @@
     },
     {
       "name": "--wtv-indent-size",
-      "description": "Tree node indent per level (= tv-column-width)",
+      "description": "Tree node indent per level (= --wtv-column-width)",
       "values": []
     },
     {
@@ -270,11 +250,6 @@
     {
       "name": "--wtv-icon-size",
       "description": "Node icon size (16px)",
-      "values": []
-    },
-    {
-      "name": "--wtv-toggle-size",
-      "description": "Toggle icon column size (= tv-column-width)",
       "values": []
     },
     {
@@ -333,13 +308,18 @@
       "values": []
     },
     {
+      "name": "--wtv-checkbox-gap",
+      "description": "Space between the checkbox and the node pill",
+      "values": []
+    },
+    {
       "name": "--wtv-checkbox-scale",
       "description": "Box/border/radius scale via calc (shared --base-checkbox-scale contract, no transform).",
       "values": []
     },
     {
       "name": "--wtv-checkbox-border-width",
-      "description": "Checkbox box border thickness (hairline; multiplied by --wtv-checkbox-scale).",
+      "description": "Checkbox box border thickness (→ --wtv-border-width; multiplied by --wtv-checkbox-scale).",
       "values": []
     },
     {
@@ -484,7 +464,7 @@
     },
     {
       "name": "--wtv-drag-over-bg",
-      "description": "Drag-over node background",
+      "description": "Drag-over node background (→ --base-primary-bg-subtle)",
       "values": []
     },
     {
@@ -499,7 +479,7 @@
     },
     {
       "name": "--wtv-drop-valid-bg",
-      "description": "Valid drop target background",
+      "description": "Valid drop target background (→ --base-success-bg-subtle)",
       "values": []
     },
     {
@@ -509,7 +489,7 @@
     },
     {
       "name": "--wtv-drop-invalid-bg",
-      "description": "Invalid drop target background",
+      "description": "Invalid drop target background (→ --base-danger-bg-subtle)",
       "values": []
     },
     {
@@ -534,7 +514,12 @@
     },
     {
       "name": "--wtv-touch-ghost-shadow",
-      "description": "Touch drag ghost box shadow",
+      "description": "Touch drag ghost shadow (→ --base-shadow-lg)",
+      "values": []
+    },
+    {
+      "name": "--wtv-drag-denied-flash-bg",
+      "description": "Optional: pulse color of the \"can't move / drop here\" row (default danger 18%)",
       "values": []
     },
     {
@@ -604,17 +589,17 @@
     },
     {
       "name": "--wtv-tooltip-shadow",
-      "description": "Node tooltip drop shadow",
+      "description": "Node tooltip shadow (→ --base-shadow-md)",
       "values": []
     },
     {
       "name": "--wtv-tooltip-z-index",
-      "description": "Node tooltip stacking order (10000)",
+      "description": "Node tooltip stacking order (→ --base-z-tooltip, 10000)",
       "values": []
     },
     {
       "name": "--wtv-context-menu-bg",
-      "description": "Context menu background",
+      "description": "Context menu background (→ --base-dropdown-bg)",
       "values": []
     },
     {
@@ -628,8 +613,13 @@
       "values": []
     },
     {
+      "name": "--wtv-context-menu-shortcut-color",
+      "description": "Optional: shortcut hint color (default --wtv-text-color-2)",
+      "values": []
+    },
+    {
       "name": "--wtv-context-menu-border",
-      "description": "Context menu border",
+      "description": "Context menu border (→ --base-dropdown-border)",
       "values": []
     },
     {
@@ -689,7 +679,7 @@
     },
     {
       "name": "--wtv-context-menu-danger-bg-hover",
-      "description": "Danger item hover background",
+      "description": "Danger item hover background (→ --base-danger-bg-subtle)",
       "values": []
     },
     {
@@ -724,7 +714,7 @@
     },
     {
       "name": "--wtv-loading-bg",
-      "description": "Loading overlay background",
+      "description": "Loading overlay veil (tree surface at 80%)",
       "values": []
     },
     {
@@ -739,7 +729,7 @@
     },
     {
       "name": "--wtv-empty-zone-bg",
-      "description": "Empty tree drop zone background",
+      "description": "Empty tree drop zone background (→ --base-primary-bg-subtle)",
       "values": []
     },
     {
@@ -769,12 +759,17 @@
     },
     {
       "name": "--wtv-z-index-dropdown",
-      "description": "Context menu z-index (1000)",
+      "description": "Context menu z-index (→ --base-z-dropdown, 1000)",
+      "values": []
+    },
+    {
+      "name": "--wtv-z-index-drop-zones",
+      "description": "Floating drop-zone overlay (→ --base-z-tooltip + 1; standalone 10000)",
       "values": []
     },
     {
       "name": "--wtv-z-index-ghost",
-      "description": "Drag ghost z-index (10000)",
+      "description": "Touch-drag ghost z-index (drop-zone overlay + 1)",
       "values": []
     },
     {

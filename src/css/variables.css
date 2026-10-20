@@ -25,27 +25,30 @@
        --base-primary-color: #10b981;
      }`;
 
-   --base-* variables used by this component:
-     --base-primary-color           Primary accent color
-     --base-primary-color-hover     Accent hover state
-     --base-primary-bg-subtle     Light accent background (selection)
-     --base-text-color-1           Primary text color
-     --base-text-color-3           Secondary/muted text color
-     --base-on-primary-text-color   Text on accent backgrounds
-     --base-main-bg                Main background color
-     --base-elevated-bg            Elevated/subtle surface background
-     --base-hover-bg               Hover background
-     --base-border-color           Border color
-     --base-danger-color           Danger/destructive color
-     --base-font-family            Font family
-     --base-font-size-xs           Font size multiplier (× rem)
-     --base-font-size-sm           Font size multiplier (× rem)
-     --base-font-size-base         Font size multiplier (× rem)
-     --base-font-weight-medium     Font weight
-     --base-font-weight-semibold   Font weight
-     --base-border-radius-sm       Border radius multiplier (× rem)
-     --base-border-radius-md       Border radius multiplier (× rem)
-     --base-border-radius-lg       Border radius multiplier (× rem)
+   --base-* variables used by this component (@keenmate/base-css-variables 2.0):
+     Colour      primary-color, primary-color-hover, on-primary-text-color,
+                 text-color-1, text-color-3, main-bg, elevated-bg, hover-bg,
+                 active-bg, border-color, success-color, danger-color,
+                 input-bg, checkbox-border-color
+     Tints       primary-bg-subtle (drag-over, empty drop zone),
+                 success-bg-subtle / danger-bg-subtle (drop valid / invalid,
+                 menu danger hover)
+     Item states highlighted-bg, -bg-hover, -text-color, -outline (selection);
+                 focused-bg, -text-color, -outline, outline-width (cursor)
+     Surfaces    dropdown-bg, dropdown-border, dropdown-box-shadow (context menu),
+                 tooltip-bg, tooltip-text-color, shadow-md (tooltip),
+                 shadow-lg (touch-drag ghost)
+     Type        font-family, font-family-mono, font-size-xs, font-size-sm,
+                 font-weight-medium, font-weight-semibold
+     Sizing      rem, border-width, border-radius-sm, border-radius-lg,
+                 checkbox-scale, icon-check-size
+     Motion      duration-normal
+     Layers      z-dropdown, z-tooltip
+     Icons       icon-chevron, icon-caret-down, icon-expand, icon-collapse,
+                 icon-check, icon-indeterminate
+   Derived --base-* tokens resolve where the contract declares them (:root,
+   [data-theme], .base-scope) — re-theme a subtree with one of those, or set the
+   --wtv-* variable directly.
    ============================================================================== */
 
 :host {
@@ -89,6 +92,8 @@
   --wtv-success-color: var(--base-success-color, light-dark(#198754, #4ade80));
   --wtv-danger-color: var(--base-danger-color, light-dark(#dc3545, #f87c86));
   --wtv-light-bg: var(--base-elevated-bg, light-dark(#f8f9fa, #2b2b2b));
+  /* Stroke width of the hairlines (menu, checkbox, debug panel). */
+  --wtv-border-width: var(--base-border-width, 1px);
 
   /* Hover / Active / Selected — color-mix chains keep highlights visible
      against any --wtv-bg-color / --wtv-text-color combination. */
@@ -174,7 +179,7 @@
   /* ==========================================================================
      TRANSITIONS & ANIMATIONS
      ========================================================================== */
-  --wtv-transition-speed: 150ms;
+  --wtv-transition-speed: var(--base-duration-normal, 150ms);
 
   /* ==========================================================================
      TREE-SPECIFIC LAYOUT
@@ -221,7 +226,7 @@
      plus-minus / arrow) just REPOINTS these variables via the
      `:host([icon-set=…])` blocks in tree.css — the rendering rule never
      changes. Concept names mirror the --base-icon-* contract 1:1, so a theme
-     that reskins --base-icon-chevron reskins every KeenMate component's
+     that reskins --base-icon-chevron reskins every Keenmate component's
      disclosure at once.
 
      --wtv-icon-expand    glyph shown collapsed / the only glyph in rotate mode
@@ -247,18 +252,18 @@
   --wtv-icon-indeterminate: var(--base-icon-indeterminate, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/></svg>"));
   /* mask-size of the check/dash glyph INSIDE the checkbox box. Defaults to the
      shared --base-icon-check-size (the SAME knob pure-admin's .pa-checkbox and
-     ms read), so a theme rescales the mark once for every KeenMate checkbox;
+     ms read), so a theme rescales the mark once for every Keenmate checkbox;
      68% assumes a Lucide glyph that fills its viewBox edge-to-edge. */
   --wtv-icon-check-size: var(--base-icon-check-size, 68%);
 
   /* ==========================================================================
-     CHECKBOX — styled native <input>, canonical KeenMate render contract
+     CHECKBOX — styled native <input>, canonical Keenmate render contract
      (single-element model shared with web-multiselect / svelte-treeview: the
      <input> IS the box, appearance:none; box/border/radius scale via calc on
      --base-checkbox-scale — NO transform; indeterminate = modifier class).
      ========================================================================== */
   /* Box dimensions aligned with web-multiselect (--ms-checkbox-*): 1.6rem box,
-     1px border, flat 0.3rem radius — so a KeenMate checkbox is the same size in
+     1px border, flat 0.3rem radius — so a Keenmate checkbox is the same size in
      every component. (Radius is flat 0.3, NOT --wtv-border-radius-sm, matching
      ms — a theme's sm radius shouldn't reshape the small checkbox.) */
   --wtv-checkbox-size: calc(var(--wtv-rem) * 1.6);  /* 16px */
@@ -269,7 +274,7 @@
      Applied to width/height/border/radius via calc (see tree.css), NOT a CSS
      transform, so the masked tick/dash stays crisp + centered at any scale. */
   --wtv-checkbox-scale: var(--base-checkbox-scale, 1);
-  --wtv-checkbox-border-width: 1px;                 /* hairline */
+  --wtv-checkbox-border-width: var(--wtv-border-width);  /* hairline */
   /* Dedicated --base-checkbox-border-color (ms parity): a stronger mid-gray than
      the faint generic --base-border-color so the box reads as a real control. */
   --wtv-checkbox-border-color: var(--base-checkbox-border-color, light-dark(#8f8f8f, #5a5a5a));
@@ -309,14 +314,14 @@
   --wtv-glow-child-text: rgba(72, 62, 98, 0.7);
 
   /* Drag-over states */
-  --wtv-drag-over-bg: color-mix(in srgb, var(--wtv-accent-color) 10%, transparent);
+  --wtv-drag-over-bg: var(--base-primary-bg-subtle, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
   --wtv-drag-over-border: 2px dashed var(--wtv-accent-color);
   --wtv-drag-over-glow-shadow: 0 0 8px color-mix(in srgb, var(--wtv-accent-color) 40%, transparent);
 
   /* Drop validation */
-  --wtv-drop-valid-bg: color-mix(in srgb, var(--wtv-success-color) 10%, transparent);
+  --wtv-drop-valid-bg: var(--base-success-bg-subtle, color-mix(in srgb, var(--wtv-success-color) 10%, transparent));
   --wtv-drop-valid-border-color: var(--wtv-success-color);
-  --wtv-drop-invalid-bg: color-mix(in srgb, var(--wtv-danger-color) 10%, transparent);
+  --wtv-drop-invalid-bg: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
   --wtv-drop-invalid-border-color: var(--wtv-danger-color);
 
   /* Dragover highlight */
@@ -325,7 +330,7 @@
 
   /* Touch ghost */
   --wtv-touch-ghost-bg: color-mix(in srgb, var(--wtv-accent-color) 90%, transparent);
-  --wtv-touch-ghost-shadow: 0 4px 12px var(--base-shadow-color, rgba(0, 0, 0, 0.3));
+  --wtv-touch-ghost-shadow: var(--base-shadow-lg, 0 4px 12px rgba(0, 0, 0, 0.3));
 
   /* Scroll highlight */
   --wtv-scroll-highlight-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
@@ -348,24 +353,23 @@
   --wtv-tooltip-width: auto;
   --wtv-tooltip-min-width: 0;
   --wtv-tooltip-max-width: calc(32 * var(--wtv-rem));
-  --wtv-tooltip-shadow: 0 2px 8px var(--base-shadow-color, rgba(0, 0, 0, 0.15));
-  --wtv-tooltip-z-index: 10000;
+  --wtv-tooltip-shadow: var(--base-shadow-md, 0 2px 8px rgba(0, 0, 0, 0.15));
+  --wtv-tooltip-z-index: var(--base-z-tooltip, 10000);
 
   /* ==========================================================================
      CONTEXT MENU
      Each variable defaults to a higher-order component variable so the menu
      can be themed independently without affecting the tree itself.
      ========================================================================== */
-  --wtv-context-menu-bg: var(--base-dropdown-bg,
-    var(--base-elevated-bg, var(--wtv-bg-color)));
+  --wtv-context-menu-bg: var(--base-dropdown-bg, var(--wtv-bg-color));
   --wtv-context-menu-bg-hover: var(--wtv-hover-bg);
   --wtv-context-menu-text-color: var(--wtv-text-color);
-  --wtv-context-menu-border: 1px solid var(--wtv-border-color);
+  --wtv-context-menu-border: var(--base-dropdown-border, var(--wtv-border-width) solid var(--wtv-border-color));
   /* Match svelte-treeview's menu chrome: small radius + the shared dropdown
-     shadow token (both chain to --base-*, so under a KeenMate theme the two
+     shadow token (both chain to --base-*, so under a Keenmate theme the two
      components render an identical menu surface). */
   --wtv-context-menu-border-radius: var(--wtv-border-radius-sm);
-  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px var(--base-shadow-color, rgba(0, 0, 0, 0.15)));
+  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.15));
   --wtv-context-menu-min-width: calc(var(--wtv-rem) * 15);  /* ~150px */
   --wtv-context-menu-padding: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-font-size: var(--wtv-font-size-sm);
@@ -375,7 +379,7 @@
   --wtv-context-menu-icon-font-size: var(--wtv-font-size-xs);
   --wtv-context-menu-arrow-font-size: var(--wtv-font-size-xs);
   --wtv-context-menu-danger-color: var(--wtv-danger-color);
-  --wtv-context-menu-danger-bg-hover: color-mix(in srgb, var(--wtv-danger-color) 10%, transparent);
+  --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
   --wtv-context-menu-divider-color: var(--wtv-border-color);
   --wtv-context-menu-divider-margin: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-disabled-opacity: 0.5;
@@ -386,14 +390,14 @@
   --wtv-spinner-size: calc(var(--wtv-rem) * 3.2);  /* 32px */
   --wtv-spinner-track: var(--wtv-border-color);
   --wtv-spinner-color: var(--wtv-accent-color);
-  --wtv-loading-bg: light-dark(rgba(255, 255, 255, 0.8), rgba(26, 26, 26, 0.8));
+  --wtv-loading-bg: color-mix(in srgb, var(--wtv-bg-color) 80%, transparent);
 
   /* ==========================================================================
      DROP PLACEHOLDER (empty tree)
      ========================================================================== */
   --wtv-tree-min-height: calc(6 * var(--wtv-rem));                   /* 60px — min height for empty/loading states */
   --wtv-empty-zone-border: 2px dashed var(--wtv-accent-color);
-  --wtv-empty-zone-bg: color-mix(in srgb, var(--wtv-accent-color) 10%, transparent);
+  --wtv-empty-zone-bg: var(--base-primary-bg-subtle, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
   --wtv-empty-zone-radius: var(--wtv-border-radius-lg);               /* 8px — matches svelte-treeview's 0.8rem */
   /* Engaged state (:hover + --active), token-for-token with svelte-treeview's
      --stv-drop-placeholder-hover-* family so one theme drives both packages.
@@ -406,11 +410,13 @@
   --wtv-empty-zone-hover-scale: 1;
 
   /* ==========================================================================
-     Z-INDEX LAYERS
+     Z-INDEX LAYERS — on the shared --base-z-* scale; the numbers are the
+     standalone fallbacks. The drag overlays sit above tooltips, the ghost on top.
      ========================================================================== */
-  --wtv-z-index-dropdown: 1000;
-  --wtv-z-index-ghost: 10000;
-  --wtv-z-index-overlay: 10;
+  --wtv-z-index-dropdown: var(--base-z-dropdown, 1000);
+  --wtv-z-index-drop-zones: calc(var(--base-z-tooltip, 9999) + 1);
+  --wtv-z-index-ghost: calc(var(--wtv-z-index-drop-zones) + 1);
+  --wtv-z-index-overlay: 10;  /* loading overlay, local to the tree */
 
   /* ==========================================================================
      MISC

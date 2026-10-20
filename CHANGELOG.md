@@ -14,6 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **More of the look comes from the `--base-*` 2.0 contract** (each keeps its standalone
+  fallback, so the tree looks the same without the contract):
+  - Context menu: `--base-dropdown-border` (was a 1px divider line) and `--base-dropdown-bg`
+    (the unreachable `--base-elevated-bg` middle step is gone); danger-item hover
+    `--base-danger-bg-subtle`.
+  - Tints: drag-over row and empty-tree drop zone `--base-primary-bg-subtle`, drop valid /
+    invalid `--base-success-bg-subtle` / `--base-danger-bg-subtle` (20% in dark themes, like
+    every other tint, instead of a flat 10%).
+  - Shadows: tooltip `--base-shadow-md`, touch ghost `--base-shadow-lg` — one tone with pure-admin.
+  - Debug stats `--base-font-family-mono`; hairlines `--wtv-border-width` (new, ← `--base-border-width`);
+    `--wtv-transition-speed` ← `--base-duration-normal` (also drives the tooltip fade).
+  - z-index on the shared scale: context menu `--base-z-dropdown`, tooltip `--base-z-tooltip`,
+    the floating drop zones (new `--wtv-z-index-drop-zones`) and the touch ghost just above it.
+    Standalone values are unchanged (1000 / 10000).
+- **Drop-indicator arrows follow `--wtv-glow-*-color`.** They were SVGs with the colours baked in,
+  so a retinted glow kept the old arrow colour; they are now masks filled with the glow colour.
+- **Loading overlay veil is the tree surface at 80%** (`--wtv-loading-bg`), instead of fixed
+  white / near-black — a themed dark surface no longer gets a mismatched veil.
+- **"Can't drop here" pulse uses `--wtv-danger-color`** (was a hardcoded `#e11d48`).
 - **Removed dead tokens `--wtv-selected-bg`, `--wtv-selected-border`, `--wtv-selected-border-color`.**
   Row selection moved to `--wtv-highlighted-*` (the shared `--base-highlighted-*` item states);
   these three were still defined and documented but nothing read them, so setting them did nothing.
@@ -38,11 +57,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **State styling parity with svelte-treeview 5.0.0 — focus bar can't be wiped, lighter presets, checkbox gap.** The default focus bar (`.wtv__node-content--focused-default`) is now painted as a `background-image` layer instead of an inset `box-shadow`, so the box-shadow-based presets and the scroll flash no longer erase it; default width `--wtv-focus-bar-width` 3px → 2px. `--highlight-border` (was a 2px accent outline over `--wtv-selected-bg`) and `--highlight-glow` (was an outer glow bleeding onto neighbouring rows) are now 1px INSET hairline rings (`--wtv-highlight-ring-color`) over `--wtv-highlighted-bg`, with no hardcoded radius override. `--highlight-brackets` keeps its `❯ label ❮` chevrons with checkboxes on (the old checkbox suppression + bold fallback dated from before highlight and checked were separate states). The checkbox → pill spacing moved from a margin on the `<input>` to `margin-left: var(--wtv-checkbox-gap)` (new token, default `0.6rem`) on `.wtv__checkbox ~ .wtv__node-content`, because unlayered resets (Bootstrap reboot `input { margin: 0 }`, Tailwind preflight) zero input margins.
 
-- **Highlight + focus read the shared `--base-highlighted-*` / `--base-focused-*` tokens — default focus look is now an inset outline ring.** The multi-select highlight (`.wtv__node-content--highlighted`) maps to the new shared selected-item tokens from `@keenmate/base-css-variables` and the focused row (`.wtv__node-content--focused-default`) to the shared focused-item tokens, so one knob themes the tree and web-multiselect identically (inline fallbacks keep the tree self-sufficient). New/rewired tokens: `--wtv-highlighted-bg` ← `--base-highlighted-bg` (default tint 12% → 10% accent), `--wtv-highlighted-bg-hover` ← `--base-highlighted-bg-hover`, `--wtv-highlighted-text` ← `--base-highlighted-text`, `--wtv-highlighted-ring` ← `--base-highlighted-ring` (default `none`, drawn as an inset outline), `--wtv-focused-bg` ← `--base-focused-bg` (applied only on a non-highlighted row, so focused+highlighted keeps the selection tint), `--wtv-focused-text` ← `--base-focused-text`, `--wtv-focused-ring` ← `--base-focused-ring` (default `1px solid` accent), `--wtv-focused-outline-offset` (`calc(-1 * var(--base-ring-width, 1px))`, following the shared ring-width token). The default focus look is now a 1px INSET `outline` ring (matching web-multiselect's focused option) instead of the left focus bar — outline is its own paint channel, so the box-shadow presets and the scroll flash still can't wipe it. `--wtv-focus-bar-width` / `--wtv-focus-bar-color` are removed (set `--wtv-focused-ring: none` to suppress the ring).
+- **Highlight + focus read the shared `--base-highlighted-*` / `--base-focused-*` tokens — default focus look is now an inset outline ring.** The multi-select highlight (`.wtv__node-content--highlighted`) maps to the new shared selected-item tokens from `@keenmate/base-css-variables` and the focused row (`.wtv__node-content--focused-default`) to the shared focused-item tokens, so one knob themes the tree and web-multiselect identically (inline fallbacks keep the tree self-sufficient). New/rewired tokens: `--wtv-highlighted-bg` ← `--base-highlighted-bg` (default tint 12% → 10% accent), `--wtv-highlighted-bg-hover` ← `--base-highlighted-bg-hover`, `--wtv-highlighted-text` ← `--base-highlighted-text-color`, `--wtv-highlighted-ring` ← `--base-highlighted-outline` (default `none`, drawn as an inset outline), `--wtv-focused-bg` ← `--base-focused-bg` (applied only on a non-highlighted row, so focused+highlighted keeps the selection tint), `--wtv-focused-text` ← `--base-focused-text-color`, `--wtv-focused-ring` ← `--base-focused-outline` (default `1px solid` accent), `--wtv-focused-outline-offset` (`calc(-1 * var(--base-outline-width, 1px))`, following the shared outline-width token). The default focus look is now a 1px INSET `outline` ring (matching web-multiselect's focused option) instead of the left focus bar — outline is its own paint channel, so the box-shadow presets and the scroll flash still can't wipe it. `--wtv-focus-bar-width` / `--wtv-focus-bar-color` are removed (set `--wtv-focused-ring: none` to suppress the ring).
 
 - **`dropZoneLayout` / `drop-zone-layout` values `'above'` / `'below'` renamed to `'before'` / `'after'`** — finishing the drop-position rename so the whole drag & drop surface speaks one before/after vocabulary (parity with svelte-treeview 5.0.0). Same meaning: all three floating zones in a row above / below the hovered node. Container classes follow: `.wtv__drop-zones--above` / `--below` → `.wtv__drop-zones--before` / `--after`; type `DropZoneLayout` = `'around' | 'before' | 'after' | 'wave' | 'wave2'`. The drag-drop demo maps previously saved `above`/`below` settings.
 
 ### Fixed
+
+- **Touch drag-and-drop works inside `<web-treeview>`.** The touch ghost was appended to `<body>`,
+  outside the shadow root, so none of its CSS applied (an unstyled text line at the bottom of the
+  page). The drop target was found with `document.elementFromPoint`, which stops at the shadow
+  host, so a touch drop never landed on a node, and the drag-over highlight and the 🚫 "can't
+  move / drop" badges (desktop drop-denied included) looked rows up in `document` and found
+  nothing. The ghost now lives in the tree's container, hit-testing uses the tree's root node,
+  and lookups are scoped to the tree (no longer able to hit another tree with the same paths).
+  Covered by the new `e2e/touch-drag.spec.ts`.
+- **The floating drop zones no longer set an inline `z-index: 10000`**, which no token could
+  override; they read `--wtv-z-index-drop-zones`.
+- **Docs and metadata match the CSS.** The manifest lists exactly the `--base-*` tokens the CSS
+  reads; seven `--wtv-*` names that don't exist (`--wtv-border`, `-border-width-base`,
+  `-border-radius-md`, `-font-size-base`, `-transition-normal`, `-easing`, `-toggle-size`) are
+  gone from the manifest, the editor data and `docs/theming.md`, and the missing ones were added.
+  The theming demos set `--base-highlighted-bg` for the selection (they set
+  `--base-primary-bg-subtle`, which the selection doesn't read).
 
 - **Follow-cursor node tooltips no longer pin to the row's corner on a stationary "hover to read".** Two parts: the core rc11 fix (cursor rect seeded on `mouseenter`, so it's valid before the show delay elapses even if the pointer never moves), and a web-treeview-side fix — the renderer now rebuilds a node's tooltip **only when the node's data changes** (`_rev`), instead of on every `_updateNodeElement`. A same-`_rev` reconcile (virtual-scroll reposition, focus/highlight toggle) mid-hover used to destroy + recreate the tooltip, dropping the freshly-seeded cursor rect (and needlessly churning floating-ui `autoUpdate` + listeners); it now keeps the live handle. Enable/disable, callback, placement and follow-cursor changes still rebuild via `_onConfigChange → _fullRender`. Guarded by a new follow-cursor case in `e2e/tooltip.spec.ts`.
 

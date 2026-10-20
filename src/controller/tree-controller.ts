@@ -3632,7 +3632,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this.removeGhostElement();
       this._clearDragDenied();
       if (this._dropDeniedTimer) { clearTimeout(this._dropDeniedTimer); this._dropDeniedTimer = null; }
-      document.querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
+      this._domScope().querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
     }
     this._contextMenuCleanup?.();
     this._contextMenuCleanup = null;
@@ -4693,7 +4693,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     if (this.touchDragState.ghostElement) {
       this.touchDragState.ghostElement.style.pointerEvents = 'none';
     }
-    const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+    const elementUnderTouch = this._elementFromPoint(touch.clientX, touch.clientY);
     if (this.touchDragState.ghostElement) {
       this.touchDragState.ghostElement.style.pointerEvents = '';
     }
@@ -4711,7 +4711,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         this.touchDragState.ghostElement.style.display = 'none';
       }
 
-      const dropElement = document.elementFromPoint(touch.clientX, touch.clientY);
+      const dropElement = this._elementFromPoint(touch.clientX, touch.clientY);
       const dropNode = this.findNodeFromElement(dropElement);
 
       const emptyTarget = dropElement?.closest('.wtv__empty-state, .wtv__empty-zone');
@@ -4769,7 +4769,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     try { navigator.vibrate?.([30, 25, 30]); } catch { /* blocked by browser policy */ }
 
     if (typeof document === 'undefined') return;
-    const el = document.querySelector(
+    const el = this._domScope().querySelector(
       `[data-tree-path="${node.path}"] .wtv__node-content`
     ) as HTMLElement | null;
     if (!el) return;
@@ -4814,7 +4814,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     try { navigator.vibrate?.([30, 25, 30]); } catch { /* blocked by browser policy */ }
 
     if (typeof document === 'undefined') return;
-    const el = document.querySelector(
+    const el = this._domScope().querySelector(
       `[data-tree-path="${node.path}"] .wtv__node-content`
     ) as HTMLElement | null;
     if (!el) return;
@@ -4836,15 +4836,32 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   private createGhostElement(node: LTreeNode<any>, x: number, y: number) {
     this.removeGhostElement();
-    document.querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
+    this._domScope().querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
 
     const ghost = document.createElement('div');
     ghost.className = 'wtv__touch-ghost';
     ghost.textContent = this.tree.getNodeDisplayValue(node);
     ghost.style.left = `${x}px`;
     ghost.style.top = `${y}px`;
-    document.body.appendChild(ghost);
+    // Inside the tree's own container, not <body>: the ghost's CSS and --wtv-*
+    // variables live in the shadow root, and the container carries the
+    // per-instance data-theme. position: fixed still places it by viewport.
+    (this.containerElement ?? document.body).appendChild(ghost);
     this.touchDragState.ghostElement = ghost;
+  }
+
+  /** The tree's own DOM, for lookups by path: the .wtv__container (inside the
+   *  shadow root for <web-treeview>), so they neither miss a shadow-rendered tree
+   *  nor hit another tree with the same paths. */
+  private _domScope(): ParentNode {
+    return this.containerElement ?? document;
+  }
+
+  /** Hit-test from the tree's root node — document.elementFromPoint stops at
+   *  the shadow host and never returns a row. */
+  private _elementFromPoint(x: number, y: number): Element | null {
+    const root = this.containerElement?.getRootNode();
+    return (root instanceof ShadowRoot ? root : document).elementFromPoint(x, y);
   }
 
   private removeGhostElement() {
@@ -4867,7 +4884,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const newTarget = this.findNodeFromElement(element);
 
     if (this.touchDragState.currentDropTarget && this.touchDragState.currentDropTarget !== newTarget) {
-      const prevElement = document.querySelector(
+      const prevElement = this._domScope().querySelector(
         `[data-tree-path="${this.touchDragState.currentDropTarget.path}"] .wtv__node-content`
       );
       prevElement?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
@@ -4884,7 +4901,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     }
 
     if (newTarget && newTarget !== this._draggedNode && newTarget.isDropAllowed) {
-      const targetElement = document.querySelector(
+      const targetElement = this._domScope().querySelector(
         `[data-tree-path="${newTarget.path}"] .wtv__node-content`
       );
       targetElement?.classList.add(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
@@ -4896,7 +4913,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   private clearDropTargetHighlight() {
     if (this.touchDragState.currentDropTarget) {
-      const element = document.querySelector(
+      const element = this._domScope().querySelector(
         `[data-tree-path="${this.touchDragState.currentDropTarget.path}"] .wtv__node-content`
       );
       element?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');

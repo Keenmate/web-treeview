@@ -1,6 +1,6 @@
 # Theming — `@keenmate/web-treeview`
 
-The component publishes ~110 CSS variables. The contract follows the BlissFramework theming model: every color resolves through a `--base-*` design-system token (overridable host-wide), then a `--wtv-*` component token (overridable per-instance), with `light-dark()` fallbacks that flip automatically with `color-scheme` (Strategy B). See [usage.md](./usage.md) for the API surface.
+The component publishes ~150 CSS variables. The contract follows the BlissFramework theming model: every color resolves through a `--base-*` design-system token (overridable host-wide), then a `--wtv-*` component token (overridable per-instance), with `light-dark()` fallbacks that flip automatically with `color-scheme` (Strategy B). See [usage.md](./usage.md) for the API surface.
 
 ## Overrides at three levels
 
@@ -29,6 +29,12 @@ web-treeview {
 ```
 
 `examples-theming.html` ships 8 complete themes (dark, neon, corporate, glassmorphism, etc.).
+
+> **Derived `--base-*` tokens resolve where the contract declares them.** `@keenmate/base-css-variables`
+> 2.0 computes tokens such as `--base-highlighted-bg` or `--base-primary-bg-subtle` on `:root`,
+> `[data-theme]` and `.base-scope`. Setting an *input* (`--base-primary-color`) on a plain wrapper
+> `<div>` does not recompute them there — add `class="base-scope"` to that wrapper, or set the
+> `--wtv-*` variable directly.
 
 ## Dark mode — how it flips
 
@@ -72,7 +78,7 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-active-bg` | `--base-active-bg` \| `color-mix(text 14%, bg)` | Base active / pressed background |
 | `--wtv-node-bg-hover` | `= --wtv-hover-bg` | Node hover background |
 | `--wtv-node-bg-active` | `= --wtv-active-bg` | Node active / pressed background |
-| `--wtv-node-transition` | `background 150ms, box-shadow 150ms ease` | Node content transition (set `none` to disable) |
+| `--wtv-node-transition` | `none` | Node content transition (e.g. `background var(--wtv-transition-speed)` to animate) |
 | `--wtv-highlighted-bg` | `--base-highlighted-bg` \| `color-mix(accent 10%, transparent)` | Default `.wtv__node-content--highlighted` (multi-select) background tint |
 | `--wtv-highlighted-bg-hover` | `--base-highlighted-bg-hover` \| `= --wtv-highlighted-bg` | Highlighted row background on hover |
 | `--wtv-highlighted-text` | `--base-highlighted-text-color` \| `currentColor` | Highlighted row text color |
@@ -86,17 +92,15 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-border-width-base` | `1px` | Base border width |
-| `--wtv-border` | `1px solid --wtv-border-color` | Full border shorthand |
+| `--wtv-border-width` | `--base-border-width` \| `1px` | Hairline width (context menu, checkbox, debug panel) |
 
 ### Typography
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-font-family` | `--base-font-family` \| `inherit` | Font family |
+| `--wtv-font-family` | `--base-font-family` \| system sans-serif stack | Font family (optional; not declared) |
 | `--wtv-font-size-xs` | `calc(1.2 * --wtv-rem)` | 12px |
 | `--wtv-font-size-sm` | `calc(1.4 * --wtv-rem)` | 14px |
-| `--wtv-font-size-base` | `calc(1.6 * --wtv-rem)` | 16px |
 | `--wtv-font-size` | `= --wtv-font-size-sm` | Default font size |
 | `--wtv-font-weight-medium` | `500` | Medium weight |
 | `--wtv-font-weight-semibold` | `600` | Semibold weight |
@@ -111,29 +115,26 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-spacing-md` | `8px` | Medium spacing |
 | `--wtv-spacing-lg` | `12px` | Large spacing |
 | `--wtv-spacing-xl` | `16px` | Extra large spacing |
-| `--wtv-column-width` | `calc(--wtv-rem * 2.4)` | Unified column width (24px) for toggle, icon, indent step |
-| `--wtv-indent-size` | `= --wtv-column-width` | Tree indent per level |
-| `--wtv-node-padding` | `4px 8px` | Node content padding |
-| `--wtv-node-height` | `calc(--wtv-rem * 3.2)` | Node row height (32px) |
+| `--wtv-column-width` | `calc(--wtv-rem * 2.4)` | Toggle / icon column width (24px) |
+| `--wtv-indent-size` | `calc(--wtv-rem * 1.6)` | Indent per level (16px) — its own knob |
+| `--wtv-node-padding` | `--wtv-spacing-sm --wtv-spacing-md` | Node content padding (4px 8px) |
+| `--wtv-node-height` | `calc(--wtv-rem * 2.4)` | Minimum row height (24px) |
 | `--wtv-icon-size` | `calc(--wtv-rem * 1.6)` | Node icon size (16px) |
-| `--wtv-toggle-size` | `= --wtv-column-width` | Toggle icon column size |
 | `--wtv-toggle-color` | `= --wtv-text-color-2` | Toggle icon color |
+| `--wtv-checkbox-gap` | `calc(--wtv-rem * 0.6)` | Space between the checkbox and the node pill |
 
 ### Border radius
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `--wtv-border-radius-sm` | `calc(0.4 * --wtv-rem)` | 4px |
-| `--wtv-border-radius-md` | `calc(0.6 * --wtv-rem)` | 6px |
 | `--wtv-border-radius-lg` | `calc(0.8 * --wtv-rem)` | 8px |
 
 ### Transitions
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-transition-speed` | `150ms` | Fast transition duration |
-| `--wtv-transition-normal` | `200ms` | Normal transition duration |
-| `--wtv-easing` | `cubic-bezier(0.4, 0, 0.2, 1)` | Default easing curve |
+| `--wtv-transition-speed` | `--base-duration-normal` \| `150ms` | Transition duration (empty zone, tooltip fade) |
 
 ### Drag & drop — glow indicators
 
@@ -148,27 +149,31 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-glow-{before,after,child}-shadow` | `0 2px 12px rgba(... 0.4)` | Zone active box shadow |
 | `--wtv-glow-{before,after,child}-text` | `rgba(... 0.7)` | Default zone text color |
 
+The drop-indicator arrows are masks filled with the matching `--wtv-glow-*-color` (alpha dropped),
+so retinting a glow colour retints its arrow too.
+
 ### Drag & drop — state colors
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-drag-over-bg` | `accent 10%` | Drag-over node background |
+| `--wtv-drag-over-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Drag-over node background |
 | `--wtv-drag-over-border` | `2px dashed accent` | Drag-over node border |
 | `--wtv-drag-over-glow-shadow` | `0 0 8px accent 40%` | Drag-over glow shadow |
-| `--wtv-drop-valid-bg` | `success 10%` | Valid drop background |
+| `--wtv-drop-valid-bg` | `--base-success-bg-subtle` \| `success 10%` | Valid drop background |
 | `--wtv-drop-valid-border-color` | `= --wtv-success-color` | Valid drop border color |
-| `--wtv-drop-invalid-bg` | `danger 10%` | Invalid drop background |
+| `--wtv-drop-invalid-bg` | `--base-danger-bg-subtle` \| `danger 10%` | Invalid drop background |
 | `--wtv-drop-invalid-border-color` | `= --wtv-danger-color` | Invalid drop border color |
 | `--wtv-dragover-highlight-bg` | `success 15%` | Dragover highlight background |
 | `--wtv-dragover-highlight-border` | `2px dashed success` | Dragover highlight border |
 | `--wtv-touch-ghost-bg` | `accent 90%` | Touch drag ghost background |
-| `--wtv-touch-ghost-shadow` | `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
+| `--wtv-touch-ghost-shadow` | `--base-shadow-lg` \| `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
 | `--wtv-scroll-highlight-bg` | `accent 30%` | Scroll-to-node highlight |
 | `--wtv-scroll-highlight-shadow` | `0 0 8px accent 40%` | Scroll highlight shadow |
 | `--wtv-dragged-opacity` | `0.5` | Dragged node opacity |
+| `--wtv-drag-denied-flash-bg` | `danger 18%` | Optional: pulse of the "can't move / drop here" row |
 | `--wtv-cut-opacity` | `0.4` | Cut node opacity (clipboard) |
 | `--wtv-empty-zone-border` | `2px dashed accent` | Empty zone border (during drag) |
-| `--wtv-empty-zone-bg` | `accent 10%` | Empty zone background |
+| `--wtv-empty-zone-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Empty zone background |
 | `--wtv-empty-zone-radius` | `= --wtv-border-radius-lg` | Empty zone border radius |
 
 ### Context menu
@@ -177,12 +182,12 @@ Each variable defaults to the corresponding higher-order `--wtv-*` variable, so 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-context-menu-bg` | `--base-dropdown-bg` \| `--base-elevated-bg` \| `= --wtv-bg-color` | Menu background |
+| `--wtv-context-menu-bg` | `--base-dropdown-bg` \| `= --wtv-bg-color` | Menu background |
 | `--wtv-context-menu-bg-hover` | `= --wtv-hover-bg` | Item hover background |
 | `--wtv-context-menu-text-color` | `= --wtv-text-color` | Menu text color |
-| `--wtv-context-menu-border` | `1px solid --wtv-border-color` | Menu border |
-| `--wtv-context-menu-border-radius` | `= --wtv-border-radius-lg` | Menu border radius |
-| `--wtv-context-menu-shadow` | `0 4px 16px rgba(0,0,0,0.12)` | Menu shadow |
+| `--wtv-context-menu-border` | `--base-dropdown-border` \| `--wtv-border-width solid --wtv-border-color` | Menu border |
+| `--wtv-context-menu-border-radius` | `= --wtv-border-radius-sm` | Menu border radius |
+| `--wtv-context-menu-shadow` | `--base-dropdown-box-shadow` \| `0 2px 10px rgba(0,0,0,0.15)` | Menu shadow |
 | `--wtv-context-menu-min-width` | `calc(--wtv-rem * 15)` | Menu min width (~150px) |
 | `--wtv-context-menu-padding` | `--wtv-spacing-sm 0` | Menu padding |
 | `--wtv-context-menu-font-size` | `= --wtv-font-size-sm` | Menu font size |
@@ -192,7 +197,8 @@ Each variable defaults to the corresponding higher-order `--wtv-*` variable, so 
 | `--wtv-context-menu-icon-font-size` | `= --wtv-font-size-xs` | Item icon font size |
 | `--wtv-context-menu-arrow-font-size` | `= --wtv-font-size-xs` | Submenu arrow font size |
 | `--wtv-context-menu-danger-color` | `= --wtv-danger-color` | Danger item text color |
-| `--wtv-context-menu-danger-bg-hover` | `danger 10%` | Danger item hover background |
+| `--wtv-context-menu-danger-bg-hover` | `--base-danger-bg-subtle` \| `danger 10%` | Danger item hover background |
+| `--wtv-context-menu-shortcut-color` | `= --wtv-text-color-2` | Optional: shortcut hint color |
 | `--wtv-context-menu-divider-color` | `= --wtv-border-color` | Divider line color |
 | `--wtv-context-menu-divider-margin` | `--wtv-spacing-sm 0` | Divider margin |
 | `--wtv-context-menu-disabled-opacity` | `0.5` | Disabled item opacity |
@@ -202,18 +208,30 @@ Each variable defaults to the corresponding higher-order `--wtv-*` variable, so 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `--wtv-tree-min-height` | `calc(6 * --wtv-rem)` | Min height for empty / loading states (60px) |
-| `--wtv-spinner-size` | `32px` | Spinner size |
+| `--wtv-spinner-size` | `calc(--wtv-rem * 3.2)` | Spinner size (32px) |
 | `--wtv-spinner-track` | `= --wtv-border-color` | Spinner track color |
 | `--wtv-spinner-color` | `= --wtv-accent-color` | Spinner accent color |
-| `--wtv-loading-bg` | `light-dark(rgba(255,255,255,0.8), rgba(26,26,26,0.8))` | Loading overlay background |
+| `--wtv-loading-bg` | `--wtv-bg-color` at 80% | Loading overlay veil |
 
-### Z-index
+### Tooltip
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-z-index-dropdown` | `1000` | Context menu, drop zones |
-| `--wtv-z-index-ghost` | `10000` | Touch drag ghost |
-| `--wtv-z-index-overlay` | `10` | Loading overlay |
+| `--wtv-tooltip-bg` | `--base-tooltip-bg` \| `light-dark(#333, #f5f5f5)` | Tooltip background |
+| `--wtv-tooltip-color` | `--base-tooltip-text-color` \| `light-dark(#fff, #1a1a1a)` | Tooltip text color |
+| `--wtv-tooltip-shadow` | `--base-shadow-md` \| `0 2px 8px rgba(0,0,0,0.15)` | Tooltip shadow |
+
+### Z-index
+
+On the shared `--base-z-*` scale when the contract is loaded; the numbers are the standalone fallbacks.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--wtv-z-index-dropdown` | `--base-z-dropdown` \| `1000` | Context menu |
+| `--wtv-tooltip-z-index` | `--base-z-tooltip` \| `10000` | Node tooltip |
+| `--wtv-z-index-drop-zones` | `--base-z-tooltip + 1` \| `10000` | Floating drop-zone overlay |
+| `--wtv-z-index-ghost` | `= --wtv-z-index-drop-zones + 1` | Touch drag ghost |
+| `--wtv-z-index-overlay` | `10` | Loading overlay (local to the tree) |
 
 ## See also
 

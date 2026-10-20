@@ -115,9 +115,11 @@
   transform: translate(-50%, -50%) rotate(0deg);
   width: calc(2.4 * var(--wtv-rem));
   height: calc(2.4 * var(--wtv-rem));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2386b398' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13a1 1 0 0 0-1-1H5.061a1 1 0 0 1-.75-1.811l6.836-6.835a1.207 1.207 0 0 1 1.707 0l6.835 6.835a1 1 0 0 1-.75 1.811H16a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: contain;
+  /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
+     retints --wtv-glow-before-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-glow-before-color) r g b);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13a1 1 0 0 0-1-1H5.061a1 1 0 0 1-.75-1.811l6.836-6.835a1.207 1.207 0 0 1 1.707 0l6.835 6.835a1 1 0 0 1-.75 1.811H16a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13a1 1 0 0 0-1-1H5.061a1 1 0 0 1-.75-1.811l6.836-6.835a1.207 1.207 0 0 1 1.707 0l6.835 6.835a1 1 0 0 1-.75 1.811H16a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z'/%3E%3C/svg%3E") no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
@@ -135,9 +137,11 @@
   transform: translate(-50%, -50%) rotate(0deg);
   width: calc(2.4 * var(--wtv-rem));
   height: calc(2.4 * var(--wtv-rem));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f2b69e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 11a1 1 0 0 0 1 1h2.939a1 1 0 0 1 .75 1.811l-6.835 6.836a1.207 1.207 0 0 1-1.707 0L4.31 13.81a1 1 0 0 1 .75-1.811H8a1 1 0 0 0 1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: contain;
+  /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
+     retints --wtv-glow-after-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-glow-after-color) r g b);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 11a1 1 0 0 0 1 1h2.939a1 1 0 0 1 .75 1.811l-6.835 6.836a1.207 1.207 0 0 1-1.707 0L4.31 13.81a1 1 0 0 1 .75-1.811H8a1 1 0 0 0 1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1z'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 11a1 1 0 0 0 1 1h2.939a1 1 0 0 1 .75 1.811l-6.835 6.836a1.207 1.207 0 0 1-1.707 0L4.31 13.81a1 1 0 0 1 .75-1.811H8a1 1 0 0 0 1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1z'/%3E%3C/svg%3E") no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
@@ -156,9 +160,11 @@
   transform: translate(-50%, -50%) rotate(45deg);
   width: calc(2.4 * var(--wtv-rem));
   height: calc(2.4 * var(--wtv-rem));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a79bc6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M4 9v6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: contain;
+  /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
+     retints --wtv-glow-child-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-glow-child-color) r g b);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M4 9v6'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M4 9v6'/%3E%3C/svg%3E") no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
@@ -555,7 +561,7 @@
 @keyframes wtv-drag-denied-flash {
   0%,
   100% { background-color: transparent; }
-  50% { background-color: var(--wtv-drag-denied-flash-bg, color-mix(in srgb, #e11d48 18%, transparent)); }
+  50% { background-color: var(--wtv-drag-denied-flash-bg, color-mix(in srgb, var(--wtv-danger-color) 18%, transparent)); }
 }
 
 /* No-entry icon pops in and STAYS visible until the finger lifts. */
@@ -685,7 +691,7 @@
 
 .wtv__context-menu .wtv__context-menu-divider,
 .wtv__context-menu .wtv__context-menu-separator {
-  height: 1px;
+  height: var(--wtv-border-width);
   background-color: var(--wtv-context-menu-divider-color);
   margin: var(--wtv-context-menu-divider-margin);
 }
@@ -708,7 +714,7 @@
 .wtv__context-menu .wtv__context-menu-divider--named::after {
   content: '';
   flex: 1;
-  height: 1px;
+  height: var(--wtv-border-width);
   background-color: var(--wtv-context-menu-divider-color);
 }
 
@@ -724,7 +730,7 @@
    NODE TOOLTIP (hover/focus)
    Portaled into the shadow container by the shared core createTooltip; positioned
    via Floating UI. Same shape + shared --base-tooltip-* tokens as web-multiselect's
-   option tooltip (and svelte-treeview's .stv__tooltip), so one KeenMate theme renders
+   option tooltip (and svelte-treeview's .stv__tooltip), so one Keenmate theme renders
    all three identically.
    ============================================================================== */
 .wtv__tooltip {
@@ -732,7 +738,7 @@
   z-index: var(--wtv-tooltip-z-index, 10000);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition: opacity var(--wtv-transition-speed, 0.15s) ease, visibility var(--wtv-transition-speed, 0.15s) ease;
 
   /* Hardcoded fallbacks (second arg) keep the tooltip legible even if it ever mounts
      outside the shadow container where the --wtv-tooltip-* vars don't resolve. */
@@ -750,7 +756,7 @@
   max-width: var(--wtv-tooltip-max-width, 32rem);
   word-wrap: break-word;
   white-space: pre-wrap;
-  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px var(--base-shadow-color, rgba(0, 0, 0, 0.15)));
+  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
   pointer-events: none; /* never intercept the pointer */
 }
 
@@ -766,7 +772,7 @@
 .wtv__debug-info {
   font-size: var(--wtv-font-size-xs);
   background-color: color-mix(in srgb, var(--wtv-accent-color) 5%, transparent);
-  border: 1px solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
+  border: var(--wtv-border-width) solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
   border-radius: var(--wtv-border-radius-sm);
   padding: var(--wtv-spacing-md);
   margin-bottom: var(--wtv-spacing-md);
@@ -785,7 +791,7 @@
 
 .wtv__debug-info details[open] summary {
   margin-bottom: var(--wtv-spacing-md);
-  border-bottom: 1px solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
+  border-bottom: var(--wtv-border-width) solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
 }
 
 .wtv__debug-info .wtv__debug-stats {
@@ -798,10 +804,10 @@
   background: var(--wtv-light-bg);
   padding: calc(0.2 * var(--wtv-rem)) var(--wtv-spacing-sm);
   border-radius: calc(0.2 * var(--wtv-rem));
-  font-family: monospace;
+  font-family: var(--base-font-family-mono, monospace);
   font-size: var(--wtv-font-size-xs);
   color: var(--wtv-text-color);
-  border: 1px solid var(--wtv-border-color);
+  border: var(--wtv-border-width) solid var(--wtv-border-color);
 }
 
 /* ==============================================================================
@@ -848,6 +854,7 @@
 
 .wtv__drop-zones {
   /* position/top/left/width/height set via inline styles (JS-calculated fixed overlay) */
+  z-index: var(--wtv-z-index-drop-zones);
   pointer-events: none;
   overflow: visible;
 }
@@ -1030,7 +1037,7 @@
    CHECKBOX
    ============================================================================== */
 
-/* Styled native checkbox — the canonical KeenMate render contract, shared
+/* Styled native checkbox — the canonical Keenmate render contract, shared
    byte-for-byte (modulo prefix) with web-multiselect's .ms__checkbox and
    svelte-treeview's .stv__checkbox: the <input> ITSELF is the box
    (appearance:none), the tick / dash is an ::after mask, and the indeterminate

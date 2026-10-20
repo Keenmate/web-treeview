@@ -1620,7 +1620,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     zones.style.left = `${rect.left}px`;
     zones.style.width = `${rect.width}px`;
     zones.style.height = `${rect.height}px`;
-    zones.style.zIndex = '10000';
     zones.style.setProperty('--drop-zone-start', typeof start === 'number' ? `${start}%` : start);
     zones.style.setProperty('--drop-zone-max-width', `${maxWidth}px`);
 

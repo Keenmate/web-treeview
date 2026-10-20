@@ -5901,12 +5901,8 @@
               "description": "Small font (14px)"
             },
             {
-              "name": "--wtv-font-size-base",
-              "description": "Base font (16px)"
-            },
-            {
               "name": "--wtv-font-size",
-              "description": "Default font size (= tv-font-size-sm)"
+              "description": "Default font size (= --wtv-font-size-sm)"
             },
             {
               "name": "--wtv-font-weight-medium",
@@ -5945,6 +5941,10 @@
               "description": "Default border color"
             },
             {
+              "name": "--wtv-border-width",
+              "description": "Hairline stroke width of the context menu, checkbox and debug panel (→ --base-border-width, 1px)"
+            },
+            {
               "name": "--wtv-success-color",
               "description": "Success/valid drop color"
             },
@@ -5965,20 +5965,12 @@
               "description": "Active/pressed background"
             },
             {
-              "name": "--wtv-border-width-base",
-              "description": "Base border width (1px)"
-            },
-            {
-              "name": "--wtv-border",
-              "description": "Full border shorthand (1px solid border-color)"
-            },
-            {
               "name": "--wtv-node-bg-hover",
-              "description": "Node hover background (aliases tv-hover-bg)"
+              "description": "Node hover background (aliases --wtv-hover-bg)"
             },
             {
               "name": "--wtv-node-bg-active",
-              "description": "Node active/pressed background (aliases tv-active-bg)"
+              "description": "Node active/pressed background (aliases --wtv-active-bg)"
             },
             {
               "name": "--wtv-highlighted-bg",
@@ -6021,6 +6013,10 @@
               "description": "Text color for the opt-in .wtv__node-content--highlight-fill flavor (default inherit)"
             },
             {
+              "name": "--wtv-highlight-ring-color",
+              "description": "Hairline ring color of the opt-in --highlight-border / --highlight-glow presets (accent 45%)"
+            },
+            {
               "name": "--wtv-node-transition",
               "description": "Node content (row) transition. Default none = instant hover; set e.g. 'background var(--wtv-transition-speed), box-shadow var(--wtv-transition-speed) ease' to animate"
             },
@@ -6041,24 +6037,12 @@
               "description": "Small border radius (4px)"
             },
             {
-              "name": "--wtv-border-radius-md",
-              "description": "Medium border radius (6px)"
-            },
-            {
               "name": "--wtv-border-radius-lg",
               "description": "Large border radius (8px)"
             },
             {
               "name": "--wtv-transition-speed",
-              "description": "Fast transition duration (150ms)"
-            },
-            {
-              "name": "--wtv-transition-normal",
-              "description": "Normal transition duration (200ms)"
-            },
-            {
-              "name": "--wtv-easing",
-              "description": "Default easing curve"
+              "description": "Transition duration (→ --base-duration-normal, 150ms)"
             },
             {
               "name": "--wtv-column-width",
@@ -6066,7 +6050,7 @@
             },
             {
               "name": "--wtv-indent-size",
-              "description": "Tree node indent per level (= tv-column-width)"
+              "description": "Tree node indent per level (= --wtv-column-width)"
             },
             {
               "name": "--wtv-node-padding",
@@ -6079,10 +6063,6 @@
             {
               "name": "--wtv-icon-size",
               "description": "Node icon size (16px)"
-            },
-            {
-              "name": "--wtv-toggle-size",
-              "description": "Toggle icon column size (= tv-column-width)"
             },
             {
               "name": "--wtv-toggle-color",
@@ -6129,12 +6109,16 @@
               "description": "Checkbox box dimension (default 1.6×rem)."
             },
             {
+              "name": "--wtv-checkbox-gap",
+              "description": "Space between the checkbox and the node pill"
+            },
+            {
               "name": "--wtv-checkbox-scale",
               "description": "Box/border/radius scale via calc (shared --base-checkbox-scale contract, no transform)."
             },
             {
               "name": "--wtv-checkbox-border-width",
-              "description": "Checkbox box border thickness (hairline; multiplied by --wtv-checkbox-scale)."
+              "description": "Checkbox box border thickness (→ --wtv-border-width; multiplied by --wtv-checkbox-scale)."
             },
             {
               "name": "--wtv-checkbox-border-color",
@@ -6250,7 +6234,7 @@
             },
             {
               "name": "--wtv-drag-over-bg",
-              "description": "Drag-over node background"
+              "description": "Drag-over node background (→ --base-primary-bg-subtle)"
             },
             {
               "name": "--wtv-drag-over-border",
@@ -6262,7 +6246,7 @@
             },
             {
               "name": "--wtv-drop-valid-bg",
-              "description": "Valid drop target background"
+              "description": "Valid drop target background (→ --base-success-bg-subtle)"
             },
             {
               "name": "--wtv-drop-valid-border-color",
@@ -6270,7 +6254,7 @@
             },
             {
               "name": "--wtv-drop-invalid-bg",
-              "description": "Invalid drop target background"
+              "description": "Invalid drop target background (→ --base-danger-bg-subtle)"
             },
             {
               "name": "--wtv-drop-invalid-border-color",
@@ -6290,7 +6274,11 @@
             },
             {
               "name": "--wtv-touch-ghost-shadow",
-              "description": "Touch drag ghost box shadow"
+              "description": "Touch drag ghost shadow (→ --base-shadow-lg)"
+            },
+            {
+              "name": "--wtv-drag-denied-flash-bg",
+              "description": "Optional: pulse color of the \"can't move / drop here\" row (default danger 18%)"
             },
             {
               "name": "--wtv-scroll-highlight-bg",
@@ -6346,15 +6334,15 @@
             },
             {
               "name": "--wtv-tooltip-shadow",
-              "description": "Node tooltip drop shadow"
+              "description": "Node tooltip shadow (→ --base-shadow-md)"
             },
             {
               "name": "--wtv-tooltip-z-index",
-              "description": "Node tooltip stacking order (10000)"
+              "description": "Node tooltip stacking order (→ --base-z-tooltip, 10000)"
             },
             {
               "name": "--wtv-context-menu-bg",
-              "description": "Context menu background"
+              "description": "Context menu background (→ --base-dropdown-bg)"
             },
             {
               "name": "--wtv-context-menu-bg-hover",
@@ -6365,8 +6353,12 @@
               "description": "Context menu text color"
             },
             {
+              "name": "--wtv-context-menu-shortcut-color",
+              "description": "Optional: shortcut hint color (default --wtv-text-color-2)"
+            },
+            {
               "name": "--wtv-context-menu-border",
-              "description": "Context menu border"
+              "description": "Context menu border (→ --base-dropdown-border)"
             },
             {
               "name": "--wtv-context-menu-border-radius",
@@ -6414,7 +6406,7 @@
             },
             {
               "name": "--wtv-context-menu-danger-bg-hover",
-              "description": "Danger item hover background"
+              "description": "Danger item hover background (→ --base-danger-bg-subtle)"
             },
             {
               "name": "--wtv-context-menu-divider-color",
@@ -6442,7 +6434,7 @@
             },
             {
               "name": "--wtv-loading-bg",
-              "description": "Loading overlay background"
+              "description": "Loading overlay veil (tree surface at 80%)"
             },
             {
               "name": "--wtv-tree-min-height",
@@ -6454,7 +6446,7 @@
             },
             {
               "name": "--wtv-empty-zone-bg",
-              "description": "Empty tree drop zone background"
+              "description": "Empty tree drop zone background (→ --base-primary-bg-subtle)"
             },
             {
               "name": "--wtv-empty-zone-radius",
@@ -6478,11 +6470,15 @@
             },
             {
               "name": "--wtv-z-index-dropdown",
-              "description": "Context menu z-index (1000)"
+              "description": "Context menu z-index (→ --base-z-dropdown, 1000)"
+            },
+            {
+              "name": "--wtv-z-index-drop-zones",
+              "description": "Floating drop-zone overlay (→ --base-z-tooltip + 1; standalone 10000)"
             },
             {
               "name": "--wtv-z-index-ghost",
-              "description": "Drag ghost z-index (10000)"
+              "description": "Touch-drag ghost z-index (drop-zone overlay + 1)"
             },
             {
               "name": "--wtv-z-index-overlay",
@@ -6506,214 +6502,6 @@
           "declaration": {
             "name": "WebTreeViewElement",
             "module": "src/web-component.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/ltree-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "getParentPath",
-          "return": {
-            "type": {
-              "text": "string | null"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getRelativePath",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "parentPath",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getPathSegments",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "start",
-              "default": "0",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "count",
-              "default": "1",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getLevel",
-          "return": {
-            "type": {
-              "text": "number"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "getParentPath",
-          "declaration": {
-            "name": "getParentPath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getRelativePath",
-          "declaration": {
-            "name": "getRelativePath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getPathSegments",
-          "declaration": {
-            "name": "getPathSegments",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getLevel",
-          "declaration": {
-            "name": "getLevel",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/string-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "isEmptyString",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "isNotEmptyString",
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "isEmptyString",
-          "declaration": {
-            "name": "isEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "isNotEmptyString",
-          "declaration": {
-            "name": "isNotEmptyString",
-            "module": "src/helpers/string-helpers.ts"
           }
         }
       ]
@@ -7758,7 +7546,7 @@
               "kind": "field",
               "name": "currentHighlight",
               "type": {
-                "text": "{\n    element: HTMLElement;\n    timeoutId: ReturnType<typeof setTimeout>;\n  } | null"
+                "text": "{\r\n    element: HTMLElement;\r\n    timeoutId: ReturnType<typeof setTimeout>;\r\n  } | null"
               },
               "privacy": "private",
               "default": "null"
@@ -7839,7 +7627,7 @@
               "kind": "field",
               "name": "touchDragState",
               "type": {
-                "text": "{\n    node: LTreeNode<any> | null;\n    startX: number;\n    startY: number;\n    isDragging: boolean;\n    /** A long-press landed on a NON-draggable node: we show the held 🚫 badge\n     *  instead of starting a drag, and swallow touchmove so it stays put. */\n    isDenied: boolean;\n    ghostElement: HTMLElement | null;\n    currentDropTarget: LTreeNode<any> | null;\n  }"
+                "text": "{\r\n    node: LTreeNode<any> | null;\r\n    startX: number;\r\n    startY: number;\r\n    isDragging: boolean;\r\n    /** A long-press landed on a NON-draggable node: we show the held 🚫 badge\r\n     *  instead of starting a drag, and swallow touchmove so it stays put. */\r\n    isDenied: boolean;\r\n    ghostElement: HTMLElement | null;\r\n    currentDropTarget: LTreeNode<any> | null;\r\n  }"
               },
               "privacy": "private",
               "default": "{ node: null, startX: 0, startY: 0, isDragging: false, isDenied: false, ghostElement: null, currentDropTarget: null }"
@@ -8039,7 +7827,7 @@
               "kind": "method",
               "name": "_flushNotify",
               "privacy": "private",
-              "description": "Synchronously emit state-change snapshot, bypassing microtask batching.\nUsed when the DOM must be updated before the caller continues (e.g. scrollToPath)."
+              "description": "Synchronously emit state-change snapshot, bypassing microtask batching.\r\nUsed when the DOM must be updated before the caller continues (e.g. scrollToPath)."
             },
             {
               "kind": "field",
@@ -8087,7 +7875,7 @@
               "type": {
                 "text": "Set<string>"
               },
-              "description": "The emitted (policy-projected) selection — what `getSelectedPaths()` and the\n`selection-change` event expose. Equals the canonical set in independent mode\nor under the 'all' policy.",
+              "description": "The emitted (policy-projected) selection — what `getSelectedPaths()` and the\r\n`selection-change` event expose. Equals the canonical set in independent mode\r\nor under the 'all' policy.",
               "readonly": true
             },
             {
@@ -8468,7 +8256,7 @@
                   }
                 }
               ],
-              "description": "Silently sync scroll position without triggering state notification.\nUsed by the renderer's fast synchronous scroll path."
+              "description": "Silently sync scroll position without triggering state notification.\r\nUsed by the renderer's fast synchronous scroll path."
             },
             {
               "kind": "method",
@@ -8512,7 +8300,7 @@
               "type": {
                 "text": "number"
               },
-              "description": "Resolved row height: explicit > measured > 24px default (matches the\n--wtv-node-height token; only used before a real row can be measured).",
+              "description": "Resolved row height: explicit > measured > 24px default (matches the\r\n--wtv-node-height token; only used before a real row can be measured).",
               "readonly": true
             },
             {
@@ -8530,7 +8318,7 @@
               "type": {
                 "text": "LTreeNode<T>[]"
               },
-              "description": "All visible flat nodes (before virtual scroll slicing).\nWhen virtual scroll is active, bypasses the progressive render filter\nbecause virtual scroll already limits rendered nodes to the visible window.",
+              "description": "All visible flat nodes (before virtual scroll slicing).\r\nWhen virtual scroll is active, bypasses the progressive render filter\r\nbecause virtual scroll already limits rendered nodes to the visible window.",
               "readonly": true
             },
             {
@@ -8600,7 +8388,7 @@
                   }
                 }
               ],
-              "description": "Toggle expand/collapse for a node clicked via the toggle UI. Honors the\n`isAccordionExpand` config: when expanding under accordion mode, every\nexpanded sibling (whose `isCollapsible` allows it) is first collapsed\nin a single batch. Programmatic `expandNodes` / `expandAll` callers\nbypass the accordion. Mirrors svelte-treeview Node.svelte's\ntoggleExpanded() flow."
+              "description": "Toggle expand/collapse for a node clicked via the toggle UI. Honors the\r\n`isAccordionExpand` config: when expanding under accordion mode, every\r\nexpanded sibling (whose `isCollapsible` allows it) is first collapsed\r\nin a single batch. Programmatic `expandNodes` / `expandAll` callers\r\nbypass the accordion. Mirrors svelte-treeview Node.svelte's\r\ntoggleExpanded() flow."
             },
             {
               "kind": "method",
@@ -8791,7 +8579,7 @@
                   }
                 }
               ],
-              "description": "Build the shared { path, node, parent, siblings } pointer for a node the tree\nalready holds — gives on* events and clipboard callbacks the same relational\ncontext. Pass the live node (preferred) or just a path (e.g. a pre-removal\nsnapshot, where the node is gone and only the path is known). Missing\nparent/siblings resolve to null/[]."
+              "description": "Build the shared { path, node, parent, siblings } pointer for a node the tree\r\nalready holds — gives on* events and clipboard callbacks the same relational\r\ncontext. Pass the live node (preferred) or just a path (e.g. a pre-removal\r\nsnapshot, where the node is gone and only the path is known). Missing\r\nparent/siblings resolve to null/[]."
             },
             {
               "kind": "method",
@@ -8810,7 +8598,7 @@
                   }
                 }
               ],
-              "description": "The effective top-level set being dragged: when the grabbed node is part of a\nsame-tree multi-highlight, the draggable top-level highlighted subtrees (the\nsame set the multi-drag move loop uses); otherwise just the grabbed node.\nUsed to populate `dragged` on the drag/drop contexts. Call BEFORE a move\nmutates the highlight set."
+              "description": "The effective top-level set being dragged: when the grabbed node is part of a\r\nsame-tree multi-highlight, the draggable top-level highlighted subtrees (the\r\nsame set the multi-drag move loop uses); otherwise just the grabbed node.\r\nUsed to populate `dragged` on the drag/drop contexts. Call BEFORE a move\r\nmutates the highlight set."
             },
             {
               "kind": "method",
@@ -8829,7 +8617,7 @@
                   }
                 }
               ],
-              "description": "The full top-level dragged set as NodeRefs, correct for BOTH same-tree and\ncross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.\nSame-tree reads the live highlight set (nodes resolve). Cross-tree can't see\nthe source's highlight, so it reads the paths the source published on drag\nstart (getDragSet) and builds path-only refs (node/parent null cross-tree);\nfalls back to the lead node alone when no set was published (e.g. touch). Call\nBEFORE a move mutates the highlight set."
+              "description": "The full top-level dragged set as NodeRefs, correct for BOTH same-tree and\r\ncross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.\r\nSame-tree reads the live highlight set (nodes resolve). Cross-tree can't see\r\nthe source's highlight, so it reads the paths the source published on drag\r\nstart (getDragSet) and builds path-only refs (node/parent null cross-tree);\r\nfalls back to the lead node alone when no set was published (e.g. touch). Call\r\nBEFORE a move mutates the highlight set."
             },
             {
               "kind": "method",
@@ -8854,7 +8642,7 @@
                   }
                 }
               ],
-              "description": "Normalize a consumer drag manifest (from beforeDragStartCallback): dedupe and\nguarantee the lead stays (you can prune siblings but not the node under the\ncursor). Descendants are KEPT — moveNodes treats an omitted descendant as a\nhole. Order is preserved (= landing order). (svelte-treeview rc13)"
+              "description": "Normalize a consumer drag manifest (from beforeDragStartCallback): dedupe and\r\nguarantee the lead stays (you can prune siblings but not the node under the\r\ncursor). Descendants are KEPT — moveNodes treats an omitted descendant as a\r\nhole. Order is preserved (= landing order). (svelte-treeview rc13)"
             },
             {
               "kind": "method",
@@ -9039,7 +8827,7 @@
                   }
                 }
               ],
-              "description": "Expand a set of paths into a COMPLETE manifest: every descendant of every\nmember is added. moveNodes/duplicateNodes treat a manifest as authoritative —\na descendant PRESENT rides along, one ABSENT is a hole — so callers that just\nwant whole subtrees (multi-drag, DropGroup routing) must complete their set\nfirst, else every unlisted descendant reads as a hole. (svelte-treeview rc13)"
+              "description": "Expand a set of paths into a COMPLETE manifest: every descendant of every\r\nmember is added. moveNodes/duplicateNodes treat a manifest as authoritative —\r\na descendant PRESENT rides along, one ABSENT is a hole — so callers that just\r\nwant whole subtrees (multi-drag, DropGroup routing) must complete their set\r\nfirst, else every unlisted descendant reads as a hole. (svelte-treeview rc13)"
             },
             {
               "kind": "method",
@@ -9058,7 +8846,7 @@
                   }
                 }
               ],
-              "description": "Complete a set of top-level dragged refs into the flattened manifest of live\nNodeRefs (every descendant included) for beforeDragStartCallback's\nctx.dragged. Same-tree only (nodes are live at drag start)."
+              "description": "Complete a set of top-level dragged refs into the flattened manifest of live\r\nNodeRefs (every descendant included) for beforeDragStartCallback's\r\nctx.dragged. Same-tree only (nodes are live at drag start)."
             },
             {
               "kind": "method",
@@ -9088,7 +8876,7 @@
                   }
                 }
               ],
-              "description": "Batch-move a COMPLETE manifest of nodes under a target, honoring \"holes\".\nA descendant ABSENT from the manifest is left behind by re-homing it to its\nmoved root's OLD parent (it physically stays put). Every source is resolved to\na live ref up front, so per-move path reassignment can't stale later items.\nCross-tree nodes (treeId mismatch) are skipped. Roots (manifest entries whose\nparent isn't in the manifest) chain in landing order: first at target/position,\nthe rest 'after'. (svelte-treeview rc13)"
+              "description": "Batch-move a COMPLETE manifest of nodes under a target, honoring \"holes\".\r\nA descendant ABSENT from the manifest is left behind by re-homing it to its\r\nmoved root's OLD parent (it physically stays put). Every source is resolved to\r\na live ref up front, so per-move path reassignment can't stale later items.\r\nCross-tree nodes (treeId mismatch) are skipped. Roots (manifest entries whose\r\nparent isn't in the manifest) chain in landing order: first at target/position,\r\nthe rest 'after'. (svelte-treeview rc13)"
             },
             {
               "kind": "method",
@@ -9132,13 +8920,13 @@
                   }
                 }
               ],
-              "description": "Batch-DUPLICATE a COMPLETE manifest — the copy-side twin of moveNodes. A\ndescendant ABSENT from the manifest is a hole, but a copy has nothing to\nre-home, so the hole is simply NOT copied. Roots chain in source order under\nthe target; each node's data flows through `transform` (the INPUT transform;\nreturn null to skip). `sourceTree` defaults to this tree — pass another tree's\nLtree to copy its live nodes in (cross-tree). (svelte-treeview rc13)"
+              "description": "Batch-DUPLICATE a COMPLETE manifest — the copy-side twin of moveNodes. A\r\ndescendant ABSENT from the manifest is a hole, but a copy has nothing to\r\nre-home, so the hole is simply NOT copied. Roots chain in source order under\r\nthe target; each node's data flows through `transform` (the INPUT transform;\r\nreturn null to skip). `sourceTree` defaults to this tree — pass another tree's\r\nLtree to copy its live nodes in (cross-tree). (svelte-treeview rc13)"
             },
             {
               "kind": "field",
               "name": "_defaultCopyTransform",
               "privacy": "private",
-              "description": "Default INPUT transform for a copy-drop when the consumer supplies no\npasteNodeTransformationCallback: uniquify the id so the duplicate doesn't\ncollide with the original."
+              "description": "Default INPUT transform for a copy-drop when the consumer supplies no\r\npasteNodeTransformationCallback: uniquify the id so the duplicate doesn't\r\ncollide with the original."
             },
             {
               "kind": "method",
@@ -9163,7 +8951,7 @@
                   }
                 }
               ],
-              "description": "Execute a beforeDropCallback `DropGroup[]` (content-addressed routing). Each\ngroup's paths (whole-subtree roots) are completed to a manifest and moved to\nthe group's target/position via moveNodes; targets + sources are resolved to\nlive refs up front so per-move path reassignment can't stale them. Cross-tree\npaths (not in this tree) are skipped for the consumer to place. Fires drop once\nwith all placed nodes. (svelte-treeview rc13)"
+              "description": "Execute a beforeDropCallback `DropGroup[]` (content-addressed routing). Each\r\ngroup's paths (whole-subtree roots) are completed to a manifest and moved to\r\nthe group's target/position via moveNodes; targets + sources are resolved to\r\nlive refs up front so per-move path reassignment can't stale them. Cross-tree\r\npaths (not in this tree) are skipped for the consumer to place. Fires drop once\r\nwith all placed nodes. (svelte-treeview rc13)"
             },
             {
               "kind": "method",
@@ -9300,7 +9088,7 @@
                   }
                 }
               ],
-              "description": "Programmatically update the highlight set.\n- `mode='replace'`: replaces the set with `path`\n- `mode='toggle'`: toggles `path` in/out of the set\n- `mode='range'`: range-selects from focused node to `path`\nPass `{ silent: true }` to skip the `highlightChangeCallback` / mirror callbacks."
+              "description": "Programmatically update the highlight set.\r\n- `mode='replace'`: replaces the set with `path`\r\n- `mode='toggle'`: toggles `path` in/out of the set\r\n- `mode='range'`: range-selects from focused node to `path`\r\nPass `{ silent: true }` to skip the `highlightChangeCallback` / mirror callbacks."
             },
             {
               "kind": "method",
@@ -9325,7 +9113,7 @@
                   }
                 }
               ],
-              "description": "Add nodes to the highlight set (additive — existing highlights are kept).\nUse setHighlightedPaths() to replace the whole set instead.\nPass `{ silent: true }` to skip `highlightChangeCallback`."
+              "description": "Add nodes to the highlight set (additive — existing highlights are kept).\r\nUse setHighlightedPaths() to replace the whole set instead.\r\nPass `{ silent: true }` to skip `highlightChangeCallback`."
             },
             {
               "kind": "method",
@@ -9350,7 +9138,7 @@
                   }
                 }
               ],
-              "description": "Replace the entire highlight set with the given paths.\nEquivalent to clearHighlight() + highlightNodes(paths).\nPass `{ silent: true }` to skip `highlightChangeCallback`."
+              "description": "Replace the entire highlight set with the given paths.\r\nEquivalent to clearHighlight() + highlightNodes(paths).\r\nPass `{ silent: true }` to skip `highlightChangeCallback`."
             },
             {
               "kind": "method",
@@ -9376,7 +9164,7 @@
                   }
                 }
               ],
-              "description": "Clear highlights. Pass `paths` to clear only those nodes, or omit to clear all.\nPass `{ silent: true }` to skip `highlightChangeCallback`."
+              "description": "Clear highlights. Pass `paths` to clear only those nodes, or omit to clear all.\r\nPass `{ silent: true }` to skip `highlightChangeCallback`."
             },
             {
               "kind": "method",
@@ -9433,7 +9221,7 @@
                   }
                 }
               ],
-              "description": "Highlight every visible node. Pass `{ silent: true }` to skip\n`highlightChangeCallback`."
+              "description": "Highlight every visible node. Pass `{ silent: true }` to skip\r\n`highlightChangeCallback`."
             },
             {
               "kind": "method",
@@ -9502,7 +9290,7 @@
                   }
                 }
               ],
-              "description": "Internal: do the click-driven highlight work. Called by both the\nclick handler (with `modifiers` from the event) and the public\n`highlightNode(path, mode, options)` (which builds modifiers from\nthe mode string)."
+              "description": "Internal: do the click-driven highlight work. Called by both the\r\nclick handler (with `modifiers` from the event) and the public\r\n`highlightNode(path, mode, options)` (which builds modifiers from\r\nthe mode string)."
             },
             {
               "kind": "method",
@@ -9543,7 +9331,7 @@
                   }
                 }
               ],
-              "description": "Project the canonical checked set through the active `cascadeSelectPolicy` to\nproduce the EMITTED selection. Pure — reads visualState/isSelected off the live\ntree, never mutates. Independent mode OR 'all' → the canonical set as-is;\n'leaves' → only checked leaf nodes; 'rolled-up' → a fully-checked selectable\nbranch collapses to its root (stop descending), indeterminate branches descend\nto emit their checked bits. (svelte-treeview rc14)"
+              "description": "Project the canonical checked set through the active `cascadeSelectPolicy` to\r\nproduce the EMITTED selection. Pure — reads visualState/isSelected off the live\r\ntree, never mutates. Independent mode OR 'all' → the canonical set as-is;\r\n'leaves' → only checked leaf nodes; 'rolled-up' → a fully-checked selectable\r\nbranch collapses to its root (stop descending), indeterminate branches descend\r\nto emit their checked bits. (svelte-treeview rc14)"
             },
             {
               "kind": "method",
@@ -9554,7 +9342,7 @@
                   "text": "void"
                 }
               },
-              "description": "When `shouldShowCheckboxes` is false, the highlight set IS the selection set —\nmirror it onto `_selectedPaths` so consumers reading the bindable\ncheckbox state see what the user picked via the mouse. With checkboxes\nvisible the two sets stay independent. Mirrors svelte-treeview rc09."
+              "description": "When `shouldShowCheckboxes` is false, the highlight set IS the selection set —\r\nmirror it onto `_selectedPaths` so consumers reading the bindable\r\ncheckbox state see what the user picked via the mouse. With checkboxes\r\nvisible the two sets stay independent. Mirrors svelte-treeview rc09."
             },
             {
               "kind": "method",
@@ -9574,7 +9362,7 @@
                   "text": "Set<string>"
                 }
               },
-              "description": "The EMITTED (policy-projected) checkbox set — the minimal cover in cascade\n'rolled-up' mode, the leaves in 'leaves', or the full canonical set in 'all' /\nindependent mode. Use the `selectedPaths` getter for the raw canonical set."
+              "description": "The EMITTED (policy-projected) checkbox set — the minimal cover in cascade\r\n'rolled-up' mode, the leaves in 'leaves', or the full canonical set in 'all' /\r\nindependent mode. Use the `selectedPaths` getter for the raw canonical set."
             },
             {
               "kind": "method",
@@ -9617,7 +9405,7 @@
                   }
                 }
               ],
-              "description": "Apply a checked/unchecked state to the given paths, expanding to\ndescendants in cascade mode and recomputing ancestor visual states.\nReturns whether the selected set actually changed. Does not notify."
+              "description": "Apply a checked/unchecked state to the given paths, expanding to\r\ndescendants in cascade mode and recomputing ancestor visual states.\r\nReturns whether the selected set actually changed. Does not notify."
             },
             {
               "kind": "method",
@@ -9653,7 +9441,7 @@
                   }
                 }
               ],
-              "description": "Check a single node (cascades to descendants in cascade mode).\nPass `{ silent: true }` to skip `selectionChangeCallback`."
+              "description": "Check a single node (cascades to descendants in cascade mode).\r\nPass `{ silent: true }` to skip `selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9678,7 +9466,7 @@
                   }
                 }
               ],
-              "description": "Check multiple nodes (additive — existing checks are kept).\nUse setSelectedPaths() to replace the whole set instead.\nPass `{ silent: true }` to skip `selectionChangeCallback`."
+              "description": "Check multiple nodes (additive — existing checks are kept).\r\nUse setSelectedPaths() to replace the whole set instead.\r\nPass `{ silent: true }` to skip `selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9703,7 +9491,7 @@
                   }
                 }
               ],
-              "description": "Replace the entire checkbox set with the given paths.\nEquivalent to clearSelection() + selectNodes(paths).\nPass `{ silent: true }` to skip `selectionChangeCallback`."
+              "description": "Replace the entire checkbox set with the given paths.\r\nEquivalent to clearSelection() + selectNodes(paths).\r\nPass `{ silent: true }` to skip `selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9722,7 +9510,7 @@
                   }
                 }
               ],
-              "description": "Check every selectable node. Pass `{ silent: true }` to skip\n`selectionChangeCallback`."
+              "description": "Check every selectable node. Pass `{ silent: true }` to skip\r\n`selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9747,7 +9535,7 @@
                   }
                 }
               ],
-              "description": "Uncheck a single node (cascades to descendants in cascade mode).\nPass `{ silent: true }` to skip `selectionChangeCallback`."
+              "description": "Uncheck a single node (cascades to descendants in cascade mode).\r\nPass `{ silent: true }` to skip `selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9773,7 +9561,7 @@
                   }
                 }
               ],
-              "description": "Clear checkbox selection. Pass `paths` to uncheck only those nodes, or omit\nto clear all. Pass `{ silent: true }` to skip `selectionChangeCallback`."
+              "description": "Clear checkbox selection. Pass `paths` to uncheck only those nodes, or omit\r\nto clear all. Pass `{ silent: true }` to skip `selectionChangeCallback`."
             },
             {
               "kind": "method",
@@ -9798,7 +9586,7 @@
                   }
                 }
               ],
-              "description": "Move focus to a node. `_options` is accepted for signature parity;\nfocus changes have no dedicated change callback."
+              "description": "Move focus to a node. `_options` is accepted for signature parity;\r\nfocus changes have no dedicated change callback."
             },
             {
               "kind": "method",
@@ -9843,7 +9631,7 @@
                   }
                 }
               ],
-              "description": "Handle checkbox toggle. Honors checkboxMode (cascade/independent),\nmulti-highlight bulk toggle, beforeCheckboxToggleCallback interceptor.\nMirrors svelte-treeview rc06+ flow."
+              "description": "Handle checkbox toggle. Honors checkboxMode (cascade/independent),\r\nmulti-highlight bulk toggle, beforeCheckboxToggleCallback interceptor.\r\nMirrors svelte-treeview rc06+ flow."
             },
             {
               "kind": "method",
@@ -9854,7 +9642,7 @@
                   "text": "void"
                 }
               },
-              "description": "Re-derive every node's visualState + isSelected when checkboxMode changes\nat runtime. Switching to 'independent' PROMOTES an indeterminate [-] node to\nfully checked; switching to 'cascade' recomputes parent dashes from their\ndescendants. Without this the indeterminate marker (an imperative DOM prop)\nsticks after a mode flip. (svelte-treeview parity — guarded by the ported\ne2e/checkbox-mode.spec.ts.) No-op before the tree is built."
+              "description": "Re-derive every node's visualState + isSelected when checkboxMode changes\r\nat runtime. Switching to 'independent' PROMOTES an indeterminate [-] node to\r\nfully checked; switching to 'cascade' recomputes parent dashes from their\r\ndescendants. Without this the indeterminate marker (an imperative DOM prop)\r\nsticks after a mode flip. (svelte-treeview parity — guarded by the ported\r\ne2e/checkbox-mode.spec.ts.) No-op before the tree is built."
             },
             {
               "kind": "method",
@@ -9892,7 +9680,7 @@
                   }
                 }
               ],
-              "description": "Walk up from a node and set visualState on each ancestor based on its\ndescendant selection. Syncs `isSelected` on the ancestors (all\ndescendants selected → ancestor selected)."
+              "description": "Walk up from a node and set visualState on each ancestor based on its\r\ndescendant selection. Syncs `isSelected` on the ancestors (all\r\ndescendants selected → ancestor selected)."
             },
             {
               "kind": "method",
@@ -9911,7 +9699,7 @@
                   }
                 }
               ],
-              "description": "Compute the visualState (selected / notSelected / indeterminate) for a\nnode based on its descendants' `isSelected`. Leaves use the node's own\n`isSelected`."
+              "description": "Compute the visualState (selected / notSelected / indeterminate) for a\r\nnode based on its descendants' `isSelected`. Leaves use the node's own\r\n`isSelected`."
             },
             {
               "kind": "method",
@@ -10091,7 +9879,7 @@
                   "type": {
                     "text": "((data: T, ctx: NodeTransformContext<T>) => T | null) | null"
                   },
-                  "description": "Optional per-node transform (overrides pasteNodeTransformationCallback);\nreturn null to SKIP a node (skipping a root skips its subtree)."
+                  "description": "Optional per-node transform (overrides pasteNodeTransformationCallback);\r\nreturn null to SKIP a node (skipping a root skips its subtree)."
                 },
                 {
                   "name": "position",
@@ -10143,7 +9931,7 @@
                   "text": "string[]"
                 }
               },
-              "description": "Paths a keyboard shortcut should act on: the highlight set if any, else the\nfocused node, else empty. Shared by the built-in copy/cut/delete handling."
+              "description": "Paths a keyboard shortcut should act on: the highlight set if any, else the\r\nfocused node, else empty. Shared by the built-in copy/cut/delete handling."
             },
             {
               "kind": "method",
@@ -10181,7 +9969,7 @@
                   }
                 }
               ],
-              "description": "Remove nodes (and their descendants) from the tree. Defaults to the current\nselection (highlight set, else focused node). Runs `beforeDeleteCallback` first\n(narrow or block), removes only top-level subtrees, clears highlight + focus of\nanything removed, and fires `onDelete` with PRE-REMOVAL node snapshots."
+              "description": "Remove nodes (and their descendants) from the tree. Defaults to the current\r\nselection (highlight set, else focused node). Runs `beforeDeleteCallback` first\r\n(narrow or block), removes only top-level subtrees, clears highlight + focus of\r\nanything removed, and fires `onDelete` with PRE-REMOVAL node snapshots."
             },
             {
               "kind": "method",
@@ -10199,7 +9987,7 @@
                   }
                 }
               ],
-              "description": "Built-in keyboard shortcuts, gated by `shouldHandleKeyboardShortcuts` (default\non). Returns true when it consumed the event (caller should preventDefault +\nstop). A consumer `onTreeKeydown` runs BEFORE this, so it can override/suppress.\n  Ctrl/Cmd+C copy · Ctrl/Cmd+X cut · Ctrl/Cmd+V paste (into focused node / root) ·\n  Delete remove selection · Escape cancel cut. Classic CUA aliases too:\n  Ctrl+Insert copy · Shift+Insert paste · Shift+Delete cut."
+              "description": "Built-in keyboard shortcuts, gated by `shouldHandleKeyboardShortcuts` (default\r\non). Returns true when it consumed the event (caller should preventDefault +\r\nstop). A consumer `onTreeKeydown` runs BEFORE this, so it can override/suppress.\r\n  Ctrl/Cmd+C copy · Ctrl/Cmd+X cut · Ctrl/Cmd+V paste (into focused node / root) ·\r\n  Delete remove selection · Escape cancel cut. Classic CUA aliases too:\r\n  Ctrl+Insert copy · Shift+Insert paste · Shift+Delete cut."
             },
             {
               "kind": "method",
@@ -10217,7 +10005,7 @@
                   }
                 }
               ],
-              "description": "Full keydown entry point for the renderer: runs the consumer `onTreeKeydown`\ninterceptor FIRST (return true to suppress everything), then the built-in\nshortcuts. Returns true when the event was consumed (caller should\npreventDefault + stop; skip its own navigation handling)."
+              "description": "Full keydown entry point for the renderer: runs the consumer `onTreeKeydown`\r\ninterceptor FIRST (return true to suppress everything), then the built-in\r\nshortcuts. Returns true when the event was consumed (caller should\r\npreventDefault + stop; skip its own navigation handling)."
             },
             {
               "kind": "method",
@@ -10246,7 +10034,7 @@
                   "default": "0"
                 }
               ],
-              "description": "Collect a node and all its descendants into a ClipboardEntry. Descendants are\nparent-first with paths relative to the source node (INCLUDING the leading\nseparator, e.g. \".2\" under \"1\"). The optional copy transform cleans each\nsnapshot before it lands on the shared clipboard — it gets the SAME\nNodeTransformContext the input transform sees (phase: 'output', target: null)."
+              "description": "Collect a node and all its descendants into a ClipboardEntry. Descendants are\r\nparent-first with paths relative to the source node (INCLUDING the leading\r\nseparator, e.g. \".2\" under \"1\"). The optional copy transform cleans each\r\nsnapshot before it lands on the shared clipboard — it gets the SAME\r\nNodeTransformContext the input transform sees (phase: 'output', target: null)."
             },
             {
               "kind": "method",
@@ -10621,7 +10409,7 @@
                   "name": "options",
                   "optional": true,
                   "type": {
-                    "text": "{\n      expand?: boolean;\n      expandTarget?: boolean;\n      highlight?: boolean;\n      scrollOptions?: ScrollIntoViewOptions;\n      containerScroll?: boolean;\n      containerElement?: HTMLElement;\n    }"
+                    "text": "{\r\n      expand?: boolean;\r\n      expandTarget?: boolean;\r\n      highlight?: boolean;\r\n      scrollOptions?: ScrollIntoViewOptions;\r\n      containerScroll?: boolean;\r\n      containerElement?: HTMLElement;\r\n    }"
                   }
                 }
               ]
@@ -10672,7 +10460,7 @@
                   "text": "void"
                 }
               },
-              "description": "Re-apply the controller-owned runtime selection onto freshly (re)inserted\nnodes. `_selectedPaths` is the source of truth and survives a data re-insert;\nthe per-node `isSelected` flag does NOT (fresh nodes default to false), and\nthe cascade `visualState` is derived. So after every insertArray we push\n`_selectedPaths` back onto `node.isSelected` and recompute `visualState` from\nit — otherwise a config-triggered re-insert silently drops the checkbox\nselection + indeterminate dashes. (web-grid-style: primary state lives off\nthe nodes; derived state is recomputed.) The renderer reads `checked` straight\nfrom `snapshot.selectedPaths`, so it's already rebuild-proof; this keeps the\ncascade computation + the indeterminate marker correct too."
+              "description": "Re-apply the controller-owned runtime selection onto freshly (re)inserted\r\nnodes. `_selectedPaths` is the source of truth and survives a data re-insert;\r\nthe per-node `isSelected` flag does NOT (fresh nodes default to false), and\r\nthe cascade `visualState` is derived. So after every insertArray we push\r\n`_selectedPaths` back onto `node.isSelected` and recompute `visualState` from\r\nit — otherwise a config-triggered re-insert silently drops the checkbox\r\nselection + indeterminate dashes. (web-grid-style: primary state lives off\r\nthe nodes; derived state is recomputed.) The renderer reads `checked` straight\r\nfrom `snapshot.selectedPaths`, so it's already rebuild-proof; this keeps the\r\ncascade computation + the indeterminate marker correct too."
             },
             {
               "kind": "method",
@@ -10683,7 +10471,7 @@
                   "text": "Set<string>"
                 }
               },
-              "description": "Snapshot which nodes are currently expanded — call BEFORE a data re-insert\n(which resets isExpanded to the expandLevel default) so the user's manual\nexpand/collapse survives. Paths are stable across a re-insert."
+              "description": "Snapshot which nodes are currently expanded — call BEFORE a data re-insert\r\n(which resets isExpanded to the expandLevel default) so the user's manual\r\nexpand/collapse survives. Paths are stable across a re-insert."
             },
             {
               "kind": "method",
@@ -10702,7 +10490,7 @@
                   }
                 }
               ],
-              "description": "Re-apply a captured expansion set onto freshly (re)inserted nodes. Paths not\npresent in the new data are simply ignored. Unlike selection/highlight (whose\nsource of truth is a controller-owned set the renderer reads), expansion is\nconsumed by the LTree's own flattening, so it stays on the node — we just make\nthe re-insert lossless by restoring it."
+              "description": "Re-apply a captured expansion set onto freshly (re)inserted nodes. Paths not\r\npresent in the new data are simply ignored. Unlike selection/highlight (whose\r\nsource of truth is a controller-owned set the renderer reads), expansion is\r\nconsumed by the LTree's own flattening, so it stays on the node — we just make\r\nthe re-insert lossless by restoring it."
             },
             {
               "kind": "method",
@@ -10774,7 +10562,7 @@
                   }
                 }
               ],
-              "description": "Manual double-click detection, called by the renderer for every genuine\nplain (no Ctrl/Shift) UI click. The flat diff reconciler patches a row's\nattributes on the first click (focus/highlight bumps `_rev`), so the\nbrowser's native `dblclick` can't be trusted. Returns `true` when this\nclick completes a double within the 400ms window — the caller then\nconsumes the click (returns early) so the gesture reads as a single open\nrather than a re-toggle. Fires `onNodeDoubleClick` for every clickBehavior;\n`select` mode additionally toggles expand/collapse on the double (the other\nmodes already toggle on single click)."
+              "description": "Manual double-click detection, called by the renderer for every genuine\r\nplain (no Ctrl/Shift) UI click. The flat diff reconciler patches a row's\r\nattributes on the first click (focus/highlight bumps `_rev`), so the\r\nbrowser's native `dblclick` can't be trusted. Returns `true` when this\r\nclick completes a double within the 400ms window — the caller then\r\nconsumes the click (returns early) so the gesture reads as a single open\r\nrather than a re-toggle. Fires `onNodeDoubleClick` for every clickBehavior;\r\n`select` mode additionally toggles expand/collapse on the double (the other\r\nmodes already toggle on single click)."
             },
             {
               "kind": "method",
@@ -10865,7 +10653,7 @@
                   "text": "string[]"
                 }
               },
-              "description": "Pick out the \"top-level highlighted\" subset of `highlightedPaths`:\nevery path whose nearest highlighted ancestor is NOT in the set.\nDescendants whose ancestor is also highlighted are absorbed — they\nride along inside the ancestor's subtree during multi-drag."
+              "description": "Pick out the \"top-level highlighted\" subset of `highlightedPaths`:\r\nevery path whose nearest highlighted ancestor is NOT in the set.\r\nDescendants whose ancestor is also highlighted are absorbed — they\r\nride along inside the ancestor's subtree during multi-drag."
             },
             {
               "kind": "field",
@@ -10970,7 +10758,7 @@
                   }
                 }
               ],
-              "description": "Build the NodeDropContext and fire onNodeDrop. `dropped` is the nodes the\nlibrary placed (null when it didn't — cross-tree or shouldAutoHandle*=false)."
+              "description": "Build the NodeDropContext and fire onNodeDrop. `dropped` is the nodes the\r\nlibrary placed (null when it didn't — cross-tree or shouldAutoHandle*=false)."
             },
             {
               "kind": "method",
@@ -11190,7 +10978,7 @@
                   }
                 }
               ],
-              "description": "\"Can't move this\" — a locked node was long-pressed. Fires onNodeDragDenied\nalways; the built-in held 🚫 badge + double-buzz only when\nshouldIndicateUndraggable. Torn down on release via _clearDragDenied."
+              "description": "\"Can't move this\" — a locked node was long-pressed. Fires onNodeDragDenied\r\nalways; the built-in held 🚫 badge + double-buzz only when\r\nshouldIndicateUndraggable. Torn down on release via _clearDragDenied."
             },
             {
               "kind": "method",
@@ -11210,7 +10998,7 @@
                   }
                 }
               ],
-              "description": "\"Can't drop here\" — the target-side twin. Fires onNodeDropDenied always; the\nbuilt-in indicator (haptic + a brief 🚫 flash on the refusing target) only\nwhen shouldIndicateUndraggable. Transient (a drop is a discrete moment), so\nit auto-clears after a short beat."
+              "description": "\"Can't drop here\" — the target-side twin. Fires onNodeDropDenied always; the\r\nbuilt-in indicator (haptic + a brief 🚫 flash on the refusing target) only\r\nwhen shouldIndicateUndraggable. Transient (a drop is a discrete moment), so\r\nit auto-clears after a short beat."
             },
             {
               "kind": "method",
@@ -11236,6 +11024,42 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "_domScope",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "ParentNode"
+                }
+              },
+              "description": "The tree's own DOM, for lookups by path: the .wtv__container (inside the\r\nshadow root for <web-treeview>), so they neither miss a shadow-rendered tree\r\nnor hit another tree with the same paths."
+            },
+            {
+              "kind": "method",
+              "name": "_elementFromPoint",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Element | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "y",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ],
+              "description": "Hit-test from the tree's root node — document.elementFromPoint stops at\r\nthe shadow host and never returns a row."
             },
             {
               "kind": "method",
@@ -11440,6 +11264,214 @@
       "path": "src/controller/types.ts",
       "declarations": [],
       "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/ltree-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "getParentPath",
+          "return": {
+            "type": {
+              "text": "string | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getRelativePath",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "parentPath",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getPathSegments",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "start",
+              "default": "0",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "count",
+              "default": "1",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getLevel",
+          "return": {
+            "type": {
+              "text": "number"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "getParentPath",
+          "declaration": {
+            "name": "getParentPath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getRelativePath",
+          "declaration": {
+            "name": "getRelativePath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getPathSegments",
+          "declaration": {
+            "name": "getPathSegments",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getLevel",
+          "declaration": {
+            "name": "getLevel",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/string-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "isEmptyString",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "isNotEmptyString",
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "isEmptyString",
+          "declaration": {
+            "name": "isEmptyString",
+            "module": "src/helpers/string-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isNotEmptyString",
+          "declaration": {
+            "name": "isNotEmptyString",
+            "module": "src/helpers/string-helpers.ts"
+          }
+        }
+      ]
     },
     {
       "kind": "javascript-module",
@@ -12430,7 +12462,7 @@
                   }
                 }
               ],
-              "description": "Forward the `theme` prop onto `.wtv__container` as `data-theme=\"...\"`.\nThe dark-mode partial keys off this attribute for per-instance overrides."
+              "description": "Forward the `theme` prop onto `.wtv__container` as `data-theme=\"...\"`.\r\nThe dark-mode partial keys off this attribute for per-instance overrides."
             },
             {
               "kind": "field",
@@ -12481,7 +12513,7 @@
               "kind": "field",
               "name": "_onDocumentDragEnd",
               "privacy": "private",
-              "description": "Catches dragend from OTHER trees (cross-tree) and Esc cancellations.\ndragend fires on the source element; when that element lives in a\ndifferent shadow root the event never reaches our bodyEl."
+              "description": "Catches dragend from OTHER trees (cross-tree) and Esc cancellations.\r\ndragend fires on the source element; when that element lives in a\r\ndifferent shadow root the event never reaches our bodyEl."
             },
             {
               "kind": "field",
@@ -12513,7 +12545,7 @@
                   "text": "void"
                 }
               },
-              "description": "Fast synchronous virtual scroll update.\nBypasses the controller's queueMicrotask + state-change event pipeline.\nComputes the visible window, updates DOM positioning, and reconciles\nonly the node list — skips drag/drop/context-menu/debug updates."
+              "description": "Fast synchronous virtual scroll update.\r\nBypasses the controller's queueMicrotask + state-change event pipeline.\r\nComputes the visible window, updates DOM positioning, and reconciles\r\nonly the node list — skips drag/drop/context-menu/debug updates."
             },
             {
               "kind": "method",
@@ -12676,7 +12708,7 @@
                   }
                 }
               ],
-              "description": "(Re)build the toggle-icon class list from scratch based on node.hasChildren.\nCalled by BOTH _createNodeElement and updateNode so a node crossing the\nleaf↔folder line always gets the right marker. updateNode used to only touch\nthe `expanded` class when hasChildren was already true, so a node that GAINED\nchildren (e.g. a cross-tree child-drop) kept its empty --leaf-none slot (no\ndisclosure glyph), and a folder that LOST all its children (a move out) kept a\nstale --expand glyph. Resetting className first clears any stale icon/expanded\nclasses."
+              "description": "(Re)build the toggle-icon class list from scratch based on node.hasChildren.\r\nCalled by BOTH _createNodeElement and updateNode so a node crossing the\r\nleaf↔folder line always gets the right marker. updateNode used to only touch\r\nthe `expanded` class when hasChildren was already true, so a node that GAINED\r\nchildren (e.g. a cross-tree child-drop) kept its empty --leaf-none slot (no\r\ndisclosure glyph), and a folder that LOST all its children (a move out) kept a\r\nstale --expand glyph. Resetting className first clears any stale icon/expanded\r\nclasses."
             },
             {
               "kind": "method",
@@ -12707,7 +12739,7 @@
                   }
                 }
               ],
-              "description": "Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a\nrow, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an\n<i> (`<i class=\"wtv__node-icon {value}\">`, FontAwesome-friendly), overridable via\nrenderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.\nReserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content."
+              "description": "Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a\r\nrow, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an\r\n<i> (`<i class=\"wtv__node-icon {value}\">`, FontAwesome-friendly), overridable via\r\nrenderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.\r\nReserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content."
             },
             {
               "kind": "method",
@@ -12732,7 +12764,7 @@
                   }
                 }
               ],
-              "description": "Build the canonical checkbox: a single styled native <input class=\"wtv__checkbox\">\nwhose ::after renders the checkmark/dash mask (see tree.css). The <input> IS the\nbox (appearance:none) — the same single-element contract as web-multiselect's\n.ms__checkbox and svelte-treeview's .stv__checkbox, themeable via --base-icon-check\n/ --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked=\"mixed\"\n(NOT the native .indeterminate DOM property) so it survives the diff reconciler +\nvirtual-scroll recycling. The delegated click handler preventDefaults so only the\ncontroller toggles the state."
+              "description": "Build the canonical checkbox: a single styled native <input class=\"wtv__checkbox\">\r\nwhose ::after renders the checkmark/dash mask (see tree.css). The <input> IS the\r\nbox (appearance:none) — the same single-element contract as web-multiselect's\r\n.ms__checkbox and svelte-treeview's .stv__checkbox, themeable via --base-icon-check\r\n/ --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked=\"mixed\"\r\n(NOT the native .indeterminate DOM property) so it survives the diff reconciler +\r\nvirtual-scroll recycling. The delegated click handler preventDefaults so only the\r\ncontroller toggles the state."
             },
             {
               "kind": "method",
@@ -12763,7 +12795,7 @@
                   }
                 }
               ],
-              "description": "Apply checked / indeterminate to a .wtv__checkbox <input>. Indeterminate wins:\nit shows the dash (modifier class + aria-checked=\"mixed\") and leaves the native\n`checked` false so the dash glyph, not the tick, renders."
+              "description": "Apply checked / indeterminate to a .wtv__checkbox <input>. Indeterminate wins:\r\nit shows the dash (modifier class + aria-checked=\"mixed\") and leaves the native\r\n`checked` false so the dash glyph, not the tick, renders."
             },
             {
               "kind": "method",
@@ -12818,7 +12850,7 @@
                   }
                 }
               ],
-              "description": "Apply the data-driven nodeClass / nodeContentClass hooks to a row.\nTracks the previously-applied classes in `data-*` attributes so a\nre-render removes stale classes before adding the new ones (the diff\nreconciler reuses row elements rather than recreating them)."
+              "description": "Apply the data-driven nodeClass / nodeContentClass hooks to a row.\r\nTracks the previously-applied classes in `data-*` attributes so a\r\nre-render removes stale classes before adding the new ones (the diff\r\nreconciler reuses row elements rather than recreating them)."
             },
             {
               "kind": "method",
@@ -12887,7 +12919,7 @@
                   }
                 }
               ],
-              "description": "Create / refresh / tear down the hover-focus tooltip for a row. The direct\nanalog of web-multiselect's attachOptionTooltips, built on the shared core\ncreateTooltip (portal, autoUpdate, followCursor, data-theme inherit). Recreated\non every node update so content tracks data (rename / _rev bump); a no-op +\nteardown when disabled, no callback, or empty content. Mounts into the shadow\ncontainer so it inherits the injected --wtv-tooltip-* tokens + data-theme."
+              "description": "Create / refresh / tear down the hover-focus tooltip for a row. The direct\r\nanalog of web-multiselect's attachOptionTooltips, built on the shared core\r\ncreateTooltip (portal, autoUpdate, followCursor, data-theme inherit). Recreated\r\non every node update so content tracks data (rename / _rev bump); a no-op +\r\nteardown when disabled, no callback, or empty content. Mounts into the shadow\r\ncontainer so it inherits the injected --wtv-tooltip-* tokens + data-theme."
             },
             {
               "kind": "method",

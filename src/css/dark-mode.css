@@ -9,7 +9,7 @@
 
    Resolution precedence (highest specificity wins):
      per-instance :host([data-theme]) / .wtv__container[data-theme]
-       → framework ancestor class (data-theme / data-bs-theme / .dark)
+       → page / theme-source signal :host([data-context-theme])
          → OS preference via @media
 
    Wins vs Strategy A (variable-redeclaration):
@@ -42,23 +42,22 @@
 }
 
 /* =============================================================================
-   SIGNAL #2 — Framework theme classes (Bootstrap 5.3+, Tailwind, generic)
+   SIGNAL #2 — Page theme signal (Bootstrap 5.3+, Tailwind, generic)
+   =============================================================================
+   Detected ONCE per page by @keenmate/web-components-core (1.0.0-rc13+):
+   `data-theme`, `data-bs-theme`, `.dark` / `.light` on <html>, then <body>;
+   or the element named by the `theme-source` attribute (`closest` = nearest
+   ancestor with a signal); or forced for every component with
+   `setThemeMode()`. BlissElement mirrors the result onto the host as
+   `data-context-theme`. Replaces `:host-context()`, which Firefox doesn't
+   support and Safari only partly. `:host([...])` outranks the bare `:host`
+   in the @media rule above, so a page set to light beats an OS set to dark.
    ============================================================================= */
-:host-context([data-theme="dark"]),
-:host-context([data-bs-theme="dark"]),
-:host-context(.dark),
-[data-theme="dark"] .wtv__container,
-[data-bs-theme="dark"] .wtv__container,
-.dark .wtv__container {
+:host([data-context-theme="dark"]) {
   color-scheme: dark;
 }
 
-:host-context([data-theme="light"]),
-:host-context([data-bs-theme="light"]),
-:host-context(.light),
-[data-theme="light"] .wtv__container,
-[data-bs-theme="light"] .wtv__container,
-.light .wtv__container {
+:host([data-context-theme="light"]) {
   color-scheme: light;
 }
 

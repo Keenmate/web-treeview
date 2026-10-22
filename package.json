@@ -48,10 +48,11 @@
     "clean": "rimraf dist --glob \"*.tgz\"",
     "clean:dist": "rimraf dist",
     "prepublishOnly": "npm run build",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "playwright test --workers=4",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium firefox webkit"
   },
   "keywords": [
     "web-component",
@@ -79,7 +80,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
-    "@keenmate/web-components-core": "^1.0.0-rc12",
+    "@keenmate/web-components-core": "^1.0.0-rc13",
     "flexsearch": "^0.8.212"
   },
   "devDependencies": {

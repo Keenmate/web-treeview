@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: help setup dev build package publish publish-dry clean clean-dist preview lint test test-e2e test-e2e-ui test-e2e-headed test-e2e-install check-version update-deps install-dev image-build image-run image-stop image-clean
+.PHONY: help setup dev build package publish publish-dry clean clean-dist preview lint test test-e2e test-e2e-all test-e2e-ui test-e2e-headed test-e2e-install check-version update-deps install-dev image-build image-run image-stop image-clean
 
 # Per-developer overrides (container runner, image name, port). Optional: the
 # leading `-` means it's fine if the file is absent. Defaults below apply when a
@@ -67,8 +67,11 @@ lint: ## Run linter (if configured)
 
 test: test-e2e ## Run all tests (alias for test-e2e)
 
-test-e2e: ## Run Playwright e2e tests (headless)
+test-e2e: ## Run Playwright e2e tests (headless, chromium)
 	npm run test:e2e
+
+test-e2e-all: ## Run e2e on chromium, firefox and webkit
+	npm run test:e2e:all
 
 test-e2e-ui: ## Open Playwright Test UI for debugging
 	npm run test:e2e:ui
@@ -76,7 +79,7 @@ test-e2e-ui: ## Open Playwright Test UI for debugging
 test-e2e-headed: ## Run Playwright e2e tests with visible browser
 	npm run test:e2e:headed
 
-test-e2e-install: ## Download Chromium browser binary (one-time setup)
+test-e2e-install: ## Download Chromium, Firefox and WebKit binaries (one-time setup)
 	npm run test:e2e:install
 
 check-version: ## Show current package version

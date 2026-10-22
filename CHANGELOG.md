@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Dark / light from the page works in Firefox and Safari.** `dark-mode.css` no longer uses
+  `:host-context()` (Firefox doesn't support it, Safari only partly — the whole selector list was
+  dropped there, so an OS set to dark beat `<html data-theme="light">`). It reads the
+  `data-context-theme` attribute that `@keenmate/web-components-core` 1.0.0-rc13 sets on the host:
+  the page's theme (`data-theme`, `data-bs-theme`, `.dark` / `.light` on `<html>` or `<body>`) is
+  detected once and shared by every Keenmate component. The per-instance `theme` / `data-theme`
+  still wins. The dead light-DOM selectors (`[data-theme] .wtv__container`, which can't match
+  across the shadow boundary) are gone. **Behaviour change:** a signal on a wrapper element is read
+  only with `theme-source="closest"` (or a selector) on the tree; `setThemeMode()` from the core
+  forces every component. Core dependency `^1.0.0-rc13`.
+
 - **More of the look comes from the `--base-*` 2.0 contract** (each keeps its standalone
   fallback, so the tree looks the same without the contract):
   - Context menu: `--base-dropdown-border` (was a 1px divider line) and `--base-dropdown-bg`

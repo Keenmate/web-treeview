@@ -23,9 +23,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *      Triggers the @media :host rule inside the shadow stylesheet, which
  *      re-declares --wtv-bg-color with the dark fallback (#1a1a1a).
  *
- * Ancestor signals ([data-theme], [data-bs-theme], .dark on the page) do NOT
- * pierce Shadow DOM — the web-component would need to mirror them onto its
- * host element. Tracked as a follow-up; skipped tests at the bottom.
+ *   D. Page signals ([data-theme], [data-bs-theme], .dark on <html>) and
+ *      theme-source — mirrored onto the host as data-context-theme by
+ *      @keenmate/web-components-core (tests 8–13).
  */
 
 const PAGE = '/test/theming.html';
@@ -114,11 +114,54 @@ test.describe('Theming — library default reacts to OS preference via :host @me
   });
 });
 
-// ── Ancestor signals: gap in current web-component ──────────────────────────
-// The svelte build also covers [data-theme="dark"], [data-bs-theme="dark"] and
-// .dark on an ancestor. Those require the web-component to mirror the ancestor
-// signal onto its host (so the inner .wtv__container[data-theme="dark"] rule
-// can fire). Not implemented yet — tracked as a follow-up.
-test.skip('8. Ancestor [data-theme="dark"] — needs host mirror (TODO)', () => {});
-test.skip('9. Ancestor [data-bs-theme="dark"] — needs host mirror (TODO)', () => {});
-test.skip('10. Ancestor .dark — needs host mirror (TODO)', () => {});
+// ── Page / theme-source signals (web-components-core theme context) ─────────
+// Core detects data-theme / data-bs-theme / .dark / .light on <html> or <body>
+// once per page and mirrors it onto every host as data-context-theme, which
+// dark-mode.css reads. No :host-context(), so these hold in Firefox and WebKit.
+test.describe('Theming — page signal via data-context-theme', () => {
+  const pageSignals: [string, (html: HTMLElement) => void][] = [
+    ['<html data-theme="dark">', (h) => h.setAttribute('data-theme', 'dark')],
+    ['<html data-bs-theme="dark">', (h) => h.setAttribute('data-bs-theme', 'dark')],
+    ['<html class="dark">', (h) => h.classList.add('dark')],
+  ];
+  pageSignals.forEach(([label, apply], i) => {
+    test(`${8 + i}. Page ${label} → library dark default on baseline tree`, async ({ page }) => {
+      await page.goto(PAGE);
+      await page.locator('h1').first().waitFor();
+      await page.evaluate(`(${apply.toString()})(document.documentElement)`);
+      const card = scenarioCard(page, 'baseline-light');
+      await expect(card.locator('web-treeview')).toHaveAttribute('data-context-theme', 'dark');
+      await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(DARK_BG);
+    });
+  });
+
+  test('11. Page data-theme="light" beats OS dark', async ({ browser }) => {
+    const context = await browser.newContext({ colorScheme: 'dark' });
+    const page = await context.newPage();
+    await page.goto(PAGE);
+    await page.locator('h1').first().waitFor();
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    const tree = ltreeContainer(scenarioCard(page, 'baseline-light'));
+    await expect.poll(() => backgroundColor(tree)).toBe(LIGHT_BG);
+    await context.close();
+  });
+
+  test('12. Wrapper data-theme="dark" + theme-source="closest" → dark', async ({ page }) => {
+    await page.goto(PAGE);
+    await page.locator('h1').first().waitFor();
+    const card = scenarioCard(page, 'baseline-light');
+    await card.evaluate((el) => {
+      el.setAttribute('data-theme', 'dark');
+      el.querySelector('web-treeview')!.setAttribute('theme-source', 'closest');
+    });
+    await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(DARK_BG);
+  });
+
+  test('13. Per-instance theme="light" wins over page dark', async ({ page }) => {
+    await page.goto(PAGE);
+    await page.locator('h1').first().waitFor();
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    const tree = ltreeContainer(scenarioCard(page, 'per-instance-light'));
+    await expect.poll(() => backgroundColor(tree)).toBe(LIGHT_BG);
+  });
+});

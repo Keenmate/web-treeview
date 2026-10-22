@@ -1367,7 +1367,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** Create / refresh / tear down the hover-focus tooltip for a row. The direct
    *  analog of web-multiselect's attachOptionTooltips, built on the shared core
-   *  createTooltip (portal, autoUpdate, followCursor, data-theme inherit). Recreated
+   *  createTooltip (portal, autoUpdate, shouldFollowCursor, data-theme inherit). Recreated
    *  on every node update so content tracks data (rename / _rev bump); a no-op +
    *  teardown when disabled, no callback, or empty content. Mounts into the shadow
    *  container so it inherits the injected --wtv-tooltip-* tokens + data-theme. */
@@ -1385,7 +1385,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       placement: cfg.tooltipPlacement,
       offset: cfg.tooltipOffset,
       delay: cfg.tooltipDelay,
-      followCursor: cfg.tooltipFollowCursor,
+      shouldFollowCursor: cfg.tooltipFollowCursor,
       cssClass: 'wtv__tooltip',
       visibleClass: 'wtv__tooltip--visible'
     });

@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Built on `@keenmate/web-components-core` 1.0.0-rc15** (its naming-review renames: `shouldReflect`
+  in the input table, `shouldFollowCursor` for row tooltips). No change to the element's
+  attributes, properties or events.
 - **BREAKING: *highlighted* is now *selected*, the checkbox's *selected* is now *checked*.**
   The names of `@keenmate/base-css-variables` 2.0 and web-multiselect. No deprecated aliases —
   `selectedPaths` keeps its type but changes meaning, so search for every old name.

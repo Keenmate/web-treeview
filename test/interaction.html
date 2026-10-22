@@ -58,8 +58,8 @@
             </div>
 
             <div class="output"><p class="output-label">Focused Node</p><pre id="out-1-focused">(none)</pre></div>
-            <div class="output"><p class="output-label">Highlighted</p><pre id="out-1-highlighted">(none)</pre></div>
-            <div class="output"><p class="output-label">Selected / Checked</p><pre id="out-1-selected">(none)</pre></div>
+            <div class="output"><p class="output-label">Selected Paths</p><pre id="out-1-selected">(none)</pre></div>
+            <div class="output"><p class="output-label">Checked Paths</p><pre id="out-1-checked">(none)</pre></div>
         </div>
 
         <!-- Card 2: Multi-Select -->
@@ -74,7 +74,7 @@
             </div>
 
             <div class="output"><p class="output-label">Focused Node</p><pre id="out-2-focused">(none)</pre></div>
-            <div class="output"><p class="output-label">Highlighted</p><pre id="out-2-highlighted">(none)</pre></div>
+            <div class="output"><p class="output-label">Selected Paths</p><pre id="out-2-selected">(none)</pre></div>
         </div>
 
         <!-- Card 3: Keyboard Navigation -->
@@ -170,18 +170,18 @@
                 const node = e.detail.focusedNode;
                 setText('out-1-focused', node ? `${node.data?.name} (${node.path})` : '(none)');
             });
-            tree1.addEventListener('highlight-change', (e) => {
-                setText('out-1-highlighted', pathsText(e.detail.paths));
-            });
             tree1.addEventListener('selection-change', (e) => {
                 setText('out-1-selected', pathsText(e.detail.paths));
             });
+            tree1.addEventListener('checked-change', (e) => {
+                setText('out-1-checked', pathsText(e.detail.paths));
+            });
 
             document.getElementById('clear-1').addEventListener('click', () => {
-                tree1.clearHighlight?.();
-                tree1.deselectAll?.();
-                setText('out-1-highlighted', '(none)');
+                tree1.clearSelection?.();
+                tree1.uncheckAll?.();
                 setText('out-1-selected', '(none)');
+                setText('out-1-checked', '(none)');
             });
 
             // ── Card 2: Multi-Select ──
@@ -192,13 +192,13 @@
                 const node = e.detail.focusedNode;
                 setText('out-2-focused', node ? `${node.data?.name} (${node.path})` : '(none)');
             });
-            tree2.addEventListener('highlight-change', (e) => {
-                setText('out-2-highlighted', pathsText(e.detail.paths));
+            tree2.addEventListener('selection-change', (e) => {
+                setText('out-2-selected', pathsText(e.detail.paths));
             });
 
             document.getElementById('clear-2').addEventListener('click', () => {
-                tree2.clearHighlight?.();
-                setText('out-2-highlighted', '(none)');
+                tree2.clearSelection?.();
+                setText('out-2-selected', '(none)');
             });
 
             // ── Card 3: Keyboard Navigation ──

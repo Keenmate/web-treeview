@@ -144,7 +144,7 @@
             <div class="controls">
                 <button onclick="addTree()">Add a tree</button>
                 <button class="secondary" onclick="removeTree()">Remove last</button>
-                <button class="btn-outline" onclick="logAllExpanded()">Log every instance's expanded/selected state</button>
+                <button class="btn-outline" onclick="logAllExpanded()">Log every instance's expanded/selected/checked state</button>
             </div>
 
             <div id="dynamic-hosts"></div>
@@ -393,8 +393,9 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
                 id: el.id,
                 expanded: [...el.getExpandedPaths()].length,
                 selected: [...el.getSelectedPaths()].length,
+                checked: [...el.getCheckedPaths()].length,
             }));
-            console.log('%c🌲 expanded/selected across all live instances', 'color:#059669;font-weight:bold;');
+            console.log('%c🌲 expanded/selected/checked across all live instances', 'color:#059669;font-weight:bold;');
             console.table(rows);
         };
 

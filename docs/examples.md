@@ -84,17 +84,17 @@ Out of the box with no configuration in single mode; opt into multi mode for Ctr
 
 ```javascript
 // Programmatic multi-select
-tree.highlightNodes(['1.1', '1.2', '1.3']);
-tree.selectAll();
-tree.clearHighlight();
+tree.selectNodes(['1.1', '1.2', '1.3']);
+tree.checkAll();
+tree.clearSelection();
 
 // Query
-const nodes = tree.getHighlightedNodes();
-const paths = tree.getHighlightedPaths(); // Set<string>
+const nodes = tree.getSelectedNodes();
+const paths = tree.getSelectedPaths(); // Set<string>
 
 // Listen for changes
-tree.addEventListener('highlight-change', (e) => {
-  console.log('Highlighted:', e.detail.paths);
+tree.addEventListener('selection-change', (e) => {
+  console.log('Selected:', e.detail.paths);
 });
 ```
 
@@ -130,11 +130,11 @@ See `examples-interaction.html` for interactive demos.
 ## Clipboard
 
 ```javascript
-tree.copyNodes();             // Copy highlighted nodes
+tree.copyNodes();             // Copy selected nodes
 tree.cutNodes();              // Cut (dimmed via --wtv-cut-opacity)
 const result = tree.pasteNodes('1.2'); // Paste at target
 // result = { success, count, skipped, error?, entries?, operation? }
-tree.deleteNodes();           // Delete highlighted (or specified) nodes
+tree.deleteNodes();           // Delete selected (or specified) nodes
 tree.cancelCut();             // Cancel a pending cut
 
 // Built-in keyboard shortcuts when the tree has focus:
@@ -143,7 +143,7 @@ tree.cancelCut();             // Cancel a pending cut
 //
 // onTreeKeydown runs first and can intercept any key — return true to suppress
 // both the default navigation and the built-in shortcuts:
-// tree.onTreeKeydown = (ctx) => { /* ctx = { event, focusedNode, highlightedNodes, controller } */ };
+// tree.onTreeKeydown = (ctx) => { /* ctx = { event, focusedNode, selectedNodes, controller } */ };
 ```
 
 Cross-tree paste: the clipboard sits at the package level, so `cutNodes` on one tree and `pasteNodes` on another moves the nodes between trees.

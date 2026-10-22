@@ -116,15 +116,15 @@
      NODE STATE STYLING — each interactive state owns ONE visual channel so
      they compose instead of fighting (the old mix of outset rings + outlines
      + full-width backgrounds read as big / noisy / overlapping):
-       • hover + selection-highlight → BACKGROUND (selection wins; hover is
-         suppressed under a highlighted row so only the stronger tint shows)
+       • hover + selected → BACKGROUND (selected wins; hover is
+         suppressed under a selected row so only the stronger tint shows)
        • cursor-focus → OUTLINE: a thin INSET outline ring (outline + negative
          outline-offset) — paints inside the pill, never spills onto neighbours
          or the scroll edge, and is its own paint channel so the box-shadow
          presets / scroll flash can't wipe it. Matches web-multiselect's
          focused option.
        • checked → the CHECKBOX only (no row treatment); style checked rows via
-         the `selectedNodeClass` prop if you want more
+         the `checkedNodeClass` prop if you want more
      Selection reads the shared --base-selected-* tokens and focus the shared
      --base-focused-* tokens (@keenmate/base-css-variables), so ONE knob themes
      the tree + multiselect identically; the inline fallbacks keep the tree
@@ -132,16 +132,12 @@
      Each default look is a FALLBACK: set the matching *NodeClass prop and it
      steps aside. Mirrors svelte-treeview's unified state model.
      ────────────────────────────────────────────────────────────────────── */
-  /* Selected = the click / Ctrl / Shift-click set (base-css-variables 2.0.0-rc03 naming;
-     the API still calls it "highlighted" until the selected → checked rename).
-     Deprecated: the old --wtv-highlighted-bg / -bg-hover / -text / -ring names are still
-     honoured when set on the element — they sit first in each chain — and go away with
-     the API rename. */
-  --wtv-selected-bg: var(--wtv-highlighted-bg, var(--base-selected-bg, var(--base-primary-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-accent-color) 10%, transparent), color-mix(in srgb, var(--wtv-accent-color) 20%, transparent)))));
-  --wtv-selected-bg-hover: var(--wtv-highlighted-bg-hover, var(--base-selected-bg-hover, var(--wtv-selected-bg)));
-  --wtv-selected-text: var(--wtv-highlighted-text, var(--base-selected-text-color, currentColor));
+  /* Selected = the click / Ctrl / Shift-click set (selectedPaths). */
+  --wtv-selected-bg: var(--base-selected-bg, var(--base-primary-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-accent-color) 10%, transparent), color-mix(in srgb, var(--wtv-accent-color) 20%, transparent))));
+  --wtv-selected-bg-hover: var(--base-selected-bg-hover, var(--wtv-selected-bg));
+  --wtv-selected-text: var(--base-selected-text-color, currentColor);
   /* Outline shorthand, drawn as an INSET outline (see --wtv-focused-outline-offset). */
-  --wtv-selected-ring: var(--wtv-highlighted-ring, var(--base-selected-outline, none));
+  --wtv-selected-ring: var(--base-selected-outline, none);
   --wtv-focused-bg: var(--base-focused-bg, transparent);
   --wtv-focused-text: var(--base-focused-text-color, currentColor);
   /* Outline shorthand for the default focus ring — drawn INSET. Set `none` to
@@ -149,12 +145,12 @@
   --wtv-focused-ring: var(--base-focused-outline, var(--base-outline-width, 1px) solid var(--wtv-accent-color));
   /* = −(ring width), following --base-outline-width so a thicker ring stays inset. */
   --wtv-focused-outline-offset: calc(-1 * var(--base-outline-width, 1px));
-  /* Opt-in `--highlight-fill` flavor (Explorer-style strong fill) — only used by
-     the .wtv__node-content--highlight-fill class, not the default state. */
-  --wtv-highlight-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
-  --wtv-highlight-color: inherit;
-  /* Hairline ring used by the --highlight-border / --highlight-glow presets. */
-  --wtv-highlight-ring-color: color-mix(in srgb, var(--wtv-accent-color) 45%, transparent);
+  /* Opt-in `--selected-fill` flavor (Explorer-style strong fill) — only used by
+     the .wtv__node-content--selected-fill class, not the default state. */
+  --wtv-selected-fill-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
+  --wtv-selected-fill-color: inherit;
+  /* Hairline ring used by the --selected-border / --selected-glow presets. */
+  --wtv-selected-preset-ring-color: color-mix(in srgb, var(--wtv-accent-color) 45%, transparent);
 
   /* ==========================================================================
      TYPOGRAPHY SCALE (with theme-designer integration)
@@ -200,14 +196,14 @@
      density (mirrors svelte-treeview's --stv-node-indent-per-level). */
   --wtv-indent-size: calc(var(--wtv-rem) * 1.6); /* 16px */
   /* Node row padding (mirrors svelte-treeview's --stv-node-content-padding).
-     SYMMETRIC (was `… 0` on the left) so the highlight/hover/focus background —
+     SYMMETRIC (was `… 0` on the left) so the selected/hover/focus background —
      painted on .wtv__node-content — insets evenly like svelte's rounded pill,
      instead of a flush-left block hard against the toggle. Applied on
      .wtv__node-content. */
   --wtv-node-padding: var(--wtv-spacing-sm) var(--wtv-spacing-md);
   /* Minimum row height, applied as min-height on the ROW (.wtv__node). Compact by
      default (matches svelte-treeview's ~natural row height) so it doesn't inflate
-     the highlight, which is painted on the centered .wtv__node-content. Raise it
+     the selected tint, which is painted on the centered .wtv__node-content. Raise it
      for roomier / touch-friendly rows. Keep roughly in sync with the virtual
      scroller's pre-measurement fallback (resolvedRowHeight ?? 24). */
   --wtv-node-height: calc(var(--wtv-rem) * 2.4);  /* 24px */
@@ -277,7 +273,7 @@
      every component. (Radius is flat 0.3, NOT --wtv-border-radius-sm, matching
      ms — a theme's sm radius shouldn't reshape the small checkbox.) */
   --wtv-checkbox-size: calc(var(--wtv-rem) * 1.6);  /* 16px */
-  /* Space between the checkbox and the node pill, so a highlight tint / focus
+  /* Space between the checkbox and the node pill, so a selected tint / focus
      ring never butts against the box. */
   --wtv-checkbox-gap: calc(var(--wtv-rem) * 0.6);
   /* Box scale — the shared --base-checkbox-scale contract (base-css-variables).

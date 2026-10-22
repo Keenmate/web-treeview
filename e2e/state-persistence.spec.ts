@@ -5,16 +5,16 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *
  * Bug: every property/attribute change on <web-treeview> resends the full config,
  * which re-triggers insertArray (a full data re-insert with fresh node objects).
- * Runtime state that lived ON the nodes (highlight, checkbox selection, expansion)
+ * Runtime state that lived ON the nodes (selection, checked state, expansion)
  * was silently reset to defaults by that re-insert.
  *
- * Fix: highlight + selection are read from controller-owned sets the renderer
- * consults (snapshot.highlightedPaths / selectedPaths — survive the re-insert);
+ * Fix: selected + checked are read from controller-owned sets the renderer
+ * consults (snapshot.selectedPaths / checkedPaths — survive the re-insert);
  * expansion is captured before the re-insert and re-applied to the fresh nodes.
  * This spec forces a re-insert (re-setting a member) and asserts nothing resets.
  */
 
-const PAGE = '/test/highlight-focus.html';
+const PAGE = '/test/selection-focus.html';
 
 function tree(page: Page) {
   return page.locator('.wtv__container').first();
@@ -22,11 +22,11 @@ function tree(page: Page) {
 function node(page: Page, path: string): Locator {
   return tree(page).locator(`.wtv__node[data-tree-path="${path}"]`).first();
 }
-function isHighlighted(page: Page, path: string): Promise<boolean> {
+function isSelected(page: Page, path: string): Promise<boolean> {
   return node(page, path)
     .locator('.wtv__node-content')
     .first()
-    .evaluate((el) => [...el.classList].some((c) => c.includes('highlight')));
+    .evaluate((el) => [...el.classList].some((c) => c === 'wtv__node-content--selected'));
 }
 function isExpanded(page: Page, path: string): Promise<boolean> {
   return node(page, path).getAttribute('data-expanded').then((v) => v === 'true');
@@ -67,13 +67,13 @@ test.describe('runtime state survives a config-change re-insert', () => {
     await expect(node(page, '1')).toBeVisible();
   });
 
-  test('highlight survives a re-insert', async ({ page }) => {
-    await page.evaluate(() => (document.getElementById('tree') as any).setHighlightedPaths(['1']));
-    await expect.poll(() => isHighlighted(page, '1')).toBe(true);
+  test('selection survives a re-insert', async ({ page }) => {
+    await page.evaluate(() => (document.getElementById('tree') as any).setSelectedPaths(['1']));
+    await expect.poll(() => isSelected(page, '1')).toBe(true);
 
     await forceRebuild(page);
 
-    expect(await isHighlighted(page, '1')).toBe(true); // was lost pre-refactor
+    expect(await isSelected(page, '1')).toBe(true); // was lost pre-refactor
   });
 
   test('expansion survives a re-insert', async ({ page }) => {

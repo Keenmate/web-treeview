@@ -23,14 +23,14 @@
                 show-checkboxes="true"
                 checkbox-mode="independent"
                 is-selectable-member="selectable"
-                is-selected-member="selected"></web-treeview>
+                is-checked-member="selected"></web-treeview>
         </div>
 
         <dl class="readouts">
-            <dt>selected-paths-count:</dt>
-            <dd data-testid="selected-paths-count">0</dd>
-            <dt>selected-paths-list:</dt>
-            <dd data-testid="selected-paths-list"></dd>
+            <dt>checked-paths-count:</dt>
+            <dd data-testid="checked-paths-count">0</dd>
+            <dt>checked-paths-list:</dt>
+            <dd data-testid="checked-paths-list"></dd>
         </dl>
     </main>
 
@@ -58,17 +58,17 @@
             tree.isSorted = true;
             tree.data = data;
 
-            const countEl = document.querySelector('[data-testid="selected-paths-count"]');
-            const listEl = document.querySelector('[data-testid="selected-paths-list"]');
+            const countEl = document.querySelector('[data-testid="checked-paths-count"]');
+            const listEl = document.querySelector('[data-testid="checked-paths-list"]');
 
             function refresh() {
-                const paths = [...tree.getSelectedPaths()].sort();
+                const paths = [...tree.getCheckedPaths()].sort();
                 countEl.textContent = String(paths.length);
                 listEl.textContent = paths.join(',');
             }
 
-            tree.addEventListener('selection-change', refresh);
-            // Initial seed from isSelectedMember is set during construction;
+            tree.addEventListener('checked-change', refresh);
+            // Initial seed from isCheckedMember is set during construction;
             // emit a synthetic refresh on first frame so the initial readout matches.
             requestAnimationFrame(refresh);
         });

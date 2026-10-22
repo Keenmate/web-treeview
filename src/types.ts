@@ -20,10 +20,10 @@ export type {
   NodeConfig,
   ClickBehavior,
   CheckboxMode,
-  CascadeSelectPolicy,
+  CascadeCheckPolicy,
   SelectionModifiers,
   RangeSelectionMode,
-  HighlightMode,
+  SelectMode,
   TreeMutationOptions,
   TreeControllerConfig,
   TreeControllerSnapshot,
@@ -64,7 +64,7 @@ import type { DragDropMode, DropOperation, ContextMenuItem, ContextMenuEntry } f
 import type {
   ClickBehavior,
   RangeSelectionMode,
-  HighlightMode,
+  SelectMode,
   TreeMutationOptions,
   NodeEventContext,
   NodeDragContext,
@@ -97,7 +97,7 @@ export interface TreeViewConfig<T = any> {
   parentPathMember?: string | null;
   levelMember?: string | null;
   isExpandedMember?: string | null;
-  isSelectedMember?: string | null;
+  isCheckedMember?: string | null;
   isDraggableMember?: string | null;
   isDropAllowedMember?: string | null;
   hasChildrenMember?: string | null;
@@ -150,18 +150,18 @@ export interface TreeViewConfig<T = any> {
    *  inherit from the page (OS preference, framework classes, etc.). */
   theme?: 'dark' | 'light' | null;
   bodyClass?: string | null;
-  /** CSS class applied to every node in the highlight set (Ctrl/Shift+click). */
-  highlightedNodeClass?: string | null;
+  /** CSS class applied to every node in the selected set (Ctrl/Shift+click). */
+  selectedNodeClass?: string | null;
   /** CSS class applied to the single focused node. */
   focusedNodeClass?: string | null;
-  /** CSS class applied to every checked (selectedPaths) node — the checkbox is the
+  /** CSS class applied to every checked (checkedPaths) node — the checkbox is the
    *  default signal, this is opt-in extra styling for checked rows. */
-  selectedNodeClass?: string | null;
+  checkedNodeClass?: string | null;
   dragOverNodeClass?: string | null;
   /** CSS class for the dragged source row (the dimmed node left in place while its ghost
    *  follows the pointer). When set, REPLACES the built-in `.wtv__node-content--dragged`
    *  visual (opacity + left-anchored scale). Tune the default via `--wtv-dragged-opacity` /
-   *  `--wtv-dragged-scale` instead of replacing it. Mirrors `highlightedNodeClass`. */
+   *  `--wtv-dragged-scale` instead of replacing it. Mirrors `selectedNodeClass`. */
   draggedNodeClass?: string | null;
   /** Enable hover/focus tooltips on node rows (the direct analog of web-multiselect's
    *  option tooltips). Content from `getNodeTooltipCallback`; no content ⇒ no tooltip.
@@ -222,13 +222,13 @@ export interface TreeViewConfig<T = any> {
   // Bindable properties
   searchText?: string | null;
   /** Single focused node (click, arrow keys). Distinct from the multi-select
-   *  highlight set. */
+   *  selected set. */
   focusedNode?: LTreeNode<T> | null;
-  /** Multi-select highlight set (Ctrl/Shift+click). */
-  highlightedPaths?: Set<string>;
-  /** Checkbox / data-state selection set. When `shouldShowCheckboxes` is false,
-   *  the controller mirrors `highlightedPaths` into this set. */
+  /** Multi-select selected set (Ctrl/Shift+click). */
   selectedPaths?: Set<string>;
+  /** Checkbox / data-state checked set. When `shouldShowCheckboxes` is false,
+   *  the controller mirrors `selectedPaths` into this set. */
+  checkedPaths?: Set<string>;
 
   // Loading
   isLoading?: boolean | null;
@@ -238,7 +238,7 @@ export interface TreeViewConfig<T = any> {
   getSearchValueCallback?: (node: LTreeNode<T>) => string;
   getIsExpandedCallback?: (node: LTreeNode<T>) => boolean;
   getIsSelectableCallback?: (node: LTreeNode<T>) => boolean;
-  getIsSelectedCallback?: (node: LTreeNode<T>) => boolean;
+  getIsCheckedCallback?: (node: LTreeNode<T>) => boolean;
   getIsDraggableCallback?: (node: LTreeNode<T>) => boolean;
   getIsDropAllowedCallback?: (node: LTreeNode<T>) => boolean;
   getIsCollapsibleCallback?: (node: LTreeNode<T>) => boolean;
@@ -251,7 +251,7 @@ export interface TreeViewConfig<T = any> {
   contextMenuXOffset?: number | null;
   contextMenuYOffset?: number | null;
 
-  // Selection model (rc06+: focusedNode / highlightedPaths / selectedPaths)
+  // Selection model (rc06+: focusedNode / selectedPaths / checkedPaths)
   /** `'single'` (default) — Ctrl/Shift+click degrade to plain click.
    *  `'multi'` — Ctrl+click toggles, Shift+click range-extends. */
   selectionMode?: 'single' | 'multi';
@@ -259,17 +259,17 @@ export interface TreeViewConfig<T = any> {
   shouldShowCheckboxes?: boolean;
   /** `'independent'` (default) — checkbox state is per-node; toggling a parent
    *  does NOT cascade to descendants. `'cascade'` — toggling a parent cascades
-   *  to every descendant; partial selection shows an indeterminate state on
+   *  to every descendant; a partially checked subtree shows an indeterminate state on
    *  the parent. */
   checkboxMode?: 'independent' | 'cascade';
   /** Which paths the selection EMITS in cascade mode (a projection of the canonical
-   *  checked set, exposed by `getSelectedPaths()` + the `selection-change` event).
+   *  checked set, exposed by `getCheckedPaths()` + the `checked-change` event).
    *  ONLY applies in cascade mode. `'rolled-up'` (default) — minimal cover (a
    *  fully-checked subtree collapses to its root); `'leaves'` — only checked leaf
    *  nodes; `'all'` — every fully-checked node. */
-  cascadeSelectPolicy?: 'rolled-up' | 'leaves' | 'all';
+  cascadeCheckPolicy?: 'rolled-up' | 'leaves' | 'all';
   /** When `true`, plain clicks on a selectable node toggle its checkbox
-   *  instead of focusing/highlighting. Requires `shouldShowCheckboxes=true`. */
+   *  instead of focusing/selecting. Requires `shouldShowCheckboxes=true`. */
   shouldClickToggleCheckbox?: boolean;
   /** Interceptor invoked before applying a checkbox toggle. Return `false`
    *  to cancel, return a `string[]` to override which paths are affected,
@@ -280,10 +280,10 @@ export interface TreeViewConfig<T = any> {
     affectedPaths: string[]
   ) => boolean | string[] | void;
   rangeSelectionMode?: RangeSelectionMode;
-  /** Fires on changes to the checkbox / data-state selection set (selectedPaths). */
+  /** Fires on changes to the checkbox / data-state checked set (checkedPaths). */
+  onCheckedChange?: (ctx: SelectionChangeContext<T>) => void;
+  /** Fires on changes to the selected set (Ctrl/Shift+click, arrow keys). */
   onSelectionChange?: (ctx: SelectionChangeContext<T>) => void;
-  /** Fires on changes to the highlight set (Ctrl/Shift+click, arrow keys). */
-  onHighlightChange?: (ctx: SelectionChangeContext<T>) => void;
 
   // Debug
   shouldDisplayDebugInformation?: boolean | null;
@@ -432,26 +432,26 @@ export interface TreeViewMethods<T = any> {
   replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string };
   deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 
-  // Highlight set (UI multi-select — Ctrl/Shift+click)
-  highlightNode(path: string, mode?: HighlightMode, options?: TreeMutationOptions): void;
-  highlightNodes(paths: string[], options?: TreeMutationOptions): void;
-  setHighlightedPaths(paths: string[], options?: TreeMutationOptions): void;
-  highlightAll(options?: TreeMutationOptions): void;
-  clearHighlight(paths?: string[], options?: TreeMutationOptions): void;
-  getHighlightedNodes(): LTreeNode<T>[];
-  getHighlightedPaths(): Set<string>;
-  isNodeHighlighted(path: string): boolean;
-
-  // Selection set (checkbox / data state)
-  selectNode(path: string, options?: TreeMutationOptions): void;
+  // Selected set (UI multi-select — Ctrl/Shift+click)
+  selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;
   setSelectedPaths(paths: string[], options?: TreeMutationOptions): void;
   selectAll(options?: TreeMutationOptions): void;
-  deselectNode(path: string, options?: TreeMutationOptions): void;
   clearSelection(paths?: string[], options?: TreeMutationOptions): void;
   getSelectedNodes(): LTreeNode<T>[];
   getSelectedPaths(): Set<string>;
   isNodeSelected(path: string): boolean;
+
+  // Checked set (checkbox / data state)
+  checkNode(path: string, options?: TreeMutationOptions): void;
+  checkNodes(paths: string[], options?: TreeMutationOptions): void;
+  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void;
+  checkAll(options?: TreeMutationOptions): void;
+  uncheckNode(path: string, options?: TreeMutationOptions): void;
+  clearChecked(paths?: string[], options?: TreeMutationOptions): void;
+  getCheckedNodes(): LTreeNode<T>[];
+  getCheckedPaths(): Set<string>;
+  isNodeChecked(path: string): boolean;
 
   // Focus (single cursor)
   focusNode(path: string, options?: TreeMutationOptions): void;
@@ -507,8 +507,8 @@ export interface TreeEventMap<T = any> {
   'data-changed': CustomEvent<{ data: T[] }>;
   'focused-node-changed': CustomEvent<{ focusedNode: LTreeNode<T> | null }>;
   'search-text-changed': CustomEvent<{ searchText: string }>;
-  'highlight-change': CustomEvent<SelectionChangeContext<T>>;
   'selection-change': CustomEvent<SelectionChangeContext<T>>;
+  'checked-change': CustomEvent<SelectionChangeContext<T>>;
   'tree-changed': CustomEvent<void>;
 }
 

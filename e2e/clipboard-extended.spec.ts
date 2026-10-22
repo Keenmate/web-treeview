@@ -39,7 +39,7 @@ test.describe('Built-in Delete', () => {
     await goto(page);
     await expect(nodeAt(page, '1.2')).toBeVisible();
 
-    // Click to focus/highlight Notes.txt, then press Delete.
+    // Click to focus/selection Notes.txt, then press Delete.
     await contentOf(nodeAt(page, '1.2')).click();
     await page.keyboard.press('Delete');
 

@@ -25,6 +25,10 @@ import {
 } from '@keenmate/web-components-core';
 import type { NodeRenderContext } from '../controller/types';
 
+/** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
+ *  anything else (emoji, symbol, text) is rendered as the element's text. */
+const ICON_CLASS_LIST = /^\s*-?[A-Za-z_][\w-]*(\s+-?[A-Za-z_][\w-]*)*\s*$/;
+
 /** Add space-separated class string to an element (classList.add doesn't support spaces) */
 function addClasses(el: HTMLElement, classes: string): void {
   for (const cls of classes.split(' ')) {
@@ -85,7 +89,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // Mirrors web-multiselect's option tooltips.
   private tooltips = new Map<string, TooltipHandle>();
   // The node _rev each live tooltip was built at. A reconcile pass that ISN'T a data
-  // change (virtual-scroll reposition, focus/highlight toggle) keeps the same handle,
+  // change (virtual-scroll reposition, focus/selection toggle) keeps the same handle,
   // so the core createTooltip's follow-cursor rect — seeded on mouseenter — survives a
   // stationary hover instead of being dropped by a needless destroy+recreate.
   private tooltipRevs = new Map<string, number>();
@@ -273,7 +277,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
             if (fresh) {
               this._syncCheckboxState(
                 checkbox,
-                fresh.isSelected,
+                fresh.isChecked,
                 fresh.visualState === 'indeterminate'
               );
             }
@@ -321,7 +325,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
         // shouldClickToggleCheckbox: a plain click on a selectable node with
         // checkboxes shown toggles the checkbox instead of running the
-        // normal click/highlight flow. Expand-on-click still fires.
+        // normal click/select flow. Expand-on-click still fires.
         if (
           this.controller.shouldClickToggleCheckbox &&
           this.lastNodeConfig?.shouldShowCheckboxes &&
@@ -402,15 +406,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       case 'a':
         if (ctrl) {
           event.preventDefault();
-          this.controller.highlightAll();
+          this.controller.selectAll();
         }
         break;
       case 'Escape':
         // handleKeydown already consumed Escape when a cut was pending
         // (cancel-cut). Reaching here means no pending cut, so clear the
-        // highlight set. Checkboxes are deliberate state and stay put.
-        if (this.controller.getHighlightedPaths().size > 0) {
-          this.controller.clearHighlight();
+        // selected set. Checkboxes are deliberate state and stay put.
+        if (this.controller.getSelectedPaths().size > 0) {
+          this.controller.clearSelection();
         }
         break;
     }
@@ -941,17 +945,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           const existingRev = el.getAttribute('data-rev');
           const existingExpanded = el.getAttribute('data-expanded');
           const existingHasChildren = el.getAttribute('data-has-children');
-          // Focus/highlight move between nodes WITHOUT bumping this node's _rev, so
-          // a row that just lost focus/highlight must still be re-rendered to drop
-          // its stale focusedNodeClass / highlightedNodeClass (see _createNodeElement).
+          // Focus/selection move between nodes WITHOUT bumping this node's _rev, so
+          // a row that just lost focus/selection must still be re-rendered to drop
+          // its stale focusedNodeClass / selectedNodeClass (see _createNodeElement).
           const existingFocused = el.getAttribute('data-focused');
-          const existingHighlighted = el.getAttribute('data-highlighted');
+          const existingSelected = el.getAttribute('data-selected');
           if (
             existingRev !== String(node._rev) ||
             existingExpanded !== String(!!node.isExpanded) ||
             existingHasChildren !== String(!!node.hasChildren) ||
             existingFocused !== String(snapshot.focusedNode?.path === node.path) ||
-            existingHighlighted !== String(snapshot.highlightedPaths.has(node.path))
+            existingSelected !== String(snapshot.selectedPaths.has(node.path))
           ) {
             this._updateNodeElement(el, node, snapshot);
           }
@@ -1148,8 +1152,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       iconEl.className = base;
       iconEl.innerHTML = '';
       this.config.renderIconCallback!(node, value, iconEl, ctx);
+    } else if (value && !ICON_CLASS_LIST.test(value)) {
+      // Not a class list (emoji / symbol / text) — render the value itself.
+      iconEl.className = base;
+      iconEl.textContent = value;
     } else {
       iconEl.className = base + (value ? ' ' + value : '');
+      iconEl.textContent = '';
     }
     if (color) iconEl.style.color = color;
     else iconEl.style.removeProperty('color');
@@ -1204,13 +1213,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // so the reconcile-skip check (see updateNodes) re-renders a node that crossed
     // the leaf↔folder line and its toggle marker gets rebuilt.
     el.setAttribute('data-has-children', String(!!node.hasChildren));
-    // Focus/highlight aren't captured by _rev — moving focus/highlight to ANOTHER
+    // Focus/selection aren't captured by _rev — moving focus/selection to ANOTHER
     // node doesn't bump THIS node's _rev, so the reconcile-skip check (see
     // updateNodes) must track them as data-attributes (like data-expanded) or a row
-    // that LOSES focus/highlight is never re-rendered and keeps its stale
-    // focusedNodeClass / highlightedNodeClass.
+    // that LOSES focus/selection is never re-rendered and keeps its stale
+    // focusedNodeClass / selectedNodeClass.
     el.setAttribute('data-focused', String(snapshot.focusedNode?.path === node.path));
-    el.setAttribute('data-highlighted', String(snapshot.highlightedPaths.has(node.path)));
+    el.setAttribute('data-selected', String(snapshot.selectedPaths.has(node.path)));
 
     if (this.controller && node.id) {
       el.id = `${this.controller.treeId}-${node.id}`;
@@ -1238,7 +1247,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
       row.appendChild(
         this._buildCheckbox(
-          snapshot.selectedPaths.has(node.path),
+          snapshot.checkedPaths.has(node.path),
           node.visualState === 'indeterminate'
         )
       );
@@ -1261,18 +1270,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       content.classList.add('wtv__node-content--cut');
     }
 
-    // Highlight / focus state — applied to the row content so the styling
+    // Selected / focus state — applied to the row content so the styling
     // affects only the visible row, not the children indentation area below.
-    // Highlight is read from the controller-owned set (snapshot), NOT node.isHighlighted:
-    // the set survives a data rebuild, so highlighting isn't lost when a config change
+    // Selected is read from the controller-owned set (snapshot), NOT node.isSelected:
+    // the set survives a data rebuild, so the selection isn't lost when a config change
     // re-inserts the data (web-grid-style state-off-nodes).
-    if (snapshot.highlightedPaths.has(node.path)) {
-      // `--highlighted` is a FALLBACK: only apply it when no highlightedNodeClass
+    if (snapshot.selectedPaths.has(node.path)) {
+      // `--selected` is a FALLBACK: only apply it when no selectedNodeClass
       // is configured, so the marker's default look never fights a custom class.
-      if (nodeConfig?.highlightedNodeClass) {
-        content.classList.add(nodeConfig.highlightedNodeClass);
+      if (nodeConfig?.selectedNodeClass) {
+        content.classList.add(nodeConfig.selectedNodeClass);
       } else {
-        content.classList.add('wtv__node-content--highlighted');
+        content.classList.add('wtv__node-content--selected');
       }
     }
     if (snapshot.focusedNode?.path === node.path) {
@@ -1286,9 +1295,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
     // Checked rows carry no default row treatment (the checkbox is the signal);
-    // style them via the `selectedNodeClass` prop.
-    if (node.isSelected && nodeConfig?.selectedNodeClass) {
-      content.classList.add(nodeConfig.selectedNodeClass);
+    // style them via the `checkedNodeClass` prop.
+    if (node.isChecked && nodeConfig?.checkedNodeClass) {
+      content.classList.add(nodeConfig.checkedNodeClass);
     }
 
     if (nodeConfig?.clickBehavior !== 'expand' && node.hasChildren) {
@@ -1348,8 +1357,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       deviceClass: this._deviceClass,
       container: { width: this._containerBox.width, height: this._containerBox.height },
       isExpanded: !!node.isExpanded,
+      isChecked: snapshot.checkedPaths.has(node.path),
       isSelected: snapshot.selectedPaths.has(node.path),
-      isHighlighted: snapshot.highlightedPaths.has(node.path),
       isFocused: snapshot.focusedNode?.path === node.path,
       level: node.level ?? 0,
       hasChildren: !!node.hasChildren
@@ -1408,19 +1417,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const nodeConfig = this.lastNodeConfig;
     const ctx = this._buildRenderContext(node, snapshot);
 
-    // Highlight / focus / cut state — applied to the row content so the styling
+    // Selected / focus / cut state — applied to the row content so the styling
     // affects only the visible row, not the children indentation area below.
     const contentEl = el.querySelector(':scope > .wtv__node-row > .wtv__node-content') as HTMLElement | null;
     if (contentEl) {
       // Cut dimming lives on the content pill (see _createNodeElement).
       contentEl.classList.toggle('wtv__node-content--cut', snapshot.cutPaths.has(node.path));
-      // Fallback marker only when no highlightedNodeClass is configured (see
+      // Fallback marker only when no selectedNodeClass is configured (see
       // _createNodeElement) — keeps the default look from fighting a custom class.
-      const hasCustomHighlight = !!nodeConfig?.highlightedNodeClass;
-      const isHighlighted = snapshot.highlightedPaths.has(node.path);
-      contentEl.classList.toggle('wtv__node-content--highlighted', isHighlighted && !hasCustomHighlight);
-      if (hasCustomHighlight) {
-        contentEl.classList.toggle(nodeConfig.highlightedNodeClass, isHighlighted);
+      const hasCustomSelected = !!nodeConfig?.selectedNodeClass;
+      const isSelected = snapshot.selectedPaths.has(node.path);
+      contentEl.classList.toggle('wtv__node-content--selected', isSelected && !hasCustomSelected);
+      if (hasCustomSelected) {
+        contentEl.classList.toggle(nodeConfig.selectedNodeClass, isSelected);
       }
       const isFocused = snapshot.focusedNode?.path === node.path;
       contentEl.classList.toggle('wtv__node-content--focused', isFocused);
@@ -1434,12 +1443,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         contentEl.classList.toggle('wtv__node-content--focused-default', isFocused);
       }
       // Checked rows: optional custom class only (checkbox is the default signal).
-      if (nodeConfig?.selectedNodeClass) {
-        contentEl.classList.toggle(nodeConfig.selectedNodeClass, !!node.isSelected);
+      if (nodeConfig?.checkedNodeClass) {
+        contentEl.classList.toggle(nodeConfig.checkedNodeClass, !!node.isChecked);
       }
       // Keep the dirty-check attributes in sync (see updateNodes + _createNodeElement).
       el.setAttribute('data-focused', String(isFocused));
-      el.setAttribute('data-highlighted', String(isHighlighted));
+      el.setAttribute('data-selected', String(isSelected));
     }
 
     // Sync checkbox checked / indeterminate. The .wtv__checkbox IS the <input>
@@ -1456,7 +1465,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       this._syncCheckboxState(
         cb,
-        snapshot.selectedPaths.has(node.path),
+        snapshot.checkedPaths.has(node.path),
         node.visualState === 'indeterminate'
       );
     } else {
@@ -1476,8 +1485,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const content = el.querySelector('.wtv__node-content') as HTMLElement;
     if (content) {
       // Sync wtv__clickable based on current clickBehavior + hasChildren.
-      // Other classes on the content element (wtv__node-content--highlighted, wtv__node-content--focused,
-      // highlightedNodeClass, focusedNodeClass) are managed earlier in this
+      // Other classes on the content element (wtv__node-content--selected, wtv__node-content--focused,
+      // selectedNodeClass, focusedNodeClass) are managed earlier in this
       // function and must not be wiped here.
       const clickable =
         nodeConfig?.clickBehavior !== 'expand' && node.hasChildren;
@@ -1513,7 +1522,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (row) this._applyNodeIcon(row, node, ctx);
     // Rebuild the tooltip ONLY when the node's data changed — its content comes
     // from getNodeTooltipCallback(node), so a same-_rev reconcile (reposition,
-    // focus/highlight toggle) must keep the existing handle. Rebuilding every pass
+    // focus/selection toggle) must keep the existing handle. Rebuilding every pass
     // would drop the follow-cursor rect seeded on mouseenter (stationary-hover bug)
     // and needlessly churn floating-ui autoUpdate + listeners. Enable/disable,
     // callback, placement and follow-cursor changes are config-level and go through

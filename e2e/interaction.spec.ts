@@ -2,7 +2,7 @@ import { test, expect, Page, Locator } from '@playwright/test';
 
 /**
  * E2E coverage for /test/interaction.html — three trees exercising the rc03
- * three-level selection model (focusedNode / highlightedPaths / selectedPaths),
+ * three-level selection model (focusedNode / selectedPaths / checkedPaths),
  * checkbox cascade, and click-behavior modes.
  *
  * Sample data is sorted alphabetically by `name` (sortByName). Useful paths:
@@ -88,33 +88,33 @@ test.describe('Click Behavior tree', () => {
     await expect(outputValue(card, 'Focused Node')).toContainText('(1)');
   });
 
-  test('Ctrl+click adds paths to highlightedPaths', async ({ page }) => {
+  test('Ctrl+click adds paths to selectedPaths', async ({ page }) => {
     await gotoInteraction(page);
     const card = clickBehaviorCard(page);
 
-    await expect(outputValue(card, 'Highlighted')).toContainText('(none');
+    await expect(outputValue(card, 'Selected Paths')).toContainText('(none');
 
     await nodeContent(nodeInCard(card, '1')).click();
     await nodeContent(nodeInCard(card, '2')).click({ modifiers: ['Control'] });
     await nodeContent(nodeInCard(card, '3')).click({ modifiers: ['Control'] });
 
-    const highlighted = outputValue(card, 'Highlighted');
-    await expect(highlighted).toContainText('1');
-    await expect(highlighted).toContainText('2');
-    await expect(highlighted).toContainText('3');
+    const selected = outputValue(card, 'Selected Paths');
+    await expect(selected).toContainText('1');
+    await expect(selected).toContainText('2');
+    await expect(selected).toContainText('3');
   });
 
-  test('Clear All resets highlighted / selected outputs', async ({ page }) => {
+  test('Clear All resets selected / checked outputs', async ({ page }) => {
     await gotoInteraction(page);
     const card = clickBehaviorCard(page);
 
     await nodeContent(nodeInCard(card, '1')).click();
     await nodeContent(nodeInCard(card, '2')).click({ modifiers: ['Control'] });
-    await expect(outputValue(card, 'Highlighted')).not.toContainText('(none');
+    await expect(outputValue(card, 'Selected Paths')).not.toContainText('(none');
 
     await card.getByRole('button', { name: 'Clear All' }).click();
-    await expect(outputValue(card, 'Highlighted')).toContainText('(none');
-    await expect(outputValue(card, 'Selected / Checked')).toContainText('(none');
+    await expect(outputValue(card, 'Selected Paths')).toContainText('(none');
+    await expect(outputValue(card, 'Checked Paths')).toContainText('(none');
   });
 
   test('toggling Show Checkboxes renders checkboxes on selectable nodes', async ({ page }) => {
@@ -138,10 +138,10 @@ test.describe('Click Behavior tree', () => {
 
     await checkboxOf(nodeInCard(card, '1')).click();
 
-    // Emitted set uses the default cascadeSelectPolicy='rolled-up' (rc09): a
+    // Emitted set uses the default cascadeCheckPolicy='rolled-up' (rc09): a
     // fully-checked subtree collapses to its root, so only '1' is emitted — the
     // descendants are covered by it, not listed.
-    const selected = outputValue(card, 'Selected / Checked');
+    const selected = outputValue(card, 'Checked Paths');
     await expect(selected).toContainText('1');
     await expect(selected).not.toContainText('1.1');
     await expect(selected).not.toContainText('1.2');
@@ -168,13 +168,13 @@ test.describe('Click Behavior tree', () => {
 
     await expect(checkboxInputOf(nodeInCard(card, '1'))).not.toBeChecked();
 
-    const selected = outputValue(card, 'Selected / Checked');
+    const selected = outputValue(card, 'Checked Paths');
     await expect(selected).toContainText('1.1');
     await expect(selected).toContainText('1.2');
     await expect(selected).not.toHaveText(/(^|, )1(,|$)/);
   });
 
-  test('shouldClickToggleCheckbox: plain click toggles checkbox and skips focus/highlight', async ({ page }) => {
+  test('shouldClickToggleCheckbox: plain click toggles checkbox and skips focus/selection', async ({ page }) => {
     await gotoInteraction(page);
     const card = clickBehaviorCard(page);
 
@@ -184,10 +184,10 @@ test.describe('Click Behavior tree', () => {
     await nodeContent(nodeInCard(card, '1.1')).click();
 
     await expect(checkboxInputOf(nodeInCard(card, '1.1'))).toBeChecked();
-    await expect(outputValue(card, 'Selected / Checked')).toContainText('1.1');
+    await expect(outputValue(card, 'Checked Paths')).toContainText('1.1');
 
     await expect(outputValue(card, 'Focused Node')).toHaveText('(none)');
-    await expect(outputValue(card, 'Highlighted')).toHaveText('(none)');
+    await expect(outputValue(card, 'Selected Paths')).toHaveText('(none)');
 
     // Gap > 400ms so the re-click reads as a distinct single click rather than
     // a double-click (which the controller now consumes as a single gesture).
@@ -196,7 +196,7 @@ test.describe('Click Behavior tree', () => {
     await expect(checkboxInputOf(nodeInCard(card, '1.1'))).not.toBeChecked();
   });
 
-  test('shouldClickToggleCheckbox: Ctrl+click still builds multi-highlight (modifier falls through)', async ({ page }) => {
+  test('shouldClickToggleCheckbox: Ctrl+click still builds multi-selection (modifier falls through)', async ({ page }) => {
     await gotoInteraction(page);
     const card = clickBehaviorCard(page);
 
@@ -206,8 +206,8 @@ test.describe('Click Behavior tree', () => {
     await nodeContent(nodeInCard(card, '1.1')).click({ modifiers: ['Control'] });
     await nodeContent(nodeInCard(card, '1.2')).click({ modifiers: ['Control'] });
 
-    await expect(outputValue(card, 'Highlighted')).toContainText('1.1');
-    await expect(outputValue(card, 'Highlighted')).toContainText('1.2');
+    await expect(outputValue(card, 'Selected Paths')).toContainText('1.1');
+    await expect(outputValue(card, 'Selected Paths')).toContainText('1.2');
 
     await expect(checkboxInputOf(nodeInCard(card, '1.1'))).not.toBeChecked();
     await expect(checkboxInputOf(nodeInCard(card, '1.2'))).not.toBeChecked();
@@ -293,16 +293,16 @@ test.describe('Click Behavior tree', () => {
 // ── Multi-Select tree ───────────────────────────────────────────────────────
 
 test.describe('Multi-Select tree', () => {
-  test('Ctrl+click on two nodes highlights both', async ({ page }) => {
+  test('Ctrl+click on two nodes selects both', async ({ page }) => {
     await gotoInteraction(page);
     const card = multiSelectCard(page);
 
     await nodeContent(nodeInCard(card, '1')).click();
     await nodeContent(nodeInCard(card, '3')).click({ modifiers: ['Control'] });
 
-    const highlighted = outputValue(card, 'Highlighted');
-    await expect(highlighted).toContainText('1');
-    await expect(highlighted).toContainText('3');
+    const selected = outputValue(card, 'Selected Paths');
+    await expect(selected).toContainText('1');
+    await expect(selected).toContainText('3');
   });
 
   test('Shift+click selects a visual range', async ({ page }) => {
@@ -312,10 +312,10 @@ test.describe('Multi-Select tree', () => {
     await nodeContent(nodeInCard(card, '1')).click();
     await nodeContent(nodeInCard(card, '3')).click({ modifiers: ['Shift'] });
 
-    const highlighted = outputValue(card, 'Highlighted');
-    await expect(highlighted).toContainText('1');
-    await expect(highlighted).toContainText('3');
-    await expect(highlighted).toContainText('2');
+    const selected = outputValue(card, 'Selected Paths');
+    await expect(selected).toContainText('1');
+    await expect(selected).toContainText('3');
+    await expect(selected).toContainText('2');
   });
 
   test('Clear All resets multi-select outputs', async ({ page }) => {
@@ -324,10 +324,10 @@ test.describe('Multi-Select tree', () => {
 
     await nodeContent(nodeInCard(card, '1')).click();
     await nodeContent(nodeInCard(card, '2')).click({ modifiers: ['Control'] });
-    await expect(outputValue(card, 'Highlighted')).not.toContainText('(none');
+    await expect(outputValue(card, 'Selected Paths')).not.toContainText('(none');
 
     await card.getByRole('button', { name: 'Clear All' }).click();
-    await expect(outputValue(card, 'Highlighted')).toContainText('(none');
+    await expect(outputValue(card, 'Selected Paths')).toContainText('(none');
   });
 });
 

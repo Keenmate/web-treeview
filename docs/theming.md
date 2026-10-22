@@ -82,7 +82,7 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-node-bg-hover` | `= --wtv-hover-bg` | Node hover background |
 | `--wtv-node-bg-active` | `= --wtv-active-bg` | Node active / pressed background |
 | `--wtv-node-transition` | `none` | Node content transition (e.g. `background var(--wtv-transition-speed)` to animate) |
-| `--wtv-selected-bg` | `--base-selected-bg` \| `--base-primary-bg-subtle` \| accent 10% (20% dark) | Selected row (click / Ctrl / Shift-click set) background tint; row class `.wtv__node-content--highlighted` |
+| `--wtv-selected-bg` | `--base-selected-bg` \| `--base-primary-bg-subtle` \| accent 10% (20% dark) | Selected row (click / Ctrl / Shift-click set) background tint; row class `.wtv__node-content--selected` |
 | `--wtv-selected-bg-hover` | `--base-selected-bg-hover` \| `= --wtv-selected-bg` | Selected row background on hover |
 | `--wtv-selected-text` | `--base-selected-text-color` \| `currentColor` | Selected row text color |
 | `--wtv-selected-ring` | `--base-selected-outline` \| `none` | Selected row outline shorthand (drawn inset) |
@@ -90,8 +90,6 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-focused-text` | `--base-focused-text-color` \| `currentColor` | Focused row text color |
 | `--wtv-focused-ring` | `--base-focused-outline` \| `1px solid --wtv-accent-color` | Default `.wtv__node-content--focused-default` ring — outline shorthand drawn inset (`none` to suppress) |
 | `--wtv-focused-outline-offset` | `calc(-1 * var(--base-outline-width, 1px))` | Outline offset for the focus ring / selected ring (negative = inset; follows `--base-outline-width`) |
-
-The old `--wtv-highlighted-bg` / `-bg-hover` / `-text` / `-ring` names still work when set on the element (deprecated; removed with the `highlightedPaths` → `selectedPaths` API rename).
 
 ### Border
 

@@ -129,7 +129,7 @@
                             expand-level="2"
                             order-member="sortOrder"
                             drag-drop-mode="both"
-                            highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
+                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="drop-warning" id="te-warning"></div>
 
@@ -221,7 +221,7 @@
                             expand-level="2"
                             tree-id="te-source"
                             drag-drop-mode="both"
-                            highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
+                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="button-row mt-1">
                         <button onclick="document.getElementById('cb-source').copyNodes()">Copy</button>
@@ -238,7 +238,7 @@
                             expand-level="2"
                             tree-id="te-target"
                             drag-drop-mode="both"
-                            highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
+                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="button-row mt-1">
                         <button onclick="pasteIntoTarget()">Paste here</button>
@@ -270,12 +270,12 @@
                     <tr><td><code>insertBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
                     <tr><td><code>replaceBranch(parentPath, data[])</code></td><td>Replace a parent's children with a new set.</td></tr>
                     <tr><td><code>deleteBranch(path, keepParent?)</code></td><td>Delete a whole subtree (optionally keep the parent).</td></tr>
-                    <tr><td><code>deleteNodes(paths?)</code></td><td>Delete the given paths (defaults to the highlight set). Returns <code>{ removed, blocked }</code>.</td></tr>
-                    <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to highlight set).</td></tr>
+                    <tr><td><code>deleteNodes(paths?)</code></td><td>Delete the given paths (defaults to the selected set). Returns <code>{ removed, blocked }</code>.</td></tr>
+                    <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to the selected set).</td></tr>
                     <tr><td><code>pasteNodes(targetPath, transform?, position?)</code></td><td>Insert clipboard content; returns a <code>PasteResult</code> (<code>{ success, count, skipped }</code>).</td></tr>
                     <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
                     <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code></td><td>Read the tree structure (used by Move up / down).</td></tr>
-                    <tr><td><code>getSelectedPaths()</code> / <code>getHighlightedPaths()</code> / <code>focusNode(path)</code></td><td>Selection &amp; focus accessors.</td></tr>
+                    <tr><td><code>getSelectedPaths()</code> / <code>getCheckedPaths()</code> / <code>focusNode(path)</code></td><td>Selected, checked &amp; focus accessors.</td></tr>
                     <tr><td><code>getAllData()</code> / <code>getNodeByPath(path)</code></td><td>Snapshot all node data; look up one node.</td></tr>
                     <tr><td><code>contextMenuCallback(node, close) =&gt; ContextMenuEntry[]</code></td><td>Build the right-click menu entries for a node.</td></tr>
                 </tbody>
@@ -306,7 +306,7 @@ const i = siblings.findIndex(s =&gt; s.path === path);
 if (i &gt; 0) tree.moveNode(path, siblings[i - 1].path, 'before');
 
 // Clipboard: copy selection, paste under a target with fresh ids
-tree.copyNodes();                       // defaults to the highlight set
+tree.copyNodes();                       // defaults to the selected set
 let nextId = 9000;
 tree.pasteNodes(targetPath, (data) =&gt; ({ ...data, id: nextId++ }), 'child');
 
@@ -629,10 +629,10 @@ tree.contextMenuCallback = (node, close) =&gt; [
                 const op = source.getClipboardOperation?.() ?? target.getClipboardOperation?.();
                 document.getElementById('cb-op').textContent = has ? op : 'empty';
                 document.getElementById('cb-info').textContent = has
-                    ? `(${source.getSelectedPaths().size || source.getHighlightedPaths().size || '?'} entries)` : '';
+                    ? `(${source.getCheckedPaths().size || source.getSelectedPaths().size || '?'} entries)` : '';
             }
 
-            source.addEventListener('highlight-change', updateClipboardStatus);
+            source.addEventListener('selection-change', updateClipboardStatus);
             source.addEventListener('tree-changed', updateClipboardStatus);
             target.addEventListener('tree-changed', updateClipboardStatus);
 

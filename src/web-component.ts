@@ -39,7 +39,7 @@ import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
-import type { HighlightMode, TreeMutationOptions, NodeTransformContext } from './controller/types';
+import type { SelectMode, TreeMutationOptions, NodeTransformContext } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeController } from './controller/tree-controller';
 import { initLogger } from './logger';
@@ -88,7 +88,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'parentPathMember', attribute: 'parent-path-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name holding a node parent path.' },
   { configKey: 'levelMember', attribute: 'level-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name holding a node depth level.' },
   { configKey: 'isExpandedMember', attribute: 'is-expanded-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a node is expanded.' },
-  { configKey: 'isSelectedMember', attribute: 'is-selected-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a node is selected (checkbox).' },
+  { configKey: 'isCheckedMember', attribute: 'is-checked-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a node is checked (checkbox).' },
   { configKey: 'isDraggableMember', attribute: 'is-draggable-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a node is draggable.' },
   { configKey: 'isDropAllowedMember', attribute: 'is-drop-allowed-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging whether a drop is allowed onto a node.' },
   { configKey: 'hasChildrenMember', attribute: 'has-children-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name flagging that a node has children (lazy trees).' },
@@ -116,9 +116,9 @@ const INPUTS: readonly InputDef[] = [
   // ── Theme / visual classes ─────────────────────────────────────────────────
   { configKey: 'theme', attribute: 'theme', converter: toEnum(['dark', 'light'] as const, { shouldNullOnInvalid: true }), on: 'update', description: 'Force a `dark` / `light` theme (unset → follow host).' },
   { configKey: 'bodyClass', attribute: 'body-class', converter: toText({ isNullable: true }), on: 'update', description: 'Extra class on the tree body container.' },
-  { configKey: 'highlightedNodeClass', attribute: 'highlighted-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to highlighted nodes.' },
+  { configKey: 'selectedNodeClass', attribute: 'selected-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to selected nodes.' },
   { configKey: 'focusedNodeClass', attribute: 'focused-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to the focused node.' },
-  { configKey: 'selectedNodeClass', attribute: 'selected-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to checked (selected) nodes — opt-in extra styling; the checkbox is the default signal.' },
+  { configKey: 'checkedNodeClass', attribute: 'checked-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to checked nodes — opt-in extra styling; the checkbox is the default signal.' },
   { configKey: 'dragOverNodeClass', attribute: 'drag-over-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to a node being dragged over.' },
   { configKey: 'draggedNodeClass', attribute: 'dragged-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class for the dragged source row; replaces the built-in .wtv__node-content--dragged visual.' },
 
@@ -181,7 +181,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'selectionMode', attribute: 'selection-mode', converter: toEnum(['single', 'multi'] as const), on: 'update', description: 'Single- or multi-node selection.' },
   { configKey: 'shouldShowCheckboxes', attribute: 'show-checkboxes', converter: toBool('default-false'), on: 'update', description: 'Show a checkbox on each node.' },
   { configKey: 'checkboxMode', attribute: 'checkbox-mode', converter: toEnum(['independent', 'cascade'] as const), on: 'update', description: 'Checkbox interaction: `independent` toggles one node; `cascade` toggles the subtree with a tristate box on branches.' },
-  { configKey: 'cascadeSelectPolicy', attribute: 'cascade-select-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the selection EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
+  { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
   { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggles-checkbox', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
   // ── Complex property (data; too large for an attribute) ────────────────────
@@ -225,8 +225,8 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'onNodeDragStart', converter: cb(), on: 'none', type: '(ctx: NodeDragContext) => void', description: 'A node drag started (also fires `node-drag-start`).' },
   { configKey: 'onNodeDragOver', converter: cb(), on: 'none', type: '(ctx: NodeDragContext) => void', description: 'A node was dragged over (also fires `node-drag-over`).' },
   { configKey: 'onNodeDrop', converter: cb(), on: 'none', type: '(ctx: NodeDropContext) => void', description: 'A drop completed (also fires `node-drop`).' },
-  { configKey: 'onHighlightChange', converter: cb(), on: 'none', type: '(ctx: unknown) => void', description: 'The highlight set changed (also fires `highlight-change`).' },
-  { configKey: 'onSelectionChange', converter: cb(), on: 'none', type: '(ctx: SelectionChangeContext) => void', description: 'The selection (checkbox) set changed (also fires `selection-change`).' },
+  { configKey: 'onSelectionChange', converter: cb(), on: 'none', type: '(ctx: unknown) => void', description: 'The selected set changed (also fires `selection-change`).' },
+  { configKey: 'onCheckedChange', converter: cb(), on: 'none', type: '(ctx: SelectionChangeContext) => void', description: 'The checked (checkbox) set changed (also fires `checked-change`).' },
 
   // ── Callbacks: pure engine hooks (non-reactive → none) ─────────────────────
   { configKey: 'beforeCopyCallback', converter: cb(), on: 'none', type: '(ctx: BeforeCopyContext) => boolean | void', description: 'Runs before a copy; return false to veto.' },
@@ -256,7 +256,7 @@ const INPUTS: readonly InputDef[] = [
 // managed `on<Name>` handler PROPERTIES for these (consumers use
 // addEventListener), and the default handler-property names would collide with
 // the identically-named engine callback inputs above (`onCopy`, `onNodeDrop`,
-// `onSelectionChange`, …). Declaring them here still gives `emit()` its typing
+// `onCheckedChange`, …). Declaring them here still gives `emit()` its typing
 // and feeds the CEM manifest.
 type TreeViewEvents = {
   'node-clicked': unknown;
@@ -270,8 +270,8 @@ type TreeViewEvents = {
   'node-drop': unknown;
   'node-drag-denied': unknown;
   'node-drop-denied': unknown;
-  'highlight-change': unknown;
   'selection-change': unknown;
+  'checked-change': unknown;
   'tree-changed': undefined;
   'focused-node-changed': { focusedNode: unknown };
 };
@@ -287,8 +287,8 @@ const EVENTS: readonly EventDef[] = [
   { name: 'node-drop', property: false, description: 'A drop completed. `detail` is the NodeDropContext.' },
   { name: 'node-drag-denied', property: false, description: 'A locked node was long-pressed / an undraggable drag was attempted. `detail` is the NodeRef.' },
   { name: 'node-drop-denied', property: false, description: 'A drop was rejected by the target. `detail` is the NodeRef.' },
-  { name: 'highlight-change', property: false, description: 'The highlight set changed. `detail` is `{ paths, nodes }`.' },
-  { name: 'selection-change', property: false, description: 'The selection (checkbox) set changed. `detail` is `{ paths, nodes }`.' },
+  { name: 'selection-change', property: false, description: 'The selected set changed. `detail` is `{ paths, nodes }`.' },
+  { name: 'checked-change', property: false, description: 'The checked (checkbox) set changed. `detail` is `{ paths, nodes }`.' },
   { name: 'tree-changed', property: false, description: 'The tree state changed (bulk notification; no detail).' },
   { name: 'focused-node-changed', property: false, description: 'The focused node changed. `detail` is `{ focusedNode }`.' },
 ];
@@ -440,8 +440,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     bridge('node-drop', 'onNodeDrop');
     bridge('node-drag-denied', 'onNodeDragDenied');
     bridge('node-drop-denied', 'onNodeDropDenied');
-    bridge('highlight-change', 'onHighlightChange');
     bridge('selection-change', 'onSelectionChange');
+    bridge('checked-change', 'onCheckedChange');
 
     return cfg as Partial<TreeViewConfig<T>>;
   }
@@ -646,44 +646,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     return this.#treeview?.deleteBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
   }
 
-  // ── Highlight (focus + multi-select) ────────────────────────────────────────
+  // ── Selection (focus + multi-select) ────────────────────────────────────────
 
-  highlightNode(path: string, mode: HighlightMode = 'replace', options?: TreeMutationOptions): void {
-    this.#treeview?.highlightNode(path, mode, options);
-  }
-
-  highlightNodes(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.highlightNodes(paths, options);
-  }
-
-  setHighlightedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.setHighlightedPaths(paths, options);
-  }
-
-  highlightAll(options?: TreeMutationOptions): void {
-    this.#treeview?.highlightAll(options);
-  }
-
-  clearHighlight(paths?: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.clearHighlight(paths, options);
-  }
-
-  getHighlightedNodes(): LTreeNode<T>[] {
-    return this.#treeview?.getHighlightedNodes() ?? [];
-  }
-
-  getHighlightedPaths(): Set<string> {
-    return this.#treeview?.getHighlightedPaths() ?? new Set();
-  }
-
-  isNodeHighlighted(path: string): boolean {
-    return this.#treeview?.isNodeHighlighted(path) ?? false;
-  }
-
-  // ── Selection (checkbox data state) ─────────────────────────────────────────
-
-  selectNode(path: string, options?: TreeMutationOptions): void {
-    this.#treeview?.selectNode(path, options);
+  selectNode(path: string, mode: SelectMode = 'replace', options?: TreeMutationOptions): void {
+    this.#treeview?.selectNode(path, mode, options);
   }
 
   selectNodes(paths: string[], options?: TreeMutationOptions): void {
@@ -696,10 +662,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
 
   selectAll(options?: TreeMutationOptions): void {
     this.#treeview?.selectAll(options);
-  }
-
-  deselectNode(path: string, options?: TreeMutationOptions): void {
-    this.#treeview?.deselectNode(path, options);
   }
 
   clearSelection(paths?: string[], options?: TreeMutationOptions): void {
@@ -716,6 +678,44 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
 
   isNodeSelected(path: string): boolean {
     return this.#treeview?.isNodeSelected(path) ?? false;
+  }
+
+  // ── Checked (checkbox data state) ───────────────────────────────────────────
+
+  checkNode(path: string, options?: TreeMutationOptions): void {
+    this.#treeview?.checkNode(path, options);
+  }
+
+  checkNodes(paths: string[], options?: TreeMutationOptions): void {
+    this.#treeview?.checkNodes(paths, options);
+  }
+
+  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
+    this.#treeview?.setCheckedPaths(paths, options);
+  }
+
+  checkAll(options?: TreeMutationOptions): void {
+    this.#treeview?.checkAll(options);
+  }
+
+  uncheckNode(path: string, options?: TreeMutationOptions): void {
+    this.#treeview?.uncheckNode(path, options);
+  }
+
+  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
+    this.#treeview?.clearChecked(paths, options);
+  }
+
+  getCheckedNodes(): LTreeNode<T>[] {
+    return this.#treeview?.getCheckedNodes() ?? [];
+  }
+
+  getCheckedPaths(): Set<string> {
+    return this.#treeview?.getCheckedPaths() ?? new Set();
+  }
+
+  isNodeChecked(path: string): boolean {
+    return this.#treeview?.isNodeChecked(path) ?? false;
   }
 
   // ── Focus (single cursor) ───────────────────────────────────────────────────

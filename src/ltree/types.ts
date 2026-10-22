@@ -78,8 +78,8 @@ export interface Ltree<T> {
 	hasChildrenMember: string | null | undefined;
 	isExpandedMember: string | null | undefined;
 	getIsExpandedCallback?: (node: LTreeNode<T>) => boolean;
-	isSelectedMember: string | null | undefined;
-	getIsSelectedCallback?: (node: LTreeNode<T>) => boolean;
+	isCheckedMember: string | null | undefined;
+	getIsCheckedCallback?: (node: LTreeNode<T>) => boolean;
 
 	displayValueMember?: string | null | undefined;
 	getDisplayValueCallback?: (node: LTreeNode<T>) => string;

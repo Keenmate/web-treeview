@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test — Highlight / Focus Fixture</title>
+    <title>Test — Selection / Focus Fixture</title>
     <style>
         main { padding: 1rem; font-family: sans-serif; }
         h1 { margin: 0 0 1rem; font-size: 1.2rem; }
@@ -20,15 +20,15 @@
 </head>
 <body>
     <main>
-        <h1>Highlight / Focus Test Fixture</h1>
+        <h1>Selection / Focus Test Fixture</h1>
 
         <div class="controls">
             <label>
-                Highlight Class:
-                <select id="highlight-class">
+                Selected Class:
+                <select id="selected-class">
                     <option value="">(none / fallback)</option>
-                    <option value="wtv__node-content--highlight-bold">Bold</option>
-                    <option value="wtv__node-content--highlight-glow">Glow</option>
+                    <option value="wtv__node-content--selected-bold">Bold</option>
+                    <option value="wtv__node-content--selected-glow">Glow</option>
                 </select>
             </label>
             <label>
@@ -49,7 +49,7 @@
         </div>
 
         <div class="output"><p class="output-label">Focused Node</p><pre id="out-focused">(none)</pre></div>
-        <div class="output"><p class="output-label">Highlighted</p><pre id="out-highlighted">(none)</pre></div>
+        <div class="output"><p class="output-label">Selected Paths</p><pre id="out-selected">(none)</pre></div>
     </main>
 
     <script type="module">
@@ -77,13 +77,13 @@
             tree.isSorted = true;
             tree.data = sampleData;
 
-            const highlightSelect = document.getElementById('highlight-class');
+            const selectedClassSelect = document.getElementById('selected-class');
             const focusSelect = document.getElementById('focus-class');
 
             // '' = unset → remove the attribute so the fallback marker applies.
-            highlightSelect.addEventListener('change', () => {
-                if (highlightSelect.value) tree.setAttribute('highlighted-node-class', highlightSelect.value);
-                else tree.removeAttribute('highlighted-node-class');
+            selectedClassSelect.addEventListener('change', () => {
+                if (selectedClassSelect.value) tree.setAttribute('selected-node-class', selectedClassSelect.value);
+                else tree.removeAttribute('selected-node-class');
             });
             focusSelect.addEventListener('change', () => {
                 if (focusSelect.value) tree.setAttribute('focused-node-class', focusSelect.value);
@@ -94,14 +94,14 @@
                 const node = e.detail.focusedNode;
                 setText('out-focused', node ? `${node.data?.name} (${node.path})` : '(none)');
             });
-            tree.addEventListener('highlight-change', (e) => {
-                setText('out-highlighted', pathsText(e.detail.paths));
+            tree.addEventListener('selection-change', (e) => {
+                setText('out-selected', pathsText(e.detail.paths));
             });
 
             document.getElementById('clear').addEventListener('click', () => {
-                tree.clearHighlight?.();
+                tree.clearSelection?.();
                 tree.clearFocus?.();
-                setText('out-highlighted', '(none)');
+                setText('out-selected', '(none)');
                 setText('out-focused', '(none)');
             });
         });

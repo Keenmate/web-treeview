@@ -126,11 +126,15 @@ All mounted `<web-treeview>` elements are tracked in a `Set` and exposed via `ge
 
 ## Render context (device + node state)
 
-The render callbacks receive a `NodeRenderContext` as their LAST arg — `renderNodeCallback(node, el, ctx)`, `renderIconCallback(node, value, el, ctx)`. ctx = { deviceClass: 'mobile'|'tablet'|'desktop', container: {width,height}, isExpanded, isSelected, isHighlighted, isFocused, level, hasChildren }. device/container come from `@keenmate/web-components-core/environment` (`classifyDevice` + `observeEnvironment`/`observeElementSize`, set up in the renderer's `mount`, torn down in `destroy`); a device-class FLIP forces `_fullRender`, container size updates silently (virtual-scroll-first). Built by `_buildRenderContext(node, snapshot)`; node-state from node + snapshot. Back-compat (extra arg ignored). Parity with svelte-treeview's NodeRenderContext. Requires core ≥ rc10. e2e `test/render-context.html` + `e2e/render-context.spec.ts`.
+The render callbacks receive a `NodeRenderContext` as their LAST arg — `renderNodeCallback(node, el, ctx)`, `renderIconCallback(node, value, el, ctx)`. ctx = { deviceClass: 'mobile'|'tablet'|'desktop', container: {width,height}, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }. device/container come from `@keenmate/web-components-core/environment` (`classifyDevice` + `observeEnvironment`/`observeElementSize`, set up in the renderer's `mount`, torn down in `destroy`); a device-class FLIP forces `_fullRender`, container size updates silently (virtual-scroll-first). Built by `_buildRenderContext(node, snapshot)`; node-state from node + snapshot. Back-compat (extra arg ignored). Parity with svelte-treeview's NodeRenderContext. Requires core ≥ rc10. e2e `test/render-context.html` + `e2e/render-context.spec.ts`.
+
+## Node states — focused / selected / checked
+
+Names follow `@keenmate/base-css-variables` 2.0 (rc06 rename, no aliases): **focused** = the single cursor row (`focusNode`, `focused-node-changed`, `.wtv__node-content--focused`); **selected** = the click / Ctrl / Shift-click set (`selectedPaths`, `selectNode(path, SelectMode)` / `selectNodes` / `selectAll` / `clearSelection`, `onSelectionChange` / `selection-change`, `selectedNodeClass`, row class `.wtv__node-content--selected`, `--wtv-selected-*` ← `--base-selected-*`); **checked** = the checkbox (`checkedPaths`, `checkNode` / `checkNodes` / `checkAll` / `uncheckNode` / `clearChecked`, `onCheckedChange` / `checked-change`, `checkedNodeClass`, `cascadeCheckPolicy`, `VisualState.checked/unchecked`). Before rc06 these were *highlighted* / *selected* — svelte-treeview still uses the old names until it follows. `isSelectable` gates both sets; `selectionMode` / `rangeSelectionMode` belong to the selected set. Scroll / dragover / search "highlight" are unrelated and keep the word.
 
 ## Per-node icons (every node)
 
-`iconMember` / `iconCallback` resolve a per-node icon VALUE; it renders as a dedicated `.wtv__node-icon` element on EVERY node (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot anymore (so branches get icons and the toggle keeps its chevron). Default render is `<i class="wtv__node-icon {value}">` (FontAwesome-friendly); override with `renderIconCallback(node, value, iconEl)` for SVG/unicode/markup. COLOR via `iconColorMember` / `iconColorCallback` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); `renderIconCallback` lives on RendererConfig (like renderNodeCallback) and a post-data assignment triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `customStylesCallback`.
+`iconMember` / `iconCallback` resolve a per-node icon VALUE; it renders as a dedicated `.wtv__node-icon` element on EVERY node (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot anymore (so branches get icons and the toggle keeps its chevron). Default render is `<i class="wtv__node-icon {value}">` (FontAwesome-friendly) when the value reads as a class list (`ICON_CLASS_LIST`); any other value (emoji, symbol) is rendered as the `<i>`'s text; override with `renderIconCallback(node, value, iconEl)` for SVG/unicode/markup. COLOR via `iconColorMember` / `iconColorCallback` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); `renderIconCallback` lives on RendererConfig (like renderNodeCallback) and a post-data assignment triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `customStylesCallback`.
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 
@@ -160,12 +164,12 @@ shape is `NodeRef<T> = { path, node, parent, siblings }`, built by `controller.n
 - Events: `onNodeClick(NodeRef)`, `onNodeDoubleClick(NodeRef)`, `onNodeDragStart` /
   `onNodeDragOver(NodeDragContext = NodeRef + { event, dragged })`,
   `onNodeDrop(NodeDropContext = { source, target, dragged, dropped, position, operation, event })`,
-  `onHighlightChange` / `onSelectionChange(SelectionChangeContext = { paths, nodes })`,
+  `onSelectionChange` / `onCheckedChange(SelectionChangeContext = { paths, nodes })`,
   `onCopy` / `onCut` / `onDelete(ClipboardEventContext = { operation?, paths, nodes })`,
   `onPaste(PasteResult)`.
 - Interceptors: `beforeCopyCallback` / `beforeCutCallback(BeforeCopyContext)`,
   `beforePasteCallback(BeforePasteContext)`, `beforeDeleteCallback(BeforeDeleteContext)`,
-  `onTreeKeydown(TreeKeydownContext = { event, focusedNode, highlightedNodes, controller })` —
+  `onTreeKeydown(TreeKeydownContext = { event, focusedNode, selectedNodes, controller })` —
   return `true` to suppress default + built-in shortcuts. `beforeDropCallback(ctx: BeforeDropContext)`
   is now a ctx object too (migrated off its old 5-arg positional form): `false` blocks,
   `{ position?, operation? }` redirects, a `DropGroup[]` fans one drop out to several
@@ -175,7 +179,7 @@ shape is `NodeRef<T> = { path, node, parent, siblings }`, built by `controller.n
   `nodeOutputTransformationCallback(data, ctx: NodeTransformContext)` = OUTPUT/egress (clean/redact
   at snapshot), `nodeInputTransformationCallback(data, ctx)` = INPUT/ingress (derive ids/names at
   insert; returning `null` skips a node + its subtree).
-- DOM `CustomEvent` `detail` mirrors the ctx object (e.g. `highlight-change` detail is
+- DOM `CustomEvent` `detail` mirrors the ctx object (e.g. `selection-change` detail is
   `{ paths, nodes }`; `node-drop` detail is the `NodeDropContext`).
 
 New surface: `deleteNodes(paths?)` + Delete/Shift+Delete keys; `shouldHandleKeyboardShortcuts`

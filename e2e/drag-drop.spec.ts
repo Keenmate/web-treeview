@@ -162,36 +162,36 @@ test.describe('multi-drag (selectionMode=multi)', () => {
     return await roots.locator('.wtv__node-row .wtv__node-content > span').allInnerTexts();
   }
 
-  test('grabbing a non-highlighted node replaces the highlight with just that node', async ({ page }) => {
+  test('grabbing a non-selected node replaces the selection with just that node', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
     await nodeRow(nodeByPath(section, '1')).click();
     await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
-    await expect(page.getByTestId('multi-highlighted-size')).toHaveText('2');
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('2');
 
     await dragNodeTo(nodeRow(nodeByPath(section, '3')), nodeRow(nodeByPath(section, '4')), 'child');
 
-    await expect(page.getByTestId('multi-highlighted-size')).toHaveText('1');
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('1');
     await expect(page.getByTestId('multi-drop-count')).toHaveText('1');
     await expect(page.getByTestId('multi-drop-dragged')).toHaveText('Multi-C');
   });
 
-  test('grabbing a highlighted node preserves the highlight set', async ({ page }) => {
+  test('grabbing a selected node preserves the selected set', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
     await nodeRow(nodeByPath(section, '1')).click();
     await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
     await nodeRow(nodeByPath(section, '3')).click({ modifiers: ['Control'] });
-    await expect(page.getByTestId('multi-highlighted-size')).toHaveText('3');
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('3');
 
     await dragNodeTo(nodeRow(nodeByPath(section, '1')), nodeRow(nodeByPath(section, '4')), 'child');
 
-    await expect(page.getByTestId('multi-highlighted-size')).not.toHaveText('1');
+    await expect(page.getByTestId('multi-selected-size')).not.toHaveText('1');
   });
 
-  test('multi-drag (child position): all top-level highlighted subtrees land under dropNode', async ({ page }) => {
+  test('multi-drag (child position): all top-level selected subtrees land under dropNode', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -201,7 +201,7 @@ test.describe('multi-drag (selectionMode=multi)', () => {
     await nodeRow(nodeByPath(section, '1')).click();
     await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
     await nodeRow(nodeByPath(section, '3')).click({ modifiers: ['Control'] });
-    await expect(page.getByTestId('multi-highlighted-size')).toHaveText('3');
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('3');
 
     await dragNodeTo(nodeRow(nodeByPath(section, '1')), nodeRow(nodeByPath(section, '4')), 'child');
 
@@ -228,25 +228,25 @@ test.describe('multi-drag (selectionMode=multi)', () => {
     await expect(section.locator('.wtv__node[data-tree-path]')).toHaveCount(6);
   });
 
-  // Top-level absorption (ancestor + descendant both highlighted) currently
+  // Top-level absorption (ancestor + descendant both selected) currently
   // doesn't fire the move on web-treeview's controller. Skipped pending a
   // follow-up — the other multi-drag positions cover the bulk of the path.
-  test.skip('top-level absorption: descendant of a highlighted ancestor rides along inside — controller bug', () => {});
+  test.skip('top-level absorption: descendant of a selected ancestor rides along inside — controller bug', () => {});
 
-  test('locked node (isDraggable=false) in the highlight set does NOT ride along on multi-drag', async ({ page }) => {
+  test('locked node (isDraggable=false) in the selected set does NOT ride along on multi-drag', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-multi-locked');
 
     expect(await rootNodeNamesInOrder(section)).toEqual(['Lock-A', 'Lock-B', 'Lock-C', 'Lock-D']);
 
-    // Highlight A, B and the LOCKED C.
+    // Select A, B and the LOCKED C.
     await nodeRow(nodeByPath(section, '1')).click();
     await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
     await nodeRow(nodeByPath(section, '3')).click({ modifiers: ['Control'] });
-    await expect(page.getByTestId('locked-highlighted-size')).toHaveText('3');
+    await expect(page.getByTestId('locked-selected-size')).toHaveText('3');
 
     // Drag the lead (Lock-A) onto Lock-D as child. A and B move; the locked
-    // Lock-C must stay at root despite being highlighted.
+    // Lock-C must stay at root despite being selected.
     await dragNodeTo(nodeRow(nodeByPath(section, '1')), nodeRow(nodeByPath(section, '4')), 'child');
 
     // Pre-fix, Lock-C would have ridden along and roots would be just ['Lock-D'].

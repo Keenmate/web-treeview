@@ -4,7 +4,7 @@ import type { TreeViewRenderer, RendererConfig } from './renderer/types';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
 import type { Ltree, DropPosition, TreeChange, ApplyChangesResult } from './ltree/types';
-import type { HighlightMode, TreeMutationOptions, NodeTransformContext } from './controller/types';
+import type { SelectMode, TreeMutationOptions, NodeTransformContext } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { SearchOptions } from 'flexsearch';
@@ -210,48 +210,14 @@ export class WebTreeView<T = any> {
     return this.controller.getNodeByPath(path);
   }
 
-  // ── Highlight set (Ctrl/Shift+click multi-select) ───────────────────
+  // ── Selected set (Ctrl/Shift+click multi-select) ────────────────────
 
-  highlightNode(
+  selectNode(
     path: string,
-    mode: HighlightMode = 'replace',
+    mode: SelectMode = 'replace',
     options?: TreeMutationOptions
   ): void {
-    this.controller.highlightNode(path, mode, options);
-  }
-
-  highlightNodes(paths: string[], options?: TreeMutationOptions): void {
-    this.controller.highlightNodes(paths, options);
-  }
-
-  setHighlightedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.controller.setHighlightedPaths(paths, options);
-  }
-
-  highlightAll(options?: TreeMutationOptions): void {
-    this.controller.highlightAll(options);
-  }
-
-  clearHighlight(paths?: string[], options?: TreeMutationOptions): void {
-    this.controller.clearHighlight(paths, options);
-  }
-
-  getHighlightedNodes(): LTreeNode<T>[] {
-    return this.controller.getHighlightedNodes();
-  }
-
-  getHighlightedPaths(): Set<string> {
-    return this.controller.getHighlightedPaths();
-  }
-
-  isNodeHighlighted(path: string): boolean {
-    return this.controller.isNodeHighlighted(path);
-  }
-
-  // ── Selection set (checkbox / data state) ───────────────────────────
-
-  selectNode(path: string, options?: TreeMutationOptions): void {
-    this.controller.selectNode(path, options);
+    this.controller.selectNode(path, mode, options);
   }
 
   selectNodes(paths: string[], options?: TreeMutationOptions): void {
@@ -264,10 +230,6 @@ export class WebTreeView<T = any> {
 
   selectAll(options?: TreeMutationOptions): void {
     this.controller.selectAll(options);
-  }
-
-  deselectNode(path: string, options?: TreeMutationOptions): void {
-    this.controller.deselectNode(path, options);
   }
 
   clearSelection(paths?: string[], options?: TreeMutationOptions): void {
@@ -284,6 +246,44 @@ export class WebTreeView<T = any> {
 
   isNodeSelected(path: string): boolean {
     return this.controller.isNodeSelected(path);
+  }
+
+  // ── Checked set (checkbox / data state) ─────────────────────────────
+
+  checkNode(path: string, options?: TreeMutationOptions): void {
+    this.controller.checkNode(path, options);
+  }
+
+  checkNodes(paths: string[], options?: TreeMutationOptions): void {
+    this.controller.checkNodes(paths, options);
+  }
+
+  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
+    this.controller.setCheckedPaths(paths, options);
+  }
+
+  checkAll(options?: TreeMutationOptions): void {
+    this.controller.checkAll(options);
+  }
+
+  uncheckNode(path: string, options?: TreeMutationOptions): void {
+    this.controller.uncheckNode(path, options);
+  }
+
+  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
+    this.controller.clearChecked(paths, options);
+  }
+
+  getCheckedNodes(): LTreeNode<T>[] {
+    return this.controller.getCheckedNodes();
+  }
+
+  getCheckedPaths(): Set<string> {
+    return this.controller.getCheckedPaths();
+  }
+
+  isNodeChecked(path: string): boolean {
+    return this.controller.isNodeChecked(path);
   }
 
   // ── Focus (single cursor) ───────────────────────────────────────────
@@ -371,8 +371,8 @@ function mapToControllerConfig<T>(options: Partial<TreeViewConfig<T>>): TreeCont
     levelMember: options.levelMember,
     isExpandedMember: options.isExpandedMember,
     getIsExpandedCallback: options.getIsExpandedCallback,
-    isSelectedMember: options.isSelectedMember,
-    getIsSelectedCallback: options.getIsSelectedCallback,
+    isCheckedMember: options.isCheckedMember,
+    getIsCheckedCallback: options.getIsCheckedCallback,
     isSelectableMember: options.isSelectableMember,
     getIsSelectableCallback: options.getIsSelectableCallback,
     isDraggableMember: options.isDraggableMember,
@@ -397,8 +397,8 @@ function mapToControllerConfig<T>(options: Partial<TreeViewConfig<T>>): TreeCont
 
     data: options.data || [],
     focusedNode: options.focusedNode,
-    highlightedPaths: options.highlightedPaths,
     selectedPaths: options.selectedPaths,
+    checkedPaths: options.checkedPaths,
 
     expandLevel: options.expandLevel,
     isAccordionExpand: options.isAccordionExpand,
@@ -460,9 +460,9 @@ function mapToControllerConfig<T>(options: Partial<TreeViewConfig<T>>): TreeCont
     hasContextMenuRenderer: !!(options.contextMenuCallback || options.renderContextMenuCallback),
 
     bodyClass: options.bodyClass,
-    highlightedNodeClass: options.highlightedNodeClass,
-    focusedNodeClass: options.focusedNodeClass,
     selectedNodeClass: options.selectedNodeClass,
+    focusedNodeClass: options.focusedNodeClass,
+    checkedNodeClass: options.checkedNodeClass,
     dragOverNodeClass: options.dragOverNodeClass,
     draggedNodeClass: options.draggedNodeClass,
     shouldShowNodeTooltips: options.shouldShowNodeTooltips,
@@ -496,11 +496,11 @@ function mapToControllerConfig<T>(options: Partial<TreeViewConfig<T>>): TreeCont
     selectionMode: options.selectionMode,
     shouldShowCheckboxes: options.shouldShowCheckboxes,
     checkboxMode: options.checkboxMode,
-    cascadeSelectPolicy: options.cascadeSelectPolicy,
+    cascadeCheckPolicy: options.cascadeCheckPolicy,
     shouldClickToggleCheckbox: options.shouldClickToggleCheckbox,
     beforeCheckboxToggleCallback: options.beforeCheckboxToggleCallback,
+    onCheckedChange: options.onCheckedChange,
     onSelectionChange: options.onSelectionChange,
-    onHighlightChange: options.onHighlightChange,
   } as TreeControllerConfig<T>;
 }
 

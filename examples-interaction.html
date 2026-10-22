@@ -63,12 +63,12 @@
             <p>
                 <code>click-behavior</code> controls what happens when you click a node;
                 <code>selection-mode</code> decides whether Ctrl/Shift+click can extend the set.
-                The library tracks three independent kinds of selection:
+                The library tracks three independent node states:
             </p>
             <ul>
                 <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focused-node-changed</code>; styled by <code>focused-node-class</code>.</li>
-                <li><strong>highlightedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>highlight-change</code>; styled by <code>highlighted-node-class</code>.</li>
-                <li><strong>selectedPaths</strong> &mdash; checkbox data state. Surfaces as <code>selection-change</code>.</li>
+                <li><strong>selectedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>selection-change</code>; styled by <code>selected-node-class</code>.</li>
+                <li><strong>checkedPaths</strong> &mdash; checkbox data state. Surfaces as <code>checked-change</code>.</li>
             </ul>
             <p>
                 With <code>selection-mode="multi"</code>:
@@ -77,7 +77,7 @@
                 <span class="kbd">Shift+Click</span> range-selects, and
                 <span class="kbd">Ctrl+A</span> selects all (click the tree first for focus).
                 <code>range-selection-mode</code> controls whether a Shift range includes collapsed children.
-                Pick a <strong>Highlighted style</strong> below and build up a set to see it on every row.
+                Pick a <strong>Selected style</strong> below and build up a set to see it on every row.
             </p>
 
             <div class="controls">
@@ -97,14 +97,14 @@
                     </select>
                 </label>
                 <label>
-                    Highlighted style:
-                    <select id="in1-highlight-class">
+                    Selected style:
+                    <select id="in1-selected-class">
                         <option value="" selected>Default (soft tint)</option>
-                        <option value="wtv__node-content--highlight-bold">Bold</option>
-                        <option value="wtv__node-content--highlight-border">Border</option>
-                        <option value="wtv__node-content--highlight-brackets">Brackets</option>
-                        <option value="wtv__node-content--highlight-fill">Highlight (Explorer-style)</option>
-                        <option value="wtv__node-content--highlight-glow">Glow (soft ring)</option>
+                        <option value="wtv__node-content--selected-bold">Bold</option>
+                        <option value="wtv__node-content--selected-border">Border</option>
+                        <option value="wtv__node-content--selected-brackets">Brackets</option>
+                        <option value="wtv__node-content--selected-fill">Fill (Explorer-style)</option>
+                        <option value="wtv__node-content--selected-glow">Glow (soft ring)</option>
                     </select>
                 </label>
                 <label>
@@ -137,7 +137,7 @@
                         <option value="logical">logical (full tree walk, incl. collapsed)</option>
                     </select>
                 </label>
-                <button id="in1-select-specific">Highlight 1.1.1, 1.1.3, 1.2.1</button>
+                <button id="in1-select-specific">Select 1.1.1, 1.1.3, 1.2.1</button>
                 <button class="secondary" id="in1-clear">Clear all</button>
             </div>
 
@@ -155,10 +155,10 @@
                     <div class="output">
                         <p class="output-label">focusedNode</p>
                         <pre id="in1-focused">(none)</pre>
-                        <p class="output-label mt-1">highlightedPaths (Ctrl/Shift+click) &mdash; <span id="in1-highlight-count">0</span></p>
-                        <pre id="in1-highlight">(none)</pre>
-                        <p class="output-label mt-1">selectedPaths (checkboxes) &mdash; <span id="in1-selected-count">0</span></p>
+                        <p class="output-label mt-1">selectedPaths (Ctrl/Shift+click) &mdash; <span id="in1-selected-count">0</span></p>
                         <pre id="in1-selected">(none)</pre>
+                        <p class="output-label mt-1">checkedPaths (checkboxes) &mdash; <span id="in1-checked-count">0</span></p>
+                        <pre id="in1-checked">(none)</pre>
                     </div>
                 </div>
             </div>
@@ -167,16 +167,16 @@
                 <div class="note-title">How the styles stack — one channel per state</div>
                 <p>
                     Each state owns a different visual channel so they compose instead of fighting:
-                    <strong>Highlighted</strong> (the set) paints the <em>background</em> as a soft tint;
+                    <strong>Selected</strong> (the set) paints the <em>background</em> as a soft tint;
                     <strong>Focused</strong> (the single cursor row) is a thin <em>inset outline ring</em>, so it
                     stacks cleanly on top of any background. After a plain click the same row is both (tint + ring);
                     after a Shift+click range the intermediate rows are tinted only, while the last-clicked row is
-                    tinted <em>and</em> ringed. Each default is a fallback &mdash; pick a <em>Highlighted</em> or
+                    tinted <em>and</em> ringed. Each default is a fallback &mdash; pick a <em>Selected</em> or
                     <em>Focused style</em> above and the built-in look steps aside.
                 </p>
                 <p>
-                    <strong>Checkboxes</strong> are a separate channel &mdash; <code>selectedPaths</code>, independent of
-                    highlight/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
+                    <strong>Checkboxes</strong> are a separate channel &mdash; <code>checkedPaths</code>, independent of
+                    selection/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
                     partial branches); <code>independent</code> toggles one node. With <code>click-toggles-checkbox</code> on,
                     a plain row click flips that node's checkbox instead of just focusing the row.
                 </p>
@@ -199,7 +199,7 @@
                     <div class="demo-label">Tree</div>
                     <div class="tree-container">
                         <web-treeview id="in3-tree" expand-level="1"
-                            highlighted-node-class="wtv__node-content--highlight-bold"
+                            selected-node-class="wtv__node-content--selected-bold"
                             focused-node-class="demo-focused-outline"></web-treeview>
                     </div>
                     <div class="controls">
@@ -237,8 +237,8 @@
             <h2>IN03 · Cascade Checkboxes &amp; Value Policy</h2>
             <p>
                 Two orthogonal knobs. <code>checkbox-mode</code> controls how checking a branch
-                <em>behaves</em>; <code>cascade-select-policy</code> controls which paths the selection
-                <em>emits</em> (what <code>getSelectedPaths()</code> / the <code>selection-change</code> event report).
+                <em>behaves</em>; <code>cascade-check-policy</code> controls which paths the checked set
+                <em>emits</em> (what <code>getCheckedPaths()</code> / the <code>checked-change</code> event report).
                 Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
                 (The <code>click-toggles-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
                 the IN01 picker above.)
@@ -257,7 +257,7 @@
                     </select>
                 </label>
                 <label>
-                    cascade-select-policy:
+                    cascade-check-policy:
                     <select id="in4-policy">
                         <option value="rolled-up" selected>rolled-up (minimal cover)</option>
                         <option value="leaves">leaves (only checked leaves)</option>
@@ -287,14 +287,14 @@
                         <web-treeview id="in4-tree" expand-level="3"
                             show-checkboxes="true"
                             checkbox-mode="cascade"
-                            cascade-select-policy="rolled-up"></web-treeview>
+                            cascade-check-policy="rolled-up"></web-treeview>
                     </div>
                 </div>
                 <div>
-                    <div class="demo-label">Emitted selectedPaths</div>
+                    <div class="demo-label">Emitted checkedPaths</div>
                     <div class="output">
-                        <p class="output-label">getSelectedPaths() &mdash; <span id="in4-count">0</span> entries</p>
-                        <pre id="in4-selected">(none — check some branches)</pre>
+                        <p class="output-label">getCheckedPaths() &mdash; <span id="in4-count">0</span> entries</p>
+                        <pre id="in4-checked">(none — check some branches)</pre>
                     </div>
                 </div>
             </div>
@@ -306,13 +306,13 @@
             <p>
                 Restore tree state from URL parameters <em>without</em> firing selection callbacks. You share a
                 link like <code>?nodePath=1.2.3</code>; the page loads form data from the URL, and the tree just
-                needs to scroll + visually highlight the matching node. Firing <code>highlight-change</code> in
+                needs to scroll + visually select the matching node. Firing <code>selection-change</code> in
                 that flow would re-trigger your form-loader and overwrite whatever the URL just supplied.
             </p>
             <p>
-                Pass <code>{ silent: true }</code> to <code>highlightNode()</code> / <code>highlightNodes()</code> /
-                <code>clearHighlight()</code> / <code>clearSelection()</code>. State (highlight set, CSS class,
-                focused node) still updates &mdash; only the <code>highlight-change</code> / <code>selection-change</code>
+                Pass <code>{ silent: true }</code> to <code>selectNode()</code> / <code>selectNodes()</code> /
+                <code>clearSelection()</code> / <code>clearChecked()</code>. State (selected set, CSS class,
+                focused node) still updates &mdash; only the <code>selection-change</code> / <code>checked-change</code>
                 events are suppressed.
             </p>
 
@@ -331,21 +331,21 @@
 
             <div class="tree-container">
                 <web-treeview id="in5-tree" expand-level="2"
-                    highlighted-node-class="wtv__node-content--highlight-bold"></web-treeview>
+                    selected-node-class="wtv__node-content--selected-bold"></web-treeview>
             </div>
 
             <div class="output">
-                <p class="output-label">Form data (only changes when highlight-change fires)</p>
+                <p class="output-label">Form data (only changes when selection-change fires)</p>
                 <pre id="in5-form">(form not loaded yet)</pre>
-                <p class="output-label mt-1">highlight-change fired</p>
+                <p class="output-label mt-1">selection-change fired</p>
                 <pre id="in5-fires">0 time(s)</pre>
             </div>
 
             <div class="code-block">
-<pre><code>// Restore tree state from URL params without firing highlight-change
+<pre><code>// Restore tree state from URL params without firing selection-change
 function restoreFromUrl(nodePath) {
   loadFormDataFromUrl(nodePath);              // preserve this value
-  tree.highlightNode(nodePath, 'replace', { silent: true });
+  tree.selectNode(nodePath, 'replace', { silent: true });
   tree.scrollToPath(nodePath, { expand: true, highlight: true });
 }</code></pre>
             </div>
@@ -355,7 +355,7 @@ function restoreFromUrl(nodePath) {
         <div class="card">
             <h2>IN05 · Clipboard &amp; Bulk Operations</h2>
             <p>
-                Cross-tree copy/cut/paste plus batch branch mutations. Highlight nodes in the source tree, then
+                Cross-tree copy/cut/paste plus batch branch mutations. Select nodes in the source tree, then
                 <span class="kbd">Ctrl+C</span>/<span class="kbd">Ctrl+X</span>; click a target node in the right
                 tree and <span class="kbd">Ctrl+V</span> (or use the buttons). Cut nodes dim until pasted or
                 cancelled with <span class="kbd">Escape</span>.
@@ -372,7 +372,7 @@ function restoreFromUrl(nodePath) {
                     <div class="tree-container tree-container-sm">
                         <web-treeview id="in6-source" expand-level="2" tree-id="source"
                             selection-mode="multi"
-                            highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
+                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="controls">
                         <button id="in6-copy">Copy</button>
@@ -384,7 +384,7 @@ function restoreFromUrl(nodePath) {
                     <div class="demo-label">Target tree</div>
                     <div class="tree-container tree-container-sm">
                         <web-treeview id="in6-target" expand-level="2" tree-id="target"
-                            highlighted-node-class="wtv__node-content--highlight-border"></web-treeview>
+                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="controls">
                         <button id="in6-paste">Paste here</button>
@@ -394,7 +394,7 @@ function restoreFromUrl(nodePath) {
 
             <div class="output">
                 <p class="output-label">Paste result:</p>
-                <pre id="in6-paste-out">Highlight nodes, copy/cut, then paste into the target tree</pre>
+                <pre id="in6-paste-out">Select nodes, copy/cut, then paste into the target tree</pre>
             </div>
 
             <h3 style="margin-top:1.5rem">Bulk branch mutations</h3>
@@ -402,7 +402,7 @@ function restoreFromUrl(nodePath) {
 
             <div class="tree-container" id="in6-bulk-container">
                 <web-treeview id="in6-bulk" expand-level="3"
-                    highlighted-node-class="wtv__node-content--highlight-bold"></web-treeview>
+                    selected-node-class="wtv__node-content--selected-bold"></web-treeview>
             </div>
 
             <div class="controls">
@@ -513,16 +513,16 @@ function restoreFromUrl(nodePath) {
                 document.getElementById('in1-focused').textContent =
                     n ? `${n.data?.name} (${n.path})` : '(none)';
             });
-            in1.addEventListener('highlight-change', (e) => {
+            in1.addEventListener('selection-change', (e) => {
                 const paths = [...e.detail.paths].sort();
-                document.getElementById('in1-highlight-count').textContent = paths.length;
-                document.getElementById('in1-highlight').textContent =
-                    paths.length ? paths.join(', ') : '(none)';
-            });
-            in1.addEventListener('selection-change', () => {
-                const paths = [...in1.getSelectedPaths()].sort();
                 document.getElementById('in1-selected-count').textContent = paths.length;
                 document.getElementById('in1-selected').textContent =
+                    paths.length ? paths.join(', ') : '(none)';
+            });
+            in1.addEventListener('checked-change', () => {
+                const paths = [...in1.getCheckedPaths()].sort();
+                document.getElementById('in1-checked-count').textContent = paths.length;
+                document.getElementById('in1-checked').textContent =
                     paths.length ? paths.join(', ') : '(none)';
             });
 
@@ -532,9 +532,9 @@ function restoreFromUrl(nodePath) {
             document.getElementById('in1-selection-mode').addEventListener('change', (e) => {
                 in1.setAttribute('selection-mode', e.target.value);
             });
-            document.getElementById('in1-highlight-class').addEventListener('change', (e) => {
-                if (e.target.value) in1.setAttribute('highlighted-node-class', e.target.value);
-                else in1.removeAttribute('highlighted-node-class'); // '' → built-in soft tint
+            document.getElementById('in1-selected-class').addEventListener('change', (e) => {
+                if (e.target.value) in1.setAttribute('selected-node-class', e.target.value);
+                else in1.removeAttribute('selected-node-class'); // '' → built-in soft tint
             });
             document.getElementById('in1-focus-class').addEventListener('change', (e) => {
                 if (e.target.value) in1.setAttribute('focused-node-class', e.target.value);
@@ -553,15 +553,15 @@ function restoreFromUrl(nodePath) {
             });
             document.getElementById('in1-range-mode').addEventListener('change', (e) => {
                 in1.rangeSelectionMode = e.target.value;
-                in1.clearHighlight();
+                in1.clearSelection();
             });
             document.getElementById('in1-select-specific').addEventListener('click', () => {
-                in1.setHighlightedPaths(['1.1.1', '1.1.3', '1.2.1']);
+                in1.setSelectedPaths(['1.1.1', '1.1.3', '1.2.1']);
             });
             document.getElementById('in1-clear').addEventListener('click', () => {
-                in1.clearHighlight();
-                in1.clearFocus();
                 in1.clearSelection();
+                in1.clearFocus();
+                in1.clearChecked();
             });
 
             // ── IN02 · Keyboard Navigation ────────────────────────────────
@@ -591,13 +591,13 @@ function restoreFromUrl(nodePath) {
             in4.data = fileTree;
 
             function refreshIn4Emitted() {
-                // getSelectedPaths() already projects through cascadeSelectPolicy.
-                const paths = [...in4.getSelectedPaths()].sort();
+                // getCheckedPaths() already projects through cascadeCheckPolicy.
+                const paths = [...in4.getCheckedPaths()].sort();
                 document.getElementById('in4-count').textContent = paths.length;
-                document.getElementById('in4-selected').textContent =
+                document.getElementById('in4-checked').textContent =
                     paths.length ? paths.join('\n') : '(none — check some branches)';
             }
-            in4.addEventListener('selection-change', refreshIn4Emitted);
+            in4.addEventListener('checked-change', refreshIn4Emitted);
 
             document.getElementById('in4-show-checkboxes').addEventListener('change', (e) => {
                 if (e.target.checked) in4.setAttribute('show-checkboxes', 'true');
@@ -609,11 +609,11 @@ function restoreFromUrl(nodePath) {
                 refreshIn4Emitted();
             });
             document.getElementById('in4-policy').addEventListener('change', (e) => {
-                in4.setAttribute('cascade-select-policy', e.target.value);
+                in4.setAttribute('cascade-check-policy', e.target.value);
                 refreshIn4Emitted();
             });
             document.getElementById('in4-clear').addEventListener('click', () => {
-                in4.clearSelection();
+                in4.clearChecked();
                 refreshIn4Emitted();
             });
 
@@ -626,7 +626,7 @@ function restoreFromUrl(nodePath) {
             const in5FormEl = document.getElementById('in5-form');
             const in5FiresEl = document.getElementById('in5-fires');
 
-            in5.addEventListener('highlight-change', (e) => {
+            in5.addEventListener('selection-change', (e) => {
                 in5Fires++;
                 const last = [...e.detail.paths].pop();
                 if (last) in5FormEl.textContent =
@@ -647,15 +647,15 @@ function restoreFromUrl(nodePath) {
                 // 1. Load form data from the "URL" — preserve this value.
                 in5FormEl.textContent = `URL-loaded data for "${path}" — do not overwrite`;
                 in5Fires = 0;
-                // 2. Mark the node; silent skips highlight-change.
-                in5.highlightNode(path, 'replace', { silent });
+                // 2. Mark the node; silent skips selection-change.
+                in5.selectNode(path, 'replace', { silent });
                 // 3. Scroll into view (scrollToPath never fires selection events).
                 await in5.scrollToPath(path, { expand: true, highlight: true, behavior: 'smooth', block: 'center' });
                 updateIn5Fires();
             });
             document.getElementById('in5-silent').addEventListener('change', updateIn5Fires);
             document.getElementById('in5-reset').addEventListener('click', () => {
-                in5.clearHighlight(undefined, { silent: true });
+                in5.clearSelection(undefined, { silent: true });
                 in5Fires = 0;
                 in5FormEl.textContent = '(form not loaded yet)';
                 in5FiresEl.textContent = '0 time(s)';
@@ -676,9 +676,9 @@ function restoreFromUrl(nodePath) {
                 const has = in6src.hasClipboardContent?.() ?? false;
                 document.getElementById('in6-op').textContent = has ? op : 'empty';
                 document.getElementById('in6-info').textContent = has
-                    ? `(${in6src.getHighlightedPaths().size || '?'} entries)` : '';
+                    ? `(${in6src.getSelectedPaths().size || '?'} entries)` : '';
             }
-            in6src.addEventListener('highlight-change', updateClipboardStatus);
+            in6src.addEventListener('selection-change', updateClipboardStatus);
             in6src.addEventListener('tree-changed', updateClipboardStatus);
             in6tgt.addEventListener('tree-changed', updateClipboardStatus);
 

@@ -1,14 +1,14 @@
 import { test, expect, Page, Locator } from '@playwright/test';
 
 /**
- * E2E coverage for /test/highlight-focus.html — parity with svelte-treeview's
- * e2e/highlight-focus.spec.ts.
+ * E2E coverage for /test/selection-focus.html — parity with svelte-treeview's
+ * e2e/selection-focus.spec.ts.
  *
  * Two contracts:
  *
- *  1. Highlight-marker FALLBACK. `.wtv__node-content--highlighted` ships a
- *     default look so highlight is visible out of the box, but the DOM renderer
- *     only applies it when `highlightedNodeClass` is unset. Setting a highlight
+ *  1. Selected-marker FALLBACK. `.wtv__node-content--selected` ships a
+ *     default look so the selection is visible out of the box, but the DOM renderer
+ *     only applies it when `selectedNodeClass` is unset. Setting a selected
  *     class must suppress the marker so the default background never fights the
  *     configured style.
  *
@@ -18,23 +18,26 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *
  * NB: web-treeview's diff renderer only re-renders a row when its `_rev` bumps
  * (a config-only attribute change does NOT re-render already-drawn rows). So
- * each test sets the highlight/focus class BEFORE clicking — the click bumps
+ * each test sets the selection/focus class BEFORE clicking — the click bumps
  * `_rev`, and `_updateNodeElement` then reads the current config. This is why
- * there's no "switch the class on an already-highlighted row" test like the
+ * there's no "switch the class on an already-selected row" test like the
  * Svelte build has (Svelte's reactive class binding hot-swaps; the diff
  * renderer intentionally doesn't).
  *
  * Page data (alpha-sorted): '1' Documents, '1.1' Work, '1.2' Personal,
  * '2' Downloads. 1.1/1.2/2 are leaves. click-behavior="select": a plain click
- * focuses + highlights (replace).
+ * focuses + selects (replace).
  */
 
-const PAGE = '/test/highlight-focus.html';
+const PAGE = '/test/selection-focus.html';
 
-const MARKER = 'wtv__node-content--highlighted';
+const MARKER = 'wtv__node-content--selected';
 const FOCUS_MARKER = 'wtv__node-content--focused';
-const BOLD = 'wtv__node-content--highlight-bold';
-const GLOW = 'wtv__node-content--highlight-glow';
+const BOLD = 'wtv__node-content--selected-bold';
+const GLOW = 'wtv__node-content--selected-glow';
+
+// Whole-class match — `\b` would let `--selected` match inside `--selected-bold`.
+const cls = (name: string) => new RegExp(`(^|\\s)${name}(\\s|$)`);
 const FOCUS_CLASS = 'test-focus';
 
 function nodeContent(page: Page, path: string): Locator {
@@ -59,39 +62,39 @@ async function goto(page: Page) {
   await expect(page.locator('.wtv__node').first()).toBeVisible();
 }
 
-// ── Highlight marker fallback ────────────────────────────────────────────────
+// ── Selected marker fallback ────────────────────────────────────────────────
 
-test.describe('highlight marker fallback', () => {
-  test('no highlightedNodeClass: highlighted row gets the fallback marker', async ({ page }) => {
+test.describe('selected marker fallback', () => {
+  test('no selectedNodeClass: selected row gets the fallback marker', async ({ page }) => {
     await goto(page);
 
     const work = nodeContent(page, '1.1');
     await work.click();
 
-    await expect(outputValue(page, 'Highlighted')).toContainText('1.1');
-    await expect(work).toHaveClass(new RegExp(`\\b${MARKER}\\b`));
+    await expect(outputValue(page, 'Selected Paths')).toContainText('1.1');
+    await expect(work).toHaveClass(cls(MARKER));
   });
 
-  test('highlightedNodeClass="Bold": custom class applied, fallback marker suppressed', async ({ page }) => {
+  test('selectedNodeClass="Bold": custom class applied, fallback marker suppressed', async ({ page }) => {
     await goto(page);
-    await page.getByLabel('Highlight Class:').selectOption(BOLD);
+    await page.getByLabel('Selected Class:').selectOption(BOLD);
 
     const work = nodeContent(page, '1.1');
     await work.click();
 
-    await expect(work).toHaveClass(new RegExp(`\\b${BOLD}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${MARKER}\\b`));
+    await expect(work).toHaveClass(cls(BOLD));
+    await expect(work).not.toHaveClass(cls(MARKER));
   });
 
-  test('highlightedNodeClass="Glow": custom class applied, fallback marker suppressed', async ({ page }) => {
+  test('selectedNodeClass="Glow": custom class applied, fallback marker suppressed', async ({ page }) => {
     await goto(page);
-    await page.getByLabel('Highlight Class:').selectOption(GLOW);
+    await page.getByLabel('Selected Class:').selectOption(GLOW);
 
     const work = nodeContent(page, '1.1');
     await work.click();
 
-    await expect(work).toHaveClass(new RegExp(`\\b${GLOW}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${MARKER}\\b`));
+    await expect(work).toHaveClass(cls(GLOW));
+    await expect(work).not.toHaveClass(cls(MARKER));
   });
 });
 
@@ -105,8 +108,8 @@ test.describe('focused node styling', () => {
     await work.click();
 
     await expect(outputValue(page, 'Focused Node')).toContainText('Work');
-    await expect(work).toHaveClass(new RegExp(`\\b${FOCUS_MARKER}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
+    await expect(work).toHaveClass(cls(FOCUS_MARKER));
+    await expect(work).not.toHaveClass(cls(FOCUS_CLASS));
   });
 
   test('focusedNodeClass lands on the focused row', async ({ page }) => {
@@ -116,8 +119,8 @@ test.describe('focused node styling', () => {
     const work = nodeContent(page, '1.1');
     await work.click();
 
-    await expect(work).toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
-    await expect(work).toHaveClass(new RegExp(`\\b${FOCUS_MARKER}\\b`));
+    await expect(work).toHaveClass(cls(FOCUS_CLASS));
+    await expect(work).toHaveClass(cls(FOCUS_MARKER));
   });
 
   test('focus is single: moving focus moves both the hook and the custom class', async ({ page }) => {
@@ -128,27 +131,27 @@ test.describe('focused node styling', () => {
     const personal = nodeContent(page, '1.2');
 
     await work.click();
-    await expect(work).toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
+    await expect(work).toHaveClass(cls(FOCUS_CLASS));
 
     await personal.click();
-    await expect(personal).toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
-    await expect(personal).toHaveClass(new RegExp(`\\b${FOCUS_MARKER}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${FOCUS_MARKER}\\b`));
+    await expect(personal).toHaveClass(cls(FOCUS_CLASS));
+    await expect(personal).toHaveClass(cls(FOCUS_MARKER));
+    await expect(work).not.toHaveClass(cls(FOCUS_CLASS));
+    await expect(work).not.toHaveClass(cls(FOCUS_MARKER));
 
     await expect(page.locator(`.${FOCUS_MARKER}`)).toHaveCount(1);
   });
 
-  test('highlight and focus stack independently on the same row', async ({ page }) => {
+  test('selection and focus stack independently on the same row', async ({ page }) => {
     await goto(page);
-    await page.getByLabel('Highlight Class:').selectOption(BOLD);
+    await page.getByLabel('Selected Class:').selectOption(BOLD);
     await page.getByLabel('Focus Class:').selectOption(FOCUS_CLASS);
 
     const work = nodeContent(page, '1.1');
     await work.click();
 
-    await expect(work).toHaveClass(new RegExp(`\\b${BOLD}\\b`));
-    await expect(work).toHaveClass(new RegExp(`\\b${FOCUS_CLASS}\\b`));
-    await expect(work).not.toHaveClass(new RegExp(`\\b${MARKER}\\b`));
+    await expect(work).toHaveClass(cls(BOLD));
+    await expect(work).toHaveClass(cls(FOCUS_CLASS));
+    await expect(work).not.toHaveClass(cls(MARKER));
   });
 });

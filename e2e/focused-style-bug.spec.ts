@@ -4,21 +4,21 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * Regression: the focused style must sit on EXACTLY ONE row.
  *
  * The flat diff reconciler only re-renders a row when its `data-rev`,
- * `data-expanded` or `data-has-children` changes. Focus (and highlight) move
+ * `data-expanded` or `data-has-children` changes. Focus (and selection) move
  * between nodes WITHOUT bumping the losing node's `_rev` — e.g. a Ctrl+click
- * that adds a node to a multi-highlight (the previously-focused row stays
- * highlighted, so nothing bumps its `_rev`), or a checkbox toggle on another
+ * that adds a node to a multi-selection (the previously-focused row stays
+ * selected, so nothing bumps its `_rev`), or a checkbox toggle on another
  * row. Before the fix, the losing row was skipped by the reconciler and kept
  * its stale `focusedNodeClass`, so the focus style accumulated on every row it
- * had ever visited. The renderer now tracks `data-focused` / `data-highlighted`
- * in the dirty check so a row that loses focus/highlight is always re-rendered.
+ * had ever visited. The renderer now tracks `data-focused` / `data-selected`
+ * in the dirty check so a row that loses focus/selection is always re-rendered.
  *
- * Fixture: /test/highlight-focus.html — selection-mode="multi",
+ * Fixture: /test/selection-focus.html — selection-mode="multi",
  * click-behavior="select", focusedNodeClass selectable as `test-focus`.
  * Data (alpha-sorted): '1' Documents, '1.1' Work, '1.2' Personal, '2' Downloads.
  */
 
-const PAGE = '/test/highlight-focus.html';
+const PAGE = '/test/selection-focus.html';
 const FOCUS_CLASS = 'test-focus';
 
 function nodeContent(page: Page, path: string): Locator {
@@ -29,7 +29,7 @@ function nodeContent(page: Page, path: string): Locator {
     .first();
 }
 
-test('Ctrl+click across a multi-highlight leaves the focus class on exactly one row', async ({ page }) => {
+test('Ctrl+click across a multi-selection leaves the focus class on exactly one row', async ({ page }) => {
   await page.goto(PAGE);
   await expect(page.locator('.wtv__node').first()).toBeVisible();
   await page.getByLabel('Focus Class:').selectOption(FOCUS_CLASS);
@@ -38,12 +38,12 @@ test('Ctrl+click across a multi-highlight leaves the focus class on exactly one 
   const personal = nodeContent(page, '1.2');
   const re = new RegExp(`\\b${FOCUS_CLASS}\\b`);
 
-  // First Ctrl+click: Work enters the highlight set and takes focus.
+  // First Ctrl+click: Work enters the selected set and takes focus.
   await work.click({ modifiers: ['Control'] });
   await expect(work).toHaveClass(re);
 
-  // Second Ctrl+click: Personal joins the highlight set and focus moves to it.
-  // Work stays highlighted (its _rev does NOT bump), so the reconciler must still
+  // Second Ctrl+click: Personal joins the selected set and focus moves to it.
+  // Work stays selected (its _rev does NOT bump), so the reconciler must still
   // re-render it to drop the now-stale focus class.
   await personal.click({ modifiers: ['Control'] });
   await expect(personal).toHaveClass(re);

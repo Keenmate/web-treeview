@@ -24,10 +24,10 @@
         <dl class="readouts">
             <dt>focused-path:</dt>
             <dd><span data-testid="focused-path"></span></dd>
-            <dt>highlighted-size:</dt>
-            <dd><span data-testid="highlighted-size">0</span></dd>
-            <dt>highlighted-sorted:</dt>
-            <dd><span data-testid="highlighted-sorted"></span></dd>
+            <dt>selected-size:</dt>
+            <dd><span data-testid="selected-size">0</span></dd>
+            <dt>selected-sorted:</dt>
+            <dd><span data-testid="selected-sorted"></span></dd>
         </dl>
     </main>
 
@@ -70,14 +70,14 @@
             tree.data = sampleData;
 
             const focusedEl = document.querySelector('[data-testid="focused-path"]');
-            const sizeEl = document.querySelector('[data-testid="highlighted-size"]');
-            const sortedEl = document.querySelector('[data-testid="highlighted-sorted"]');
+            const sizeEl = document.querySelector('[data-testid="selected-size"]');
+            const sortedEl = document.querySelector('[data-testid="selected-sorted"]');
 
             tree.addEventListener('focused-node-changed', (e) => {
                 focusedEl.textContent = e.detail.focusedNode?.path ?? '';
             });
 
-            tree.addEventListener('highlight-change', (e) => {
+            tree.addEventListener('selection-change', (e) => {
                 const paths = [...e.detail.paths].sort();
                 sizeEl.textContent = String(paths.length);
                 sortedEl.textContent = paths.join(',');

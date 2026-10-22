@@ -37,18 +37,18 @@ test('isExpanded updates on collapse (diff reconciler re-renders the icon)', asy
 	await expect(ctx(page, '1')).toHaveAttribute('data-expanded', 'false');
 });
 
-test('isSelected flips when the checkbox is toggled', async ({ page }) => {
+test('isChecked flips when the checkbox is toggled', async ({ page }) => {
 	const leaf = ctx(page, '1.1.1');
-	await expect(leaf).toHaveAttribute('data-selected', 'false');
+	await expect(leaf).toHaveAttribute('data-checked', 'false');
 	await page.locator('[data-tree-path="1.1.1"] .wtv__checkbox').first().click();
-	await expect(leaf).toHaveAttribute('data-selected', 'true');
+	await expect(leaf).toHaveAttribute('data-checked', 'true');
 });
 
-test('isHighlighted + isFocused flip when a row is clicked', async ({ page }) => {
+test('isSelected + isFocused flip when a row is clicked', async ({ page }) => {
 	const leaf = ctx(page, '1.1.1');
-	await expect(leaf).toHaveAttribute('data-highlighted', 'false');
+	await expect(leaf).toHaveAttribute('data-selected', 'false');
 	await expect(leaf).toHaveAttribute('data-focused', 'false');
 	await page.locator('[data-tree-path="1.1.1"] .wtv__node-content').first().click();
 	await expect(leaf).toHaveAttribute('data-focused', 'true');
-	await expect(leaf).toHaveAttribute('data-highlighted', 'true');
+	await expect(leaf).toHaveAttribute('data-selected', 'true');
 });

@@ -247,8 +247,8 @@ tree.renderNodeCallback = (node, el, ctx) =&gt; {
   deviceClass: 'mobile' | 'tablet' | 'desktop'; // classifyDevice(): capability + size
   container: { width: number; height: number }; // the tree's OWN border-box, in px
   isExpanded:    boolean;
+  isChecked:     boolean;
   isSelected:    boolean;
-  isHighlighted: boolean;
   isFocused:     boolean;
   level:         number;   // 1-based depth
   hasChildren:   boolean;
@@ -266,8 +266,8 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
                 <tr><td><code>deviceClass</code></td><td><code>'mobile' | 'tablet' | 'desktop'</code></td><td><code>classifyDevice</code> + <code>observeEnvironment</code> (capability + physical size, orientation-robust)</td></tr>
                 <tr><td><code>container</code></td><td><code>{ width, height }</code></td><td><code>observeElementSize</code> on the tree's own container (shared <code>ResizeObserver</code>)</td></tr>
                 <tr><td><code>isExpanded</code></td><td><code>boolean</code></td><td>live node state at render time</td></tr>
-                <tr><td><code>isSelected</code></td><td><code>boolean</code></td><td>live node state (checkbox / selection)</td></tr>
-                <tr><td><code>isHighlighted</code></td><td><code>boolean</code></td><td>live node state (row highlight)</td></tr>
+                <tr><td><code>isChecked</code></td><td><code>boolean</code></td><td>live node state (checkbox)</td></tr>
+                <tr><td><code>isSelected</code></td><td><code>boolean</code></td><td>live node state (row selection)</td></tr>
                 <tr><td><code>isFocused</code></td><td><code>boolean</code></td><td>live node state (keyboard focus)</td></tr>
                 <tr><td><code>level</code></td><td><code>number</code></td><td>node depth (1-based)</td></tr>
                 <tr><td><code>hasChildren</code></td><td><code>boolean</code></td><td>node has descendants</td></tr>

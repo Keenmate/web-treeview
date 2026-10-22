@@ -93,8 +93,8 @@ export function getClipboardTree(id: string): ClipboardSourceTree | undefined {
 // The top-level dragged paths, published by the SOURCE tree on drag start so a
 // CROSS-TREE drop/dragover can expose the full multi-drag set via ctx.dragged.
 // The target controller only receives ONE reconstituted node (from dataTransfer)
-// and can't see the source's highlight set, so it reads the set from here. Same-
-// tree drops don't need this — they compute the set from their own live highlight.
+// and can't see the source's selected set, so it reads the set from here. Same-
+// tree drops don't need this — they compute the set from their own live selection.
 // `paths` = the top-level dragged set (for ctx.dragged). `manifest` = the COMPLETE
 // placement set (every descendant, or a curated beforeDragStart override with
 // holes) used by a cross-tree AUTO-copy. (svelte-treeview rc13)

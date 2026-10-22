@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Regression: Esc-cancelling a drag must restore the pre-drag highlight.
+ * Regression: Esc-cancelling a drag must restore the pre-drag selection.
  *
  * On dragstart, the controller's `_nodeDragStartCallback` schedules a rAF that
- * replaces the highlight with the dragged node (OS-convention selection sync).
+ * replaces the selection with the dragged node (OS-convention selection sync).
  * If the user then presses Esc, the browser fires dragend with dropEffect
- * 'none' and the controller must roll the highlight back. Without rollback the
+ * 'none' and the controller must roll the selection back. Without rollback the
  * user is left with the dragged node visually selected after a cancelled drag.
  *
  * Playwright's mouse helpers don't synthesize HTML5 drag events, so we
@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test';
  * element is re-queried after the rAF because the controller's reconciliation
  * re-keys the row and the original DOM node is detached.
  */
-test('Esc during drag restores the pre-drag highlight on the source row', async ({ page }) => {
+test('Esc during drag restores the pre-drag selection on the source row', async ({ page }) => {
   await page.goto('/test/drag-esc-cancel.html');
   await expect(page.locator('.wtv__node').first()).toBeVisible();
 

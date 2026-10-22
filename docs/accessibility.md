@@ -13,13 +13,13 @@ When the tree body has focus (click any node first), keyboard navigation is acti
 | `Enter` / `Space` | Toggle expand / collapse on focused node |
 | `Home` / `End` | Focus first / last visible node |
 | `PageDown` / `PageUp` | _TODO — controller gap, tracked in e2e skips_ |
-| `Shift+ArrowDown / Up / Home / End` | _TODO — extend highlight range, controller gap_ |
-| `Ctrl+A` | Add every visible node to the highlight set |
+| `Shift+ArrowDown / Up / Home / End` | _TODO — extend selection range, controller gap_ |
+| `Ctrl+A` | Add every visible node to the selected set |
 | `Ctrl/Cmd+C` / `Ctrl/Cmd+X` / `Ctrl/Cmd+V` | Copy / cut / paste |
-| `Delete` / `Shift+Delete` | Delete highlighted node(s) |
-| `Escape` | Cancel pending cut, or clear highlight |
+| `Delete` / `Shift+Delete` | Delete selected node(s) |
+| `Escape` | Cancel pending cut, or clear the selection |
 
-The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `onTreeKeydown` interceptor (`ctx = { event, focusedNode, highlightedNodes, controller }`) runs **first** on every keydown; returning `true` suppresses both the default navigation and the built-in shortcuts. Built-in delete honors `beforeDeleteCallback` and fires the `onDelete` event.
+The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `onTreeKeydown` interceptor (`ctx = { event, focusedNode, selectedNodes, controller }`) runs **first** on every keydown; returning `true` suppresses both the default navigation and the built-in shortcuts. Built-in delete honors `beforeDeleteCallback` and fires the `onDelete` event.
 
 Plain `Tab` moves focus *out of* the tree to the next focusable element on the page; the tree itself is a single tab stop with internal arrow-key navigation, per the WAI-ARIA tree pattern.
 
@@ -28,10 +28,10 @@ Plain `Tab` moves focus *out of* the tree to the next focusable element on the p
 The tree maintains three independent state sets — see [usage.md](./usage.md) for the full API:
 
 - `focusedNode` — single node. Driven by clicks (per `clickBehavior`) and arrow keys. Renders the `.wtv__node-content--focused` always-on marker class plus the optional `focusedNodeClass` (if configured).
-- `highlightedPaths` — multi-select set. Driven by Ctrl / Shift + click and `Ctrl+A`. Renders `.wtv__node-content--highlighted` plus the optional `highlightedNodeClass`.
-- `selectedPaths` — checkbox / data-state set. Driven by checkbox clicks when `shouldShowCheckboxes` is on, or mirrored from `highlightedPaths` when checkboxes are off.
+- `selectedPaths` — multi-select set. Driven by Ctrl / Shift + click and `Ctrl+A`. Renders `.wtv__node-content--selected` plus the optional `selectedNodeClass`.
+- `checkedPaths` — checkbox / data-state set. Driven by checkbox clicks when `shouldShowCheckboxes` is on, or mirrored from `selectedPaths` when checkboxes are off.
 
-`silent: true` on `highlightNode` / `clearHighlight` / `clearSelection` suppresses BOTH the user callback AND the corresponding DOM event — useful when restoring state from a URL parameter so consumers don't see a phantom "user interaction" event on page load.
+`silent: true` on `selectNode` / `clearSelection` / `clearChecked` suppresses BOTH the user callback AND the corresponding DOM event — useful when restoring state from a URL parameter so consumers don't see a phantom "user interaction" event on page load.
 
 ## ARIA
 

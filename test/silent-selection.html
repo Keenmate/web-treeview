@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test — Silent Highlight Fixture</title>
+    <title>Test — Silent Selection Fixture</title>
     <style>
         main { padding: 1rem; font-family: sans-serif; max-width: 720px; }
         h1 { margin: 0 0 1rem; font-size: 1.2rem; }
@@ -12,26 +12,26 @@
         .readouts { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 0.75rem; margin-top: 0.75rem; font-family: monospace; font-size: 0.85rem; }
         .readouts dt { font-weight: 600; }
         .readouts dd { margin: 0; }
-        /* Custom highlight class so silent path still updates the DOM. */
-        :root { --test-highlight: rgb(254, 240, 138); }
+        /* Custom selected class so silent path still updates the DOM. */
+        :root { --test-selected: rgb(254, 240, 138); }
         web-treeview { display: block; }
     </style>
 </head>
 <body>
     <main>
-        <h1>Silent Highlight Fixture</h1>
+        <h1>Silent Selection Fixture</h1>
 
         <div class="controls">
             <button data-testid="reset-counters">reset counters</button>
-            <button data-testid="highlight-loud">highlightNode('1.2') loud</button>
-            <button data-testid="highlight-silent">highlightNode('1.2') silent</button>
-            <button data-testid="highlight-other-silent">highlightNode('2.1') silent</button>
-            <button data-testid="highlight-many-loud">highlightNodes(['1.1','1.2']) loud</button>
-            <button data-testid="highlight-many-silent">highlightNodes(['1.1','1.2']) silent</button>
-            <button data-testid="clear-loud">clearHighlight() loud</button>
-            <button data-testid="clear-silent">clearHighlight() silent</button>
-            <button data-testid="clear-selection-loud">clearSelection() loud</button>
-            <button data-testid="clear-selection-silent">clearSelection() silent</button>
+            <button data-testid="select-loud">selectNode('1.2') loud</button>
+            <button data-testid="select-silent">selectNode('1.2') silent</button>
+            <button data-testid="select-other-silent">selectNode('2.1') silent</button>
+            <button data-testid="select-many-loud">selectNodes(['1.1','1.2']) loud</button>
+            <button data-testid="select-many-silent">selectNodes(['1.1','1.2']) silent</button>
+            <button data-testid="clear-loud">clearSelection() loud</button>
+            <button data-testid="clear-silent">clearSelection() silent</button>
+            <button data-testid="clear-checked-loud">clearChecked() loud</button>
+            <button data-testid="clear-checked-silent">clearChecked() silent</button>
         </div>
 
         <div class="tree-container">
@@ -39,17 +39,17 @@
                 expand-level="2"
                 selection-mode="multi"
                 show-checkboxes="true"
-                highlighted-node-class="test-highlighted"></web-treeview>
+                selected-node-class="test-selected"></web-treeview>
         </div>
 
         <dl class="readouts">
             <dt>counter-click</dt><dd data-testid="counter-click">0</dd>
-            <dt>counter-highlight</dt><dd data-testid="counter-highlight">0</dd>
             <dt>counter-selection</dt><dd data-testid="counter-selection">0</dd>
+            <dt>counter-checked</dt><dd data-testid="counter-checked">0</dd>
             <dt>last-clicked</dt><dd data-testid="last-clicked">(none)</dd>
-            <dt>highlight-size</dt><dd data-testid="highlight-size">0</dd>
-            <dt>highlight-paths</dt><dd data-testid="highlight-paths"></dd>
-            <dt>selection-size</dt><dd data-testid="selection-size">0</dd>
+            <dt>selected-size</dt><dd data-testid="selected-size">0</dd>
+            <dt>selected-paths</dt><dd data-testid="selected-paths"></dd>
+            <dt>checked-size</dt><dd data-testid="checked-size">0</dd>
         </dl>
     </main>
 
@@ -71,7 +71,7 @@
             document.querySelector(`[data-testid="${id}"]`).textContent = text;
         }
 
-        const counters = { click: 0, highlight: 0, selection: 0 };
+        const counters = { click: 0, selection: 0, checked: 0 };
 
         function bump(name) {
             counters[name]++;
@@ -91,59 +91,59 @@
                 bump('click');
                 setText('last-clicked', e.detail.node.path);
             });
-            tree.addEventListener('highlight-change', (e) => {
-                bump('highlight');
-                const paths = [...e.detail.paths].sort();
-                setText('highlight-size', String(paths.length));
-                setText('highlight-paths', paths.join(','));
-            });
             tree.addEventListener('selection-change', (e) => {
                 bump('selection');
-                setText('selection-size', String(e.detail.paths.size));
+                const paths = [...e.detail.paths].sort();
+                setText('selected-size', String(paths.length));
+                setText('selected-paths', paths.join(','));
+            });
+            tree.addEventListener('checked-change', (e) => {
+                bump('checked');
+                setText('checked-size', String(e.detail.paths.size));
             });
 
-            // Mirror the highlight set into the readout even when the change came
+            // Mirror the selected set into the readout even when the change came
             // through the silent path (no event fires). The buttons below trigger
             // a refresh right after calling the silent API.
-            function refreshHighlightReadout() {
-                const paths = [...tree.getHighlightedPaths()].sort();
-                setText('highlight-size', String(paths.length));
-                setText('highlight-paths', paths.join(','));
-            }
             function refreshSelectionReadout() {
-                setText('selection-size', String(tree.getSelectedPaths().size));
+                const paths = [...tree.getSelectedPaths()].sort();
+                setText('selected-size', String(paths.length));
+                setText('selected-paths', paths.join(','));
+            }
+            function refreshCheckedReadout() {
+                setText('checked-size', String(tree.getCheckedPaths().size));
             }
 
             const wire = (testid, fn) => {
                 document.querySelector(`[data-testid="${testid}"]`).addEventListener('click', () => {
                     fn();
                     // Always refresh state readouts so silent-mode tests still see new state.
-                    refreshHighlightReadout();
                     refreshSelectionReadout();
+                    refreshCheckedReadout();
                 });
             };
 
             wire('reset-counters', () => {
-                counters.click = counters.highlight = counters.selection = 0;
+                counters.click = counters.selection = counters.checked = 0;
                 setText('counter-click', '0');
-                setText('counter-highlight', '0');
                 setText('counter-selection', '0');
+                setText('counter-checked', '0');
                 setText('last-clicked', '(none)');
             });
 
-            wire('highlight-loud',         () => tree.highlightNode('1.2'));
-            wire('highlight-silent',       () => tree.highlightNode('1.2', 'replace', { silent: true }));
-            wire('highlight-other-silent', () => tree.highlightNode('2.1', 'replace', { silent: true }));
-            wire('highlight-many-loud',    () => tree.highlightNodes(['1.1', '1.2']));
-            wire('highlight-many-silent',  () => tree.highlightNodes(['1.1', '1.2'], { silent: true }));
-            wire('clear-loud',             () => tree.clearHighlight());
-            wire('clear-silent',           () => tree.clearHighlight(undefined, { silent: true }));
-            wire('clear-selection-loud',   () => tree.clearSelection());
-            wire('clear-selection-silent', () => tree.clearSelection(undefined, { silent: true }));
+            wire('select-loud',         () => tree.selectNode('1.2'));
+            wire('select-silent',       () => tree.selectNode('1.2', 'replace', { silent: true }));
+            wire('select-other-silent', () => tree.selectNode('2.1', 'replace', { silent: true }));
+            wire('select-many-loud',    () => tree.selectNodes(['1.1', '1.2']));
+            wire('select-many-silent',  () => tree.selectNodes(['1.1', '1.2'], { silent: true }));
+            wire('clear-loud',             () => tree.clearSelection());
+            wire('clear-silent',           () => tree.clearSelection(undefined, { silent: true }));
+            wire('clear-checked-loud',   () => tree.clearChecked());
+            wire('clear-checked-silent', () => tree.clearChecked(undefined, { silent: true }));
         });
     </script>
     <style>
-        /* Highlight class applied via highlightedNodeClass="test-highlighted". */
+        /* Selected class applied via selectedNodeClass="test-selected". */
         web-treeview::part(node-content) {}
     </style>
 </body>

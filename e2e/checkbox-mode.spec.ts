@@ -7,11 +7,11 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * renders indeterminate ([-]). Switching to independent left it stuck at [-].
  *
  * Two-part fix: (1) the controller reconcile (_reconcileVisualStatesForMode)
- * promotes indeterminate→checked into `_selectedPaths`; (2) because every config
- * change re-inserts the data (fresh node objects), `_reapplyRuntimeSelection()`
- * re-applies the surviving `_selectedPaths` onto the fresh nodes and recomputes
+ * promotes indeterminate→checked into `_checkedPaths`; (2) because every config
+ * change re-inserts the data (fresh node objects), `_reapplyRuntimeChecked()`
+ * re-applies the surviving `_checkedPaths` onto the fresh nodes and recomputes
  * visualState after every insertArray. The renderer reads `checked` straight from
- * `snapshot.selectedPaths` (web-grid-style state-off-nodes), so selection is
+ * `snapshot.checkedPaths` (web-grid-style state-off-nodes), so selection is
  * rebuild-proof and the mode switch sticks.
  */
 

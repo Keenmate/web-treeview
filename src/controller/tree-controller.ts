@@ -33,7 +33,7 @@ import type {
   NodeCallbacks,
   NodeConfig,
   SelectionModifiers,
-  HighlightMode,
+  SelectMode,
   TreeMutationOptions,
   TreeControllerConfig,
   TreeControllerSnapshot,
@@ -88,9 +88,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     collapseIconClass: 'wtv__toggle-icon--collapse',
     leafIconClass: 'wtv__toggle-icon--leaf-none',
     toggleIconMode: 'rotate',
-    highlightedNodeClass: undefined,
-    focusedNodeClass: undefined,
     selectedNodeClass: undefined,
+    focusedNodeClass: undefined,
+    checkedNodeClass: undefined,
     dragOverNodeClass: undefined,
     draggedNodeClass: undefined,
     dragDropMode: 'none',
@@ -157,16 +157,16 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _shouldIndicateUndraggable: boolean = true;
 
   // Three-level selection model (rc06+)
-  private _highlightedPaths: Set<string> = new Set();
   private _selectedPaths: Set<string> = new Set();
-  private _lastHighlightedPath: string | null = null;
+  private _checkedPaths: Set<string> = new Set();
+  private _lastSelectedPath: string | null = null;
   private _rangeSelectionMode: import('./types').RangeSelectionMode = 'visual';
   private _selectionMode: 'single' | 'multi' = 'single';
   private _shouldShowCheckboxes: boolean = false;
   private _checkboxMode: import('./types').CheckboxMode = 'independent';
   // Which paths the selection EMITS in cascade mode (a projection of the canonical
-  // _selectedPaths). Only applies when checkboxMode === 'cascade'. rc14.
-  private _cascadeSelectPolicy: import('./types').CascadeSelectPolicy = 'rolled-up';
+  // _checkedPaths). Only applies when checkboxMode === 'cascade'. rc14.
+  private _cascadeCheckPolicy: import('./types').CascadeCheckPolicy = 'rolled-up';
   private _shouldClickToggleCheckbox: boolean = false;
   private beforeCheckboxToggleCb: TreeControllerConfig<T>['beforeCheckboxToggleCallback'];
 
@@ -174,8 +174,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _cutPaths: Set<string> = new Set();
 
   // Events / callbacks (ctx-object signatures — rc07 parity)
+  private checkedChangeCb: TreeControllerConfig<T>['onCheckedChange'];
   private selectionChangeCb: TreeControllerConfig<T>['onSelectionChange'];
-  private highlightChangeCb: TreeControllerConfig<T>['onHighlightChange'];
   private nodeClickedCb: TreeControllerConfig<T>['onNodeClick'];
   private onNodeDoubleClickCb: TreeControllerConfig<T>['onNodeDoubleClick'];
   private beforeCopyCb: TreeControllerConfig<T>['beforeCopyCallback'];
@@ -189,7 +189,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private outputTransformCb: TreeControllerConfig<T>['nodeOutputTransformationCallback'];
   private inputTransformCb: TreeControllerConfig<T>['nodeInputTransformationCallback'];
   // Manual double-click detection — the flat diff reconciler patches a row's
-  // attributes on the first click (focus/highlight bumps _rev), which makes the
+  // attributes on the first click (focus/selection bumps _rev), which makes the
   // browser's native dblclick unreliable. Tracks the last plain UI click.
   private _lastClickPath: string | null = null;
   private _lastClickTime: number = 0;
@@ -215,9 +215,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _collapseIconClass: string = 'wtv__toggle-icon--collapse';
   private _leafIconClass: string = 'wtv__toggle-icon--leaf-none';
   private _toggleIconMode: import('./types').ToggleIconMode = 'rotate';
-  private _highlightedNodeClass: string | null | undefined = undefined;
-  private _focusedNodeClass: string | null | undefined = undefined;
   private _selectedNodeClass: string | null | undefined = undefined;
+  private _focusedNodeClass: string | null | undefined = undefined;
+  private _checkedNodeClass: string | null | undefined = undefined;
   private _dragOverNodeClass: string | null | undefined = undefined;
   private _draggedNodeClass: string | null | undefined = undefined;
   private _shouldShowNodeTooltips: boolean = false;
@@ -257,7 +257,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _isDebugMenuActive: boolean = false;
 
   // Scroll highlight
-  private currentHighlight: {
+  private currentSelection: {
     element: HTMLElement;
     timeoutId: ReturnType<typeof setTimeout>;
   } | null = null;
@@ -272,12 +272,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _hoveredNodeForDrop: LTreeNode<any> | null = null;
   private _activeDropPosition: DropPosition | null = null;
   private _currentDropOperation: DropOperation = 'move';
-  // Snapshot of `highlightedPaths` taken in the dragstart rAF before the
+  // Snapshot of `selectedPaths` taken in the dragstart rAF before the
   // OS-convention sync replaces it with the dragged node. Restored on
   // Esc-cancel so the user isn't left with the dragged node "stuck" selected.
-  private _preDragHighlightSnapshot: Set<string> | null = null;
+  private _preDragSelectionSnapshot: Set<string> | null = null;
   // Authoritative dragged-set manifest from beforeDragStartCallback (rc13). Null =
-  // no override (use the highlight set). Consulted by _draggedRefs + the multi-drag
+  // no override (use the selected set). Consulted by _draggedRefs + the multi-drag
   // move/copy. Cleared on drag end. A curated override may omit descendants (holes).
   private _dragSetOverride: string[] | null = null;
 
@@ -403,36 +403,36 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._checkboxMode = v;
     this._reconcileVisualStatesForMode();
     // The emitted projection depends on the mode — re-notify with the new view.
-    this._emitSelectionChange();
+    this._emitCheckedChange();
   }
 
-  get cascadeSelectPolicy() { return this._cascadeSelectPolicy; }
-  set cascadeSelectPolicy(v: import('./types').CascadeSelectPolicy) {
-    if (this._cascadeSelectPolicy === v) return;
-    this._cascadeSelectPolicy = v;
+  get cascadeCheckPolicy() { return this._cascadeCheckPolicy; }
+  set cascadeCheckPolicy(v: import('./types').CascadeCheckPolicy) {
+    if (this._cascadeCheckPolicy === v) return;
+    this._cascadeCheckPolicy = v;
     // Re-project the (unchanged) canonical set through the new policy and notify.
-    this._emitSelectionChange();
+    this._emitCheckedChange();
     this._scheduleNotify();
   }
 
-  /** The emitted (policy-projected) selection — what `getSelectedPaths()` and the
-   *  `selection-change` event expose. Equals the canonical set in independent mode
+  /** The emitted (policy-projected) selection — what `getCheckedPaths()` and the
+   *  `checked-change` event expose. Equals the canonical set in independent mode
    *  or under the 'all' policy. */
-  get emittedPaths(): Set<string> { return this._projectSelection(this._selectedPaths); }
+  get emittedPaths(): Set<string> { return this._projectChecked(this._checkedPaths); }
 
-  /** Bindable: the multi-select highlight set. */
-  get highlightedPaths(): Set<string> { return this._highlightedPaths; }
-
-  /** Bindable: the checkbox / data-state selection set. */
+  /** Bindable: the multi-select selected set. */
   get selectedPaths(): Set<string> { return this._selectedPaths; }
+
+  /** Bindable: the checkbox / data-state checked set. */
+  get checkedPaths(): Set<string> { return this._checkedPaths; }
 
   get cutPaths(): Set<string> { return this._cutPaths; }
 
   get focusedNodeClass() { return this._focusedNodeClass; }
   set focusedNodeClass(v: string | null | undefined) { this._focusedNodeClass = v; this._updateNodeConfig(); }
 
-  get selectedNodeClass() { return this._selectedNodeClass; }
-  set selectedNodeClass(v: string | null | undefined) { this._selectedNodeClass = v; this._updateNodeConfig(); }
+  get checkedNodeClass() { return this._checkedNodeClass; }
+  set checkedNodeClass(v: string | null | undefined) { this._checkedNodeClass = v; this._updateNodeConfig(); }
 
   get insertResult() { return this._insertResult; }
   get searchText() { return this._searchText; }
@@ -516,8 +516,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   get toggleIconMode() { return this._toggleIconMode; }
   set toggleIconMode(v: import('./types').ToggleIconMode) { this._toggleIconMode = v; this._updateNodeConfig(); }
 
-  get highlightedNodeClass() { return this._highlightedNodeClass; }
-  set highlightedNodeClass(v: string | null | undefined) { this._highlightedNodeClass = v; this._updateNodeConfig(); }
+  get selectedNodeClass() { return this._selectedNodeClass; }
+  set selectedNodeClass(v: string | null | undefined) { this._selectedNodeClass = v; this._updateNodeConfig(); }
 
   get dragOverNodeClass() { return this._dragOverNodeClass; }
   set dragOverNodeClass(v: string | null | undefined) { this._dragOverNodeClass = v; this._updateNodeConfig(); }
@@ -734,7 +734,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._selectionMode = props.selectionMode ?? 'single';
     this._shouldShowCheckboxes = props.shouldShowCheckboxes ?? false;
     this._checkboxMode = props.checkboxMode ?? 'independent';
-    this._cascadeSelectPolicy = props.cascadeSelectPolicy ?? 'rolled-up';
+    this._cascadeCheckPolicy = props.cascadeCheckPolicy ?? 'rolled-up';
     this._shouldClickToggleCheckbox = props.shouldClickToggleCheckbox ?? false;
     this.beforeCheckboxToggleCb = props.beforeCheckboxToggleCallback;
 
@@ -772,9 +772,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._collapseIconClass = props.collapseIconClass ?? 'wtv__toggle-icon--collapse';
     this._leafIconClass = props.leafIconClass ?? 'wtv__toggle-icon--leaf-none';
     this._toggleIconMode = props.toggleIconMode ?? 'rotate';
-    this._highlightedNodeClass = props.highlightedNodeClass;
-    this._focusedNodeClass = props.focusedNodeClass;
     this._selectedNodeClass = props.selectedNodeClass;
+    this._focusedNodeClass = props.focusedNodeClass;
+    this._checkedNodeClass = props.checkedNodeClass;
     this._dragOverNodeClass = props.dragOverNodeClass;
     this._draggedNodeClass = props.draggedNodeClass;
     this._shouldShowNodeTooltips = props.shouldShowNodeTooltips ?? false;
@@ -801,8 +801,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._nodeContentClass = props.nodeContentClass;
 
     // Store callbacks
+    this.checkedChangeCb = props.onCheckedChange;
     this.selectionChangeCb = props.onSelectionChange;
-    this.highlightChangeCb = props.onHighlightChange;
     this.nodeClickedCb = props.onNodeClick;
     this.onNodeDoubleClickCb = props.onNodeDoubleClick;
     this.beforeCopyCb = props.beforeCopyCallback;
@@ -839,8 +839,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       props.getIsExpandedCallback,
       props.isSelectableMember,
       props.getIsSelectableCallback,
-      props.isSelectedMember,
-      props.getIsSelectedCallback,
+      props.isCheckedMember,
+      props.getIsCheckedCallback,
       props.isDraggableMember,
       props.getIsDraggableCallback,
       props.isDropAllowedMember,
@@ -925,8 +925,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this.currentBatchSize = 0;
       const preservedExpanded = this._collectExpandedPaths();
       this._insertResult = this.tree.insertArray(this._data);
-      this._seedSelectedPathsFromTree();
-      this._reapplyRuntimeSelection();
+      this._seedCheckedPathsFromTree();
+      this._reapplyRuntimeChecked();
       this._reapplyExpanded(preservedExpanded);
     }
 
@@ -1064,19 +1064,19 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   /**
    * The effective top-level set being dragged: when the grabbed node is part of a
-   * same-tree multi-highlight, the draggable top-level highlighted subtrees (the
+   * same-tree multi-selection, the draggable top-level selected subtrees (the
    * same set the multi-drag move loop uses); otherwise just the grabbed node.
    * Used to populate `dragged` on the drag/drop contexts. Call BEFORE a move
-   * mutates the highlight set.
+   * mutates the selected set.
    */
   private _draggedTopLevel(draggedNode: LTreeNode<T>): LTreeNode<T>[] {
     const isSameTree = draggedNode.treeId === this._treeId;
     if (
       isSameTree &&
-      this._highlightedPaths.has(draggedNode.path) &&
-      this._highlightedPaths.size > 1
+      this._selectedPaths.has(draggedNode.path) &&
+      this._selectedPaths.size > 1
     ) {
-      const set = this._getTopLevelHighlightedPaths()
+      const set = this._getTopLevelSelectedPaths()
         .map((p) => this.tree?.getNodeByPath(p) ?? null)
         .filter((n): n is LTreeNode<T> => !!n && this.getNodeIsDraggable(n));
       if (set.length) return set;
@@ -1087,17 +1087,17 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   /**
    * The full top-level dragged set as NodeRefs, correct for BOTH same-tree and
    * cross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.
-   * Same-tree reads the live highlight set (nodes resolve). Cross-tree can't see
-   * the source's highlight, so it reads the paths the source published on drag
+   * Same-tree reads the live selected set (nodes resolve). Cross-tree can't see
+   * the source's selection, so it reads the paths the source published on drag
    * start (getDragSet) and builds path-only refs (node/parent null cross-tree);
    * falls back to the lead node alone when no set was published (e.g. touch). Call
-   * BEFORE a move mutates the highlight set.
+   * BEFORE a move mutates the selected set.
    */
   private _draggedRefs(draggedNode: LTreeNode<T> | null): NodeRef<T>[] {
     if (!draggedNode) return [];
     if (draggedNode.treeId === this._treeId) {
       // A beforeDragStartCallback override is authoritative: resolve its paths
-      // directly (bypassing the highlight-derived set AND the isDraggable gate,
+      // directly (bypassing the selection-derived set AND the isDraggable gate,
       // since a forced-in node is the whole point).
       if (this._dragSetOverride) {
         return this._dragSetOverride
@@ -1135,11 +1135,11 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     position: DropPosition
   ): { success: boolean; error?: string } {
     this._skipInsertArray = true;
-    // Capture the affected path set BEFORE the move: any highlighted /
-    // selected path that is the source itself or a descendant of it needs
+    // Capture the affected path set BEFORE the move: any selected /
+    // checked path that is the source itself or a descendant of it needs
     // to be remapped onto the new location. Without this the path Sets
     // keep stale strings after a multi-drag, so the next plain click leaves
-    // visually-highlighted ghosts in the old positions and downstream
+    // visually-selected ghosts in the old positions and downstream
     // operations work on dangling paths.
     const sourceNode = this.tree?.getNodeByPath(sourcePath);
     const sep = this._treePathSeparator;
@@ -1152,11 +1152,11 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       }
       return m;
     };
-    const highlightAffected = collect(this._highlightedPaths);
-    const selectedAffected = collect(this._selectedPaths);
-    const lastHighlightSuffix =
-      this._lastHighlightedPath && highlightAffected.has(this._lastHighlightedPath)
-        ? highlightAffected.get(this._lastHighlightedPath)
+    const selectionAffected = collect(this._selectedPaths);
+    const checkedAffected = collect(this._checkedPaths);
+    const lastSelectedSuffix =
+      this._lastSelectedPath && selectionAffected.has(this._lastSelectedPath)
+        ? selectionAffected.get(this._lastSelectedPath)
         : undefined;
     const focusedAffectedSuffix =
       this._focusedNode &&
@@ -1179,10 +1179,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
           paths.add(newPath + suffix);
         }
       };
-      remap(this._highlightedPaths, highlightAffected);
-      remap(this._selectedPaths, selectedAffected);
-      if (lastHighlightSuffix !== undefined) {
-        this._lastHighlightedPath = newPath + lastHighlightSuffix;
+      remap(this._selectedPaths, selectionAffected);
+      remap(this._checkedPaths, checkedAffected);
+      if (lastSelectedSuffix !== undefined) {
+        this._lastSelectedPath = newPath + lastSelectedSuffix;
       }
       if (focusedAffectedSuffix !== undefined && this._focusedNode) {
         // _focusedNode is the same node reference; its .path was already
@@ -1540,162 +1540,162 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     return this.tree?.getAllData() || [];
   }
 
-  // ── Highlight API (multi-select via Ctrl/Shift+click) ────────────────
+  // ── Selection API (multi-select via Ctrl/Shift+click) ────────────────
   //
   // Three-level selection model (mirrors svelte-treeview rc06+):
   //   - focusedNode     = single focused node (click, arrow keys)
-  //   - highlightedPaths = multi-select set built by Ctrl/Shift+click
-  //   - selectedPaths    = checkbox data state (touched by check/uncheck)
+  //   - selectedPaths = multi-select set built by Ctrl/Shift+click
+  //   - checkedPaths    = checkbox data state (touched by check/uncheck)
   //
-  // When `shouldShowCheckboxes` is false, every change to `highlightedPaths` is
-  // mirrored into `selectedPaths` so the form-style selection still reflects
+  // When `shouldShowCheckboxes` is false, every change to `selectedPaths` is
+  // mirrored into `checkedPaths` so the form-style checked set still reflects
   // what the user picked via the mouse. With checkboxes visible the two sets
   // stay independent.
 
-  /** Programmatically update the highlight set.
+  /** Programmatically update the selected set.
    *  - `mode='replace'`: replaces the set with `path`
    *  - `mode='toggle'`: toggles `path` in/out of the set
    *  - `mode='range'`: range-selects from focused node to `path`
-   *  Pass `{ silent: true }` to skip the `highlightChangeCallback` / mirror callbacks. */
-  highlightNode(
+   *  Pass `{ silent: true }` to skip the `selectionChangeCallback` / mirror callbacks. */
+  selectNode(
     path: string,
-    mode: HighlightMode = 'replace',
+    mode: SelectMode = 'replace',
     options?: TreeMutationOptions
   ): void {
     const modifiers: SelectionModifiers | undefined =
       mode === 'toggle' ? { ctrl: true, shift: false }
       : mode === 'range' ? { ctrl: false, shift: true }
       : undefined;
-    this._applyHighlight(path, modifiers, options);
+    this._applySelection(path, modifiers, options);
   }
 
-  /** Add nodes to the highlight set (additive — existing highlights are kept).
-   *  Use setHighlightedPaths() to replace the whole set instead.
-   *  Pass `{ silent: true }` to skip `highlightChangeCallback`. */
-  highlightNodes(paths: string[], options?: TreeMutationOptions): void {
+  /** Add nodes to the selected set (additive — existing selections are kept).
+   *  Use setSelectedPaths() to replace the whole set instead.
+   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+  selectNodes(paths: string[], options?: TreeMutationOptions): void {
     let lastNode: LTreeNode<T> | null = null;
     for (const path of paths) {
       const node = this.tree?.getNodeByPath(path);
       if (node && node.isSelectable) {
-        this._highlightedPaths.add(path);
-        node.isHighlighted = true;
+        this._selectedPaths.add(path);
+        node.isSelected = true;
         node._rev++;
         lastNode = node;
       }
     }
     if (lastNode) {
-      this._lastHighlightedPath = lastNode.path;
+      this._lastSelectedPath = lastNode.path;
       this._focusedNode = lastNode;
     }
     if (!options?.silent) {
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
     }
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Replace the entire highlight set with the given paths.
-   *  Equivalent to clearHighlight() + highlightNodes(paths).
-   *  Pass `{ silent: true }` to skip `highlightChangeCallback`. */
-  setHighlightedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this._clearHighlightFlags();
-    this._highlightedPaths.clear();
-    this._lastHighlightedPath = null;
-    this.highlightNodes(paths, { silent: true });
+  /** Replace the entire selected set with the given paths.
+   *  Equivalent to clearSelection() + selectNodes(paths).
+   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
+    this._clearSelectionFlags();
+    this._selectedPaths.clear();
+    this._lastSelectedPath = null;
+    this.selectNodes(paths, { silent: true });
     if (!options?.silent) {
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
     }
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Clear highlights. Pass `paths` to clear only those nodes, or omit to clear all.
-   *  Pass `{ silent: true }` to skip `highlightChangeCallback`. */
-  clearHighlight(paths?: string[], options?: TreeMutationOptions): void {
+  /** Clear the selection. Pass `paths` to clear only those nodes, or omit to clear all.
+   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+  clearSelection(paths?: string[], options?: TreeMutationOptions): void {
     if (paths && paths.length > 0) {
       for (const path of paths) {
         const node = this.tree?.getNodeByPath(path);
         if (node) {
-          node.isHighlighted = false;
+          node.isSelected = false;
           node._rev++;
         }
-        this._highlightedPaths.delete(path);
+        this._selectedPaths.delete(path);
       }
-      if (this._lastHighlightedPath && !this._highlightedPaths.has(this._lastHighlightedPath)) {
-        this._lastHighlightedPath = null;
+      if (this._lastSelectedPath && !this._selectedPaths.has(this._lastSelectedPath)) {
+        this._lastSelectedPath = null;
       }
     } else {
-      this._clearHighlightFlags();
-      this._highlightedPaths.clear();
-      this._lastHighlightedPath = null;
+      this._clearSelectionFlags();
+      this._selectedPaths.clear();
+      this._lastSelectedPath = null;
       this._focusedNode = null;
     }
     if (!options?.silent) {
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
     }
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Get all currently highlighted nodes. */
-  getHighlightedNodes(): LTreeNode<T>[] {
+  /** Get all currently selected nodes. */
+  getSelectedNodes(): LTreeNode<T>[] {
     const nodes: LTreeNode<T>[] = [];
-    for (const path of this._highlightedPaths) {
+    for (const path of this._selectedPaths) {
       const node = this.tree?.getNodeByPath(path);
       if (node) nodes.push(node);
     }
     return nodes;
   }
 
-  /** Get a snapshot of the highlighted-path set. */
-  getHighlightedPaths(): Set<string> {
-    return new Set(this._highlightedPaths);
+  /** Get a snapshot of the selected-path set. */
+  getSelectedPaths(): Set<string> {
+    return new Set(this._selectedPaths);
   }
 
-  /** Check if a node is in the highlight set. */
-  isNodeHighlighted(path: string): boolean {
-    return this._highlightedPaths.has(path);
+  /** Check if a node is in the selected set. */
+  isNodeSelected(path: string): boolean {
+    return this._selectedPaths.has(path);
   }
 
-  /** Highlight every visible node. Pass `{ silent: true }` to skip
-   *  `highlightChangeCallback`. */
-  highlightAll(options?: TreeMutationOptions): void {
-    this._clearHighlightFlags();
-    this._highlightedPaths.clear();
+  /** Select every visible node. Pass `{ silent: true }` to skip
+   *  `selectionChangeCallback`. */
+  selectAll(options?: TreeMutationOptions): void {
+    this._clearSelectionFlags();
+    this._selectedPaths.clear();
     const visible = this.tree?.visibleFlatNodes ?? [];
     for (const node of visible) {
       if (!node.isSelectable) continue;
-      this._highlightedPaths.add(node.path);
-      node.isHighlighted = true;
+      this._selectedPaths.add(node.path);
+      node.isSelected = true;
       node._rev++;
     }
     if (visible.length > 0) {
-      this._lastHighlightedPath = visible[visible.length - 1].path;
+      this._lastSelectedPath = visible[visible.length - 1].path;
       this._focusedNode = visible[visible.length - 1];
     }
     if (!options?.silent) {
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
     }
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Clear `isHighlighted` flag on every node currently in the highlight set. */
-  private _clearHighlightFlags(): void {
-    for (const path of this._highlightedPaths) {
+  /** Clear `isSelected` flag on every node currently in the selected set. */
+  private _clearSelectionFlags(): void {
+    for (const path of this._selectedPaths) {
       const node = this.tree?.getNodeByPath(path);
       if (node) {
-        node.isHighlighted = false;
+        node.isSelected = false;
         node._rev++;
       }
     }
   }
 
-  /** Range-highlight between two paths. */
+  /** Range-select between two paths. */
   private _rangeSelect(fromPath: string, toPath: string): void {
     const nodes = this._rangeSelectionMode === 'visual'
       ? (this.tree?.visibleFlatNodes ?? [])
@@ -1714,25 +1714,25 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const start = Math.min(fromIndex, toIndex);
     const end = Math.max(fromIndex, toIndex);
 
-    this._clearHighlightFlags();
-    this._highlightedPaths.clear();
+    this._clearSelectionFlags();
+    this._selectedPaths.clear();
 
     for (let i = start; i <= end; i++) {
       const node = nodes[i];
       if (!node.isSelectable) continue;
-      this._highlightedPaths.add(node.path);
-      node.isHighlighted = true;
+      this._selectedPaths.add(node.path);
+      node.isSelected = true;
       node._rev++;
     }
 
     this._focusedNode = this.tree?.getNodeByPath(toPath) ?? null;
   }
 
-  /** Internal: do the click-driven highlight work. Called by both the
+  /** Internal: do the click-driven selection work. Called by both the
    *  click handler (with `modifiers` from the event) and the public
-   *  `highlightNode(path, mode, options)` (which builds modifiers from
+   *  `selectNode(path, mode, options)` (which builds modifiers from
    *  the mode string). */
-  private _applyHighlight(
+  private _applySelection(
     path: string,
     modifiers?: SelectionModifiers,
     options?: { silent?: boolean }
@@ -1747,87 +1747,87 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const useCtrl = ctrl && isMulti;
     const useShift = shift && isMulti;
 
-    if (useShift && this._lastHighlightedPath) {
-      this._rangeSelect(this._lastHighlightedPath, path);
+    if (useShift && this._lastSelectedPath) {
+      this._rangeSelect(this._lastSelectedPath, path);
     } else if (useCtrl) {
       if (!node.isSelectable) return;
-      if (this._highlightedPaths.has(path)) {
-        this._highlightedPaths.delete(path);
-        node.isHighlighted = false;
+      if (this._selectedPaths.has(path)) {
+        this._selectedPaths.delete(path);
+        node.isSelected = false;
         node._rev++;
       } else {
-        this._highlightedPaths.add(path);
-        node.isHighlighted = true;
+        this._selectedPaths.add(path);
+        node.isSelected = true;
         node._rev++;
       }
-      this._lastHighlightedPath = path;
+      this._lastSelectedPath = path;
       this._focusedNode = node;
     } else {
       // Replace
-      this._clearHighlightFlags();
-      this._highlightedPaths.clear();
+      this._clearSelectionFlags();
+      this._selectedPaths.clear();
       if (node.isSelectable) {
-        this._highlightedPaths.add(path);
-        node.isHighlighted = true;
+        this._selectedPaths.add(path);
+        node.isSelected = true;
         node._rev++;
-        this._lastHighlightedPath = path;
+        this._lastSelectedPath = path;
       } else {
-        this._lastHighlightedPath = null;
+        this._lastSelectedPath = null;
       }
       this._focusedNode = node;
     }
 
     if (!options?.silent) {
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
     }
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Emit the `highlightChangeCallback` callback. */
-  private _emitHighlightChange(): void {
-    this.highlightChangeCb?.({ paths: new Set(this._highlightedPaths), nodes: this.getHighlightedNodes() });
+  /** Emit the `selectionChangeCallback` callback. */
+  private _emitSelectionChange(): void {
+    this.selectionChangeCb?.({ paths: new Set(this._selectedPaths), nodes: this.getSelectedNodes() });
   }
 
-  /** Emit the `selectionChangeCallback` callback (checkbox state). */
-  private _emitSelectionChange(): void {
-    if (!this.selectionChangeCb) return;
-    const paths = this._projectSelection(this._selectedPaths);
+  /** Emit the `checkedChangeCallback` callback (checkbox state). */
+  private _emitCheckedChange(): void {
+    if (!this.checkedChangeCb) return;
+    const paths = this._projectChecked(this._checkedPaths);
     const nodes: LTreeNode<T>[] = [];
     for (const p of paths) {
       const n = this.tree?.getNodeByPath(p);
       if (n) nodes.push(n);
     }
-    this.selectionChangeCb({ paths, nodes });
+    this.checkedChangeCb({ paths, nodes });
   }
 
   /**
-   * Project the canonical checked set through the active `cascadeSelectPolicy` to
-   * produce the EMITTED selection. Pure — reads visualState/isSelected off the live
+   * Project the canonical checked set through the active `cascadeCheckPolicy` to
+   * produce the EMITTED selection. Pure — reads visualState/isChecked off the live
    * tree, never mutates. Independent mode OR 'all' → the canonical set as-is;
    * 'leaves' → only checked leaf nodes; 'rolled-up' → a fully-checked selectable
    * branch collapses to its root (stop descending), indeterminate branches descend
    * to emit their checked bits. (svelte-treeview rc14)
    */
-  private _projectSelection(canonical: Set<string>): Set<string> {
-    if (this._checkboxMode !== 'cascade' || this._cascadeSelectPolicy === 'all' || !this.tree) {
+  private _projectChecked(canonical: Set<string>): Set<string> {
+    if (this._checkboxMode !== 'cascade' || this._cascadeCheckPolicy === 'all' || !this.tree) {
       return new Set(canonical);
     }
-    const policy = this._cascadeSelectPolicy;
+    const policy = this._cascadeCheckPolicy;
     const out = new Set<string>();
     const walk = (node: LTreeNode<T>) => {
       const vs = this._computeVisualState(node);
-      if (vs === VisualState.notSelected) return;
+      if (vs === VisualState.unchecked) return;
       const children = Object.values(node.children);
       const selectable = node.isSelectable !== false;
       if (policy === 'leaves') {
-        if (children.length === 0 && node.isSelected && selectable) out.add(node.path);
+        if (children.length === 0 && node.isChecked && selectable) out.add(node.path);
         for (const child of children) walk(child);
         return;
       }
       // rolled-up: a fully-checked selectable node covers its whole subtree.
-      if (vs === VisualState.selected && selectable) {
+      if (vs === VisualState.checked && selectable) {
         out.add(node.path);
         return;
       }
@@ -1837,22 +1837,22 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     return out;
   }
 
-  /** When `shouldShowCheckboxes` is false, the highlight set IS the selection set —
-   *  mirror it onto `_selectedPaths` so consumers reading the bindable
+  /** When `shouldShowCheckboxes` is false, the selected set IS the checked set —
+   *  mirror it onto `_checkedPaths` so consumers reading the bindable
    *  checkbox state see what the user picked via the mouse. With checkboxes
    *  visible the two sets stay independent. Mirrors svelte-treeview rc09. */
-  private _mirrorHighlightToSelected(): void {
+  private _mirrorSelectedToChecked(): void {
     if (this._shouldShowCheckboxes) return;
-    this._selectedPaths = new Set(this._highlightedPaths);
-    this._emitSelectionChange();
+    this._checkedPaths = new Set(this._selectedPaths);
+    this._emitCheckedChange();
   }
 
-  // ── Selection API (checkbox / data state) ────────────────────────────
+  // ── Checked API (checkbox / data state) ────────────────────────────
 
-  /** Get all selected (checked) nodes. */
-  getSelectedNodes(): LTreeNode<T>[] {
+  /** Get all checked nodes. */
+  getCheckedNodes(): LTreeNode<T>[] {
     const nodes: LTreeNode<T>[] = [];
-    for (const path of this._selectedPaths) {
+    for (const path of this._checkedPaths) {
       const node = this.tree?.getNodeByPath(path);
       if (node) nodes.push(node);
     }
@@ -1861,19 +1861,19 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   /** The EMITTED (policy-projected) checkbox set — the minimal cover in cascade
    *  'rolled-up' mode, the leaves in 'leaves', or the full canonical set in 'all' /
-   *  independent mode. Use the `selectedPaths` getter for the raw canonical set. */
-  getSelectedPaths(): Set<string> {
-    return this._projectSelection(this._selectedPaths);
+   *  independent mode. Use the `checkedPaths` getter for the raw canonical set. */
+  getCheckedPaths(): Set<string> {
+    return this._projectChecked(this._checkedPaths);
   }
 
-  /** Check if a node is in the selected (checked) set. */
-  isNodeSelected(path: string): boolean {
-    return this._selectedPaths.has(path);
+  /** Check if a node is in the checked set. */
+  isNodeChecked(path: string): boolean {
+    return this._checkedPaths.has(path);
   }
 
   /** Apply a checked/unchecked state to the given paths, expanding to
    *  descendants in cascade mode and recomputing ancestor visual states.
-   *  Returns whether the selected set actually changed. Does not notify. */
+   *  Returns whether the checked set actually changed. Does not notify. */
   private _applyCheckboxState(paths: string[], checked: boolean): boolean {
     let affected = paths;
     if (this._checkboxMode === 'cascade') {
@@ -1884,21 +1884,21 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       }
       affected = [...expanded];
     }
-    const newPaths = new Set(this._selectedPaths);
+    const newPaths = new Set(this._checkedPaths);
     let changed = false;
     for (const path of affected) {
       const n = this.tree?.getNodeByPath(path);
       if (!n) continue;
       if (checked) {
         if (!newPaths.has(path)) { newPaths.add(path); changed = true; }
-        n.isSelected = true;
+        n.isChecked = true;
       } else {
         if (newPaths.has(path)) { newPaths.delete(path); changed = true; }
-        n.isSelected = false;
+        n.isChecked = false;
       }
       n._rev++;
     }
-    this._selectedPaths = newPaths;
+    this._checkedPaths = newPaths;
     if (this._checkboxMode === 'cascade') {
       for (const rp of paths) {
         const rn = this.tree?.getNodeByPath(rp);
@@ -1910,97 +1910,97 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     } else {
       for (const path of affected) {
         const n = this.tree?.getNodeByPath(path);
-        if (n) n.visualState = n.isSelected ? VisualState.selected : VisualState.notSelected;
+        if (n) n.visualState = n.isChecked ? VisualState.checked : VisualState.unchecked;
       }
     }
     return changed;
   }
 
-  /** Clear `isSelected` + reset visualState on every node in the checkbox set. */
-  private _clearSelectionFlags(): void {
-    for (const path of this._selectedPaths) {
+  /** Clear `isChecked` + reset visualState on every node in the checkbox set. */
+  private _clearCheckedFlags(): void {
+    for (const path of this._checkedPaths) {
       const node = this.tree?.getNodeByPath(path);
       if (node) {
-        node.isSelected = false;
-        node.visualState = VisualState.notSelected;
+        node.isChecked = false;
+        node.visualState = VisualState.unchecked;
         node._rev++;
       }
     }
   }
 
   /** Check a single node (cascades to descendants in cascade mode).
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
-  selectNode(path: string, options?: TreeMutationOptions): void {
+   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+  checkNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState([path], true);
-    if (changed && !options?.silent) this._emitSelectionChange();
+    if (changed && !options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Check multiple nodes (additive — existing checks are kept).
-   *  Use setSelectedPaths() to replace the whole set instead.
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
-  selectNodes(paths: string[], options?: TreeMutationOptions): void {
+   *  Use setCheckedPaths() to replace the whole set instead.
+   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+  checkNodes(paths: string[], options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState(paths, true);
-    if (changed && !options?.silent) this._emitSelectionChange();
+    if (changed && !options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Replace the entire checkbox set with the given paths.
-   *  Equivalent to clearSelection() + selectNodes(paths).
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
-  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this._clearSelectionFlags();
-    this._selectedPaths = new Set();
+   *  Equivalent to clearChecked() + checkNodes(paths).
+   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
+    this._clearCheckedFlags();
+    this._checkedPaths = new Set();
     this._applyCheckboxState(paths, true);
-    if (!options?.silent) this._emitSelectionChange();
+    if (!options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Check every selectable node. Pass `{ silent: true }` to skip
-   *  `selectionChangeCallback`. */
-  selectAll(options?: TreeMutationOptions): void {
+   *  `checkedChangeCallback`. */
+  checkAll(options?: TreeMutationOptions): void {
     const newPaths = new Set<string>();
     const traverse = (node: LTreeNode<T>) => {
       if (node.path && node.isSelectable) {
-        node.isSelected = true;
-        if (node.visualState !== VisualState.selected) node.visualState = VisualState.selected;
+        node.isChecked = true;
+        if (node.visualState !== VisualState.checked) node.visualState = VisualState.checked;
         node._rev++;
         newPaths.add(node.path);
       }
       for (const child of Object.values(node.children)) traverse(child);
     };
     for (const root of this.tree?.tree ?? []) traverse(root);
-    this._selectedPaths = newPaths;
-    if (!options?.silent) this._emitSelectionChange();
+    this._checkedPaths = newPaths;
+    if (!options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Uncheck a single node (cascades to descendants in cascade mode).
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
-  deselectNode(path: string, options?: TreeMutationOptions): void {
+   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+  uncheckNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState([path], false);
-    if (changed && !options?.silent) this._emitSelectionChange();
+    if (changed && !options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Clear checkbox selection. Pass `paths` to uncheck only those nodes, or omit
-   *  to clear all. Pass `{ silent: true }` to skip `selectionChangeCallback`. */
-  clearSelection(paths?: string[], options?: TreeMutationOptions): void {
+  /** Clear the checked set. Pass `paths` to uncheck only those nodes, or omit
+   *  to clear all. Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
     if (paths && paths.length > 0) {
       const changed = this._applyCheckboxState(paths, false);
-      if (changed && !options?.silent) this._emitSelectionChange();
+      if (changed && !options?.silent) this._emitCheckedChange();
       this.tree.refresh();
       this._scheduleNotify();
       return;
     }
-    this._clearSelectionFlags();
-    this._selectedPaths = new Set();
-    if (!options?.silent) this._emitSelectionChange();
+    this._clearCheckedFlags();
+    this._checkedPaths = new Set();
+    if (!options?.silent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2027,25 +2027,25 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   // ── Checkbox toggle (called by the renderer) ─────────────────────────
 
   /** Handle checkbox toggle. Honors checkboxMode (cascade/independent),
-   *  multi-highlight bulk toggle, beforeCheckboxToggleCallback interceptor.
+   *  multi-selection bulk toggle, beforeCheckboxToggleCallback interceptor.
    *  Mirrors svelte-treeview rc06+ flow. */
   private _onCheckboxToggle(
     node: LTreeNode<T>,
     options?: { skipFocus?: boolean }
   ): void {
-    // In cascade mode, indeterminate → check all (not fully selected yet).
+    // In cascade mode, indeterminate → check all (not fully checked yet).
     const newChecked =
       this._checkboxMode === 'cascade' && node.visualState === VisualState.indeterminate
         ? true
-        : !node.isSelected;
+        : !node.isChecked;
 
-    // Bulk via highlight: if the clicked node is in a multi-highlight,
-    // apply to every highlighted node.
-    const isMultiHighlighted =
-      this._highlightedPaths.size > 1 && this._highlightedPaths.has(node.path);
+    // Bulk via selection: if the clicked node is in a multi-selection,
+    // apply to every selected node.
+    const isMultiSelected =
+      this._selectedPaths.size > 1 && this._selectedPaths.has(node.path);
 
-    let affectedPaths: string[] = isMultiHighlighted
-      ? [...this._highlightedPaths]
+    let affectedPaths: string[] = isMultiSelected
+      ? [...this._selectedPaths]
       : [node.path];
 
     if (this._checkboxMode === 'cascade') {
@@ -2066,27 +2066,27 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       if (Array.isArray(result)) affectedPaths = result;
     }
 
-    const newPaths = new Set(this._selectedPaths);
+    const newPaths = new Set(this._checkedPaths);
     for (const path of affectedPaths) {
       const n = this.tree?.getNodeByPath(path);
       if (!n) continue;
       if (newChecked) {
         newPaths.add(path);
-        n.isSelected = true;
+        n.isChecked = true;
       } else {
         newPaths.delete(path);
-        n.isSelected = false;
+        n.isChecked = false;
       }
       n._rev++;
     }
-    this._selectedPaths = newPaths;
+    this._checkedPaths = newPaths;
 
     if (!options?.skipFocus) this._focusedNode = node;
 
     // Update visual states (cascade only — independent mode never auto-checks
     // a parent based on descendants).
     if (this._checkboxMode === 'cascade') {
-      const rootPaths = isMultiHighlighted ? [...this._highlightedPaths] : [node.path];
+      const rootPaths = isMultiSelected ? [...this._selectedPaths] : [node.path];
       for (const rp of rootPaths) {
         const rn = this.tree?.getNodeByPath(rp);
         if (!rn) continue;
@@ -2100,12 +2100,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     }
 
     this.nodeClickedCb?.(this.nodeRef(node));
-    this._emitSelectionChange();
+    this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Re-derive every node's visualState + isSelected when checkboxMode changes
+  /** Re-derive every node's visualState + isChecked when checkboxMode changes
    *  at runtime. Switching to 'independent' PROMOTES an indeterminate [-] node to
    *  fully checked; switching to 'cascade' recomputes parent dashes from their
    *  descendants. Without this the indeterminate marker (an imperative DOM prop)
@@ -2114,48 +2114,48 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   private _reconcileVisualStatesForMode(): void {
     if (!this.tree?.root) return;
     const cascade = this._checkboxMode === 'cascade';
-    const newPaths = new Set<string>(this._selectedPaths);
+    const newPaths = new Set<string>(this._checkedPaths);
     let anyChanged = false;
-    let selectionChanged = false;
+    let checkedChanged = false;
     const visit = (node: LTreeNode<T>) => {
       let vs: VisualState;
-      let selectionTouched = false;
+      let checkedTouched = false;
       if (cascade) {
         vs = this._computeVisualState(node);
-        // Sync isSelected with a definitive computed state (leave indeterminate as-is).
+        // Sync isChecked with a definitive computed state (leave indeterminate as-is).
         if (vs !== VisualState.indeterminate) {
-          const shouldBeSelected = vs === VisualState.selected;
-          if (node.isSelected !== shouldBeSelected) {
-            node.isSelected = shouldBeSelected;
-            if (shouldBeSelected) newPaths.add(node.path);
+          const shouldBeChecked = vs === VisualState.checked;
+          if (node.isChecked !== shouldBeChecked) {
+            node.isChecked = shouldBeChecked;
+            if (shouldBeChecked) newPaths.add(node.path);
             else newPaths.delete(node.path);
-            selectionTouched = true;
+            checkedTouched = true;
           }
         }
       } else if (node.visualState === VisualState.indeterminate) {
         // Independent mode has no partial state: promote [-] to fully checked.
-        if (!node.isSelected) {
-          node.isSelected = true;
-          selectionTouched = true;
+        if (!node.isChecked) {
+          node.isChecked = true;
+          checkedTouched = true;
         }
         newPaths.add(node.path);
-        vs = VisualState.selected;
+        vs = VisualState.checked;
       } else {
-        vs = node.isSelected ? VisualState.selected : VisualState.notSelected;
+        vs = node.isChecked ? VisualState.checked : VisualState.unchecked;
       }
-      if (node.visualState !== vs || selectionTouched) {
+      if (node.visualState !== vs || checkedTouched) {
         node.visualState = vs;
         node._rev = (node._rev || 0) + 1;
         anyChanged = true;
-        if (selectionTouched) selectionChanged = true;
+        if (checkedTouched) checkedChanged = true;
       }
       for (const key in node.children) visit(node.children[key]!);
     };
     for (const key in this.tree.root.children) visit(this.tree.root.children[key]!);
-    if (selectionChanged) this._selectedPaths = newPaths;
+    if (checkedChanged) this._checkedPaths = newPaths;
     if (anyChanged) {
       this.tree.refresh();
-      if (selectionChanged) this._emitSelectionChange();
+      if (checkedChanged) this._emitCheckedChange();
       this._scheduleNotify();
     }
   }
@@ -2174,62 +2174,62 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   }
 
   /** Walk up from a node and set visualState on each ancestor based on its
-   *  descendant selection. Syncs `isSelected` on the ancestors (all
-   *  descendants selected → ancestor selected). */
+   *  descendant checked state. Syncs `isChecked` on the ancestors (all
+   *  descendants checked → ancestor checked). */
   private _updateAncestorVisualStates(startPath: string): void {
-    const newPaths = new Set(this._selectedPaths);
+    const newPaths = new Set(this._checkedPaths);
     let path: string | null | undefined = this.tree?.getNodeByPath(startPath)?.parentPath;
     while (path) {
       const ancestor = this.tree?.getNodeByPath(path);
       if (!ancestor) break;
       const vs = this._computeVisualState(ancestor);
 
-      const shouldBeSelected = vs === VisualState.selected;
-      if (ancestor.isSelected !== shouldBeSelected) {
-        ancestor.isSelected = shouldBeSelected;
-        if (shouldBeSelected) newPaths.add(path);
+      const shouldBeChecked = vs === VisualState.checked;
+      if (ancestor.isChecked !== shouldBeChecked) {
+        ancestor.isChecked = shouldBeChecked;
+        if (shouldBeChecked) newPaths.add(path);
         else newPaths.delete(path);
       }
       if (ancestor.visualState !== vs) ancestor.visualState = vs;
       ancestor._rev++;
       path = ancestor.parentPath;
     }
-    this._selectedPaths = newPaths;
+    this._checkedPaths = newPaths;
   }
 
-  /** Compute the visualState (selected / notSelected / indeterminate) for a
-   *  node based on its descendants' `isSelected`. Leaves use the node's own
-   *  `isSelected`. */
+  /** Compute the visualState (checked / unchecked / indeterminate) for a
+   *  node based on its descendants' `isChecked`. Leaves use the node's own
+   *  `isChecked`. */
   private _computeVisualState(node: LTreeNode<T>): VisualState {
     const children = Object.values(node.children);
     if (children.length === 0) {
-      return node.isSelected ? VisualState.selected : VisualState.notSelected;
+      return node.isChecked ? VisualState.checked : VisualState.unchecked;
     }
-    let allSelected = true;
-    let noneSelected = true;
+    let allChecked = true;
+    let noneChecked = true;
     const check = (n: LTreeNode<T>) => {
-      if (!allSelected && !noneSelected) return;
-      if (n.isSelected) noneSelected = false;
-      else allSelected = false;
+      if (!allChecked && !noneChecked) return;
+      if (n.isChecked) noneChecked = false;
+      else allChecked = false;
       for (const child of Object.values(n.children)) {
-        if (!allSelected && !noneSelected) return;
+        if (!allChecked && !noneChecked) return;
         check(child);
       }
     };
     for (const child of children) {
       check(child);
-      if (!allSelected && !noneSelected) break;
+      if (!allChecked && !noneChecked) break;
     }
-    if (allSelected) return VisualState.selected;
-    if (noneSelected) return VisualState.notSelected;
+    if (allChecked) return VisualState.checked;
+    if (noneChecked) return VisualState.unchecked;
     return VisualState.indeterminate;
   }
 
   // ── Navigation API ────────────────────────────────────────────────
 
-  /** Navigate to a specific path (highlights and focuses it). */
+  /** Navigate to a specific path (selects and focuses it). */
   navTo(path: string): void {
-    this.highlightNode(path);
+    this.selectNode(path);
   }
 
   /** Navigate to the next visible node. */
@@ -2238,12 +2238,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     if (visible.length === 0) return;
     const currentPath = this._focusedNode?.path;
     if (!currentPath) {
-      this.highlightNode(visible[0].path);
+      this.selectNode(visible[0].path);
       return;
     }
     const idx = visible.findIndex(n => n.path === currentPath);
     if (idx >= 0 && idx < visible.length - 1) {
-      this.highlightNode(visible[idx + 1].path);
+      this.selectNode(visible[idx + 1].path);
     }
   }
 
@@ -2253,12 +2253,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     if (visible.length === 0) return;
     const currentPath = this._focusedNode?.path;
     if (!currentPath) {
-      this.highlightNode(visible[visible.length - 1].path);
+      this.selectNode(visible[visible.length - 1].path);
       return;
     }
     const idx = visible.findIndex(n => n.path === currentPath);
     if (idx > 0) {
-      this.highlightNode(visible[idx - 1].path);
+      this.selectNode(visible[idx - 1].path);
     }
   }
 
@@ -2274,7 +2274,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const visible = this.tree?.visibleFlatNodes ?? [];
     const idx = visible.findIndex(n => n.path === node.path);
     if (idx >= 0 && idx + 1 < visible.length) {
-      this.highlightNode(visible[idx + 1].path);
+      this.selectNode(visible[idx + 1].path);
     }
   }
 
@@ -2286,7 +2286,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const lastSep = node.path.lastIndexOf(sep);
     if (lastSep > 0) {
       const parentPath = node.path.substring(0, lastSep);
-      this.highlightNode(parentPath);
+      this.selectNode(parentPath);
     }
   }
 
@@ -2299,7 +2299,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     if (lastSep > 0) {
       const parentPath = node.path.substring(0, lastSep);
       this.tree?.collapseNodes(parentPath);
-      this.highlightNode(parentPath);
+      this.selectNode(parentPath);
     }
   }
 
@@ -2319,7 +2319,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   navFirst(): void {
     const visible = this.tree?.visibleFlatNodes ?? [];
     if (visible.length > 0) {
-      this.highlightNode(visible[0].path);
+      this.selectNode(visible[0].path);
     }
   }
 
@@ -2327,7 +2327,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   navLast(): void {
     const visible = this.tree?.visibleFlatNodes ?? [];
     if (visible.length > 0) {
-      this.highlightNode(visible[visible.length - 1].path);
+      this.selectNode(visible[visible.length - 1].path);
     }
   }
 
@@ -2338,13 +2338,13 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const currentPath = this._focusedNode?.path;
     const currentIndex = currentPath ? visible.findIndex(n => n.path === currentPath) : -1;
     if (currentIndex === -1) {
-      this.highlightNode(visible[0].path);
+      this.selectNode(visible[0].path);
       return;
     }
     const currentLevel = visible[currentIndex].level;
     for (let i = currentIndex + 1; i < visible.length; i++) {
       if (visible[i].level === currentLevel) {
-        this.highlightNode(visible[i].path);
+        this.selectNode(visible[i].path);
         return;
       }
     }
@@ -2357,13 +2357,13 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const currentPath = this._focusedNode?.path;
     const currentIndex = currentPath ? visible.findIndex(n => n.path === currentPath) : -1;
     if (currentIndex === -1) {
-      this.highlightNode(visible[visible.length - 1].path);
+      this.selectNode(visible[visible.length - 1].path);
       return;
     }
     const currentLevel = visible[currentIndex].level;
     for (let i = currentIndex - 1; i >= 0; i--) {
       if (visible[i].level === currentLevel) {
-        this.highlightNode(visible[i].path);
+        this.selectNode(visible[i].path);
         return;
       }
     }
@@ -2373,7 +2373,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   /** Copy selected nodes (or specified paths) to clipboard. */
   copyNodes(paths?: string[]): void {
-    let pathsToUse = paths ?? [...this._highlightedPaths];
+    let pathsToUse = paths ?? [...this._selectedPaths];
     if (pathsToUse.length === 0) return;
 
     // Interceptor: can modify paths (return string[]) or block (false).
@@ -2410,7 +2410,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   /** Cut selected nodes (or specified paths) to clipboard. Dimmed, not removed until paste. */
   cutNodes(paths?: string[]): void {
-    let pathsToUse = paths ?? [...this._highlightedPaths];
+    let pathsToUse = paths ?? [...this._selectedPaths];
     if (pathsToUse.length === 0) return;
 
     // Interceptor: can modify paths (return string[]) or block (false).
@@ -2700,10 +2700,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     return getClipboardOp();
   }
 
-  /** Paths a keyboard shortcut should act on: the highlight set if any, else the
+  /** Paths a keyboard shortcut should act on: the selected set if any, else the
    *  focused node, else empty. Shared by the built-in copy/cut/delete handling. */
   private _shortcutSelectionPaths(): string[] {
-    if (this._highlightedPaths.size > 0) return [...this._highlightedPaths];
+    if (this._selectedPaths.size > 0) return [...this._selectedPaths];
     return this._focusedNode ? [this._focusedNode.path] : [];
   }
 
@@ -2723,8 +2723,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   /**
    * Remove nodes (and their descendants) from the tree. Defaults to the current
-   * selection (highlight set, else focused node). Runs `beforeDeleteCallback` first
-   * (narrow or block), removes only top-level subtrees, clears highlight + focus of
+   * selection (selected set, else focused node). Runs `beforeDeleteCallback` first
+   * (narrow or block), removes only top-level subtrees, clears selection + focus of
    * anything removed, and fires `onDelete` with PRE-REMOVAL node snapshots.
    */
   deleteNodes(paths?: string[]): { removed: number; blocked: number } {
@@ -2750,7 +2750,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       else blocked++;
     }
     if (removed > 0) {
-      this.clearHighlight();
+      this.clearSelection();
       this.clearFocus();
       const removedPaths = targets.slice(0, removed);
       this.onDeleteCb?.({
@@ -2819,7 +2819,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       const suppressed = this.onTreeKeydownCb({
         event,
         focusedNode: this._focusedNode ?? null,
-        highlightedNodes: this.getHighlightedNodes(),
+        selectedNodes: this.getSelectedNodes(),
         controller: this
       });
       if (suppressed === true) return true;
@@ -3232,20 +3232,20 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     }
 
     if (highlight && this._scrollHighlightClass) {
-      if (this.currentHighlight) {
-        this.currentHighlight.element.classList.remove(this._scrollHighlightClass);
-        clearTimeout(this.currentHighlight.timeoutId);
-        this.currentHighlight = null;
+      if (this.currentSelection) {
+        this.currentSelection.element.classList.remove(this._scrollHighlightClass);
+        clearTimeout(this.currentSelection.timeoutId);
+        this.currentSelection = null;
       }
 
       contentDiv.classList.add(this._scrollHighlightClass);
       const highlightClass = this._scrollHighlightClass;
       const timeoutId = setTimeout(() => {
         contentDiv.classList.remove(highlightClass);
-        this.currentHighlight = null;
+        this.currentSelection = null;
       }, this._scrollHighlightTimeout);
 
-      this.currentHighlight = { element: contentDiv, timeoutId };
+      this.currentSelection = { element: contentDiv, timeoutId };
     }
 
     perfEnd(`[${this._treeId}] scrollToPath`);
@@ -3259,8 +3259,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       const has = (k: string) => k in updates;
       console.log('[wtv:cfg] updateProps IN',
         'focusedNodeClass:', has('focusedNodeClass') ? JSON.stringify((updates as any).focusedNodeClass) : '(absent)',
-        '| highlightedNodeClass:', has('highlightedNodeClass') ? JSON.stringify((updates as any).highlightedNodeClass) : '(absent)',
-        '| selectedNodeClass:', has('selectedNodeClass') ? JSON.stringify((updates as any).selectedNodeClass) : '(absent)');
+        '| selectedNodeClass:', has('selectedNodeClass') ? JSON.stringify((updates as any).selectedNodeClass) : '(absent)',
+        '| checkedNodeClass:', has('checkedNodeClass') ? JSON.stringify((updates as any).checkedNodeClass) : '(absent)');
     }
     // Check if any LTree-baked member mapping / structural callback changed —
     // only THAT requires tearing down and rebuilding the tree.
@@ -3285,7 +3285,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       changed(updates.levelMember, t.levelMember) ||
       changed(updates.hasChildrenMember, t.hasChildrenMember) ||
       changed(updates.isExpandedMember, t.isExpandedMember) ||
-      changed(updates.isSelectedMember, t.isSelectedMember) ||
+      changed(updates.isCheckedMember, t.isCheckedMember) ||
       changed(updates.isDraggableMember, t.isDraggableMember) ||
       changed(updates.isDropAllowedMember, t.isDropAllowedMember) ||
       changed(updates.allowedDropPositionsMember, t.allowedDropPositionsMember) ||
@@ -3298,7 +3298,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       changed(updates.getIsDraggableCallback, t.getIsDraggableCallback) ||
       changed(updates.getIsExpandedCallback, t.getIsExpandedCallback) ||
       changed(updates.getIsSelectableCallback, t.getIsSelectableCallback) ||
-      changed(updates.getIsSelectedCallback, t.getIsSelectedCallback) ||
+      changed(updates.getIsCheckedCallback, t.getIsCheckedCallback) ||
       changed(updates.getIsDropAllowedCallback, t.getIsDropAllowedCallback) ||
       changed(updates.getIsCollapsibleCallback, t.getIsCollapsibleCallback) ||
       changed(updates.getAllowedDropPositionsCallback, t.getAllowedDropPositionsCallback) ||
@@ -3318,10 +3318,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     if (updates.treePathSeparator !== undefined)
       this.treePathSeparator = updates.treePathSeparator ?? '.';
     if (updates.focusedNode !== undefined) this._focusedNode = updates.focusedNode;
-    if (updates.highlightedPaths !== undefined)
-      this._highlightedPaths = new Set(updates.highlightedPaths);
     if (updates.selectedPaths !== undefined)
       this._selectedPaths = new Set(updates.selectedPaths);
+    if (updates.checkedPaths !== undefined)
+      this._checkedPaths = new Set(updates.checkedPaths);
     if (updates.selectionMode !== undefined)
       this._selectionMode = updates.selectionMode ?? 'single';
     if (updates.shouldShowCheckboxes !== undefined) {
@@ -3337,11 +3337,11 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         this._reconcileVisualStatesForMode();
       }
     }
-    if (updates.cascadeSelectPolicy !== undefined) {
-      const nextPolicy = updates.cascadeSelectPolicy ?? 'rolled-up';
-      if (nextPolicy !== this._cascadeSelectPolicy) {
-        this._cascadeSelectPolicy = nextPolicy;
-        this._emitSelectionChange(); // re-project the unchanged canonical set
+    if (updates.cascadeCheckPolicy !== undefined) {
+      const nextPolicy = updates.cascadeCheckPolicy ?? 'rolled-up';
+      if (nextPolicy !== this._cascadeCheckPolicy) {
+        this._cascadeCheckPolicy = nextPolicy;
+        this._emitCheckedChange(); // re-project the unchanged canonical set
       }
     }
     if (updates.shouldClickToggleCheckbox !== undefined)
@@ -3371,14 +3371,14 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._leafIconClass = updates.leafIconClass ?? 'wtv__toggle-icon--leaf-none';
     if (updates.toggleIconMode !== undefined)
       this._toggleIconMode = updates.toggleIconMode ?? 'rotate';
-    if (updates.highlightedNodeClass !== undefined)
-      this._highlightedNodeClass = updates.highlightedNodeClass;
+    if (updates.selectedNodeClass !== undefined)
+      this._selectedNodeClass = updates.selectedNodeClass;
     if (updates.focusedNodeClass !== undefined)
       this._focusedNodeClass = updates.focusedNodeClass;
     else if ((globalThis as any).__WTV_DEBUG && 'focusedNodeClass' in updates)
       console.log('[wtv:cfg] focusedNodeClass guard SKIPPED clear — value is undefined, stays', JSON.stringify(this._focusedNodeClass));
-    if (updates.selectedNodeClass !== undefined)
-      this._selectedNodeClass = updates.selectedNodeClass;
+    if (updates.checkedNodeClass !== undefined)
+      this._checkedNodeClass = updates.checkedNodeClass;
     if (updates.dragOverNodeClass !== undefined)
       this._dragOverNodeClass = updates.dragOverNodeClass;
     if (updates.draggedNodeClass !== undefined)
@@ -3457,8 +3457,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
     // Multi-select
     if (updates.rangeSelectionMode !== undefined) this._rangeSelectionMode = updates.rangeSelectionMode ?? 'visual';
+    if (updates.onCheckedChange !== undefined) this.checkedChangeCb = updates.onCheckedChange;
     if (updates.onSelectionChange !== undefined) this.selectionChangeCb = updates.onSelectionChange;
-    if (updates.onHighlightChange !== undefined) this.highlightChangeCb = updates.onHighlightChange;
 
     // Callbacks
     if (updates.onNodeClick !== undefined) this.nodeClickedCb = updates.onNodeClick;
@@ -3519,8 +3519,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         updates.getIsExpandedCallback ?? this.tree.getIsExpandedCallback,
         updates.isSelectableMember ?? this.tree.isSelectableMember,
         updates.getIsSelectableCallback ?? this.tree.getIsSelectableCallback,
-        updates.isSelectedMember ?? this.tree.isSelectedMember,
-        updates.getIsSelectedCallback ?? this.tree.getIsSelectedCallback,
+        updates.isCheckedMember ?? this.tree.isCheckedMember,
+        updates.getIsCheckedCallback ?? this.tree.getIsCheckedCallback,
         updates.isDraggableMember ?? this.tree.isDraggableMember,
         updates.getIsDraggableCallback ?? this.tree.getIsDraggableCallback,
         updates.isDropAllowedMember ?? this.tree.isDropAllowedMember,
@@ -3556,8 +3556,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         this._skipInsertArray = true;
         queueMicrotask(() => { this._skipInsertArray = false; });
         this._insertResult = this.tree.insertArray(data);
-        this._seedSelectedPathsFromTree();
-        this._reapplyRuntimeSelection();
+        this._seedCheckedPathsFromTree();
+        this._reapplyRuntimeChecked();
         if (!expandLevelChanged) this._reapplyExpanded(preservedExpanded);
         const result = this._insertResult;
         initLogger.debug(`[${this._treeId}] insertArray result`, {
@@ -3607,8 +3607,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       flatIndentSize: this._flatIndentSize,
       shouldDisplayDebugInformation: this._shouldDisplayDebugInformation,
       focusedNode: this._focusedNode,
-      highlightedPaths: this._highlightedPaths,
       selectedPaths: this._selectedPaths,
+      checkedPaths: this._checkedPaths,
       cutPaths: this._cutPaths,
 
       // Virtual scroll
@@ -3660,8 +3660,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this.currentBatchSize = 0;
       const preservedExpanded = this._collectExpandedPaths();
       this._insertResult = this.tree.insertArray(this._data);
-      this._seedSelectedPathsFromTree();
-      this._reapplyRuntimeSelection();
+      this._seedCheckedPathsFromTree();
+      this._reapplyRuntimeChecked();
       this._reapplyExpanded(preservedExpanded);
     }
   }
@@ -3673,35 +3673,35 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._scheduleNotify();
   }
 
-  /** Pre-populate `_highlightedPaths` from any nodes whose `isSelected` was set
-   *  at insert time (via `isSelectedMember` or `getIsSelectedCallback`). Runs
-   *  after every `insertArray` so consumers reading `getSelectedPaths()`
-   *  immediately reflect server-side initial selection.
+  /** Pre-populate `_checkedPaths` from any nodes whose `isChecked` was set
+   *  at insert time (via `isCheckedMember` or `getIsCheckedCallback`). Runs
+   *  after every `insertArray` so consumers reading `getCheckedPaths()`
+   *  immediately reflect server-side initial checked state.
    *  Mirrors svelte-treeview rc07's post-insert seeding walk. */
-  /** Re-apply the controller-owned runtime selection onto freshly (re)inserted
-   *  nodes. `_selectedPaths` is the source of truth and survives a data re-insert;
-   *  the per-node `isSelected` flag does NOT (fresh nodes default to false), and
+  /** Re-apply the controller-owned runtime checked state onto freshly (re)inserted
+   *  nodes. `_checkedPaths` is the source of truth and survives a data re-insert;
+   *  the per-node `isChecked` flag does NOT (fresh nodes default to false), and
    *  the cascade `visualState` is derived. So after every insertArray we push
-   *  `_selectedPaths` back onto `node.isSelected` and recompute `visualState` from
+   *  `_checkedPaths` back onto `node.isChecked` and recompute `visualState` from
    *  it — otherwise a config-triggered re-insert silently drops the checkbox
-   *  selection + indeterminate dashes. (web-grid-style: primary state lives off
+   *  state + indeterminate dashes. (web-grid-style: primary state lives off
    *  the nodes; derived state is recomputed.) The renderer reads `checked` straight
-   *  from `snapshot.selectedPaths`, so it's already rebuild-proof; this keeps the
+   *  from `snapshot.checkedPaths`, so it's already rebuild-proof; this keeps the
    *  cascade computation + the indeterminate marker correct too. */
-  private _reapplyRuntimeSelection(): void {
+  private _reapplyRuntimeChecked(): void {
     if (!this.tree?.root) return;
     const cascade = this._checkboxMode === 'cascade';
-    // Pass 1: primary state — isSelected from the surviving set.
-    const applySelected = (node: LTreeNode<T>) => {
-      node.isSelected = this._selectedPaths.has(node.path);
-      for (const child of Object.values(node.children)) applySelected(child);
+    // Pass 1: primary state — isChecked from the surviving set.
+    const applyChecked = (node: LTreeNode<T>) => {
+      node.isChecked = this._checkedPaths.has(node.path);
+      for (const child of Object.values(node.children)) applyChecked(child);
     };
-    for (const child of Object.values(this.tree.root.children)) applySelected(child);
-    // Pass 2: derived visualState — needs pass 1's isSelected on all descendants.
+    for (const child of Object.values(this.tree.root.children)) applyChecked(child);
+    // Pass 2: derived visualState — needs pass 1's isChecked on all descendants.
     const applyVisual = (node: LTreeNode<T>) => {
       node.visualState = cascade
         ? this._computeVisualState(node)
-        : (node.isSelected ? VisualState.selected : VisualState.notSelected);
+        : (node.isChecked ? VisualState.checked : VisualState.unchecked);
       for (const child of Object.values(node.children)) applyVisual(child);
     };
     for (const child of Object.values(this.tree.root.children)) applyVisual(child);
@@ -3722,7 +3722,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   }
 
   /** Re-apply a captured expansion set onto freshly (re)inserted nodes. Paths not
-   *  present in the new data are simply ignored. Unlike selection/highlight (whose
+   *  present in the new data are simply ignored. Unlike selected/checked (whose
    *  source of truth is a controller-owned set the renderer reads), expansion is
    *  consumed by the LTree's own flattening, so it stays on the node — we just make
    *  the re-insert lossless by restoring it. */
@@ -3735,14 +3735,14 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     for (const child of Object.values(this.tree.root.children)) visit(child);
   }
 
-  private _seedSelectedPathsFromTree(): void {
+  private _seedCheckedPathsFromTree(): void {
     if (!this.tree) return;
-    if (!this.tree.isSelectedMember && !this.tree.getIsSelectedCallback) return;
-    // Walk every node — collapsed branches still need their selected flag
-    // reflected in selectedPaths so the checkbox state is correct when the
+    if (!this.tree.isCheckedMember && !this.tree.getIsCheckedCallback) return;
+    // Walk every node — collapsed branches still need their checked flag
+    // reflected in checkedPaths so the checkbox state is correct when the
     // user later expands them.
     const visit = (node: LTreeNode<T>) => {
-      if (node.isSelected) this._selectedPaths.add(node.path);
+      if (node.isChecked) this._checkedPaths.add(node.path);
       for (const child of Object.values(node.children)) visit(child);
     };
     const root = this.tree.root;
@@ -3851,9 +3851,9 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       collapseIconClass: this._collapseIconClass,
       leafIconClass: this._leafIconClass,
       toggleIconMode: this._toggleIconMode,
-      highlightedNodeClass: this._highlightedNodeClass,
-      focusedNodeClass: this._focusedNodeClass,
       selectedNodeClass: this._selectedNodeClass,
+      focusedNodeClass: this._focusedNodeClass,
+      checkedNodeClass: this._checkedNodeClass,
       dragOverNodeClass: this._dragOverNodeClass,
       draggedNodeClass: this._draggedNodeClass,
       dragDropMode: this._dragDropMode,
@@ -3974,14 +3974,14 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this.closeContextMenu();
     }
 
-    this._applyHighlight(node.path, modifiers);
+    this._applySelection(node.path, modifiers);
 
     uiLogger.debug(`Node clicked: ${node.path}`, {
       newPath: node.path,
       id: node.id,
       ctrl: modifiers?.ctrl,
       shift: modifiers?.shift,
-      highlightedCount: this._highlightedPaths.size
+      selectedCount: this._selectedPaths.size
     });
 
     this.nodeClickedCb?.(this.nodeRef(node));
@@ -3990,7 +3990,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   /**
    * Manual double-click detection, called by the renderer for every genuine
    * plain (no Ctrl/Shift) UI click. The flat diff reconciler patches a row's
-   * attributes on the first click (focus/highlight bumps `_rev`), so the
+   * attributes on the first click (focus/selection bumps `_rev`), so the
    * browser's native `dblclick` can't be trusted. Returns `true` when this
    * click completes a double within the 400ms window — the caller then
    * consumes the click (returns early) so the gesture reads as a single open
@@ -4113,10 +4113,10 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     }
     this.nodeDragStartCb?.({ ...this.nodeRef(node), event, dragged: draggedRefs });
 
-    // OS-convention highlight sync: grabbing a node that isn't part of the
-    // current highlight set replaces the highlight with just that node.
+    // OS-convention selection sync: grabbing a node that isn't part of the
+    // current selected set replaces the selection with just that node.
     // Mirrors Windows Explorer / macOS Finder — without it the prior
-    // highlight stays visible while the drag silently carries only the
+    // selection stays visible while the drag silently carries only the
     // grabbed node, making it impossible to tell what's actually moving.
     // Skipped when the node is already in the set (multi-drag) or when
     // the node is unselectable.
@@ -4124,22 +4124,22 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     // of the source row before the browser commits the drag image causes
     // the renderer's keyed update to drop the dragged element and the
     // drag silently aborts. rAF runs after the drag is committed.
-    if (node.isSelectable && !this._highlightedPaths.has(node.path)) {
+    if (node.isSelectable && !this._selectedPaths.has(node.path)) {
       requestAnimationFrame(() => {
         // Esc-cancel can fire dragend before this rAF runs.
         if (!this._isDragInProgress) return;
-        // Snapshot the prior highlight so _onNodeDragEnd can restore it if
+        // Snapshot the prior selection so _onNodeDragEnd can restore it if
         // the drag is Esc-cancelled. Without this, the user is left with
         // the dragged node selected even though they cancelled the operation.
-        this._preDragHighlightSnapshot = new Set(this._highlightedPaths);
-        this._clearHighlightFlags();
-        node.isHighlighted = true;
+        this._preDragSelectionSnapshot = new Set(this._selectedPaths);
+        this._clearSelectionFlags();
+        node.isSelected = true;
         node._rev++;
-        this._highlightedPaths = new Set([node.path]);
-        this._lastHighlightedPath = node.path;
+        this._selectedPaths = new Set([node.path]);
+        this._lastSelectedPath = node.path;
         this._focusedNode = node;
-        this._emitHighlightChange();
-        this._mirrorHighlightToSelected();
+        this._emitSelectionChange();
+        this._mirrorSelectedToChecked();
         this.tree.refresh();
         this._scheduleNotify();
       });
@@ -4148,12 +4148,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     this._scheduleNotify();
   }
 
-  /** Pick out the "top-level highlighted" subset of `highlightedPaths`:
-   *  every path whose nearest highlighted ancestor is NOT in the set.
-   *  Descendants whose ancestor is also highlighted are absorbed — they
+  /** Pick out the "top-level selected" subset of `selectedPaths`:
+   *  every path whose nearest selected ancestor is NOT in the set.
+   *  Descendants whose ancestor is also selected are absorbed — they
    *  ride along inside the ancestor's subtree during multi-drag. */
-  private _getTopLevelHighlightedPaths(): string[] {
-    const paths = this._highlightedPaths;
+  private _getTopLevelSelectedPaths(): string[] {
+    const paths = this._selectedPaths;
     if (paths.size === 0) return [];
     const sep = this._treePathSeparator;
     const result: string[] = [];
@@ -4178,26 +4178,26 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       dropEffect,
       operation: this._currentDropOperation
     });
-    // Esc-cancel / drop-on-invalid-target: restore the pre-drag highlight so
+    // Esc-cancel / drop-on-invalid-target: restore the pre-drag selection so
     // the dragged node doesn't end up "stuck" selected. Mirrors svelte-treeview.
-    if (dropEffect === 'none' && this._preDragHighlightSnapshot) {
-      const prior = this._preDragHighlightSnapshot;
-      this._clearHighlightFlags();
-      this._highlightedPaths = new Set(prior);
+    if (dropEffect === 'none' && this._preDragSelectionSnapshot) {
+      const prior = this._preDragSelectionSnapshot;
+      this._clearSelectionFlags();
+      this._selectedPaths = new Set(prior);
       for (const path of prior) {
         const n = this.tree?.getNodeByPath(path);
         if (n) {
-          n.isHighlighted = true;
+          n.isSelected = true;
           n._rev++;
         }
       }
       // When the snapshot was empty, focus also belonged to nobody — clear it.
       if (prior.size === 0) this._focusedNode = null;
-      this._emitHighlightChange();
-      this._mirrorHighlightToSelected();
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
       this.tree.refresh();
     }
-    this._preDragHighlightSnapshot = null;
+    this._preDragSelectionSnapshot = null;
     this._resetDragState();
   };
 
@@ -4238,7 +4238,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
     const isSameTreeDrag = draggedNodeRef.treeId === this._treeId;
 
     // Full top-level dragged set as NodeRefs — captured BEFORE any move mutates
-    // the highlight set (same-tree) or the source clears its published set
+    // the selected set (same-tree) or the source clears its published set
     // (cross-tree). Feeds ctx.dragged on every drop, single- or multi-origin.
     const draggedRefs = this._draggedRefs(draggedNodeRef);
 
@@ -4269,7 +4269,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       }
     }
 
-    // Multi-drag: when the dragged node is in a multi-highlight set (or a
+    // Multi-drag: when the dragged node is in a multi-selection set (or a
     // beforeDragStart override carries >1 top-level path), move the whole set as
     // top-level subtrees via moveNodes, which resolves refs up front, picks the
     // roots, and chains them in source order under the target. (svelte-treeview rc13)
@@ -4280,12 +4280,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       this._shouldAutoHandleMove &&
       (this._dragSetOverride
         ? this._dragSetOverride.length > 1
-        : this._highlightedPaths.has(draggedNodeRef.path) && this._highlightedPaths.size > 1);
+        : this._selectedPaths.has(draggedNodeRef.path) && this._selectedPaths.size > 1);
 
     if (isMultiDrag) {
-      const topLevelPaths = (this._dragSetOverride ?? this._getTopLevelHighlightedPaths())
+      const topLevelPaths = (this._dragSetOverride ?? this._getTopLevelSelectedPaths())
         .filter((p) => p !== dropNode!.path)
-        // Respect per-node draggability: a locked node merely in the highlight set
+        // Respect per-node draggability: a locked node merely in the selected set
         // must NOT ride along. An explicit override skips this gate (the consumer
         // forced these in on purpose).
         .filter((p) => {
@@ -4295,12 +4295,12 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         });
       dragLogger.info(`Multi-drag: moving ${topLevelPaths.length} top-level subtree(s)`, {
         topLevelPaths,
-        totalHighlighted: this._highlightedPaths.size,
+        totalSelected: this._selectedPaths.size,
         dropTarget: dropNode!.path,
         position
       });
       // A curated override IS the manifest as-is (its omissions are holes moveNodes
-      // leaves behind); a plain highlight set has no holes, so complete it → whole
+      // leaves behind); a plain selected set has no holes, so complete it → whole
       // subtrees move.
       const manifest = this._dragSetOverride ? topLevelPaths : this._completeManifest(topLevelPaths);
       const result = this.moveNodes(manifest, dropNode!.path, position);
@@ -4322,18 +4322,18 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
     if (isSameTreeDrag && operation === 'copy' && dropNode && this._shouldAutoHandleCopy) {
       // Copy twin of the move branches: build the same manifest (curated override
-      // with holes, or the completed highlight/lead set = whole subtrees), then
+      // with holes, or the completed selected/lead set = whole subtrees), then
       // duplicateNodes runs the INPUT transform per node — the consumer's
       // pasteNodeTransformationCallback, else a default id-uniquifier.
       const transform = this.inputTransformCb ?? this._defaultCopyTransform;
       const isMulti = this._dragSetOverride
         ? this._dragSetOverride.length > 1
-        : this._highlightedPaths.has(draggedNodeRef.path) && this._highlightedPaths.size > 1;
+        : this._selectedPaths.has(draggedNodeRef.path) && this._selectedPaths.size > 1;
       const manifest = this._dragSetOverride
         ? this._dragSetOverride
         : isMulti
           ? this._completeManifest(
-              this._getTopLevelHighlightedPaths().filter((p) => p !== dropNode.path)
+              this._getTopLevelSelectedPaths().filter((p) => p !== dropNode.path)
             )
           : this._completeManifest([draggedNodeRef.path]);
       const result = this.duplicateNodes(manifest, dropNode.path, position, transform);

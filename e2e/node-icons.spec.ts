@@ -39,6 +39,17 @@ test('default: per-node color from icon-color-member is applied inline', async (
 	expect(await iconAt(page, 'default', '1.1.1').evaluate((el) => (el as HTMLElement).style.color)).toBe('');
 });
 
+test('default: a non-class value (emoji) renders as the icon text', async ({ page }) => {
+	const branch = iconAt(page, 'emoji', '1');
+	await expect(branch).toHaveText('🗂️');
+	expect(await branch.getAttribute('class')).not.toContain('🗂');
+	await expect(iconAt(page, 'emoji', '1.1.1')).toHaveText('👤');
+	// A class-like value on the same tree still goes on the class, with no text.
+	const cls = iconAt(page, 'emoji', '1.2');
+	await expect(cls).toHaveClass(/fa-building/);
+	await expect(cls).toHaveText('');
+});
+
 test('renderIconCallback: populates the icon element and receives the resolved value', async ({ page }) => {
 	const icon = iconAt(page, 'custom', '1');
 	await expect(icon).toHaveText('★');

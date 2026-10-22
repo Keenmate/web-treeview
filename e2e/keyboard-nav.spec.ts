@@ -221,17 +221,17 @@ test.describe('Home / End — jump to first/last visible', () => {
 
 // ── Controller gaps: PageDown / PageUp and Shift+ extend ──────────────────
 // These exist in the Svelte build but the web-treeview controller doesn't yet
-// expose navPageDown / navPageUp / navHighlightNext / navHighlightPrev /
-// navHighlightFirst / navHighlightLast / navHighlightPageDown / navHighlightPageUp.
+// expose navPageDown / navPageUp / navSelectNext / navSelectPrev /
+// navSelectFirst / navSelectLast / navSelectPageDown / navSelectPageUp.
 // Tracked as a follow-up.
 
 test.skip('PageDown jumps 10 nodes forward — controller gap', () => {});
 test.skip('PageDown clamps to last visible — controller gap', () => {});
 test.skip('PageUp jumps 10 nodes backward — controller gap', () => {});
 test.skip('PageUp clamps to first visible — controller gap', () => {});
-test.skip('Shift+ArrowDown extends highlight to next sibling — controller gap', () => {});
-test.skip('Shift+ArrowUp extends highlight to prev sibling — controller gap', () => {});
-test.skip('Shift+End extends highlight to last — controller gap', () => {});
-test.skip('Shift+Home extends highlight to first — controller gap', () => {});
-test.skip('Shift+PageDown extends highlight by 10 — controller gap', () => {});
-test.skip('Shift+PageUp extends highlight by -10 — controller gap', () => {});
+test.skip('Shift+ArrowDown extends selection to next sibling — controller gap', () => {});
+test.skip('Shift+ArrowUp extends selection to prev sibling — controller gap', () => {});
+test.skip('Shift+End extends selection to last — controller gap', () => {});
+test.skip('Shift+Home extends selection to first — controller gap', () => {});
+test.skip('Shift+PageDown extends selection by 10 — controller gap', () => {});
+test.skip('Shift+PageUp extends selection by -10 — controller gap', () => {});

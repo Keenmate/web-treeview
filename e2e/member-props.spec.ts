@@ -1,7 +1,7 @@
 import { test, expect, Page, Locator } from '@playwright/test';
 
 /**
- * Tests for the isSelectableMember + isSelectedMember props.
+ * Tests for the isSelectableMember + isCheckedMember props.
  *
  * Fixture data:
  *   1     Documents  selectable=true  selected=false
@@ -73,7 +73,7 @@ test.describe('isSelectableMember', () => {
   });
 });
 
-test.describe('isSelectedMember', () => {
+test.describe('isCheckedMember', () => {
   test('nodes with selected=true and selectable=true render their checkbox in checked state', async ({ page }) => {
     await gotoFixture(page);
     await expect(checkboxInput(nodeByPath(page, '1.1'))).toBeChecked();
@@ -86,29 +86,29 @@ test.describe('isSelectedMember', () => {
     await expect(checkboxInput(nodeByPath(page, '2.1'))).not.toBeChecked();
   });
 
-  test('selectedPaths is seeded with every path where selected=true (incl. non-selectable)', async ({ page }) => {
+  test('checkedPaths is seeded with every path where selected=true (incl. non-selectable)', async ({ page }) => {
     await gotoFixture(page);
 
-    // Seed walk visits node.isSelected for every node, independent of isSelectable.
+    // Seed walk visits node.isChecked for every node, independent of isSelectable.
     // Expect all three selected=true paths: 1.1, 1.3, 2 (sorted).
-    await expect(page.getByTestId('selected-paths-count')).toHaveText('3');
-    await expect(page.getByTestId('selected-paths-list')).toHaveText('1.1,1.3,2');
+    await expect(page.getByTestId('checked-paths-count')).toHaveText('3');
+    await expect(page.getByTestId('checked-paths-list')).toHaveText('1.1,1.3,2');
   });
 
-  test('toggling a checkbox updates selectedPaths', async ({ page }) => {
+  test('toggling a checkbox updates checkedPaths', async ({ page }) => {
     await gotoFixture(page);
 
-    await expect(page.getByTestId('selected-paths-count')).toHaveText('3');
+    await expect(page.getByTestId('checked-paths-count')).toHaveText('3');
 
     await checkbox(nodeByPath(page, '2.1')).click();
     await expect(checkboxInput(nodeByPath(page, '2.1'))).toBeChecked();
 
-    await expect(page.getByTestId('selected-paths-count')).toHaveText('4');
-    await expect(page.getByTestId('selected-paths-list')).toHaveText('1.1,1.3,2,2.1');
+    await expect(page.getByTestId('checked-paths-count')).toHaveText('4');
+    await expect(page.getByTestId('checked-paths-list')).toHaveText('1.1,1.3,2,2.1');
 
     await checkbox(nodeByPath(page, '1.1')).click();
     await expect(checkboxInput(nodeByPath(page, '1.1'))).not.toBeChecked();
-    await expect(page.getByTestId('selected-paths-count')).toHaveText('3');
-    await expect(page.getByTestId('selected-paths-list')).toHaveText('1.3,2,2.1');
+    await expect(page.getByTestId('checked-paths-count')).toHaveText('3');
+    await expect(page.getByTestId('checked-paths-list')).toHaveText('1.3,2,2.1');
   });
 });

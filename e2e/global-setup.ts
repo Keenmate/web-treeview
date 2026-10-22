@@ -22,7 +22,7 @@ export default async function globalSetup(config: FullConfig) {
     '/test/member-props.html',
     '/test/data.html',
     '/test/context-menu.html',
-    '/test/silent-highlight.html',
+    '/test/silent-selection.html',
     '/test/drag-esc-cancel.html',
     '/test/drag-drop.html',
     '/test/branch-operations.html',

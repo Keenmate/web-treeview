@@ -99,7 +99,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `level-member` | `string` | — | Property name for depth level (auto-calculated if omitted) |
 | `has-children-member` | `string` | — | Property name for has-children flag (auto-calculated if omitted) |
 | `is-expanded-member` | `string` | — | Property name for expanded state in data |
-| `is-selected-member` | `string` | — | Property name for selected state in data |
+| `is-checked-member` | `string` | — | Property name for checked (checkbox) state in data |
 | `is-draggable-member` | `string` | — | Property name for per-node draggable flag |
 | `is-drop-allowed-member` | `string` | — | Property name for per-node drop-allowed flag |
 | `is-collapsible-member` | `string` | — | Property name for per-node collapsible flag |
@@ -157,7 +157,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `body-class` | `string` | — | Extra class on `.wtv__container` |
-| `highlighted-node-class` | `string` | — | Extra class on each highlighted node-content |
+| `selected-node-class` | `string` | — | Extra class on each selected node-content |
 | `focused-node-class` | `string` | — | Extra class on the focused node-content |
 | `drag-over-node-class` | `string` | — | Extra class while a drag is over the node |
 | `expand-icon-class` | `string` | `wtv__toggle-icon--expand` | Toggle icon class for expandable nodes |
@@ -218,8 +218,8 @@ Set via JavaScript, not HTML attributes.
 | `renderLoadingCallback` | `(container) => void` | Loading-state rendering |
 | `renderHeaderCallback` | `(container) => void` | Tree header rendering |
 | `renderFooterCallback` | `(container) => void` | Tree footer rendering |
-| `onSelectionChange` | `(ctx: { paths, nodes }) => void` | Selection (checkbox / data) set changed |
-| `onHighlightChange` | `(ctx: { paths, nodes }) => void` | Highlight (Ctrl/Shift+click) set changed |
+| `onCheckedChange` | `(ctx: { paths, nodes }) => void` | Checked (checkbox / data) set changed |
+| `onSelectionChange` | `(ctx: { paths, nodes }) => void` | Selected (Ctrl/Shift+click) set changed |
 | `renderStartCallback` | `() => void` | First render batch starting |
 | `renderProgressCallback` | `(stats) => void` | Render batch progress tick |
 | `renderCompleteCallback` | `(stats) => void` | All render batches done |
@@ -229,7 +229,7 @@ Set via JavaScript, not HTML attributes.
 | `getIsDraggableCallback` | `(node) => boolean` | Dynamic draggable check |
 | `getIsCollapsibleCallback` | `(node) => boolean` | Dynamic collapsible check |
 | `getIsSelectableCallback` | `(node) => boolean` | Dynamic selectable check |
-| `getIsSelectedCallback` | `(node) => boolean` | Seed initial `isSelected` per node |
+| `getIsCheckedCallback` | `(node) => boolean` | Seed initial `isChecked` per node |
 | `getIsExpandedCallback` | `(node) => boolean` | Seed initial `isExpanded` per node |
 | `getIsDropAllowedCallback` | `(node) => boolean` | Dynamic drop-allowed check |
 | `getAllowedDropPositionsCallback` | `(node) => DropPosition[] \| null` | Dynamic per-position constraint |
@@ -245,7 +245,7 @@ Set via JavaScript, not HTML attributes.
 | `beforeDeleteCallback` | `(ctx: { paths, nodes }) => string[] \| false \| void` | Narrow (return `path[]`) or block (`false`) the built-in Delete set |
 | `copyNodeTransformationCallback` | `(data, ctx: NodeTransformContext) => T` | Per-node transform at snapshot time (clean/redact fields) |
 | `pasteNodeTransformationCallback` | `(data, ctx: NodeTransformContext) => T \| null` | Per-node transform at insert; return `null` to skip a node (skipping a root skips its subtree) |
-| `onTreeKeydown` | `(ctx: { event, focusedNode, highlightedNodes, controller }) => boolean \| void` | Keydown interceptor; return `true` to suppress default + built-in shortcuts. Runs before built-in handling |
+| `onTreeKeydown` | `(ctx: { event, focusedNode, selectedNodes, controller }) => boolean \| void` | Keydown interceptor; return `true` to suppress default + built-in shortcuts. Runs before built-in handling |
 
 `NodeTransformContext` = `{ operation, phase: 'copy' \| 'paste', isRoot, index, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during phase `'copy'`.
 
@@ -262,29 +262,29 @@ Set via JavaScript, not HTML attributes.
 | `searchNodes` | `(searchText): LTreeNode[]` | Search without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
 | `closeContextMenu` | `()` | Close the context menu |
-| `highlightNode` | `(path, mode?, options?)` | Highlight one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
-| `highlightNodes` | `(paths[], options?)` | Add nodes to the highlight set (**additive**) |
-| `setHighlightedPaths` | `(paths[], options?)` | Replace the entire highlight set |
-| `highlightAll` | `(options?)` | Highlight every visible node (Ctrl+A) |
-| `clearHighlight` | `(paths?, options?)` | Clear the given paths, or all when omitted |
-| `getHighlightedNodes` | `(): LTreeNode[]` | All highlighted nodes |
-| `getHighlightedPaths` | `(): Set<string>` | All highlighted paths |
-| `isNodeHighlighted` | `(path): boolean` | Check highlight membership |
-| `selectNode` | `(path, options?)` | Check one node (cascades in cascade mode) |
-| `selectNodes` | `(paths[], options?)` | Check nodes (**additive**) |
-| `setSelectedPaths` | `(paths[], options?)` | Replace the entire checkbox set |
-| `selectAll` | `(options?)` | Check every selectable node |
-| `deselectNode` | `(path, options?)` | Uncheck one node (cascades in cascade mode) |
-| `clearSelection` | `(paths?, options?)` | Uncheck the given paths, or all when omitted (was `deselectAll`) |
-| `getSelectedNodes` | `(): LTreeNode[]` | All checkbox-selected nodes |
-| `getSelectedPaths` | `(): Set<string>` | All checkbox-selected paths |
-| `isNodeSelected` | `(path): boolean` | Check selection membership |
+| `selectNode` | `(path, mode?, options?)` | Select one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
+| `selectNodes` | `(paths[], options?)` | Add nodes to the selected set (**additive**) |
+| `setSelectedPaths` | `(paths[], options?)` | Replace the entire selected set |
+| `selectAll` | `(options?)` | Select every visible node (Ctrl+A) |
+| `clearSelection` | `(paths?, options?)` | Clear the given paths, or all when omitted |
+| `getSelectedNodes` | `(): LTreeNode[]` | All selected nodes |
+| `getSelectedPaths` | `(): Set<string>` | All selected paths |
+| `isNodeSelected` | `(path): boolean` | Check selected-set membership |
+| `checkNode` | `(path, options?)` | Check one node (cascades in cascade mode) |
+| `checkNodes` | `(paths[], options?)` | Check nodes (**additive**) |
+| `setCheckedPaths` | `(paths[], options?)` | Replace the entire checkbox set |
+| `checkAll` | `(options?)` | Check every selectable node |
+| `uncheckNode` | `(path, options?)` | Uncheck one node (cascades in cascade mode) |
+| `clearChecked` | `(paths?, options?)` | Uncheck the given paths, or all when omitted |
+| `getCheckedNodes` | `(): LTreeNode[]` | All checked nodes |
+| `getCheckedPaths` | `(): Set<string>` | All checked paths |
+| `isNodeChecked` | `(path): boolean` | Check checked-set membership |
 | `focusNode` | `(path, options?)` | Move focus to a node |
 | `clearFocus` | `(options?)` | Clear the focused node |
-| `copyNodes` | `(paths?)` | Copy highlighted/specified nodes to clipboard |
-| `cutNodes` | `(paths?)` | Cut highlighted/specified nodes to clipboard |
+| `copyNodes` | `(paths?)` | Copy selected/specified nodes to clipboard |
+| `cutNodes` | `(paths?)` | Cut selected/specified nodes to clipboard |
 | `pasteNodes` | `(targetPath, transformData?, position?): PasteResult` | Paste clipboard at target. `PasteResult.count` (formerly `pastedCount`) + `PasteResult.skipped` |
-| `deleteNodes` | `(paths?)` | Delete highlighted/specified nodes (honors `beforeDeleteCallback`, fires `onDelete`) |
+| `deleteNodes` | `(paths?)` | Delete selected/specified nodes (honors `beforeDeleteCallback`, fires `onDelete`) |
 | `cancelCut` | `()` | Cancel pending cut |
 | `navTo` | `(path)` | Focus a specific node |
 | `navNext` / `navPrev` | `()` | Focus next / previous visible node |
@@ -311,14 +311,14 @@ Set via JavaScript, not HTML attributes.
 | `node-drop` | `{ source, target, dragged, dropped, position, operation, event }` | Drop completed (NodeDropContext) |
 | `copy` | `{ operation, paths, nodes }` | Nodes copied to clipboard |
 | `cut` | `{ operation, paths, nodes }` | Nodes cut to clipboard |
-| `highlight-change` | `{ paths, nodes }` | Highlight (Ctrl/Shift+click) set changed |
-| `selection-change` | `{ paths, nodes }` | Checkbox/data-state selection changed |
+| `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed |
+| `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed |
 | `focused-node-changed` | `{ focusedNode }` | Single-focused node changed |
 | `search-text-changed` | `{ searchText }` | `searchText` config updated |
 | `tree-changed` | — | Tree state changed (expand, collapse, data) |
 | `data-changed` | `{ data }` | Underlying data array swapped |
 
-`silent: true` (the `TreeMutationOptions` flag on every highlight/selection/focus mutator) suppresses both the user callback AND the DOM event. The verbs are partitioned: `highlight*` drives the UI multi-select set, `select*` drives the checkbox/data set, `focus*` drives the single cursor.
+`silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the user callback AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 
 ## Architecture
 

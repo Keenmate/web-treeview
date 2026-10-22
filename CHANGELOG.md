@@ -7,22 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Emoji icons render.** An `iconMember` / `iconCallback` value that isn't a CSS class list
+  (an emoji such as `🗂️`, a symbol) went onto the `<i>` as a class, so the icon slot stayed
+  empty. Such a value is now rendered as the icon's text; class lists (`fa-solid fa-user`)
+  still go on the class.
+
 ### Added
 
-- **`selectedNodeClass` / `selected-node-class` — opt-in CSS class for checked rows, completing the class-override triad (`highlightedNodeClass` / `focusedNodeClass` / `selectedNodeClass`).** Checked rows carry no default row treatment — the checkbox is the signal — so set this prop when you want to style the checked rows themselves. Threaded through the web component, facade, controller and renderer; the class is added/removed as a node's `isSelected` flips. Mirrored in `@keenmate/svelte-treeview`.
-- **Highlight flavor `--highlight-fill` + full parity with svelte-treeview's opt-in highlight set.** The `highlightedNodeClass` showcase flavors now match `@keenmate/svelte-treeview` one-for-one: added `.wtv__node-content--highlight-fill` (Explorer-style strong accent fill, driven by new `--wtv-highlight-bg` / `--wtv-highlight-color` tokens) and the `.wtv__checkbox ~ …--highlight-brackets` suppression rules (brackets step aside when a checkbox is shown, falling back to bold+accent). The IN01 demo dropdown now offers all five — Bold, Border, Brackets, Highlight (Explorer-style), Glow. New tokens documented in `component-variables.manifest.json` + `vscode.css-custom-data.json`.
+- **`checkedNodeClass` / `checked-node-class` — opt-in CSS class for checked rows, completing the class-override triad (`selectedNodeClass` / `focusedNodeClass` / `checkedNodeClass`).** Checked rows carry no default row treatment — the checkbox is the signal — so set this prop when you want to style the checked rows themselves. Threaded through the web component, facade, controller and renderer; the class is added/removed as a node's `isChecked` flips. Mirrored in `@keenmate/svelte-treeview`.
+- **Selected flavor `--selected-fill` + full parity with svelte-treeview's opt-in flavor set.** The `selectedNodeClass` showcase flavors now match `@keenmate/svelte-treeview` one-for-one: added `.wtv__node-content--selected-fill` (Explorer-style strong accent fill, driven by new `--wtv-selected-fill-bg` / `--wtv-selected-fill-color` tokens) and the `.wtv__checkbox ~ …--selected-brackets` suppression rules (brackets step aside when a checkbox is shown, falling back to bold+accent). The IN01 demo dropdown now offers all five — Bold, Border, Brackets, Fill (Explorer-style), Glow. New tokens documented in `component-variables.manifest.json` + `vscode.css-custom-data.json`.
 
 ### Changed
 
+- **BREAKING: *highlighted* is now *selected*, the checkbox's *selected* is now *checked*.**
+  The names of `@keenmate/base-css-variables` 2.0 and web-multiselect. No deprecated aliases —
+  `selectedPaths` keeps its type but changes meaning, so search for every old name.
+  - Checkbox: `selectedPaths` → `checkedPaths`; `selectNode` / `selectNodes` / `selectAll` /
+    `deselectNode` / `clearSelection` → `checkNode` / `checkNodes` / `checkAll` / `uncheckNode` /
+    `clearChecked`; `getSelectedPaths` / `getSelectedNodes` / `setSelectedPaths` / `isNodeSelected`
+    → `getCheckedPaths` / `getCheckedNodes` / `setCheckedPaths` / `isNodeChecked`;
+    `isSelectedMember` / `getIsSelectedCallback` → `isCheckedMember` / `getIsCheckedCallback`
+    (attribute `is-checked-member`); `cascadeSelectPolicy` → `cascadeCheckPolicy`
+    (`cascade-check-policy`); `onSelectionChange` / `selection-change` → `onCheckedChange` /
+    `checked-change`; `VisualState.selected` / `notSelected` → `checked` / `unchecked`.
+  - Click set: `highlightedPaths` → `selectedPaths`; `highlightNode` / `highlightNodes` /
+    `highlightAll` / `clearHighlight` → `selectNode` / `selectNodes` / `selectAll` /
+    `clearSelection`; `getHighlightedPaths` / `getHighlightedNodes` / `setHighlightedPaths` /
+    `isNodeHighlighted` → `getSelectedPaths` / `getSelectedNodes` / `setSelectedPaths` /
+    `isNodeSelected`; `highlightedNodeClass` → `selectedNodeClass` (`selected-node-class`);
+    `onHighlightChange` / `highlight-change` → `onSelectionChange` / `selection-change`;
+    `HighlightMode` → `SelectMode`; `TreeKeydownContext.highlightedNodes` → `selectedNodes`.
+  - Node flags and render context: `isSelected` → `isChecked`, `isHighlighted` → `isSelected`.
+  - DOM / CSS: row class `.wtv__node-content--highlighted` → `--selected`, row attribute
+    `data-highlighted` → `data-selected`; presets `--highlight-bold` / `-border` / `-fill` /
+    `-brackets` / `-glow` → `--selected-*`; `--wtv-highlight-bg` / `-color` / `-ring-color` →
+    `--wtv-selected-fill-bg` / `--wtv-selected-fill-color` / `--wtv-selected-preset-ring-color`;
+    the deprecated `--wtv-highlighted-*` aliases are removed.
+  - Unchanged: `isSelectable` (gates both sets), `selectionMode`, `rangeSelectionMode`, the
+    scroll / dragover / search highlights.
 - **Selection reads `--base-selected-*`; `--wtv-highlighted-*` → `--wtv-selected-*`.**
   `@keenmate/base-css-variables` 2.0.0-rc03 renamed the item state (*selected* = the click /
   Ctrl / Shift-click set, *checked* = the checkbox) with no aliases, so a theme's selection tint
   stopped reaching the tree. `--wtv-selected-bg` / `-bg-hover` / `-text` / `-ring` now read
   `--base-selected-bg` / `-bg-hover` / `-text-color` / `-outline`; the standalone tint follows
-  `--base-primary-bg-subtle` (20% in dark mode, was a flat 10%). The old `--wtv-highlighted-*`
-  names still work when set on the element (deprecated). The row class
-  `.wtv__node-content--highlighted` and the `highlightedPaths` API keep their names until the
-  API rename.
+  `--base-primary-bg-subtle` (20% in dark mode, was a flat 10%).
 - **Danger text is readable in dark mode.** The context menu's danger item used the danger
   *fill* as text (`#dc2626` on a dark surface = 3.6:1); it now reads `--base-danger-text-color`
   through the new `--wtv-danger-text-color`.

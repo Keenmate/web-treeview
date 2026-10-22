@@ -3,8 +3,8 @@ export type DropPosition = 'before' | 'after' | 'child';
 
 export enum VisualState {
 	indeterminate = "indeterminate",
-	selected = "true",
-	notSelected = "false",
+	checked = "true",
+	unchecked = "false",
 }
 
 export interface LTreeNode<T> {
@@ -33,10 +33,10 @@ export interface LTreeNode<T> {
 
 	visualState: VisualState;
 	isExpanded: boolean;
-	/** Checkbox state. Independent from `isHighlighted`. Mirrors svelte-treeview rc06. */
+	/** Checkbox state. Independent from `isSelected`. Mirrors svelte-treeview rc06. */
+	isChecked: boolean;
+	/** Membership in `selectedPaths` (Ctrl/Shift+click multi-select). Distinct from `isChecked`. */
 	isSelected: boolean;
-	/** Membership in `highlightedPaths` (Ctrl/Shift+click multi-select). Distinct from `isSelected`. */
-	isHighlighted: boolean;
 
 	isSelectable: boolean;
 
@@ -65,10 +65,10 @@ export function createLTreeNode<T>(data?: Partial<LTreeNode<T>>): LTreeNode<T> {
 		isInsertAllowed: true,
 		isNestAllowed: true,
 		isCheckboxVisible: false,
-		visualState: VisualState.notSelected,
+		visualState: VisualState.unchecked,
 		isExpanded: false,
+		isChecked: false,
 		isSelected: false,
-		isHighlighted: false,
 
 		isSelectable: true,
 

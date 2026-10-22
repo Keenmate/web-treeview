@@ -26,10 +26,10 @@ export interface SelectionModifiers {
 
 export type RangeSelectionMode = 'visual' | 'logical';
 
-/** Gesture mode for highlightNode(): replace = plain click, toggle = Ctrl+click, range = Shift+click. */
-export type HighlightMode = 'replace' | 'toggle' | 'range';
+/** Gesture mode for selectNode(): replace = plain click, toggle = Ctrl+click, range = Shift+click. */
+export type SelectMode = 'replace' | 'toggle' | 'range';
 
-/** Options shared by every imperative selection/highlight/focus mutator. */
+/** Options shared by every imperative select/check/focus mutator. */
 export interface TreeMutationOptions {
   /** Update state without firing the change callbacks (e.g. when restoring
    *  state from URL params or other external sources). */
@@ -89,8 +89,8 @@ export interface NodeRenderContext {
   /** The tree's own container border-box, in px. */
   container: { width: number; height: number };
   isExpanded: boolean;
+  isChecked: boolean;
   isSelected: boolean;
-  isHighlighted: boolean;
   isFocused: boolean;
   level: number;
   hasChildren: boolean;
@@ -98,13 +98,13 @@ export interface NodeRenderContext {
 export type CheckboxMode = 'independent' | 'cascade';
 /**
  * Which paths the selection EMITS in cascade mode (the projection of the canonical
- * checked set that `getSelectedPaths()` + the `selection-change` event expose).
+ * checked set that `getCheckedPaths()` + the `checked-change` event expose).
  * ONLY applies when `checkboxMode === 'cascade'`. 'rolled-up' = minimal cover (a
  * fully-checked subtree collapses to its root; a partial branch descends to emit
  * its checked bits); 'leaves' = only checked leaf nodes; 'all' = the canonical set
  * (every fully-checked node). (svelte-treeview rc14)
  */
-export type CascadeSelectPolicy = 'rolled-up' | 'leaves' | 'all';
+export type CascadeCheckPolicy = 'rolled-up' | 'leaves' | 'all';
 
 export interface NodeConfig {
   clickBehavior: ClickBehavior;
@@ -117,9 +117,9 @@ export interface NodeConfig {
   collapseIconClass: string;
   leafIconClass: string;
   toggleIconMode: ToggleIconMode;
-  highlightedNodeClass: string | null | undefined;
-  focusedNodeClass: string | null | undefined;
   selectedNodeClass: string | null | undefined;
+  focusedNodeClass: string | null | undefined;
+  checkedNodeClass: string | null | undefined;
   dragOverNodeClass: string | null | undefined;
   draggedNodeClass: string | null | undefined;
   dragDropMode: DragDropMode;
@@ -184,7 +184,7 @@ export type NodeEventContext<T> = NodeRef<T>;
  * DragEvent and `dragged` — the FULL top-level set in flight. A drag is
  * single-origin at the DOM level, so the event fires once; `dragged` is the whole
  * multi-selection (or just the one node for a single drag) so a handler doesn't
- * have to read `controller.getHighlightedPaths()` itself.
+ * have to read `controller.getSelectedPaths()` itself.
  */
 export interface NodeDragContext<T> extends NodeRef<T> {
   event: DragEvent;
@@ -275,8 +275,8 @@ export interface ClipboardEventContext<T> {
 }
 
 /**
- * Context for the selection-change events (onHighlightChange = UI multi-select
- * set; onSelectionChange = checkbox set). `paths` is the new set, `nodes` its
+ * Context for the selection-change / checked-change events (onSelectionChange = UI
+ * multi-select set; onCheckedChange = checkbox set). `paths` is the new set, `nodes` its
  * resolved live nodes.
  */
 export interface SelectionChangeContext<T> {
@@ -286,13 +286,13 @@ export interface SelectionChangeContext<T> {
 
 /**
  * Context for the onTreeKeydown interceptor. A keydown is tree-level (no single
- * anchor node), so it carries BOTH selections plus the controller for imperative
+ * anchor node), so it carries BOTH sets plus the controller for imperative
  * actions. Return `true` to suppress the default + built-in shortcut handling.
  */
 export interface TreeKeydownContext<T> {
   event: KeyboardEvent;
   focusedNode: LTreeNode<T> | null;
-  highlightedNodes: LTreeNode<T>[];
+  selectedNodes: LTreeNode<T>[];
   controller: import('./tree-controller').TreeController<T>;
 }
 
@@ -338,7 +338,7 @@ export interface NodeTransformContext<T> {
  */
 export interface BeforeCopyContext<T> {
   operation: ClipboardOperation;
-  /** The paths about to be copied/cut (the highlight set, or the explicit paths arg). */
+  /** The paths about to be copied/cut (the selected set, or the explicit paths arg). */
   paths: string[];
   /** The resolved live nodes for those paths (missing paths are dropped). */
   nodes: LTreeNode<T>[];
@@ -386,8 +386,8 @@ export interface TreeControllerConfig<T> {
   levelMember?: string | null | undefined;
   isExpandedMember?: string | null | undefined;
   getIsExpandedCallback?: (node: LTreeNode<T>) => boolean;
-  isSelectedMember?: string | null | undefined;
-  getIsSelectedCallback?: (node: LTreeNode<T>) => boolean;
+  isCheckedMember?: string | null | undefined;
+  getIsCheckedCallback?: (node: LTreeNode<T>) => boolean;
   isSelectableMember?: string | null | undefined;
   getIsSelectableCallback?: (node: LTreeNode<T>) => boolean;
   isDraggableMember?: string | null | undefined;
@@ -419,8 +419,8 @@ export interface TreeControllerConfig<T> {
   // DATA
   data: T[];
   focusedNode?: LTreeNode<T> | null | undefined;
-  highlightedPaths?: Set<string>;
   selectedPaths?: Set<string>;
+  checkedPaths?: Set<string>;
 
   // BEHAVIOUR
   expandLevel?: number | null | undefined;
@@ -479,23 +479,23 @@ export interface TreeControllerConfig<T> {
    *  cleaned entries to the consumer via PasteResult.entries without mutating. */
   shouldAutoHandlePaste?: boolean;
 
-  // SELECTION MODEL (rc06+: focusedNode / highlightedPaths / selectedPaths)
+  // SELECTION MODEL (rc06+: focusedNode / selectedPaths / checkedPaths)
   rangeSelectionMode?: RangeSelectionMode;
   selectionMode?: 'single' | 'multi';
   shouldShowCheckboxes?: boolean;
   checkboxMode?: CheckboxMode;
   /** Which paths the selection EMITS in cascade mode. Default 'rolled-up'. */
-  cascadeSelectPolicy?: CascadeSelectPolicy | null | undefined;
+  cascadeCheckPolicy?: CascadeCheckPolicy | null | undefined;
   shouldClickToggleCheckbox?: boolean;
   beforeCheckboxToggleCallback?: (
     node: LTreeNode<T>,
     checked: boolean,
     affectedPaths: string[]
   ) => boolean | string[] | void;
-  /** Fires on changes to the checkbox / data-state selection set (selectedPaths). */
+  /** Fires on changes to the checkbox / data-state checked set (checkedPaths). */
+  onCheckedChange?: (ctx: SelectionChangeContext<T>) => void;
+  /** Fires on changes to the selected set (Ctrl/Shift+click, arrow keys). */
   onSelectionChange?: (ctx: SelectionChangeContext<T>) => void;
-  /** Fires on changes to the highlight set (Ctrl/Shift+click, arrow keys). */
-  onHighlightChange?: (ctx: SelectionChangeContext<T>) => void;
 
   // EVENTS (on* = fire-and-forget; each takes ONE context object)
   /** Fires on a plain node click. ctx = NodeRef of the clicked node. */
@@ -563,9 +563,9 @@ export interface TreeControllerConfig<T> {
 
   // VISUALS
   bodyClass?: string | null | undefined;
-  highlightedNodeClass?: string | null | undefined;
-  focusedNodeClass?: string | null | undefined;
   selectedNodeClass?: string | null | undefined;
+  focusedNodeClass?: string | null | undefined;
+  checkedNodeClass?: string | null | undefined;
   dragOverNodeClass?: string | null | undefined;
   draggedNodeClass?: string | null | undefined;
   /** Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback). */
@@ -629,8 +629,8 @@ export interface TreeControllerSnapshot<T> {
   flatIndentSize: string;
   shouldDisplayDebugInformation: boolean;
   focusedNode: LTreeNode<T> | null | undefined;
-  highlightedPaths: Set<string>;
   selectedPaths: Set<string>;
+  checkedPaths: Set<string>;
   cutPaths: Set<string>;
 
   // Virtual scroll

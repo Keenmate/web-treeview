@@ -91,6 +91,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Search found nothing in Safari.** The search indexer scheduled its batches with
+  `requestIdleCallback`, which Safari doesn't have, so the index was never built and every query
+  returned "0 results". Without `requestIdleCallback` it now runs the batches as short macrotasks
+  with a ~12ms budget. Found by running the e2e suite on WebKit.
+
 - **Touch drag-and-drop works inside `<web-treeview>`.** The touch ghost was appended to `<body>`,
   outside the shadow root, so none of its CSS applied (an unstyled text line at the bottom of the
   page). The drop target was found with `document.elementFromPoint`, which stops at the shadow

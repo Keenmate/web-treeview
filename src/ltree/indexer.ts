@@ -89,9 +89,21 @@ export class Indexer<T> {
 		this.processNextBatch();
 	}
 
-	// Process the next batch using requestIdleCallback
+	// Process the next batch using requestIdleCallback. Safari has no
+	// requestIdleCallback, so there a macrotask with a synthetic ~12ms deadline
+	// stands in (without it the index was never built and search found nothing).
 	private processNextBatch(): void {
-		requestIdleCallback((deadline) => this.processBatch(deadline), { timeout: this.timeout });
+		if (typeof requestIdleCallback === 'function') {
+			requestIdleCallback((deadline) => this.processBatch(deadline), { timeout: this.timeout });
+			return;
+		}
+		setTimeout(() => {
+			const start = performance.now();
+			this.processBatch({
+				didTimeout: false,
+				timeRemaining: () => Math.max(0, 12 - (performance.now() - start))
+			});
+		}, 1);
 	}
 
 	// Process a batch of items from the queue

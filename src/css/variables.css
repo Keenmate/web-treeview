@@ -29,11 +29,13 @@
      Colour      primary-color, primary-color-hover, on-primary-text-color,
                  text-color-1, text-color-3, main-bg, elevated-bg, hover-bg,
                  active-bg, border-color, success-color, danger-color,
-                 input-bg, checkbox-border-color
+                 danger-text-color (menu danger item), input-bg,
+                 checkbox-border-color, disabled-opacity
      Tints       primary-bg-subtle (drag-over, empty drop zone),
                  success-bg-subtle / danger-bg-subtle (drop valid / invalid,
-                 menu danger hover)
-     Item states highlighted-bg, -bg-hover, -text-color, -outline (selection);
+                 menu danger hover), success-bg-subtle-hover (drag-over
+                 highlight), danger-bg-subtle-hover (drag-denied flash)
+     Item states selected-bg, -bg-hover, -text-color, -outline (selection);
                  focused-bg, -text-color, -outline, outline-width (cursor)
      Surfaces    dropdown-bg, dropdown-border, dropdown-box-shadow (context menu),
                  tooltip-bg, tooltip-text-color, shadow-md (tooltip),
@@ -82,15 +84,18 @@
      against any base luminance (avoids the bare-literal fallback footgun). */
 
   /* Core Colors */
-  --wtv-accent-color: var(--base-primary-color, light-dark(#3b82f6, #60a5fa));
-  --wtv-accent-color-hover: var(--base-primary-color-hover, light-dark(#2563eb, #3b82f6));
+  --wtv-accent-color: var(--base-primary-color, #0ea5e9);
+  --wtv-accent-color-hover: var(--base-primary-color-hover, light-dark(color-mix(in srgb, black 15%, var(--wtv-accent-color)), color-mix(in srgb, white 15%, var(--wtv-accent-color))));
   --wtv-text-color: var(--base-text-color-1, light-dark(#1e293b, #f1f5f9));
   --wtv-text-color-2: var(--base-text-color-3, light-dark(#64748b, #94a3b8));
   --wtv-text-color-on-accent: var(--base-on-primary-text-color, #ffffff);
   --wtv-bg-color: var(--base-main-bg, light-dark(#ffffff, #1a1a1a));
   --wtv-border-color: var(--base-border-color, light-dark(#e2e8f0, #3d3d3d));
-  --wtv-success-color: var(--base-success-color, light-dark(#198754, #4ade80));
-  --wtv-danger-color: var(--base-danger-color, light-dark(#dc3545, #f87c86));
+  --wtv-success-color: var(--base-success-color, #10b981);
+  --wtv-danger-color: var(--base-danger-color, #dc2626);
+  /* Danger as TEXT (menu danger item): the fill colour is too dark to read on a dark
+     surface (#dc2626 on #1a1a1a = 3.6:1), so text reads the role's text colour. */
+  --wtv-danger-text-color: var(--base-danger-text-color, light-dark(#721c24, #f87171));
   --wtv-light-bg: var(--base-elevated-bg, light-dark(#f8f9fa, #2b2b2b));
   /* Stroke width of the hairlines (menu, checkbox, debug panel). */
   --wtv-border-width: var(--base-border-width, 1px);
@@ -120,18 +125,23 @@
          focused option.
        • checked → the CHECKBOX only (no row treatment); style checked rows via
          the `selectedNodeClass` prop if you want more
-     Highlight reads the shared --base-highlighted-* tokens and focus the shared
+     Selection reads the shared --base-selected-* tokens and focus the shared
      --base-focused-* tokens (@keenmate/base-css-variables), so ONE knob themes
      the tree + multiselect identically; the inline fallbacks keep the tree
      self-sufficient without the base package.
      Each default look is a FALLBACK: set the matching *NodeClass prop and it
      steps aside. Mirrors svelte-treeview's unified state model.
      ────────────────────────────────────────────────────────────────────── */
-  --wtv-highlighted-bg: var(--base-highlighted-bg, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
-  --wtv-highlighted-bg-hover: var(--base-highlighted-bg-hover, var(--wtv-highlighted-bg));
-  --wtv-highlighted-text: var(--base-highlighted-text-color, currentColor);
+  /* Selected = the click / Ctrl / Shift-click set (base-css-variables 2.0.0-rc03 naming;
+     the API still calls it "highlighted" until the selected → checked rename).
+     Deprecated: the old --wtv-highlighted-bg / -bg-hover / -text / -ring names are still
+     honoured when set on the element — they sit first in each chain — and go away with
+     the API rename. */
+  --wtv-selected-bg: var(--wtv-highlighted-bg, var(--base-selected-bg, var(--base-primary-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-accent-color) 10%, transparent), color-mix(in srgb, var(--wtv-accent-color) 20%, transparent)))));
+  --wtv-selected-bg-hover: var(--wtv-highlighted-bg-hover, var(--base-selected-bg-hover, var(--wtv-selected-bg)));
+  --wtv-selected-text: var(--wtv-highlighted-text, var(--base-selected-text-color, currentColor));
   /* Outline shorthand, drawn as an INSET outline (see --wtv-focused-outline-offset). */
-  --wtv-highlighted-ring: var(--base-highlighted-outline, none);
+  --wtv-selected-ring: var(--wtv-highlighted-ring, var(--base-selected-outline, none));
   --wtv-focused-bg: var(--base-focused-bg, transparent);
   --wtv-focused-text: var(--base-focused-text-color, currentColor);
   /* Outline shorthand for the default focus ring — drawn INSET. Set `none` to
@@ -325,7 +335,7 @@
   --wtv-drop-invalid-border-color: var(--wtv-danger-color);
 
   /* Dragover highlight */
-  --wtv-dragover-highlight-bg: color-mix(in srgb, var(--wtv-success-color) 15%, transparent);
+  --wtv-dragover-highlight-bg: var(--base-success-bg-subtle-hover, color-mix(in srgb, var(--wtv-success-color) 15%, transparent));
   --wtv-dragover-highlight-border: 2px dashed var(--wtv-success-color);
 
   /* Touch ghost */
@@ -378,11 +388,11 @@
   --wtv-context-menu-icon-width: var(--wtv-icon-size);
   --wtv-context-menu-icon-font-size: var(--wtv-font-size-xs);
   --wtv-context-menu-arrow-font-size: var(--wtv-font-size-xs);
-  --wtv-context-menu-danger-color: var(--wtv-danger-color);
+  --wtv-context-menu-danger-color: var(--wtv-danger-text-color);
   --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
   --wtv-context-menu-divider-color: var(--wtv-border-color);
   --wtv-context-menu-divider-margin: var(--wtv-spacing-sm) 0;
-  --wtv-context-menu-disabled-opacity: 0.5;
+  --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.5);
 
   /* ==========================================================================
      LOADING OVERLAY

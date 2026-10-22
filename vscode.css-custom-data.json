@@ -113,6 +113,11 @@
       "values": []
     },
     {
+      "name": "--wtv-danger-text-color",
+      "description": "Danger as text (context menu danger item); reads --base-danger-text-color",
+      "values": []
+    },
+    {
       "name": "--wtv-light-bg",
       "description": "Elevated/subtle surface background",
       "values": []
@@ -138,28 +143,28 @@
       "values": []
     },
     {
-      "name": "--wtv-highlighted-bg",
-      "description": "Selection-highlight background tint (multi-select set); reads --base-highlighted-bg (fallback accent 10%)",
+      "name": "--wtv-selected-bg",
+      "description": "Selected-row background tint (the click / Ctrl / Shift-click set); reads --base-selected-bg (fallback --base-primary-bg-subtle, then accent 10% / 20% dark). Deprecated alias: --wtv-highlighted-bg",
       "values": []
     },
     {
-      "name": "--wtv-highlighted-bg-hover",
-      "description": "Selection-highlight background on hover; reads --base-highlighted-bg-hover (fallback --wtv-highlighted-bg)",
+      "name": "--wtv-selected-bg-hover",
+      "description": "Selected-row background on hover; reads --base-selected-bg-hover (fallback --wtv-selected-bg). Deprecated alias: --wtv-highlighted-bg-hover",
       "values": []
     },
     {
-      "name": "--wtv-highlighted-text",
-      "description": "Text color of a highlighted (multi-selected) row; reads --base-highlighted-text-color (fallback currentColor)",
+      "name": "--wtv-selected-text",
+      "description": "Text color of a selected row; reads --base-selected-text-color (fallback currentColor). Deprecated alias: --wtv-highlighted-text",
       "values": []
     },
     {
-      "name": "--wtv-highlighted-ring",
-      "description": "Outline shorthand for a highlighted row, drawn as an inset outline; reads --base-highlighted-outline (fallback none)",
+      "name": "--wtv-selected-ring",
+      "description": "Outline shorthand for a selected row, drawn as an inset outline; reads --base-selected-outline (fallback none). Deprecated alias: --wtv-highlighted-ring",
       "values": []
     },
     {
       "name": "--wtv-focused-bg",
-      "description": "Background of the focused (cursor) row when not highlighted; reads --base-focused-bg (fallback transparent)",
+      "description": "Background of the focused (cursor) row when not selected; reads --base-focused-bg (fallback transparent)",
       "values": []
     },
     {
@@ -174,7 +179,7 @@
     },
     {
       "name": "--wtv-focused-outline-offset",
-      "description": "Outline offset for the focus ring / highlighted border (default calc(-1 * var(--base-outline-width, 1px)) = inset)",
+      "description": "Outline offset for the focus ring / selected ring (default calc(-1 * var(--base-outline-width, 1px)) = inset)",
       "values": []
     },
     {
@@ -499,7 +504,7 @@
     },
     {
       "name": "--wtv-dragover-highlight-bg",
-      "description": "Dragover highlight background",
+      "description": "Dragover highlight background (→ --base-success-bg-subtle-hover)",
       "values": []
     },
     {
@@ -674,7 +679,7 @@
     },
     {
       "name": "--wtv-context-menu-danger-color",
-      "description": "Danger item text color",
+      "description": "Danger item text color (→ --wtv-danger-text-color)",
       "values": []
     },
     {
@@ -694,7 +699,7 @@
     },
     {
       "name": "--wtv-context-menu-disabled-opacity",
-      "description": "Disabled item opacity",
+      "description": "Disabled item opacity (→ --base-disabled-opacity, fallback 0.5)",
       "values": []
     },
     {

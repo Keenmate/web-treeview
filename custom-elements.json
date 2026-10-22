@@ -5953,6 +5953,10 @@
               "description": "Danger/invalid drop color"
             },
             {
+              "name": "--wtv-danger-text-color",
+              "description": "Danger as text (context menu danger item); reads --base-danger-text-color"
+            },
+            {
               "name": "--wtv-light-bg",
               "description": "Elevated/subtle surface background"
             },
@@ -5973,24 +5977,24 @@
               "description": "Node active/pressed background (aliases --wtv-active-bg)"
             },
             {
-              "name": "--wtv-highlighted-bg",
-              "description": "Selection-highlight background tint (multi-select set); reads --base-highlighted-bg (fallback accent 10%)"
+              "name": "--wtv-selected-bg",
+              "description": "Selected-row background tint (the click / Ctrl / Shift-click set); reads --base-selected-bg (fallback --base-primary-bg-subtle, then accent 10% / 20% dark). Deprecated alias: --wtv-highlighted-bg"
             },
             {
-              "name": "--wtv-highlighted-bg-hover",
-              "description": "Selection-highlight background on hover; reads --base-highlighted-bg-hover (fallback --wtv-highlighted-bg)"
+              "name": "--wtv-selected-bg-hover",
+              "description": "Selected-row background on hover; reads --base-selected-bg-hover (fallback --wtv-selected-bg). Deprecated alias: --wtv-highlighted-bg-hover"
             },
             {
-              "name": "--wtv-highlighted-text",
-              "description": "Text color of a highlighted (multi-selected) row; reads --base-highlighted-text-color (fallback currentColor)"
+              "name": "--wtv-selected-text",
+              "description": "Text color of a selected row; reads --base-selected-text-color (fallback currentColor). Deprecated alias: --wtv-highlighted-text"
             },
             {
-              "name": "--wtv-highlighted-ring",
-              "description": "Outline shorthand for a highlighted row, drawn as an inset outline; reads --base-highlighted-outline (fallback none)"
+              "name": "--wtv-selected-ring",
+              "description": "Outline shorthand for a selected row, drawn as an inset outline; reads --base-selected-outline (fallback none). Deprecated alias: --wtv-highlighted-ring"
             },
             {
               "name": "--wtv-focused-bg",
-              "description": "Background of the focused (cursor) row when not highlighted; reads --base-focused-bg (fallback transparent)"
+              "description": "Background of the focused (cursor) row when not selected; reads --base-focused-bg (fallback transparent)"
             },
             {
               "name": "--wtv-focused-text",
@@ -6002,7 +6006,7 @@
             },
             {
               "name": "--wtv-focused-outline-offset",
-              "description": "Outline offset for the focus ring / highlighted border (default calc(-1 * var(--base-outline-width, 1px)) = inset)"
+              "description": "Outline offset for the focus ring / selected ring (default calc(-1 * var(--base-outline-width, 1px)) = inset)"
             },
             {
               "name": "--wtv-highlight-bg",
@@ -6262,7 +6266,7 @@
             },
             {
               "name": "--wtv-dragover-highlight-bg",
-              "description": "Dragover highlight background"
+              "description": "Dragover highlight background (→ --base-success-bg-subtle-hover)"
             },
             {
               "name": "--wtv-dragover-highlight-border",
@@ -6402,7 +6406,7 @@
             },
             {
               "name": "--wtv-context-menu-danger-color",
-              "description": "Danger item text color"
+              "description": "Danger item text color (→ --wtv-danger-text-color)"
             },
             {
               "name": "--wtv-context-menu-danger-bg-hover",
@@ -6418,7 +6422,7 @@
             },
             {
               "name": "--wtv-context-menu-disabled-opacity",
-              "description": "Disabled item opacity"
+              "description": "Disabled item opacity (→ --base-disabled-opacity, fallback 0.5)"
             },
             {
               "name": "--wtv-spinner-size",
@@ -6502,6 +6506,214 @@
           "declaration": {
             "name": "WebTreeViewElement",
             "module": "src/web-component.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/ltree-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "getParentPath",
+          "return": {
+            "type": {
+              "text": "string | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getRelativePath",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "parentPath",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getPathSegments",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "start",
+              "default": "0",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "count",
+              "default": "1",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getLevel",
+          "return": {
+            "type": {
+              "text": "number"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "getParentPath",
+          "declaration": {
+            "name": "getParentPath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getRelativePath",
+          "declaration": {
+            "name": "getRelativePath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getPathSegments",
+          "declaration": {
+            "name": "getPathSegments",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getLevel",
+          "declaration": {
+            "name": "getLevel",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/string-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "isEmptyString",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "isNotEmptyString",
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "isEmptyString",
+          "declaration": {
+            "name": "isEmptyString",
+            "module": "src/helpers/string-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isNotEmptyString",
+          "declaration": {
+            "name": "isNotEmptyString",
+            "module": "src/helpers/string-helpers.ts"
           }
         }
       ]
@@ -11264,214 +11476,6 @@
       "path": "src/controller/types.ts",
       "declarations": [],
       "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/ltree-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "getParentPath",
-          "return": {
-            "type": {
-              "text": "string | null"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getRelativePath",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "parentPath",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getPathSegments",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "start",
-              "default": "0",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "count",
-              "default": "1",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getLevel",
-          "return": {
-            "type": {
-              "text": "number"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "getParentPath",
-          "declaration": {
-            "name": "getParentPath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getRelativePath",
-          "declaration": {
-            "name": "getRelativePath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getPathSegments",
-          "declaration": {
-            "name": "getPathSegments",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getLevel",
-          "declaration": {
-            "name": "getLevel",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/string-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "isEmptyString",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "isNotEmptyString",
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "isEmptyString",
-          "declaration": {
-            "name": "isEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "isNotEmptyString",
-          "declaration": {
-            "name": "isNotEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        }
-      ]
     },
     {
       "kind": "javascript-module",

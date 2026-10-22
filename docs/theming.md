@@ -17,7 +17,7 @@ The component publishes ~150 CSS variables. The contract follows the BlissFramew
 /* Component level — affects only this treeview instance */
 web-treeview {
   --wtv-accent-color: #8b5cf6;   /* Overrides --base-primary-color */
-  --wtv-highlighted-bg: #ede9fe;
+  --wtv-selected-bg: #ede9fe;
   --wtv-indent-size: 1.5rem;
   --wtv-node-height: 2rem;
   --wtv-border-radius-sm: 4px;
@@ -31,7 +31,7 @@ web-treeview {
 `examples-theming.html` ships 8 complete themes (dark, neon, corporate, glassmorphism, etc.).
 
 > **Derived `--base-*` tokens resolve where the contract declares them.** `@keenmate/base-css-variables`
-> 2.0 computes tokens such as `--base-highlighted-bg` or `--base-primary-bg-subtle` on `:root`,
+> 2.0 computes tokens such as `--base-selected-bg` or `--base-primary-bg-subtle` on `:root`,
 > `[data-theme]` and `.base-scope`. Setting an *input* (`--base-primary-color`) on a plain wrapper
 > `<div>` does not recompute them there — add `class="base-scope"` to that wrapper, or set the
 > `--wtv-*` variable directly.
@@ -61,15 +61,16 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-accent-color` | `--base-primary-color` \| `light-dark(#3b82f6, #60a5fa)` | Primary accent color |
-| `--wtv-accent-color-hover` | `--base-primary-color-hover` \| `light-dark(#2563eb, #3b82f6)` | Accent hover state |
+| `--wtv-accent-color` | `--base-primary-color` \| `#0ea5e9` | Primary accent color |
+| `--wtv-accent-color-hover` | `--base-primary-color-hover` \| accent 15% toward black (white in dark) | Accent hover state |
 | `--wtv-text-color` | `--base-text-color-1` \| `light-dark(#1e293b, #f1f5f9)` | Primary text color |
 | `--wtv-text-color-2` | `--base-text-color-3` \| `light-dark(#64748b, #94a3b8)` | Secondary / muted text |
 | `--wtv-text-color-on-accent` | `--base-on-primary-text-color` \| `#ffffff` | Text on accent backgrounds |
 | `--wtv-bg-color` | `--base-main-bg` \| `light-dark(#fff, #1a1a1a)` | Main background |
 | `--wtv-border-color` | `--base-border-color` \| `light-dark(#e2e8f0, #3d3d3d)` | Default border color |
-| `--wtv-success-color` | `--base-success-color` \| `light-dark(#198754, #4ade80)` | Success / valid color |
-| `--wtv-danger-color` | `--base-danger-color` \| `light-dark(#dc3545, #f87c86)` | Danger / invalid color |
+| `--wtv-success-color` | `--base-success-color` \| `#10b981` | Success / valid color |
+| `--wtv-danger-color` | `--base-danger-color` \| `#dc2626` | Danger / invalid color (fills, borders, tints) |
+| `--wtv-danger-text-color` | `--base-danger-text-color` \| `light-dark(#721c24, #f87171)` | Danger as text (context menu danger item) |
 | `--wtv-light-bg` | `--base-elevated-bg` \| `light-dark(#f8f9fa, #2b2b2b)` | Elevated surface background |
 
 ### Node states
@@ -81,14 +82,16 @@ Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but th
 | `--wtv-node-bg-hover` | `= --wtv-hover-bg` | Node hover background |
 | `--wtv-node-bg-active` | `= --wtv-active-bg` | Node active / pressed background |
 | `--wtv-node-transition` | `none` | Node content transition (e.g. `background var(--wtv-transition-speed)` to animate) |
-| `--wtv-highlighted-bg` | `--base-highlighted-bg` \| `color-mix(accent 10%, transparent)` | Default `.wtv__node-content--highlighted` (multi-select) background tint |
-| `--wtv-highlighted-bg-hover` | `--base-highlighted-bg-hover` \| `= --wtv-highlighted-bg` | Highlighted row background on hover |
-| `--wtv-highlighted-text` | `--base-highlighted-text-color` \| `currentColor` | Highlighted row text color |
-| `--wtv-highlighted-ring` | `--base-highlighted-outline` \| `none` | Highlighted row outline shorthand (drawn inset) |
-| `--wtv-focused-bg` | `--base-focused-bg` \| `transparent` | Focused row background (only when not highlighted) |
+| `--wtv-selected-bg` | `--base-selected-bg` \| `--base-primary-bg-subtle` \| accent 10% (20% dark) | Selected row (click / Ctrl / Shift-click set) background tint; row class `.wtv__node-content--highlighted` |
+| `--wtv-selected-bg-hover` | `--base-selected-bg-hover` \| `= --wtv-selected-bg` | Selected row background on hover |
+| `--wtv-selected-text` | `--base-selected-text-color` \| `currentColor` | Selected row text color |
+| `--wtv-selected-ring` | `--base-selected-outline` \| `none` | Selected row outline shorthand (drawn inset) |
+| `--wtv-focused-bg` | `--base-focused-bg` \| `transparent` | Focused row background (only when not selected) |
 | `--wtv-focused-text` | `--base-focused-text-color` \| `currentColor` | Focused row text color |
 | `--wtv-focused-ring` | `--base-focused-outline` \| `1px solid --wtv-accent-color` | Default `.wtv__node-content--focused-default` ring — outline shorthand drawn inset (`none` to suppress) |
-| `--wtv-focused-outline-offset` | `calc(-1 * var(--base-outline-width, 1px))` | Outline offset for the focus ring / highlighted border (negative = inset; follows `--base-outline-width`) |
+| `--wtv-focused-outline-offset` | `calc(-1 * var(--base-outline-width, 1px))` | Outline offset for the focus ring / selected ring (negative = inset; follows `--base-outline-width`) |
+
+The old `--wtv-highlighted-bg` / `-bg-hover` / `-text` / `-ring` names still work when set on the element (deprecated; removed with the `highlightedPaths` → `selectedPaths` API rename).
 
 ### Border
 
@@ -165,7 +168,7 @@ so retinting a glow colour retints its arrow too.
 | `--wtv-drop-valid-border-color` | `= --wtv-success-color` | Valid drop border color |
 | `--wtv-drop-invalid-bg` | `--base-danger-bg-subtle` \| `danger 10%` | Invalid drop background |
 | `--wtv-drop-invalid-border-color` | `= --wtv-danger-color` | Invalid drop border color |
-| `--wtv-dragover-highlight-bg` | `success 15%` | Dragover highlight background |
+| `--wtv-dragover-highlight-bg` | `--base-success-bg-subtle-hover` \| `success 15%` | Dragover highlight background |
 | `--wtv-dragover-highlight-border` | `2px dashed success` | Dragover highlight border |
 | `--wtv-touch-ghost-bg` | `accent 90%` | Touch drag ghost background |
 | `--wtv-touch-ghost-shadow` | `--base-shadow-lg` \| `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
@@ -198,12 +201,12 @@ Each variable defaults to the corresponding higher-order `--wtv-*` variable, so 
 | `--wtv-context-menu-icon-width` | `= --wtv-icon-size` | Item icon column width |
 | `--wtv-context-menu-icon-font-size` | `= --wtv-font-size-xs` | Item icon font size |
 | `--wtv-context-menu-arrow-font-size` | `= --wtv-font-size-xs` | Submenu arrow font size |
-| `--wtv-context-menu-danger-color` | `= --wtv-danger-color` | Danger item text color |
+| `--wtv-context-menu-danger-color` | `= --wtv-danger-text-color` | Danger item text color |
 | `--wtv-context-menu-danger-bg-hover` | `--base-danger-bg-subtle` \| `danger 10%` | Danger item hover background |
 | `--wtv-context-menu-shortcut-color` | `= --wtv-text-color-2` | Optional: shortcut hint color |
 | `--wtv-context-menu-divider-color` | `= --wtv-border-color` | Divider line color |
 | `--wtv-context-menu-divider-margin` | `--wtv-spacing-sm 0` | Divider margin |
-| `--wtv-context-menu-disabled-opacity` | `0.5` | Disabled item opacity |
+| `--wtv-context-menu-disabled-opacity` | `--base-disabled-opacity` \| `0.5` | Disabled item opacity |
 
 ### Loading
 

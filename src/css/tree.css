@@ -87,7 +87,7 @@
   background: var(--wtv-node-bg-hover);
 }
 .wtv__node .wtv__node-content--highlighted:hover {
-  background: var(--wtv-highlighted-bg-hover);
+  background: var(--wtv-selected-bg-hover);
 }
 
 /* Press feedback on the CONTENT, not the full-width outer .wtv__node — otherwise
@@ -330,16 +330,16 @@
    dom-renderer.ts), so the default look never fights a configured variant —
    set a highlight class and this marker steps aside entirely.
 
-   Selection owns the BACKGROUND channel: a soft tint (--wtv-highlighted-bg ←
-   --base-highlighted-bg). It reads the shared --base-highlighted-* tokens, so one knob
+   Selection owns the BACKGROUND channel: a soft tint (--wtv-selected-bg ←
+   --base-selected-bg). It reads the shared --base-selected-* tokens, so one knob
    themes the tree + web-multiselect's selected option identically. The optional
-   --wtv-highlighted-ring (← --base-highlighted-outline, default none) is drawn as
+   --wtv-selected-ring (← --base-selected-outline, default none) is drawn as
    an INSET outline, sharing the focus ring's outline channel — the focused-default
    rule below comes AFTER this one so the focus ring wins on a focused+selected row. */
 .wtv__node-content--highlighted {
-  background-color: var(--wtv-highlighted-bg);
-  color: var(--wtv-highlighted-text);
-  outline: var(--wtv-highlighted-ring);
+  background-color: var(--wtv-selected-bg);
+  color: var(--wtv-selected-text);
+  outline: var(--wtv-selected-ring);
   outline-offset: var(--wtv-focused-outline-offset);
   border-radius: var(--wtv-border-radius-sm);
 }
@@ -382,7 +382,7 @@
 /* Hairline inset ring + soft tint. Inset box-shadow (not border/outline) → no
    layout shift, nothing bleeds onto neighbouring rows. */
 .wtv__node-content--highlight-border {
-  background-color: var(--wtv-highlighted-bg) !important;
+  background-color: var(--wtv-selected-bg) !important;
   box-shadow: inset 0 0 0 1px var(--wtv-highlight-ring-color) !important;
 }
 
@@ -414,7 +414,7 @@
    so it never spills onto neighbouring rows or clips at the scroll edge.
    Parity with svelte-treeview's .stv__node-content--highlight-glow. */
 .wtv__node-content--highlight-glow {
-  background-color: var(--wtv-highlighted-bg) !important;
+  background-color: var(--wtv-selected-bg) !important;
   box-shadow:
     inset 0 0 0 1px var(--wtv-highlight-ring-color),
     inset 0 0 6px 0 color-mix(in srgb, var(--wtv-accent-color) 20%, transparent) !important;
@@ -561,7 +561,7 @@
 @keyframes wtv-drag-denied-flash {
   0%,
   100% { background-color: transparent; }
-  50% { background-color: var(--wtv-drag-denied-flash-bg, color-mix(in srgb, var(--wtv-danger-color) 18%, transparent)); }
+  50% { background-color: var(--wtv-drag-denied-flash-bg, var(--base-danger-bg-subtle-hover, color-mix(in srgb, var(--wtv-danger-color) 18%, transparent))); }
 }
 
 /* No-entry icon pops in and STAYS visible until the finger lifts. */
@@ -1136,7 +1136,7 @@
 /* Disabled */
 .wtv__checkbox:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: var(--base-disabled-opacity, 0.6);
 }
 
 /* ==============================================================================

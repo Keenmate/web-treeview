@@ -52,7 +52,7 @@
         <!-- CM01 · Callback Approach -->
         <div class="card">
             <h2>CM01 · Callback Approach</h2>
-            <p>Right-click any node. The web-treeview analog of svelte-treeview's <code>getContextMenuItemsCallback</code> is <code>contextMenuCallback(node, close) =&gt; ContextMenuEntry[]</code>. This demo shows shortcuts, a nested submenu, a named divider, <code>className="danger"</code>, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item.</p>
+            <p>Right-click any node. web-treeview builds the menu with <code>getContextMenuItemsCallback(ctx) =&gt; TreeMenuEntry[]</code> — <code>ctx</code> is <code>{ node, path, parent, siblings, controller, element }</code> and the entries are core action items. This demo shows shortcuts, a nested submenu, a named divider (<code>menuDivider(text)</code>), an <code>isDanger</code> item, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item. An enabled leaf closes the menu after its <code>onClick</code> — no <code>close()</code> needed.</p>
 
             <div class="controls">
                 <label class="inline">
@@ -76,31 +76,33 @@
             </div>
 
             <div class="code-block mt-1">
-<pre><code>tree.contextMenuCallback = (node, close) =&gt; {
+<pre><code>import { menuDivider } from '@keenmate/web-treeview';
+
+tree.getContextMenuItemsCallback = ({ node }) =&gt; {
     const isFolder = node.data?.type === 'folder';
-    const isReadonly = node.data?.readonly;
+    const isReadonly = !!node.data?.readonly;
     const entries = [];
 
     if (isFolder) {
-        entries.push({ icon: '📄', label: 'New File',  shortcut: 'N',       onclick: () =&gt; { log(`New file in "${node.data.name}"`); close(); } });
-        entries.push({ icon: '📁', label: 'New Folder', shortcut: 'Shift+N', onclick: () =&gt; { log(`New folder in "${node.data.name}"`); close(); } });
-        entries.push({ divider: true });
+        entries.push({ id: 'new-file',   icon: '📄', text: 'New File',   shortcut: 'N',       onClick: () =&gt; log(`New file in "${node.data.name}"`) });
+        entries.push({ id: 'new-folder', icon: '📁', text: 'New Folder', shortcut: 'Shift+N', onClick: () =&gt; log(`New folder in "${node.data.name}"`) });
+        entries.push(menuDivider());
     }
 
-    entries.push({ icon: '📋', label: 'Copy',  shortcut: 'C', onclick: () =&gt; { log(`Copied "${node.data.name}"`); close(); } });
-    entries.push({ icon: '✂️', label: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onclick: () =&gt; { log(`Cut "${node.data.name}"`); close(); } });
-    entries.push({ icon: '📥', label: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onclick: () =&gt; { log(`Paste into "${node.data.name}"`); close(); } });
+    entries.push({ id: 'copy',  icon: '📋', text: 'Copy',  shortcut: 'C', onClick: () =&gt; log(`Copied "${node.data.name}"`) });
+    entries.push({ id: 'cut',   icon: '✂️', text: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onClick: () =&gt; log(`Cut "${node.data.name}"`) });
+    entries.push({ id: 'paste', icon: '📥', text: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onClick: () =&gt; log(`Paste into "${node.data.name}"`) });
 
-    entries.push({ icon: '📤', label: 'Export As...', children: [
-        { label: 'JSON', shortcut: 'J', onclick: () =&gt; { log('…as JSON'); close(); } },
-        { label: 'XML',  shortcut: 'X', onclick: () =&gt; { log('…as XML');  close(); } },
-        { label: 'CSV',  shortcut: 'C', onclick: () =&gt; { log('…as CSV');  close(); } },
+    entries.push({ id: 'export', icon: '📤', text: 'Export As...', children: [
+        { id: 'json', text: 'JSON', shortcut: 'J', onClick: () =&gt; log('…as JSON') },
+        { id: 'xml',  text: 'XML',  shortcut: 'X', onClick: () =&gt; log('…as XML') },
+        { id: 'csv',  text: 'CSV',  shortcut: 'C', onClick: () =&gt; log('…as CSV') },
     ]});
 
-    entries.push({ divider: true, label: 'Danger zone' });
-    entries.push({ icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () =&gt; { log('rename'); close(); } });
-    entries.push({ icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () =&gt; { log('delete'); close(); } });
-    entries.push({ icon: '🔒', label: 'Read-only file', isDisabled: true, isVisible: !!isReadonly });
+    entries.push(menuDivider('Danger zone'));
+    entries.push({ id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onClick: () =&gt; log('rename') });
+    entries.push({ id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly, onClick: () =&gt; log('delete') });
+    entries.push({ id: 'readonly', icon: '🔒', text: 'Read-only file', isDisabled: true, isVisible: isReadonly });
     return entries;
 };</code></pre>
             </div>
@@ -109,7 +111,7 @@
         <!-- CM02 · Custom Item Render -->
         <div class="card">
             <h2>CM02 · Custom Item Render</h2>
-            <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback(item, node, container)</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>container</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer <code>&lt;button&gt;</code> (classes, <code>data-*</code> attrs, disabled state, submenu hover) stays component-managed. Debug mode is on so the controls below preview live.</p>
+            <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback({ node, menuItem, buttonElement, … })</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>buttonElement</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer <code>&lt;button&gt;</code> (classes, <code>data-*</code> attrs, disabled state, submenu hover) stays component-managed. Debug mode is on so the controls below preview live.</p>
 
             <div class="controls ctx-config">
                 <label>
@@ -148,33 +150,36 @@
 
             <div class="code-block mt-1">
 <pre><code>// Customize specific items; leave the rest to default rendering.
-//   container populated  → custom rendering
-//   container left empty → default icon + label + shortcut
-tree.renderContextMenuItemCallback = (item, node, container) =&gt; {
+//   buttonElement populated  → custom rendering
+//   buttonElement left empty → default icon + label + shortcut
+tree.renderContextMenuItemCallback = ({ node, menuItem, buttonElement }) =&gt; {
     const d = node.data;
-    if (item.id === 'profile') {
+    if (menuItem.id === 'profile') {
         const initials = d.name.split(' ').map(w =&gt; w[0]).join('');
-        container.innerHTML = `
+        buttonElement.innerHTML = `
             &lt;span class="avatar"&gt;${initials}&lt;/span&gt;
             &lt;span class="info"&gt;&lt;span&gt;${d.name}&lt;/span&gt;&lt;span class="role"&gt;${d.role}&lt;/span&gt;&lt;/span&gt;`;
         return;
     }
-    if (item.id === 'invoices') {
-        container.innerHTML = `
+    if (menuItem.id === 'invoices') {
+        buttonElement.innerHTML = `
             &lt;span class="wtv__context-menu-icon"&gt;🧾&lt;/span&gt;
             &lt;span class="wtv__context-menu-label"&gt;Invoices&lt;/span&gt;
             &lt;span class="count-chip"&gt;${d.invoiceCount}&lt;/span&gt;`;
         return;
     }
     // no innerHTML set → default rendering for this item
-};</code></pre>
+};
+
+// The items carry no onClick — every activation fires the `action` event.
+tree.addEventListener('action', ({ detail }) =&gt; log(detail.id, detail.node));</code></pre>
             </div>
         </div>
 
         <!-- CM03 · Context Menu Callback API -->
         <div class="card">
             <h2>CM03 · Context Menu Callback API</h2>
-            <p>Provide <code>contextMenuCallback</code> to build menu entries dynamically per node. It receives the <code>LTreeNode</code> and a <code>close()</code> function and returns a <code>ContextMenuEntry[]</code>.</p>
+            <p>Provide <code>getContextMenuItemsCallback</code> to build menu entries dynamically per node. It receives one <code>ctx</code> — <code>{ node, path, parent, siblings, controller, element }</code> — and returns a <code>TreeMenuEntry[]</code>: core action items, dividers, or built-in action names. Every activation fires the <code>action</code> event (twin <code>onAction(detail)</code>); <code>beforeActionCallback(detail)</code> returning <code>false</code> cancels it.</p>
 
             <table class="reference-table">
                 <thead>
@@ -182,11 +187,25 @@ tree.renderContextMenuItemCallback = (item, node, container) =&gt; {
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>contextMenuCallback</code></td>
+                        <td><code>getContextMenuItemsCallback</code></td>
                         <td>&mdash;</td>
-                        <td><code>(node, close) =&gt; ContextMenuEntry[]</code></td>
+                        <td><code>(ctx: TreeMenuContext) =&gt; TreeMenuEntry[]</code></td>
                         <td><code>undefined</code></td>
                         <td>Builds the menu entries for a node. Return <code>[]</code> to show nothing.</td>
+                    </tr>
+                    <tr>
+                        <td><code>beforeActionCallback</code></td>
+                        <td>&mdash;</td>
+                        <td><code>(detail) =&gt; void | false | Promise&lt;void | false&gt;</code></td>
+                        <td><code>undefined</code></td>
+                        <td>Runs before an item activates; <code>false</code> cancels its <code>onClick</code>, the <code>action</code> event and the built-in.</td>
+                    </tr>
+                    <tr>
+                        <td><code>onAction</code> / <code>action</code> event</td>
+                        <td>&mdash;</td>
+                        <td><code>(detail: TreeViewActionEventDetail) =&gt; void</code></td>
+                        <td><code>undefined</code></td>
+                        <td>An item was activated. <code>detail</code>: <code>action</code> (built-in name or <code>'custom'</code>), <code>id</code>, <code>item</code>, <code>source: 'context-menu'</code>, <code>node</code> / <code>path</code> / <code>parent</code> / <code>siblings</code>. Fires after the item's <code>onClick</code>, before the built-in.</td>
                     </tr>
                     <tr>
                         <td><code>shouldDisplayContextMenuInDebugMode</code></td>
@@ -199,28 +218,35 @@ tree.renderContextMenuItemCallback = (item, node, container) =&gt; {
             </table>
 
             <div class="code-block mt-1">
-<pre><code>import type { ContextMenuEntry } from '@keenmate/web-treeview';
+<pre><code>import { menuDivider, type TreeMenuEntry } from '@keenmate/web-treeview';
 
-tree.contextMenuCallback = (node, close) =&gt; [
-    { label: 'Copy', icon: '📋', shortcut: 'C',
-      onclick: () =&gt; { copy(node); close(); } },
-    { label: 'Edit', icon: '✏️',
-      onclick: () =&gt; { edit(node); close(); } },
-    { label: 'Export As...', icon: '📤', children: [
-        { label: 'JSON', shortcut: 'J', onclick: () =&gt; { exportAs(node, 'json'); close(); } },
-        { label: 'XML',  shortcut: 'X', onclick: () =&gt; { exportAs(node, 'xml');  close(); } },
+tree.getContextMenuItemsCallback = ({ node }): TreeMenuEntry[] =&gt; [
+    'copy', 'cut', 'paste',               // built-ins: act on the node (or the selection it's in)
+    { id: 'edit', text: 'Edit', icon: '✏️',
+      onClick: ({ node }) =&gt; edit(node) },
+    { id: 'export', text: 'Export As...', icon: '📤', children: [
+        { id: 'json', text: 'JSON', shortcut: 'J', onClick: () =&gt; exportAs(node, 'json') },
+        { id: 'xml',  text: 'XML',  shortcut: 'X', onClick: () =&gt; exportAs(node, 'xml') },
     ]},
-    { divider: true, label: 'Danger zone' },
-    { label: 'Delete', className: 'danger', isDisabled: node.data.readonly,
-      onclick: () =&gt; { del(node); close(); } },
-];</code></pre>
+    { id: 'recent', text: 'Recent', getChildrenCallback: async () =&gt; loadRecent(node) },  // lazy submenu
+    menuDivider('Danger zone'),
+    { id: 'delete', text: 'Delete', isDanger: true, isDisabled: node.data.readonly,
+      onClick: () =&gt; del(node) },
+];
+
+// One handler for every item (fires after onClick, before a built-in):
+tree.onAction = ({ action, id, node }) =&gt; console.log(action, id, node.path);
+// Veto an activation:
+tree.beforeActionCallback = ({ id, node }) =&gt; {
+    if (id === 'delete' &amp;&amp; node.data.locked) return false;
+};</code></pre>
             </div>
         </div>
 
         <!-- CM04 · Per-Item Render API -->
         <div class="card">
             <h2>CM04 · Per-Item Render API</h2>
-            <p><code>renderContextMenuItemCallback</code> runs once per item before default rendering. If it adds child nodes to <code>container</code> (the item's <code>&lt;button&gt;</code>), that markup is kept; otherwise the component falls back to the default icon + label + shortcut layout. Dividers are never passed to this callback.</p>
+            <p><code>renderContextMenuItemCallback</code> runs once per item before default rendering. If it adds child nodes to <code>ctx.buttonElement</code> (the item's <code>&lt;button&gt;</code>), that markup is kept; otherwise the component falls back to the default icon + label + shortcut layout. Dividers are never passed to this callback. To take over the <em>whole</em> menu instead, use <code>renderContextMenuCallback({ node, path, parent, siblings, containerElement, controller })</code> and close it via <code>ctx.controller.closeContextMenu()</code>.</p>
 
             <table class="reference-table">
                 <thead>
@@ -229,8 +255,13 @@ tree.contextMenuCallback = (node, close) =&gt; [
                 <tbody>
                     <tr>
                         <td><code>renderContextMenuItemCallback</code></td>
-                        <td><code>(item: ContextMenuItem, node: LTreeNode, container: HTMLElement) =&gt; void</code></td>
-                        <td>Custom render for one menu item. Fill <code>container</code> to override, leave empty to fall through to default.</td>
+                        <td><code>(ctx: { node, path, parent, siblings, menuItem: TreeMenuItem, buttonElement: HTMLElement }) =&gt; void</code></td>
+                        <td>Custom render for one menu item. Fill <code>buttonElement</code> to override, leave empty to fall through to default.</td>
+                    </tr>
+                    <tr>
+                        <td><code>renderContextMenuCallback</code></td>
+                        <td><code>(ctx: { node, path, parent, siblings, containerElement: HTMLElement }) =&gt; void</code></td>
+                        <td>Take over the whole menu: fill <code>containerElement</code>; close via <code>ctx.controller.closeContextMenu()</code>.</td>
                     </tr>
                 </tbody>
             </table>
@@ -241,60 +272,73 @@ tree.contextMenuCallback = (node, close) =&gt; [
             </div>
         </div>
 
-        <!-- CM05 · ContextMenuEntry / ContextMenuDivider Types -->
+        <!-- CM05 · TreeMenuEntry / MenuDivider Types -->
         <div class="card">
-            <h2>CM05 · ContextMenuEntry Types</h2>
-            <p>The unified entry type: an entry is either a <code>ContextMenuItem</code> or a <code>ContextMenuDivider</code>.</p>
+            <h2>CM05 · TreeMenuEntry Types</h2>
+            <p>An entry is a <code>TreeMenuItem</code> (a core action item), a <code>MenuDivider</code>, or a built-in action name: <code>'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'</code>. Built-ins act on the node — or on the whole selection when the node is in it — and come with default text / disabled / danger state.</p>
 
             <table class="reference-table">
                 <thead>
                     <tr><th>Property</th><th>Type</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><code>id</code></td><td><code>string</code></td><td>Optional stable id (emitted as <code>data-item-id</code>; handy for <code>renderContextMenuItemCallback</code> branching).</td></tr>
-                    <tr><td><code>label</code></td><td><code>string</code></td><td>Display text (required for items).</td></tr>
-                    <tr><td><code>icon</code></td><td><code>string</code></td><td>Emoji / text / CSS-class icon shown before the label.</td></tr>
-                    <tr><td><code>shortcut</code></td><td><code>string</code></td><td>Keyboard shortcut hint (right-aligned, muted).</td></tr>
+                    <tr><td><code>id</code></td><td><code>string</code></td><td>Identifies a custom item; reported in the <code>action</code> event and rendered as <code>data-id</code> (the button also carries <code>data-action</code>: the built-in name or <code>custom</code>). Handy for <code>renderContextMenuItemCallback</code> branching.</td></tr>
+                    <tr><td><code>action</code></td><td><code>TreeViewAction | 'custom'</code></td><td>Built-in action to run (same as passing the plain string). Omit for a custom item.</td></tr>
+                    <tr><td><code>text</code></td><td><code>string</code></td><td>Display text (plain text).</td></tr>
+                    <tr><td><code>icon</code></td><td><code>string</code></td><td>Emoji / text / CSS-class icon shown before the text.</td></tr>
+                    <tr><td><code>shortcut</code></td><td><code>string</code></td><td>Keyboard shortcut hint (right-aligned, muted; pressed while the menu is open, it activates the item).</td></tr>
+                    <tr><td><code>tooltip</code></td><td><code>string</code></td><td>Native tooltip (<code>title</code>) on the item.</td></tr>
                     <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td>Greys the item out and blocks clicks.</td></tr>
                     <tr><td><code>isVisible</code></td><td><code>boolean</code></td><td><code>false</code> skips rendering the item entirely.</td></tr>
-                    <tr><td><code>className</code></td><td><code>string</code></td><td>Extra CSS class (e.g. <code>"danger"</code> for red styling).</td></tr>
-                    <tr><td><code>shouldCloseOnClick</code></td><td><code>boolean</code></td><td>rc06 per-item opt-out. Defaults to <code>true</code> (activating an item dismisses the menu). Set <code>false</code> for incremental actions; your handler then dismisses via the <code>close</code> callback.</td></tr>
-                    <tr><td><code>onclick</code></td><td><code>() =&gt; void | Promise&lt;void&gt;</code></td><td>Click handler. Parent items with <code>children</code> may omit it.</td></tr>
-                    <tr><td><code>children</code></td><td><code>ContextMenuEntry[]</code></td><td>Nested submenu entries (open on hover).</td></tr>
+                    <tr><td><code>isDanger</code></td><td><code>boolean</code></td><td>Destructive (red) styling — <code>.wtv__context-menu-item--danger</code>.</td></tr>
+                    <tr><td><code>isActive</code></td><td><code>boolean</code></td><td>Toggle state is on: <code>aria-pressed="true"</code> + <code>.wtv__context-menu-item--active</code>. Still clickable.</td></tr>
+                    <tr><td><code>cssClass</code></td><td><code>string</code></td><td>Extra CSS class(es) on the item button.</td></tr>
+                    <tr><td><code>get*Callback(ctx)</code></td><td><code>(ctx: TreeMenuContext) =&gt; …</code></td><td>Dynamic variants that win over the static value: <code>getTextCallback</code>, <code>getIconCallback</code>, <code>getTooltipCallback</code>, <code>getClassCallback</code>, <code>getIsVisibleCallback</code>, <code>getIsDisabledCallback</code>, <code>getIsActiveCallback</code>.</td></tr>
+                    <tr><td><code>shouldCloseOnClick</code></td><td><code>boolean</code></td><td>Defaults to <code>true</code> (activating a leaf dismisses the menu). Set <code>false</code> for incremental actions; close later via <code>detail.controller.closeContextMenu()</code>.</td></tr>
+                    <tr><td><code>onClick</code></td><td><code>(detail) =&gt; void | Promise&lt;void&gt;</code></td><td>Click handler; receives the <code>action</code> event detail (the menu ctx + <code>action</code>, <code>id</code>, <code>item</code>, <code>source</code>). Optional — every enabled leaf activates and fires <code>action</code>.</td></tr>
+                    <tr><td><code>children</code></td><td><code>TreeMenuEntry[]</code></td><td>Nested submenu entries (open on hover).</td></tr>
+                    <tr><td><code>getChildrenCallback</code></td><td><code>(ctx) =&gt; TreeMenuEntry[] | Promise&lt;…&gt;</code></td><td>Lazy / dynamic submenu (wins over <code>children</code>); a loading row shows while it resolves.</td></tr>
                 </tbody>
             </table>
 
-            <h3>ContextMenuDivider</h3>
+            <h3>MenuDivider</h3>
             <table class="reference-table">
                 <thead>
                     <tr><th>Property</th><th>Type</th><th>Description</th></tr>
                 </thead>
                 <tbody>
                     <tr><td><code>divider</code></td><td><code>true</code></td><td>Type discriminator for divider entries.</td></tr>
-                    <tr><td><code>label</code></td><td><code>string</code></td><td>Optional named divider: <code>──── [label] ────</code>.</td></tr>
+                    <tr><td><code>text</code></td><td><code>string</code></td><td>Optional named divider: <code>──── [text] ────</code>. Or build one with <code>menuDivider(text?)</code> (exported).</td></tr>
                 </tbody>
             </table>
 
             <div class="code-block mt-1">
-<pre><code>interface ContextMenuDivider {
+<pre><code>interface MenuDivider {
   divider: true;
-  label?: string;            // named: ──── [label] ────
+  text?: string;             // named: ──── [text] ────   (menuDivider(text))
 }
 
-interface ContextMenuItem {
+interface TreeMenuItem {
+  action?: TreeViewAction | 'custom';
   id?: string;
-  label: string;
+  text?: string;
   icon?: string;
   shortcut?: string;
-  isDisabled?: boolean;
+  tooltip?: string;
+  cssClass?: string;
   isVisible?: boolean;       // false = skip rendering
-  className?: string;        // e.g. "danger"
-  shouldCloseOnClick?: boolean; // rc06 — default true
-  onclick?: () =&gt; void | Promise&lt;void&gt;;
-  children?: ContextMenuEntry[];
+  isDisabled?: boolean;
+  isDanger?: boolean;
+  isActive?: boolean;        // aria-pressed
+  getTextCallback?(ctx: TreeMenuContext): string;   // + getIcon/Tooltip/Class/IsVisible/IsDisabled/IsActiveCallback
+  shouldCloseOnClick?: boolean; // default true
+  onClick?(detail: TreeViewActionEventDetail): void | Promise&lt;void&gt;;
+  children?: TreeMenuEntry[];
+  getChildrenCallback?(ctx: TreeMenuContext): TreeMenuEntry[] | Promise&lt;TreeMenuEntry[]&gt;;
 }
 
-type ContextMenuEntry = ContextMenuItem | ContextMenuDivider;</code></pre>
+type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse';
+type TreeMenuEntry  = TreeMenuItem | MenuDivider | TreeViewAction;</code></pre>
             </div>
         </div>
 
@@ -325,7 +369,7 @@ type ContextMenuEntry = ContextMenuItem | ContextMenuDivider;</code></pre>
             </div>
 
             <div class="code-block mt-1">
-<pre><code>tree.contextMenuCallback = getContextMenu;
+<pre><code>tree.getContextMenuItemsCallback = getMenuItems;
 tree.contextMenuXOffset = 8;   // px right of the cursor (default)
 tree.contextMenuYOffset = 0;   // px below the cursor (default)
 
@@ -453,14 +497,16 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     <tr><td><code>.wtv__context-menu-arrow</code></td><td>Submenu arrow indicator (▸)</td></tr>
                     <tr><td><code>.wtv__context-menu-divider</code></td><td>Divider line</td></tr>
                     <tr><td><code>.wtv__context-menu-divider--named</code></td><td>Named divider with a centered label</td></tr>
-                    <tr><td><code>.danger</code></td><td>Danger-styled item (red text, via <code>className</code>)</td></tr>
+                    <tr><td><code>.wtv__context-menu-item--danger</code></td><td>Danger-styled item (red text, via <code>isDanger: true</code>)</td></tr>
+                    <tr><td><code>.wtv__context-menu-item--active</code></td><td>Toggled-on item (<code>isActive: true</code>, also <code>aria-pressed="true"</code>)</td></tr>
+                    <tr><td><code>.wtv__context-menu-loading</code></td><td>Loading row shown while an async <code>getChildrenCallback</code> resolves</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script type="module">
-        import '/src/index.ts';
+        import { menuDivider } from '/src/index.ts';
         import { persistControls } from './examples-controls-store.js';
 
         // ── Sample Data ─────────────────────────────────────────────────
@@ -520,32 +566,34 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 cm1LogEl.textContent = 'Right-click a node to see the context menu';
             });
 
-            cm1.contextMenuCallback = (node, close) => {
+            // Core action items: `text`, `onClick(detail)`, `isDanger`, `children`; dividers via
+            // menuDivider(text?). An enabled leaf closes the menu after its onClick.
+            cm1.getContextMenuItemsCallback = ({ node }) => {
                 const d = node.data || {};
                 const isFolder = d.type === 'folder';
                 const isReadonly = !!d.readonly;
                 const entries = [];
 
                 if (isFolder) {
-                    entries.push({ icon: '📄', label: 'New File',   shortcut: 'N',       onclick: () => { cm1Log(`New file in "${d.name}"`); close(); } });
-                    entries.push({ icon: '📁', label: 'New Folder', shortcut: 'Shift+N', onclick: () => { cm1Log(`New folder in "${d.name}"`); close(); } });
-                    entries.push({ divider: true });
+                    entries.push({ id: 'new-file',   icon: '📄', text: 'New File',   shortcut: 'N',       onClick: () => cm1Log(`New file in "${d.name}"`) });
+                    entries.push({ id: 'new-folder', icon: '📁', text: 'New Folder', shortcut: 'Shift+N', onClick: () => cm1Log(`New folder in "${d.name}"`) });
+                    entries.push(menuDivider());
                 }
 
-                entries.push({ icon: '📋', label: 'Copy',  shortcut: 'C', onclick: () => { cm1Log(`Copied "${d.name}"`); close(); } });
-                entries.push({ icon: '✂️', label: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onclick: () => { cm1Log(`Cut "${d.name}"`); close(); } });
-                entries.push({ icon: '📥', label: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onclick: () => { cm1Log(`Paste into "${d.name}"`); close(); } });
+                entries.push({ id: 'copy',  icon: '📋', text: 'Copy',  shortcut: 'C', onClick: () => cm1Log(`Copied "${d.name}"`) });
+                entries.push({ id: 'cut',   icon: '✂️', text: 'Cut',   shortcut: 'X', isDisabled: isReadonly, onClick: () => cm1Log(`Cut "${d.name}"`) });
+                entries.push({ id: 'paste', icon: '📥', text: 'Paste', shortcut: 'V', isDisabled: !isFolder,  onClick: () => cm1Log(`Paste into "${d.name}"`) });
 
-                entries.push({ icon: '📤', label: 'Export As...', children: [
-                    { label: 'JSON', shortcut: 'J', onclick: () => { cm1Log(`Export "${d.name}" as JSON`); close(); } },
-                    { label: 'XML',  shortcut: 'X', onclick: () => { cm1Log(`Export "${d.name}" as XML`);  close(); } },
-                    { label: 'CSV',  shortcut: 'C', onclick: () => { cm1Log(`Export "${d.name}" as CSV`);  close(); } },
+                entries.push({ id: 'export', icon: '📤', text: 'Export As...', children: [
+                    { id: 'json', text: 'JSON', shortcut: 'J', onClick: () => cm1Log(`Export "${d.name}" as JSON`) },
+                    { id: 'xml',  text: 'XML',  shortcut: 'X', onClick: () => cm1Log(`Export "${d.name}" as XML`) },
+                    { id: 'csv',  text: 'CSV',  shortcut: 'C', onClick: () => cm1Log(`Export "${d.name}" as CSV`) },
                 ]});
 
-                entries.push({ divider: true, label: 'Danger zone' });
-                entries.push({ icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () => { cm1Log(`Rename "${d.name}"`); close(); } });
-                entries.push({ icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () => { cm1Log(`Delete "${d.name}"`); close(); } });
-                entries.push({ icon: '🔒', label: 'Read-only file', isDisabled: true, isVisible: isReadonly });
+                entries.push(menuDivider('Danger zone'));
+                entries.push({ id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onClick: () => cm1Log(`Rename "${d.name}"`) });
+                entries.push({ id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly, onClick: () => cm1Log(`Delete "${d.name}"`) });
+                entries.push({ id: 'readonly', icon: '🔒', text: 'Read-only file', isDisabled: true, isVisible: isReadonly });
                 return entries;
             };
 
@@ -571,37 +619,39 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 cm2LogEl.textContent = JSON.stringify({ action, name: node.data?.name, role: node.data?.role }, null, 2);
             };
 
-            cm2.contextMenuCallback = (node, close) => {
+            // One onClick-free menu: every leaf fires the `action` event; log it from there.
+            cm2.getContextMenuItemsCallback = ({ node }) => {
                 const d = node.data;
                 const isDept = d.role === 'department';
                 const items = [
-                    { id: 'profile', icon: '👤', label: isDept ? `View ${d.name} team` : `${d.name}'s profile`, onclick: () => { cm2Log('profile', node); close(); } },
+                    { id: 'profile', icon: '👤', text: isDept ? `View ${d.name} team` : `${d.name}'s profile` },
                 ];
                 if (!isDept && d.email) {
-                    items.push({ id: 'email', icon: '📧', label: `Email ${d.name}`, shortcut: 'E', onclick: () => { cm2Log('email', node); close(); } });
+                    items.push({ id: 'email', icon: '📧', text: `Email ${d.name}`, shortcut: 'E' });
                 }
                 if (d.invoiceCount > 0) {
-                    items.push({ id: 'invoices', label: 'Invoices', shortcut: 'I', onclick: () => { cm2Log('invoices', node); close(); } });
+                    items.push({ id: 'invoices', text: 'Invoices', shortcut: 'I' });
                 }
                 if (!isDept) {
                     if (d.role !== 'lead') {
-                        items.push({ id: 'promote', icon: '⬆️', label: 'Promote', onclick: () => { cm2Log('promote', node); close(); } });
+                        items.push({ id: 'promote', icon: '⬆️', text: 'Promote' });
                     }
                     items.push(
-                        { divider: true, label: 'Danger zone' },
-                        { id: 'remove', icon: '🗑️', label: `Remove ${d.name}`, className: 'danger', onclick: () => { cm2Log('remove', node); close(); } },
+                        menuDivider('Danger zone'),
+                        { id: 'remove', icon: '🗑️', text: `Remove ${d.name}`, isDanger: true },
                     );
                 }
                 return items;
             };
+            cm2.addEventListener('action', ({ detail }) => cm2Log(detail.id, detail.node));
 
-            cm2.renderContextMenuItemCallback = (item, node, container) => {
+            cm2.renderContextMenuItemCallback = ({ node, menuItem, buttonElement }) => {
                 const d = node.data;
                 const color = roleColors[d.role] || '#6b7280';
 
-                if (item.id === 'profile') {
+                if (menuItem.id === 'profile') {
                     const initials = d.name.split(' ').map(w => w[0]).join('');
-                    container.innerHTML = `
+                    buttonElement.innerHTML = `
                         <span style="width: 28px; height: 28px; border-radius: 50%; background: ${color}; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 600; flex-shrink: 0;">${initials}</span>
                         <span style="display: flex; flex-direction: column; gap: 1px;">
                             <span>${d.name}</span>
@@ -609,16 +659,16 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                         </span>`;
                     return;
                 }
-                if (item.id === 'invoices') {
+                if (menuItem.id === 'invoices') {
                     const count = d.invoiceCount;
                     const chipColor = count > 5 ? '#dc3545' : count > 0 ? '#f59e0b' : '#6b7280';
-                    container.innerHTML = `
+                    buttonElement.innerHTML = `
                         <span class="wtv__context-menu-icon">🧾</span>
                         <span class="wtv__context-menu-label">Invoices</span>
                         <span style="background: ${chipColor}; color: white; font-size: 0.7em; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;">${count}</span>`;
                     return;
                 }
-                // everything else: leave container empty → default rendering
+                // everything else: leave buttonElement empty → default rendering
             };
 
             // CM02 live CSS-variable controls
@@ -641,11 +691,12 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             // ── CM06 · Menu position offset ─────────────────────────────
             const cm6 = document.getElementById('cm6-tree');
             configure(cm6, fileTree);
-            cm6.contextMenuCallback = (node, close) => [
-                { icon: '📂', label: 'Open',   shortcut: 'O',  onclick: () => close() },
-                { icon: '✏️', label: 'Rename', shortcut: 'F2', onclick: () => close() },
-                { divider: true },
-                { icon: '🗑️', label: 'Delete', className: 'danger', onclick: () => close() },
+            // No onClick needed: an enabled leaf closes the menu on activation.
+            cm6.getContextMenuItemsCallback = () => [
+                { id: 'open',   icon: '📂', text: 'Open',   shortcut: 'O' },
+                { id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2' },
+                menuDivider(),
+                { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true },
             ];
             document.getElementById('cm6-x').addEventListener('input', (e) => {
                 const v = Number(e.target.value);
@@ -665,19 +716,19 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             const cm7 = document.getElementById('cm7-tree');
             configure(cm7, fileTree);
             cm7.shouldDisplayContextMenuInDebugMode = true;
-            cm7.contextMenuCallback = (node, close) => {
+            cm7.getContextMenuItemsCallback = ({ node }) => {
                 const d = node.data || {};
                 const isReadonly = !!d.readonly;
                 return [
-                    { icon: '📂', label: 'Open',   shortcut: 'O',  onclick: () => close() },
-                    { icon: '📋', label: 'Copy',   shortcut: 'C',  onclick: () => close() },
-                    { icon: '✏️', label: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onclick: () => close() },
-                    { icon: '📤', label: 'Export As...', children: [
-                        { label: 'JSON', onclick: () => close() },
-                        { label: 'XML',  onclick: () => close() },
+                    { id: 'open',   icon: '📂', text: 'Open',   shortcut: 'O' },
+                    { id: 'copy',   icon: '📋', text: 'Copy',   shortcut: 'C' },
+                    { id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2', isDisabled: isReadonly },
+                    { id: 'export', icon: '📤', text: 'Export As...', children: [
+                        { id: 'json', text: 'JSON' },
+                        { id: 'xml',  text: 'XML' },
                     ]},
-                    { divider: true, label: 'Danger zone' },
-                    { icon: '🗑️', label: 'Delete', className: 'danger', isDisabled: isReadonly, onclick: () => close() },
+                    menuDivider('Danger zone'),
+                    { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly },
                 ];
             };
 

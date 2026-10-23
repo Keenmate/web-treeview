@@ -14,7 +14,7 @@
             <p class="subtitle">
                 Per-node icons on <strong>every</strong> node (branch + leaf) — a dedicated
                 <code>.wtv__node-icon</code> element driven by <code>iconMember</code> /
-                <code>iconCallback</code>, with per-node color and a <code>renderIconCallback</code>
+                <code>getIconCallback</code>, with per-node color and a <code>renderIconCallback</code>
                 for SVG / custom markup.
             </p>
         </header>
@@ -26,16 +26,16 @@
                 <code>icon-member</code> resolves a class string; it renders as
                 <code>&lt;i class="wtv__node-icon {value}"&gt;</code> on every node. The chevron stays on
                 branches — the icon is its own element beside it. Because web-treeview uses Shadow DOM,
-                FontAwesome's CSS is injected into the shadow root via <code>customStylesCallback</code>
+                FontAwesome's CSS is injected into the shadow root via <code>getCustomStylesCallback</code>
                 (the classes wouldn't resolve from the document otherwise). <code>icon-color-member</code>
                 colors each icon.
             </p>
             <div class="tree-container" id="c1"><web-treeview id="tree1" expand-level="4" icon-member="icon" icon-color-member="color" align-node-icons></web-treeview></div>
         </div>
 
-        <!-- IC02 · Emoji via iconCallback -->
+        <!-- IC02 · Emoji via getIconCallback -->
         <div class="card">
-            <h2>IC02 · Emoji via <code>iconCallback</code></h2>
+            <h2>IC02 · Emoji via <code>getIconCallback</code></h2>
             <p>An emoji needs no font — the value's text renders directly. Use a callback to derive it.</p>
             <div class="tree-container" id="c2"><web-treeview id="tree2" expand-level="4"></web-treeview></div>
         </div>
@@ -44,7 +44,7 @@
         <div class="card">
             <h2>IC03 · Inline SVG via <code>renderIconCallback</code></h2>
             <p>
-                For full control, <code>renderIconCallback(node, value, iconEl)</code> populates the icon
+                For full control, <code>renderIconCallback({ node, value, iconElement })</code> populates the icon
                 element — here a Lucide-style SVG. Color flows from <code>icon-color-member</code> onto the
                 element, so <code>stroke="currentColor"</code> tints the SVG.
             </p>
@@ -57,7 +57,7 @@
             <p>
                 A data member holds a Lucide icon <em>key</em> (<code>map-pin</code>, <code>shield</code>,
                 <code>user-star</code>, <code>coffee</code>, <code>user</code>) exposed via
-                <code>icon-member</code>; <code>renderIconCallback</code> receives that resolved value and
+                <code>icon-member</code>; <code>renderIconCallback</code> receives that resolved value (<code>ctx.value</code>) and
                 paints the matching inline SVG with <code>stroke="currentColor"</code>, so
                 <code>icon-color-member</code> tints each glyph. Icons from the <a href="https://icons.pureadmin.io" target="_blank" rel="noopener"><code>pure-admin</code></a> Lucide set.
             </p>
@@ -97,20 +97,20 @@
             // IC01 — FA classes. Inject FontAwesome into the shadow root so `fa-*` resolves there.
             Object.assign(document.getElementById('tree1'), common, {
                 iconMember: 'icon',
-                customStylesCallback: () =>
+                getCustomStylesCallback: () =>
                     '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css");'
             });
 
             // IC02 — emoji via callback.
             Object.assign(document.getElementById('tree2'), common, {
-                iconCallback: (node) => node.data?.emoji ?? null
+                getIconCallback: ({ node }) => node.data?.emoji ?? null
             });
 
             // IC03 — inline SVG via renderIconCallback.
             Object.assign(document.getElementById('tree3'), common, {
-                renderIconCallback: (node, _value, iconEl) => {
+                renderIconCallback: ({ node, iconElement }) => {
                     const branch = hasChildren(node);
-                    iconEl.innerHTML = branch
+                    iconElement.innerHTML = branch
                         ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>`
                         : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>`;
                 }
@@ -118,8 +118,8 @@
 
             // IC04 — Lucide SVGs keyed off iconMember (the resolved value is the LUCIDE key).
             Object.assign(document.getElementById('tree4'), common, {
-                renderIconCallback: (_node, value, iconEl) => {
-                    iconEl.innerHTML = value ? lucideSvg(value) : '';
+                renderIconCallback: ({ value, iconElement }) => {
+                    iconElement.innerHTML = value ? lucideSvg(value) : '';
                 }
             });
         });

@@ -454,16 +454,16 @@
                 cfg.maxBatchSize = +$('opt-max-batch').value;
             }
             if (cfg.isSorted) {
-                cfg.sortCallback = (items) => [...items].sort((a, b) => {
+                cfg.sortCallback = ({ items }) => [...items].sort((a, b) => {
                     const aVal = a.data?.name ?? '';
                     const bVal = b.data?.name ?? '';
                     return aVal.localeCompare(bVal);
                 });
             }
-            cfg.renderNodeCallback = (node, container) => {
+            cfg.renderNodeCallback = ({ node, contentElement }) => {
                 const span = document.createElement('span');
                 span.innerHTML = `<span class="node-path">[${node.path}]</span> ${node.data?.name ?? node.path}`;
-                container.appendChild(span);
+                contentElement.appendChild(span);
             };
             return cfg;
         }

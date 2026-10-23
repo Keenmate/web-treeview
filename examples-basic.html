@@ -103,7 +103,7 @@
 
             <div class="output">
                 <p class="output-label">Render stats:</p>
-                <pre id="tree3-output">Load data to see render statistics</pre>
+                <pre id="tree3-output">Load data to see node counts</pre>
             </div>
         </div>
 
@@ -133,7 +133,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
         <!-- Example 5: Events -->
         <div class="card">
             <h2>BU05 · Events</h2>
-            <p>Listen to tree events: <code>node-clicked</code>, <code>focused-node-changed</code>, <code>tree-changed</code>.</p>
+            <p>Listen to tree events: <code>node-click</code>, <code>focus-change</code>, <code>tree-change</code>.</p>
 
             <div class="tree-container" id="tree5-container">
                 <web-treeview id="tree5" expand-level="1"></web-treeview>
@@ -323,8 +323,8 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             // Start on the stated defaults (indent 32 / column 24 / pad 8 → root gap 32 = Generous).
             window.applyPreset('generous', document.getElementById('indent-generous'));
 
-            tree1.addEventListener('node-clicked', (e) => {
-                const node = e.detail.node;
+            tree1.addEventListener('node-click', (e) => {
+                const { node } = e.detail;
                 document.getElementById('tree1-output').textContent = JSON.stringify({
                     id: node.id,
                     path: node.path,
@@ -355,19 +355,23 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             tree3.pathMember = 'path';
             tree3.displayValueMember = 'name';
 
-            tree3.renderCompleteCallback = (stats) => {
-                document.getElementById('tree3-output').textContent = JSON.stringify(stats, null, 2);
+            const showLargeTreeStats = (count) => {
+                document.getElementById('tree3-output').textContent =
+                    `${count} nodes loaded · ${tree3.controller.getVisibleFlatNodes().length} visible`;
             };
-
-            window.loadLargeTree = () => {
+            window.loadLargeTree = async () => {
                 tree3.data = generateLargeTree(1000);
+                await tree3.whenSettled();
+                showLargeTreeStats(1000);
             };
-            window.loadVeryLargeTree = () => {
+            window.loadVeryLargeTree = async () => {
                 tree3.data = generateLargeTree(5000);
+                await tree3.whenSettled();
+                showLargeTreeStats(5000);
             };
             window.clearLargeTree = () => {
                 tree3.data = [];
-                document.getElementById('tree3-output').textContent = 'Load data to see render statistics';
+                document.getElementById('tree3-output').textContent = 'Load data to see node counts';
             };
 
             // Tree 4: Custom member mappings
@@ -388,16 +392,17 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             const logEl = document.getElementById('tree5-log');
             function logEvent(name, detail) {
                 const time = new Date().toLocaleTimeString();
-                const info = detail?.node ? ` - ${detail.node.data?.name} (path: ${detail.node.path})` : '';
+                const node = detail?.node ?? detail?.focusedNode;
+                const info = node ? ` - ${node.data?.name} (path: ${node.path})` : '';
                 const entry = document.createElement('div');
                 entry.className = 'event-entry';
                 entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">${name}</span>${info}`;
                 logEl.prepend(entry);
             }
 
-            tree5.addEventListener('node-clicked', (e) => logEvent('node-clicked', e.detail));
-            tree5.addEventListener('focused-node-changed', (e) => logEvent('focused-node-changed', e.detail));
-            tree5.addEventListener('tree-changed', () => logEvent('tree-changed'));
+            tree5.addEventListener('node-click', (e) => logEvent('node-click', e.detail));
+            tree5.addEventListener('focus-change', (e) => logEvent('focus-change', e.detail));
+            tree5.addEventListener('tree-change', () => logEvent('tree-change'));
 
             // Example 6: Accordion expand
             const accTree = document.getElementById('tree-acc');

@@ -288,17 +288,17 @@
     <!-- ================================================================ -->
     <div class="card">
         <h2>CL01 · Custom Node Template</h2>
-        <p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives the <code>LTreeNode</code> and the content container (inside <code>.wtv__node-content</code>). This example shows file-type icons and sizes.</p>
+        <p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives one <code>ctx</code>: <code>ctx.node</code> (the <code>LTreeNode</code>), <code>ctx.contentElement</code> (inside <code>.wtv__node-content</code>) and the render state (<code>isExpanded</code>, <code>level</code>, &hellip;). This example shows file-type icons and sizes.</p>
 
         <div class="tree-container" id="tree1-container">
             <web-treeview id="tree1" icon-set="plus-minus"></web-treeview>
         </div>
 
         <div class="code-block">
-<pre><code>element.renderNodeCallback = (node, container) => {
+<pre><code>element.renderNodeCallback = ({ node, contentElement }) => {
     const name = node.data?.name || '';
     const size = node.data?.size || '';
-    container.innerHTML = `
+    contentElement.innerHTML = `
         &lt;div class="custom-node"&gt;
             &lt;span class="file-icon"&gt;${getIcon(name)}&lt;/span&gt;
             &lt;span class="name"&gt;${name}&lt;/span&gt;
@@ -325,18 +325,18 @@
     <!-- ================================================================ -->
     <div class="card">
         <h2>CL03 · Header &amp; Footer Slots</h2>
-        <p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both receive a container element to populate.</p>
+        <p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both receive a <code>ctx</code> whose <code>containerElement</code> you populate.</p>
 
         <div class="tree-container" id="tree5-container">
             <web-treeview id="tree5" icon-set="triangle"></web-treeview>
         </div>
 
         <div class="code-block">
-<pre><code>tree.renderHeaderCallback = (container) => {
-    container.innerHTML = `&lt;div class="my-header"&gt;📁 File Browser&lt;/div&gt;`;
+<pre><code>tree.renderHeaderCallback = ({ containerElement }) => {
+    containerElement.innerHTML = `&lt;div class="my-header"&gt;📁 File Browser&lt;/div&gt;`;
 };
-tree.renderFooterCallback = (container) => {
-    container.innerHTML = `&lt;div class="my-footer"&gt;Right-click for context menu&lt;/div&gt;`;
+tree.renderFooterCallback = ({ containerElement }) => {
+    containerElement.innerHTML = `&lt;div class="my-footer"&gt;Right-click for context menu&lt;/div&gt;`;
 };</code></pre>
         </div>
     </div>
@@ -359,11 +359,11 @@ tree.renderFooterCallback = (container) => {
         </div>
 
         <div class="code-block">
-<pre><code>tree.renderEmptyStateCallback = (container) => {
-    container.innerHTML = `&lt;div class="empty-state"&gt;🍃 No items&lt;/div&gt;`;
+<pre><code>tree.renderEmptyStateCallback = ({ containerElement }) => {
+    containerElement.innerHTML = `&lt;div class="empty-state"&gt;🍃 No items&lt;/div&gt;`;
 };
-tree.renderLoadingCallback = (container) => {
-    container.innerHTML = `&lt;div class="loading-state"&gt;&lt;span class="spinner"&gt;&lt;/span&gt; Loading…&lt;/div&gt;`;
+tree.renderLoadingCallback = ({ containerElement }) => {
+    containerElement.innerHTML = `&lt;div class="loading-state"&gt;&lt;span class="spinner"&gt;&lt;/span&gt; Loading…&lt;/div&gt;`;
 };
 
 tree.isLoading = true;   // show the loading template
@@ -378,7 +378,7 @@ tree.data = someRows;    // populated → the tree</code></pre>
     <!-- ================================================================ -->
     <div class="card">
         <h2>CL05 · Toggle-Icon Modes &amp; Icon Sets</h2>
-        <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). The deprecated <code>expand-icon-class</code> / <code>collapse-icon-class</code> / <code>leaf-icon-class</code> escape hatches still work for FontAwesome classes &mdash; inject FA into the shadow root via <code>customStylesCallback</code>.</p>
+        <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). The deprecated <code>expand-icon-class</code> / <code>collapse-icon-class</code> / <code>leaf-icon-class</code> escape hatches still work for FontAwesome classes &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>.</p>
 
         <h3 class="fa-mode-label" style="margin-top:1rem">Built-in icon sets (no FontAwesome)</h3>
         <div class="grid" style="--grid-min: 260px; --grid-gap: 1.5rem;">
@@ -447,7 +447,7 @@ tree.data = someRows;    // populated → the tree</code></pre>
 &lt;web-treeview icon-set="triangle"&gt;
 
 // FontAwesome escape hatch — inject FA into the shadow root
-tree.customStylesCallback = () =>
+tree.getCustomStylesCallback = () =>
     `@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');`;
 
 // Swap mode — two different glyphs
@@ -460,11 +460,11 @@ tree.customStylesCallback = () =>
     </div>
 
     <!-- ================================================================ -->
-    <!-- CL06 · iOS Files Explorer (headless TreeController)              -->
+    <!-- CL06 · iOS Files Explorer (headless TreeEngine)              -->
     <!-- ================================================================ -->
     <div class="card">
-        <h2>CL06 · iOS Files Explorer (headless <code>TreeController</code>)</h2>
-        <p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeController</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
+        <h2>CL06 · iOS Files Explorer (headless <code>TreeEngine</code>)</h2>
+        <p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeEngine</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
 
         <div class="renderer-toggle" role="group" aria-label="Renderer">
             <button id="rtVanilla" class="active" type="button">Vanilla</button>
@@ -503,7 +503,7 @@ tree.customStylesCallback = () =>
 
                 <div class="note">
                     <div class="note-title">No web component used</div>
-                    <code>TreeController</code> is imported directly and used as a headless data engine. Everything visible is custom DOM.
+                    <code>TreeEngine</code> (the element's internal engine, exported for renderer authors) is imported directly and used as a headless data engine. Everything visible is custom DOM.
                 </div>
 
                 <h3>Vanilla render path</h3>
@@ -537,27 +537,27 @@ tree.customStylesCallback = () =>
     <!-- ================================================================ -->
     <div class="card">
         <h2>CL07 · How it works</h2>
-        <p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeController</code></strong> for a 100%-custom UI (CL06).</p>
+        <p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeEngine</code></strong> for a 100%-custom UI (CL06).</p>
 
         <h3>Render callbacks (on the element)</h3>
         <table class="reference-table">
             <thead><tr><th>Callback</th><th>Signature</th><th>Renders</th></tr></thead>
             <tbody>
-                <tr><td><code>renderNodeCallback</code></td><td><code>(node, container) =&gt; void</code></td><td>a node row's content</td></tr>
-                <tr><td><code>renderIconCallback</code></td><td><code>(node, value, iconEl) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
-                <tr><td><code>renderHeaderCallback</code></td><td><code>(container) =&gt; void</code></td><td>chrome above the tree</td></tr>
-                <tr><td><code>renderFooterCallback</code></td><td><code>(container) =&gt; void</code></td><td>chrome below the tree</td></tr>
-                <tr><td><code>renderEmptyStateCallback</code></td><td><code>(container) =&gt; void</code></td><td>the no-data state</td></tr>
-                <tr><td><code>renderLoadingCallback</code></td><td><code>(container) =&gt; void</code></td><td>the loading state (<code>isLoading=true</code>)</td></tr>
-                <tr><td><code>customStylesCallback</code></td><td><code>() =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
+                <tr><td><code>renderNodeCallback</code></td><td><code>({ node, contentElement, isExpanded, level, &hellip; }) =&gt; void</code></td><td>a node row's content</td></tr>
+                <tr><td><code>renderIconCallback</code></td><td><code>({ node, value, iconElement, &hellip; }) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
+                <tr><td><code>renderHeaderCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome above the tree</td></tr>
+                <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
+                <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
+                <tr><td><code>renderLoadingCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the loading state (<code>isLoading=true</code>)</td></tr>
+                <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
             </tbody>
         </table>
 
         <h3>Headless controller (no element)</h3>
         <div class="code-block">
-<pre><code>import { TreeController } from '/src/index.ts';
+<pre><code>import { TreeEngine } from '/src/index.ts';
 
-const ctrl = new TreeController({
+const ctrl = new TreeEngine({
   data: myData,
   idMember: 'id',
   pathMember: 'path',
@@ -657,10 +657,10 @@ node.data; node.path; node.hasChildren;</code></pre>
         tree1.pathMember = 'path';
         tree1.displayValueMember = 'name';
         tree1.expandLevel = 2;
-        tree1.renderNodeCallback = (node, container) => {
+        tree1.renderNodeCallback = ({ node, contentElement }) => {
             const name = node.data?.name || '';
             const size = node.data?.size || '';
-            container.innerHTML = `
+            contentElement.innerHTML = `
                 <div class="custom-node">
                     <span class="file-icon">${getIcon(name)}</span>
                     <span class="name">${name}</span>
@@ -675,10 +675,10 @@ node.data; node.path; node.hasChildren;</code></pre>
         tree2.pathMember = 'path';
         tree2.displayValueMember = 'name';
         tree2.expandLevel = 2;
-        tree2.renderNodeCallback = (node, container) => {
+        tree2.renderNodeCallback = ({ node, contentElement }) => {
             const name = node.data?.name || '';
             const status = node.data?.status;
-            container.innerHTML = `
+            contentElement.innerHTML = `
                 <div class="custom-node">
                     <span class="file-icon">${getIcon(name)}</span>
                     <span class="name">${name}</span>
@@ -693,16 +693,16 @@ node.data; node.path; node.hasChildren;</code></pre>
         tree5.pathMember = 'path';
         tree5.displayValueMember = 'name';
         tree5.expandLevel = 1;
-        tree5.renderHeaderCallback = (container) => {
-            container.innerHTML = `
+        tree5.renderHeaderCallback = ({ containerElement }) => {
+            containerElement.innerHTML = `
                 <div style="padding: 8px 12px; background: #ecfdf5; border-bottom: 1px solid #d1fae5; font-size: 0.85rem; color: #065f46; display: flex; align-items: center; gap: 6px;">
                     <span>📁</span>
                     <strong>File Browser</strong>
                     <span style="margin-left: auto; color: #6ee7b7;">${menuTree.length} items</span>
                 </div>`;
         };
-        tree5.renderFooterCallback = (container) => {
-            container.innerHTML = `
+        tree5.renderFooterCallback = ({ containerElement }) => {
+            containerElement.innerHTML = `
                 <div style="padding: 6px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center;">
                     Right-click for context menu
                 </div>`;
@@ -714,16 +714,16 @@ node.data; node.path; node.hasChildren;</code></pre>
         tree4.pathMember = 'path';
         tree4.displayValueMember = 'name';
         tree4.data = [];
-        tree4.renderEmptyStateCallback = (container) => {
-            container.innerHTML = `
+        tree4.renderEmptyStateCallback = ({ containerElement }) => {
+            containerElement.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">🍃</div>
                     <p>No items to display</p>
                     <p style="font-size: 0.85rem">Add some data to get started</p>
                 </div>`;
         };
-        tree4.renderLoadingCallback = (container) => {
-            container.innerHTML = `
+        tree4.renderLoadingCallback = ({ containerElement }) => {
+            containerElement.innerHTML = `
                 <div class="loading-state">
                     <div class="spinner"></div>
                     <span>Loading tree data...</span>
@@ -745,7 +745,7 @@ node.data; node.path; node.hasChildren;</code></pre>
             return el;
         }
         ['is-chevron', 'is-triangle', 'is-plusminus', 'is-arrow'].forEach(id => initTree(id));
-        ['fa-a', 'fa-b', 'fa-c', 'fa-d'].forEach(id => initTree(id, el => { el.customStylesCallback = faStylesCallback; }));
+        ['fa-a', 'fa-b', 'fa-c', 'fa-d'].forEach(id => initTree(id, el => { el.getCustomStylesCallback = faStylesCallback; }));
     });
 
     // Persist .controls across reloads (shared helper — parity with web-multiselect).
@@ -757,7 +757,7 @@ node.data; node.path; node.hasChildren;</code></pre>
 <!-- ==================================================================== -->
 <script type="module">
     import { html, render as litRender } from 'https://esm.run/lit-html@3';
-    import { TreeController } from '/src/index.ts';
+    import { TreeEngine } from '/src/index.ts';
 
     // ── Notepad++ sample data (shared by both renderers) ───────────────
     const notepadppData = [
@@ -813,7 +813,7 @@ node.data; node.path; node.hasChildren;</code></pre>
     ];
 
     // ── ONE headless controller ────────────────────────────────────────
-    const ctrl = new TreeController({
+    const ctrl = new TreeEngine({
       data: notepadppData,
       idMember: 'id',
       pathMember: 'path',

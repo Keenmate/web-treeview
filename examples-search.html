@@ -213,7 +213,7 @@ function navigateTo(i) {
                     <tr>
                         <td><code>getSearchValueCallback</code></td>
                         <td>&mdash; (set as JS property)</td>
-                        <td><code>(node) =&gt; string</code></td>
+                        <td><code>({ node }) =&gt; string</code></td>
                         <td>Custom extractor &mdash; index multiple fields / computed text</td>
                     </tr>
                     <tr>
@@ -250,7 +250,7 @@ tree.searchValueMember = 'name';
 
 // Advanced: index a computed string across several fields
 tree.shouldUseInternalSearchIndex = true;
-tree.getSearchValueCallback = (node) =>
+tree.getSearchValueCallback = ({ node }) =>
   `${node.data?.name} ${node.data?.description ?? ''}`;</code></pre>
             </div>
         </div>

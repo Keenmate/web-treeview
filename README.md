@@ -54,6 +54,13 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
 ## Quick start
 
+> **Breaking change in the next release — interaction model.** Every callback takes ONE context
+> object (`getIconCallback({ node })`, `getContextMenuItemsCallback({ node, path, parent, siblings })`, …),
+> context-menu entries are core action items (`{ id, text, isDanger, onClick(detail) }`), events are
+> renamed to present tense (`node-click`, `node-copy` / `node-paste`, `tree-change`, `focus-change`, new
+> `action`), and `el.getController()` is replaced by the public `el.controller` facade. See the
+> [`[Unreleased]` section of the CHANGELOG](./CHANGELOG.md#unreleased) for the full old → new table.
+
 ```html
 <script type="module" src="./node_modules/@keenmate/web-treeview/dist/web-treeview.js"></script>
 
@@ -84,7 +91,7 @@ See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./d
 - **LTree path model** — materialized path hierarchy (`'1'`, `'1.1'`, `'1.2.3'`) with configurable separator.
 - **Three node states** — single focus (arrow keys), selected set (Ctrl / Shift+click), checked set (checkboxes).
 - **Full drag and drop** — internal reorder, cross-tree drag, glow / floating drop zones, touch support, copy operations.
-- **Multi-level context menus** — viewport-aware positioning via Floating UI, keyboard shortcuts, named dividers, custom item rendering.
+- **Multi-level context menus** — viewport-aware positioning via Floating UI, keyboard shortcuts, named dividers, custom item rendering; entries are core action items (built-ins `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`, lazy submenus, an `action` event).
 - **Bulk operations** — `insertBranch`, `replaceBranch`, `deleteBranch` for efficient batch mutations.
 - **Clipboard** — `copyNodes` / `cutNodes` / `pasteNodes`, cross-tree paste, cut nodes dimmed via `--wtv-cut-opacity`.
 - **Full-text search** — FlexSearch-powered indexing with filter and highlight modes.

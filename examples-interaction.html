@@ -66,7 +66,7 @@
                 The library tracks three independent node states:
             </p>
             <ul>
-                <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focused-node-changed</code>; styled by <code>focused-node-class</code>.</li>
+                <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focus-change</code>; styled by <code>focused-node-class</code>.</li>
                 <li><strong>selectedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>selection-change</code>; styled by <code>selected-node-class</code>.</li>
                 <li><strong>checkedPaths</strong> &mdash; checkbox data state. Surfaces as <code>checked-change</code>.</li>
             </ul>
@@ -505,11 +505,11 @@ function restoreFromUrl(nodePath) {
             // ── IN01 · Click Behavior ─────────────────────────────────────
             const in1 = document.getElementById('in1-tree');
             Object.assign(in1, treeConfig);
-            in1.customStylesCallback = focusStyles;
+            in1.getCustomStylesCallback = focusStyles;
             in1.data = fileTree;
 
-            in1.addEventListener('focused-node-changed', (e) => {
-                const n = e.detail.focusedNode;
+            in1.addEventListener('focus-change', (e) => {
+                const { focusedNode: n } = e.detail;
                 document.getElementById('in1-focused').textContent =
                     n ? `${n.data?.name} (${n.path})` : '(none)';
             });
@@ -567,11 +567,11 @@ function restoreFromUrl(nodePath) {
             // ── IN02 · Keyboard Navigation ────────────────────────────────
             const in3 = document.getElementById('in3-tree');
             Object.assign(in3, treeConfig);
-            in3.customStylesCallback = focusStyles;
+            in3.getCustomStylesCallback = focusStyles;
             in3.data = fileTree;
 
-            in3.addEventListener('focused-node-changed', (e) => {
-                const n = e.detail.focusedNode;
+            in3.addEventListener('focus-change', (e) => {
+                const { focusedNode: n } = e.detail;
                 document.getElementById('in3-current').textContent =
                     n ? `${n.data?.name} (${n.path})` : 'none';
             });
@@ -679,8 +679,8 @@ function restoreFromUrl(nodePath) {
                     ? `(${in6src.getSelectedPaths().size || '?'} entries)` : '';
             }
             in6src.addEventListener('selection-change', updateClipboardStatus);
-            in6src.addEventListener('tree-changed', updateClipboardStatus);
-            in6tgt.addEventListener('tree-changed', updateClipboardStatus);
+            in6src.addEventListener('tree-change', updateClipboardStatus);
+            in6tgt.addEventListener('tree-change', updateClipboardStatus);
 
             document.getElementById('in6-copy').addEventListener('click', () => {
                 in6src.copyNodes(); updateClipboardStatus();
@@ -692,13 +692,13 @@ function restoreFromUrl(nodePath) {
                 in6src.cancelCut(); updateClipboardStatus();
             });
             document.getElementById('in6-paste').addEventListener('click', () => {
-                const target = in6tgt.getController()?.focusedNode;
+                const target = in6tgt.controller.getFocusedNode();
                 if (!target) {
                     document.getElementById('in6-paste-out').textContent =
                         'Click a target node in the right tree first';
                     return;
                 }
-                const result = in6tgt.pasteNodes(target.path, (data) => ({ ...data, id: nextId++ }));
+                const result = in6tgt.pasteNodes(target.path, ({ data }) => ({ ...data, id: nextId++ }));
                 document.getElementById('in6-paste-out').textContent = JSON.stringify(result, null, 2);
                 updateClipboardStatus();
             });
@@ -714,7 +714,7 @@ function restoreFromUrl(nodePath) {
                     data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
             }
             updateBulkOutput();
-            in6bulk.addEventListener('tree-changed', updateBulkOutput);
+            in6bulk.addEventListener('tree-change', updateBulkOutput);
 
             function showBulkResult(result, isError) {
                 const el = document.getElementById('in6-bulk-result');

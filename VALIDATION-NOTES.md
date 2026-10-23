@@ -16,7 +16,7 @@ decisions belong here.
 The component's Logic class is organized across folder-scoped subsystems
 (`src/controller/`, `src/renderer/`, `src/ltree/`) rather than a flat
 `src/<feature>.ts`. The `EventEmitter` (`src/controller/event-emitter.ts`)
-is a Side-layer base class consumed by `TreeController`, not a Service.
+is a Side-layer base class consumed by `TreeEngine`, not a Service.
 The `flex` / `indexer` / `ltree-node` files inside `src/ltree/` are pure
 data-structure helpers composed by `ltree.ts`, not independent Service
 classes. Same shape as the date-range-picker namespace-split documented
@@ -47,13 +47,13 @@ PASS with note.
 
 ## C-NC-6 — D-NC-7 = C (member-only data extractors)
 
-The component ships seven `*Member` fields without a paired
+The component ships six `*Member` fields without a paired
 `get<Name>Callback`: `idMember`, `pathMember`, `parentPathMember`,
-`levelMember`, `hasChildrenMember`, `orderMember`, `iconMember`. The
-first six are structural / auto-derived fields (path-based tree
-identity) — no consumer would want a per-node computed override for
-"what is this node's id". `iconMember` IS paired (with `iconCallback`,
-not the auto-script's expected `getIconCallback` name). The selectable
+`levelMember`, `hasChildrenMember`, `orderMember`. They are
+structural / auto-derived fields (path-based tree identity) — no
+consumer would want a per-node computed override for "what is this
+node's id". `iconMember` / `iconColorMember` are paired with the
+canonical `getIconCallback` / `getIconColorCallback`. The selectable
 / draggable / collapsible / drop-allowed extractors all follow the
 canonical `is<Name>Member` + `getIs<Name>Callback` pair. PASS with
 note; D-NC-7 = C member-only is documented for the structural fields.

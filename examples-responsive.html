@@ -78,10 +78,10 @@
 
     <div class="card">
         <p style="margin-top:0">
-            The tree renders inline and never pops out, but every render callback receives a
-            <code>NodeRenderContext</code> as its <strong>last argument</strong> &mdash; a live signal of the
+            The tree renders inline and never pops out, but every render callback's single <code>ctx</code>
+            carries the <code>NodeRenderContext</code> fields &mdash; a live signal of the
             tree's own container box and the current device. Branch on it inside
-            <code>renderNodeCallback(node, el, ctx)</code> / <code>renderIconCallback(node, value, el, ctx)</code>
+            <code>renderNodeCallback({ node, contentElement, container, deviceClass })</code> / <code>renderIconCallback({ node, value, iconElement, container, deviceClass })</code>
             to adapt each row to the available space. The engine wires one shared
             <code>ResizeObserver</code> + device matcher from
             <code>@keenmate/web-components-core/environment</code> so you don't have to.
@@ -126,8 +126,8 @@
         </div>
         <p class="hint">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
 
-        <div class="code-block"><pre><code>tree.renderNodeCallback = (node, el, ctx) =&gt; {
-  const narrow = ctx.container.width &lt; 460;            // the tree's OWN box
+        <div class="code-block"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
+  const narrow = container.width &lt; 460;            // the tree's OWN box
   el.innerHTML = '';
   const row = document.createElement('span');
   row.className = 'isco-row';
@@ -138,8 +138,8 @@
     row.append(code);
   }
   const badge = document.createElement('span');        // ctx.deviceClass
-  badge.className = 'dev-badge ' + ctx.deviceClass;
-  badge.textContent = ctx.deviceClass;
+  badge.className = 'dev-badge ' + deviceClass;
+  badge.textContent = deviceClass;
   const label = document.createElement('span');
   label.className = 'isco-label';
   label.textContent = node.data.label;
@@ -223,7 +223,7 @@ new ResizeObserver(([e]) =&gt; {
 
         <div class="code-block"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
 
-tree.renderNodeCallback = (node, el, ctx) =&gt; {
+tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
   el.innerHTML = '';
   el.className = 'ov-' + overflow;           // host decides wrap vs clip
   const label = document.createElement('span');
@@ -238,8 +238,8 @@ tree.renderNodeCallback = (node, el, ctx) =&gt; {
     <div class="card">
         <h2>RS04 &middot; How the Signal Works</h2>
         <p>
-            Everything above runs off one object handed to your render callbacks as the <strong>last
-            argument</strong>. No bindings, no listeners, no teardown on your side &mdash; the renderer owns the
+            Everything above runs off the render state spread onto the single <code>ctx</code> your render
+            callbacks receive. No bindings, no listeners, no teardown on your side &mdash; the renderer owns the
             observers and tears them down in <code>destroy()</code>.
         </p>
 
@@ -254,9 +254,9 @@ tree.renderNodeCallback = (node, el, ctx) =&gt; {
   hasChildren:   boolean;
 }
 
-// Both callbacks receive it last:
-tree.renderNodeCallback = (node, el, ctx) =&gt; { /* … */ };
-tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code></pre></div>
+// Both callbacks receive it on their one ctx (plus node / contentElement or value / iconElement):
+tree.renderNodeCallback = ({ node, contentElement, deviceClass, container }) =&gt; { /* … */ };
+tree.renderIconCallback = ({ node, value, iconElement, deviceClass, container }) =&gt; { /* … */ };</code></pre></div>
 
         <table class="reference-table">
             <thead>
@@ -336,9 +336,9 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
         let rs01Device = 'desktop';
 
         Object.assign(rs01Tree, baseConfig, {
-            renderNodeCallback: (node, el, ctx) => {
-                rs01Device = ctx.deviceClass;
-                const narrow = ctx.container.width < 460;
+            renderNodeCallback: ({ node, contentElement: el, container, deviceClass }) => {
+                rs01Device = deviceClass;
+                const narrow = container.width < 460;
                 el.innerHTML = '';
                 const row = document.createElement('span');
                 row.className = 'isco-row';
@@ -349,8 +349,8 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
                     row.append(code);
                 }
                 const badge = document.createElement('span');
-                badge.className = 'dev-badge ' + ctx.deviceClass;
-                badge.textContent = ctx.deviceClass;
+                badge.className = 'dev-badge ' + deviceClass;
+                badge.textContent = deviceClass;
                 const label = document.createElement('span');
                 label.className = 'isco-label';
                 label.textContent = node.data?.label ?? '';
@@ -383,8 +383,8 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
         };
 
         Object.assign(rs02Tree, baseConfig, {
-            renderNodeCallback: (node, el, ctx) => {
-                rs02Device = ctx.deviceClass;
+            renderNodeCallback: ({ node, contentElement: el, deviceClass }) => {
+                rs02Device = deviceClass;
                 el.innerHTML = '';
                 const row = document.createElement('span');
                 row.className = 'isco-row';
@@ -417,7 +417,7 @@ tree.renderIconCallback = (node, value, iconEl, ctx) =&gt; { /* … */ };</code>
         // Build a fresh callback bound to the current overflow mode. Re-assigning
         // renderNodeCallback (a new function identity) is a post-data assignment, which
         // the renderer treats as dirty → _fullRender, so the new mode takes effect.
-        const makeRs03Renderer = (mode) => (node, el) => {
+        const makeRs03Renderer = (mode) => ({ node, contentElement: el }) => {
             el.innerHTML = '';
             el.className = 'ov-' + mode;
             const label = document.createElement('span');

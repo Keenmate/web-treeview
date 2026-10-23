@@ -19,7 +19,7 @@ When the tree body has focus (click any node first), keyboard navigation is acti
 | `Delete` / `Shift+Delete` | Delete selected node(s) |
 | `Escape` | Cancel pending cut, or clear the selection |
 
-The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `onTreeKeydown` interceptor (`ctx = { event, focusedNode, selectedNodes, controller }`) runs **first** on every keydown; returning `true` suppresses both the default navigation and the built-in shortcuts. Built-in delete honors `beforeDeleteCallback` and fires the `onDelete` event.
+The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `beforeKeydownCallback` interceptor (`ctx = { event, focusedNode, selectedNodes, controller, element }`, `controller` = the public `el.controller` facade) runs **first** on every keydown; returning `false` suppresses both the default navigation and the built-in shortcuts for that key. Built-in delete honors `beforeDeleteCallback` and fires the `node-delete` event (+ `onNodeDelete`).
 
 Plain `Tab` moves focus *out of* the tree to the next focusable element on the page; the tree itself is a single tab stop with internal arrow-key navigation, per the WAI-ARIA tree pattern.
 

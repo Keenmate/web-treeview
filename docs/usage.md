@@ -43,7 +43,7 @@ const tree = new WebTreeView(container, {
   pathMember: 'path',
   displayValueMember: 'name',
   expandLevel: 2,
-  onNodeClick: (ctx) => console.log('Clicked:', ctx.node),
+  onNodeClick: ({ node }) => console.log('Clicked:', node),
 });
 ```
 
@@ -86,7 +86,7 @@ console.log(tree.visibleFlatNodes); // Flat list of visible nodes
 
 ## Attributes
 
-All attributes use kebab-case. Equivalent camelCase property setters exist on the element (JS property always wins over the HTML attribute). The single source of truth for the attribute ⇄ config wiring is `ATTRIBUTE_TABLE` in `src/web-component.ts`.
+All attributes use kebab-case. Equivalent camelCase property setters exist on the element (JS property always wins over the HTML attribute). The single source of truth for the attribute ⇄ config wiring is the `INPUTS` table in `src/web-component.ts`.
 
 ### Data mapping
 
@@ -125,10 +125,10 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `search-text` | `string` | — | Current search/filter text |
 | `theme` | `'dark' \| 'light'` | — | Per-instance theme override |
 | `is-loading` | `boolean` | `false` | Show loading overlay |
-| `should-handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
-| `should-auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
+| `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
+| `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
 | `no-data-text` | `string` | `'No data'` | Fallback text shown for an empty tree (config key: `noDataText`) |
-| `should-show-drop-placeholder-when-empty` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `shouldShowDropPlaceholderWhenEmpty`) |
+| `show-drop-placeholder-when-empty` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `shouldShowDropPlaceholderWhenEmpty`) |
 
 ### Drag and drop
 
@@ -199,57 +199,108 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 
 Set via JavaScript, not HTML attributes.
 
+**Every callback takes ONE context object.** Every ctx (and every event detail) also carries
+`controller` — the public `TreeViewController` facade, same as `el.controller` — and `element`
+(the host). Both are non-enumerable, so `JSON.stringify` / logs see only the data. Destructure what
+you need: `tree.getIconCallback = ({ node }) => …`.
+
+### Data & renderer
+
 | Property | Type | Description |
 |----------|------|-------------|
 | `data` | `T[]` | Array of data objects to display |
 | `renderer` | `TreeViewRenderer<T>` | Custom renderer (replaces default DomRenderer) |
-| `onNodeClick` | `(ctx: NodeRef) => void` | Click handler. `ctx = { path, node, parent, siblings }` (clicked node = `ctx.node`) |
-| `onNodeDoubleClick` | `(ctx: NodeRef) => void` | Double-click handler. `ctx = { path, node, parent, siblings }` |
-| `onNodeDragStart` | `(ctx: NodeDragContext) => void` | Drag start handler. `ctx` = NodeRef of the grabbed node + `{ event, dragged }` |
-| `onNodeDragOver` | `(ctx: NodeDragContext) => void` | Drag over handler. `ctx` = NodeRef of the hovered node + `{ event, dragged }` |
-| `onNodeDrop` | `(ctx: NodeDropContext) => void` | Drop handler. `ctx = { source, target, dragged, dropped, position, operation, event }` (source = NodeRef of the dragged lead node, target = NodeRef\|null of the drop node, dragged = full NodeRef[] set, dropped = placed NodeRef[]\|null) |
-| `beforeDropCallback` | `(dropNode, draggedNode, position, event, operation) => boolean \| { position?, operation? } \| void` | Drop validation / coercion (deliberately 5-arg positional — not migrated) |
-| `contextMenuCallback` | `(node, close) => ContextMenuEntry[]` | Context menu items |
-| `renderContextMenuItemCallback` | `(item, node, container) => void` | Per-item custom rendering |
-| `iconCallback` | `(node) => string \| null` | Dynamic icon class resolution (overrides `iconMember`) |
-| `renderNodeCallback` | `(node, container) => void` | Custom node content rendering |
-| `renderEmptyStateCallback` | `(container) => void` | "No items to display" rendering |
-| `renderEmptyZoneCallback` | `(container) => void` | Drop zone in an empty tree |
-| `renderLoadingCallback` | `(container) => void` | Loading-state rendering |
-| `renderHeaderCallback` | `(container) => void` | Tree header rendering |
-| `renderFooterCallback` | `(container) => void` | Tree footer rendering |
-| `onCheckedChange` | `(ctx: { paths, nodes }) => void` | Checked (checkbox / data) set changed |
-| `onSelectionChange` | `(ctx: { paths, nodes }) => void` | Selected (Ctrl/Shift+click) set changed |
-| `renderStartCallback` | `() => void` | First render batch starting |
-| `renderProgressCallback` | `(stats) => void` | Render batch progress tick |
-| `renderCompleteCallback` | `(stats) => void` | All render batches done |
-| `sortCallback` | `(items) => items` | Custom sort function |
-| `getDisplayValueCallback` | `(node) => string` | Dynamic display value |
-| `getSearchValueCallback` | `(node) => string` | Dynamic search value |
-| `getIsDraggableCallback` | `(node) => boolean` | Dynamic draggable check |
-| `getIsCollapsibleCallback` | `(node) => boolean` | Dynamic collapsible check |
-| `getIsSelectableCallback` | `(node) => boolean` | Dynamic selectable check |
-| `getIsCheckedCallback` | `(node) => boolean` | Seed initial `isChecked` per node |
-| `getIsExpandedCallback` | `(node) => boolean` | Seed initial `isExpanded` per node |
-| `getIsDropAllowedCallback` | `(node) => boolean` | Dynamic drop-allowed check |
-| `getAllowedDropPositionsCallback` | `(node) => DropPosition[] \| null` | Dynamic per-position constraint |
-| `indexingCompleteCallback` | `() => void` | FlexSearch indexer done |
-| `beforeCheckboxToggleCallback` | `(node, checked, affectedPaths) => boolean \| string[] \| void` | Intercept checkbox toggle |
-| `onCopy` | `(ctx: { operation, paths, nodes }) => void` | Fires after a copy; `nodes` live |
-| `onCut` | `(ctx: { operation, paths, nodes }) => void` | Fires after a cut; `nodes` still live (cut only dims until paste) |
-| `onPaste` | `(result: PasteResult) => void` | Fires after a paste; `result = { success, count, skipped, error?, entries?, operation? }` |
-| `onDelete` | `(ctx: { paths, nodes }) => void` | Fires after built-in Delete (or `deleteNodes()`); `nodes` are pre-removal snapshots |
-| `beforeCopyCallback` | `(ctx: { operation, paths, nodes }) => string[] \| false \| void` | Rewrite the copy set (new `path[]`) or block (`false`) |
-| `beforeCutCallback` | `(ctx: { operation, paths, nodes }) => string[] \| false \| void` | Rewrite the cut set or block (same shape as `beforeCopyCallback`) |
-| `beforePasteCallback` | `(ctx: { operation, target: { path, node }, entries }) => { targetPath?, position? } \| false \| void` | Batch-policy interceptor: redirect target/position or block |
-| `beforeDeleteCallback` | `(ctx: { paths, nodes }) => string[] \| false \| void` | Narrow (return `path[]`) or block (`false`) the built-in Delete set |
-| `copyNodeTransformationCallback` | `(data, ctx: NodeTransformContext) => T` | Per-node transform at snapshot time (clean/redact fields) |
-| `pasteNodeTransformationCallback` | `(data, ctx: NodeTransformContext) => T \| null` | Per-node transform at insert; return `null` to skip a node (skipping a root skips its subtree) |
-| `onTreeKeydown` | `(ctx: { event, focusedNode, selectedNodes, controller }) => boolean \| void` | Keydown interceptor; return `true` to suppress default + built-in shortcuts. Runs before built-in handling |
+| `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + `getNodeRef(path)`, `getFocusedNode()`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
 
-`NodeTransformContext` = `{ operation, phase: 'copy' \| 'paste', isRoot, index, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during phase `'copy'`.
+### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
+
+| Property | Returns | Description |
+|----------|---------|-------------|
+| `getDisplayValueCallback` | `string` | Dynamic display value (overrides `displayValueMember`) |
+| `getSearchValueCallback` | `string` | Dynamic search value |
+| `getIsExpandedCallback` | `boolean` | Seed initial `isExpanded` per node |
+| `getIsCheckedCallback` | `boolean` | Seed initial `isChecked` per node |
+| `getIsSelectableCallback` | `boolean` | Dynamic selectable check |
+| `getIsDraggableCallback` | `boolean` | Dynamic draggable check |
+| `getIsDropAllowedCallback` | `boolean` | Dynamic drop-allowed check |
+| `getIsCollapsibleCallback` | `boolean` | Dynamic collapsible check |
+| `getAllowedDropPositionsCallback` | `DropPosition[] \| null` | Dynamic per-position constraint |
+| `getIconCallback` | `string \| null` | Per-node icon value (overrides `iconMember`) — a class list or an emoji / symbol |
+| `getIconColorCallback` | `string \| null` | Per-node icon color (overrides `iconColorMember`) |
+| `getNodeClassCallback` | `string \| null` | Extra class(es) on the row (`.wtv__node`) |
+| `getNodeContentClassCallback` | `string \| null` | Extra class(es) on `.wtv__node-content` |
+| `getNodeTooltipCallback` | `string \| HTMLElement \| null` | Tooltip content (requires `show-node-tooltips`) |
+
+| Property | Signature | Description |
+|----------|-----------|-------------|
+| `sortCallback` | `({ items }) => LTreeNode[]` | Custom sibling sort: return `items` in the new order |
+| `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
+
+### Render callbacks
+
+| Property | Signature | Description |
+|----------|-----------|-------------|
+| `renderNodeCallback` | `({ node, contentElement, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }) => void` | Custom node content rendering into `contentElement` |
+| `renderIconCallback` | `({ node, value, iconElement, …renderState }) => void` | Custom per-node icon (SVG / unicode / markup) into `iconElement` |
+| `renderEmptyStateCallback` | `({ containerElement }) => void` | "No items to display" rendering |
+| `renderEmptyZoneCallback` | `({ containerElement }) => void` | Drop zone in an empty tree |
+| `renderLoadingCallback` | `({ containerElement }) => void` | Loading-state rendering |
+| `renderHeaderCallback` | `({ containerElement }) => void` | Tree header rendering |
+| `renderFooterCallback` | `({ containerElement }) => void` | Tree footer rendering |
+| `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, controller }) => void` | Take over the whole context menu; close via `controller.closeContextMenu()` |
+| `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item button; leave it empty for the default |
+
+### Context menu
+
+| Property | Signature | Description |
+|----------|-----------|-------------|
+| `getContextMenuItemsCallback` | `({ node, path, parent, siblings, controller, element }) => TreeMenuEntry[]` | The menu entries for the right-clicked node (see below) |
+| `beforeActionCallback` | `(detail: TreeViewActionEventDetail) => void \| false \| Promise<…>` | Runs before an item activates: `false` cancels its `onClick`, the `action` event and the built-in |
+
+A `TreeMenuEntry` is one of:
+
+- a **core action item** — `{ id, text, icon, shortcut, cssClass, isDanger, isDisabled, isVisible, isActive, tooltip, onClick(detail), children, getChildrenCallback(ctx), shouldCloseOnClick }`. The static fields have `get*Callback(ctx)` variants (text, icon, tooltip, class, visible, disabled, active). `onClick` receives the `action` detail. An enabled leaf closes the menu after it activates unless `shouldCloseOnClick: false`. `getChildrenCallback` loads a submenu lazily (sync or async — a loading row shows meanwhile).
+- a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
+- a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state).
+
+Activation order: `beforeActionCallback` → item `onClick` → `action` event (+ `onAction`) → built-in. Menu buttons carry `data-action` (built-in name or `custom`) and `data-id`.
+
+### Before-hooks (interceptors)
+
+| Property | Signature | Description |
+|----------|-----------|-------------|
+| `beforeCheckboxToggleCallback` | `({ node, isChecked, affectedPaths }) => string[] \| false \| void` | Intercept a checkbox toggle: `false` cancels, `string[]` overrides the affected paths |
+| `beforeCopyCallback` | `({ operation, paths, nodes }) => string[] \| false \| void` | Rewrite the copy set (new `path[]`) or block (`false`) |
+| `beforeCutCallback` | `({ operation, paths, nodes }) => string[] \| false \| void` | Rewrite the cut set or block (same shape as `beforeCopyCallback`) |
+| `beforePasteCallback` | `({ operation, target: { path, node }, entries }) => { targetPath?, position? } \| false \| void` | Batch-policy interceptor: redirect target/position or block (no `node-paste` event) |
+| `beforeDeleteCallback` | `({ paths, nodes }) => string[] \| false \| void` | Narrow (return `path[]`) or block (`false`) the built-in Delete set |
+| `beforeDragStartCallback` | `({ lead, dragged, … }) => string[] \| false \| void` | Prune / augment / veto the dragged set at drag start |
+| `beforeDropCallback` | `(ctx: BeforeDropContext) => false \| { position?, operation? } \| DropGroup[] \| void \| Promise<…>` | Drop validation / redirect / fan-out (async OK) |
+| `beforeKeydownCallback` | `({ event, focusedNode, selectedNodes, controller }) => void \| false` | Runs before built-in keyboard handling; return `false` to suppress default navigation + shortcuts for this key |
+
+A throwing before-hook cancels the operation (the error is logged).
+
+### Transforms
+
+| Property | Signature | Description |
+|----------|-----------|-------------|
+| `nodeOutputTransformationCallback` | `({ data, operation, phase, isRoot, index, position, source, target }) => T` | OUTPUT (egress) transform — clean / redact `data` as a node leaves the source (copy / cut / copy-drop) |
+| `nodeInputTransformationCallback` | `({ data, … }) => T \| null` | INPUT (ingress) transform — derive ids / values as a node lands (paste / copy-drop); return `null` to skip a node (skipping a root skips its subtree) |
+
+The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase: 'output' \| 'input', isRoot, index, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during the output phase. The `transform` arguments of `pasteNodes`, `duplicateNodes` and `copyNodeWithDescendants` take the same one-ctx shape.
+
+### Event twins (`on*`)
+
+Every event below has a camelCase `on*` property twin that receives the **detail** (not the `CustomEvent`): `onNodeClick`, `onNodeDoubleClick`, `onNodeCopy`, `onNodeCut`, `onNodePaste`, `onNodeDelete`, `onNodeDragStart`, `onNodeDragOver`, `onNodeDrop`, `onNodeDragReject`, `onNodeDropReject`, `onSelectionChange`, `onCheckedChange`, `onFocusChange`, `onTreeChange`, `onAction`, `onRenderStart`, `onRenderProgress`, `onRenderComplete`.
+
+```javascript
+tree.onNodeClick = ({ node, parent }) => console.log('clicked', node.path, 'under', parent?.path);
+tree.addEventListener('node-paste', (e) => console.log('pasted', e.detail.count));
+```
 
 ## Methods
+
+All methods are available on the element **and** on `el.controller`.
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
@@ -258,10 +309,22 @@ Set via JavaScript, not HTML attributes.
 | `expandNodes` | `(nodePath \| string[], options?)` | Expand ancestors up to node(s) |
 | `collapseNodes` | `(nodePath \| string[], options?)` | Collapse node(s) |
 | `toggleNodeExpanded` | `(path)` | Toggle (honors `isAccordionExpand`) |
+| `getExpandedPaths` / `setExpandedPaths` | `(): string[]` / `(paths[])` | Read / restore the expanded set |
 | `filterNodes` | `(searchText)` | Filter tree by search text |
 | `searchNodes` | `(searchText): LTreeNode[]` | Search without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
+| `getNodeByPath` | `(path): LTreeNode \| null` | Look up a node |
+| `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
+| `getChildren` / `getSiblings` | `(path): LTreeNode[]` | Children of a node / siblings of a node (including itself) |
+| `getFocusedNode` | `(): LTreeNode \| null` | The focused node |
+| `getVisibleFlatNodes` | `(): LTreeNode[]` | The visible rows in order |
+| `getAllData` | `(): T[]` | Current data |
+| `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
+| `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |
+| `moveNode` / `moveNodes` | `(path \| paths[], targetPath, position)` | Move node(s) `'before' \| 'after' \| 'child'` |
+| `duplicateNodes` | `(paths[], targetPath, position, transform?, sourceTree?)` | Copy node(s) with descendants; `transform({ data, … })` |
+| `applyChanges` | `(changes: TreeChange[]): ApplyChangesResult` | Apply a batch of changes |
 | `selectNode` | `(path, mode?, options?)` | Select one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
 | `selectNodes` | `(paths[], options?)` | Add nodes to the selected set (**additive**) |
 | `setSelectedPaths` | `(paths[], options?)` | Replace the entire selected set |
@@ -283,9 +346,10 @@ Set via JavaScript, not HTML attributes.
 | `clearFocus` | `(options?)` | Clear the focused node |
 | `copyNodes` | `(paths?)` | Copy selected/specified nodes to clipboard |
 | `cutNodes` | `(paths?)` | Cut selected/specified nodes to clipboard |
-| `pasteNodes` | `(targetPath, transformData?, position?): PasteResult` | Paste clipboard at target. `PasteResult.count` (formerly `pastedCount`) + `PasteResult.skipped` |
-| `deleteNodes` | `(paths?)` | Delete selected/specified nodes (honors `beforeDeleteCallback`, fires `onDelete`) |
+| `pasteNodes` | `(targetPath, transform?, position?): PasteResult` | Paste clipboard at target; `transform({ data, … })`. `PasteResult.count` + `PasteResult.skipped` |
+| `deleteNodes` | `(paths?)` | Delete selected/specified nodes (honors `beforeDeleteCallback`, fires `node-delete`) |
 | `cancelCut` | `()` | Cancel pending cut |
+| `hasClipboardContent` / `getClipboardOperation` | `(): boolean` / `(): 'copy' \| 'cut' \| null` | Clipboard state |
 | `navTo` | `(path)` | Focus a specific node |
 | `navNext` / `navPrev` | `()` | Focus next / previous visible node |
 | `navNextSibling` / `navPrevSibling` | `()` | Focus next / previous sibling at same level |
@@ -297,44 +361,50 @@ Set via JavaScript, not HTML attributes.
 | `replaceBranch` | `(parentPath, data[]): result` | Replace all children of a node |
 | `deleteBranch` | `(path, keepParent?): result` | Delete node and descendants |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
-| `getController` | `(): TreeController<T>` | Access the TreeController |
-| `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once |
+| `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
+
+`el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
 ## Events
 
-`CustomEvent` instances dispatched from the host element.
+`CustomEvent` instances dispatched from the host element. They bubble and are **not** composed. Every detail carries the non-enumerable `controller` / `element`; every event has an `on*` twin (see above) that receives the detail.
 
 | Event | Detail | Description |
 |-------|--------|-------------|
-| `node-clicked` | `{ path, node, parent, siblings }` | Node was clicked (NodeRef; `.node` = clicked node) |
-| `node-double-click` | `{ path, node, parent, siblings }` | Node was double-clicked (NodeRef) |
-| `node-drop` | `{ source, target, dragged, dropped, position, operation, event }` | Drop completed (NodeDropContext) |
-| `copy` | `{ operation, paths, nodes }` | Nodes copied to clipboard |
-| `cut` | `{ operation, paths, nodes }` | Nodes cut to clipboard |
+| `node-click` | `{ path, node, parent, siblings }` | Node was clicked (a checkbox toggle is not a click — see `checked-change`) |
+| `node-double-click` | `{ path, node, parent, siblings }` | Node was double-clicked |
+| `node-copy` | `{ operation, paths, nodes }` | Nodes copied to clipboard |
+| `node-cut` | `{ operation, paths, nodes }` | Nodes cut to clipboard (`nodes` still live — cut only dims until paste) |
+| `node-paste` | `PasteResult` = `{ success, count, skipped, error?, entries?, operation? }` | A paste ran (not fired when `beforePasteCallback` blocked it) |
+| `node-delete` | `{ paths, nodes }` | Nodes deleted (`nodes` are pre-removal snapshots) |
+| `node-drag-start` | `{ path, node, parent, siblings, event, dragged }` | A drag started |
+| `node-drag-over` | `{ path, node, parent, siblings, event, dragged }` | A node is dragged over |
+| `node-drop` | `{ source, target, dragged, dropped, position, operation, event }` | Drop completed |
+| `node-drag-reject` | `{ path, node, parent, siblings }` | An undraggable / locked node drag was attempted |
+| `node-drop-reject` | `{ path, node, parent, siblings }` | A drop was rejected by the target |
 | `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed |
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed |
-| `focused-node-changed` | `{ focusedNode }` | Single-focused node changed |
-| `search-text-changed` | `{ searchText }` | `searchText` config updated |
-| `tree-changed` | — | Tree state changed (expand, collapse, data) |
-| `data-changed` | `{ data }` | Underlying data array swapped |
+| `focus-change` | `{ focusedNode }` | Single-focused node changed |
+| `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
+| `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
-`silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the user callback AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
+`silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 
 ## Architecture
 
 ```
-WebTreeViewElement (custom element)
-  └── WebTreeView (facade)
-        ├── TreeController (state, logic, DnD)
+WebTreeViewElement (custom element, BlissElement)
+  └── WebTreeView (facade; adapts one-ctx callbacks, builds el.controller)
+        ├── TreeEngine (internal: state, logic, DnD)
         │     └── LTree (path-based tree engine)
         └── TreeViewRenderer (pluggable rendering)
               └── DomRenderer (default, flat DOM + event delegation)
 ```
 
-- **TreeController** owns all state and emits snapshots via `EventEmitter`.
+- **TreeEngine** owns all state and emits snapshots via `EventEmitter`. It is internal (exported only for renderer authors); app code drives the tree through `el.controller`.
 - **TreeViewRenderer** subscribes to snapshots and renders the DOM.
 - **LTree** is the pure data engine — usable headlessly without any DOM.
-- **WebTreeViewElement** is the custom-element wrapper. Attribute parsing is table-driven (`ATTRIBUTE_TABLE` in `src/web-component.ts`).
+- **WebTreeViewElement** is the custom-element wrapper. Inputs and events are table-driven (`INPUTS` / `EVENTS` in `src/web-component.ts`).
 
 ## Logging
 

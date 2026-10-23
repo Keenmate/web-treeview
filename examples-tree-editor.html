@@ -274,10 +274,10 @@
                     <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to the selected set).</td></tr>
                     <tr><td><code>pasteNodes(targetPath, transform?, position?)</code></td><td>Insert clipboard content; returns a <code>PasteResult</code> (<code>{ success, count, skipped }</code>).</td></tr>
                     <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
-                    <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code></td><td>Read the tree structure (used by Move up / down).</td></tr>
+                    <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>getFocusedNode()</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
                     <tr><td><code>getSelectedPaths()</code> / <code>getCheckedPaths()</code> / <code>focusNode(path)</code></td><td>Selected, checked &amp; focus accessors.</td></tr>
                     <tr><td><code>getAllData()</code> / <code>getNodeByPath(path)</code></td><td>Snapshot all node data; look up one node.</td></tr>
-                    <tr><td><code>contextMenuCallback(node, close) =&gt; ContextMenuEntry[]</code></td><td>Build the right-click menu entries for a node.</td></tr>
+                    <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
                 </tbody>
             </table>
 
@@ -292,7 +292,7 @@
 
             <div class="code-block">
 <pre><code>// Add a child under the focused node (or at root)
-const parent = tree.getController().focusedNode;
+const parent = tree.getFocusedNode();
 tree.addNode(parent?.path ?? '', {
   id: Date.now(), path: '', name: 'New Node', icon: '📄', sortOrder: 100
 });
@@ -301,21 +301,23 @@ tree.addNode(parent?.path ?? '', {
 tree.updateNode(path, { name: 'Renamed' });
 
 // Move among siblings
-const siblings = tree.getController().getSiblings(path);
+const siblings = tree.getSiblings(path);
 const i = siblings.findIndex(s =&gt; s.path === path);
 if (i &gt; 0) tree.moveNode(path, siblings[i - 1].path, 'before');
 
 // Clipboard: copy selection, paste under a target with fresh ids
 tree.copyNodes();                       // defaults to the selected set
 let nextId = 9000;
-tree.pasteNodes(targetPath, (data) =&gt; ({ ...data, id: nextId++ }), 'child');
+tree.pasteNodes(targetPath, ({ data }) =&gt; ({ ...data, id: nextId++ }), 'child');
 
 // Right-click menu
-tree.contextMenuCallback = (node, close) =&gt; [
-  { id: 'rename', icon: '✏️', label: 'Rename', onclick: () =&gt; renameNode(node.path) },
-  { divider: true },
-  { id: 'delete', icon: '🗑️', label: 'Delete', className: 'danger',
-    onclick: () =&gt; tree.removeNode(node.path) },
+import { menuDivider } from '@keenmate/web-treeview';
+
+tree.getContextMenuItemsCallback = ({ node }) =&gt; [
+  { id: 'rename', icon: '✏️', text: 'Rename', onClick: () =&gt; renameNode(node.path) },
+  menuDivider(),
+  { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true,
+    onClick: () =&gt; tree.removeNode(node.path) },
 ];</code></pre>
             </div>
         </div>
@@ -375,7 +377,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
     </div>
 
     <script type="module">
-        import '/src/index.ts';
+        import { menuDivider } from '/src/index.ts';
 
         // ── Sample data ──────────────────────────────────────────────────
 
@@ -455,7 +457,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
             let nextId = 500;
 
             Object.assign(tree, treeConfig);
-            tree.renderNodeCallback = (node, el) => { el.textContent = iconLabel(node); };
+            tree.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
             tree.data = data;
 
             const logEl = document.getElementById('te-log');
@@ -475,7 +477,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
                 warnTimer = setTimeout(() => { warnEl.style.display = 'none'; }, 4000);
             }
 
-            function focused() { return tree.getController()?.focusedNode ?? null; }
+            function focused() { return tree.getFocusedNode(); }
 
             function refreshState() {
                 const all = tree.getAllData();
@@ -492,8 +494,8 @@ tree.contextMenuCallback = (node, close) =&gt; [
                     ? `Adding under: ${n.data?.name}` : 'Adding at root level';
             }
 
-            tree.addEventListener('focused-node-changed', refreshFocusLabel);
-            tree.addEventListener('tree-changed', refreshState);
+            tree.addEventListener('focus-change', refreshFocusLabel);
+            tree.addEventListener('tree-change', refreshState);
 
             function newNode(name, icon) {
                 return { id: nextId++, path: '', name, icon, sortOrder: 100 };
@@ -551,7 +553,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
             function move(dir) {
                 const node = focused();
                 if (!node) { showWarning('Select a node to move'); return; }
-                const siblings = tree.getController().getSiblings(node.path);
+                const siblings = tree.getSiblings(node.path);
                 const i = siblings.findIndex(s => s.path === node.path);
                 if (dir < 0 && i <= 0) { addLog('Already at top'); return; }
                 if (dir > 0 && i >= siblings.length - 1) { addLog('Already at bottom'); return; }
@@ -581,8 +583,8 @@ tree.contextMenuCallback = (node, close) =&gt; [
             };
 
             // Right-click context menu — same actions as the toolbar.
-            tree.contextMenuCallback = (node, close) => [
-                { id: 'add', icon: '➕', label: 'Add child…', onclick: () => {
+            tree.getContextMenuItemsCallback = ({ node }) => [
+                { id: 'add', icon: '➕', text: 'Add child…', onClick: () => {
                     tree.focusNode(node.path);
                     const name = prompt('Child name:', 'New Node');
                     if (name && name.trim()) {
@@ -591,12 +593,12 @@ tree.contextMenuCallback = (node, close) =&gt; [
                         refreshState();
                     }
                 } },
-                { id: 'rename', icon: '✏️', label: 'Rename…', shortcut: 'F2', onclick: () => window.renameNode(node.path) },
-                { divider: true },
-                { id: 'up', icon: '⬆️', label: 'Move up', onclick: () => { tree.focusNode(node.path); move(-1); } },
-                { id: 'down', icon: '⬇️', label: 'Move down', onclick: () => { tree.focusNode(node.path); move(1); } },
-                { divider: true },
-                { id: 'delete', icon: '🗑️', label: 'Delete', className: 'danger', onclick: () => window.deleteFocused(node.path) },
+                { id: 'rename', icon: '✏️', text: 'Rename…', shortcut: 'F2', onClick: () => window.renameNode(node.path) },
+                menuDivider(),
+                { id: 'up', icon: '⬆️', text: 'Move up', onClick: () => { tree.focusNode(node.path); move(-1); } },
+                { id: 'down', icon: '⬇️', text: 'Move down', onClick: () => { tree.focusNode(node.path); move(1); } },
+                menuDivider(),
+                { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, onClick: () => window.deleteFocused(node.path) },
             ];
 
             refreshState();
@@ -610,11 +612,11 @@ tree.contextMenuCallback = (node, close) =&gt; [
             let cbNextId = 9000;
 
             Object.assign(source, treeConfig);
-            source.renderNodeCallback = (node, el) => { el.textContent = iconLabel(node); };
+            source.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
             source.data = JSON.parse(JSON.stringify(sourceData));
 
             Object.assign(target, treeConfig);
-            target.renderNodeCallback = (node, el) => { el.textContent = iconLabel(node); };
+            target.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
             target.data = JSON.parse(JSON.stringify(targetData));
 
             const cbLog = document.getElementById('cb-log');
@@ -633,20 +635,20 @@ tree.contextMenuCallback = (node, close) =&gt; [
             }
 
             source.addEventListener('selection-change', updateClipboardStatus);
-            source.addEventListener('tree-changed', updateClipboardStatus);
-            target.addEventListener('tree-changed', updateClipboardStatus);
+            source.addEventListener('tree-change', updateClipboardStatus);
+            target.addEventListener('tree-change', updateClipboardStatus);
 
-            source.onCopy = ({ paths }) => { addCbLog(`Copied ${paths.length} node(s)`); updateClipboardStatus(); };
-            source.onCut = ({ paths }) => { addCbLog(`Cut ${paths.length} node(s) — paste to move`); updateClipboardStatus(); };
+            source.onNodeCopy = ({ paths }) => { addCbLog(`Copied ${paths.length} node(s)`); updateClipboardStatus(); };
+            source.onNodeCut = ({ paths }) => { addCbLog(`Cut ${paths.length} node(s) — paste to move`); updateClipboardStatus(); };
 
             window.pasteIntoTarget = () => {
                 if (!(source.hasClipboardContent?.() || target.hasClipboardContent?.())) {
                     addCbLog('Clipboard is empty — copy/cut in the source first');
                     return;
                 }
-                const tgt = target.getController()?.focusedNode;
+                const tgt = target.getFocusedNode();
                 const targetPath = tgt?.path ?? '';
-                const result = target.pasteNodes(targetPath, (d) => ({ ...d, id: cbNextId++ }), 'child');
+                const result = target.pasteNodes(targetPath, ({ data }) => ({ ...data, id: cbNextId++ }), 'child');
                 if (result.success) {
                     addCbLog(`Pasted ${result.count} node(s)${tgt ? ` under "${tgt.data?.name}"` : ' at root'}`);
                 } else {
@@ -663,7 +665,7 @@ tree.contextMenuCallback = (node, close) =&gt; [
             function initScenario(id, seed) {
                 const el = document.getElementById(id);
                 Object.assign(el, treeConfig);
-                el.renderNodeCallback = (node, nodeEl) => { nodeEl.textContent = iconLabel(node); };
+                el.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
                 el.data = JSON.parse(JSON.stringify(seed));
                 el._nextId = 7000 + Math.floor(Math.random() * 1000);
                 return el;
@@ -674,18 +676,18 @@ tree.contextMenuCallback = (node, close) =&gt; [
 
             window.scAdd = (id, baseName, icon) => {
                 const el = document.getElementById(id);
-                const parent = el.getController()?.focusedNode;
+                const parent = el.getFocusedNode();
                 const data = { id: el._nextId++, path: '', name: `${baseName} ${el._nextId}`, icon, sortOrder: 100 };
                 el.addNode(parent?.path ?? '', data);
             };
             window.scRemove = (id) => {
                 const el = document.getElementById(id);
-                const node = el.getController()?.focusedNode;
+                const node = el.getFocusedNode();
                 if (node) el.removeNode(node.path);
             };
             window.scRename = (id) => {
                 const el = document.getElementById(id);
-                const node = el.getController()?.focusedNode;
+                const node = el.getFocusedNode();
                 if (!node) return;
                 const name = prompt('Rename:', node.data?.name ?? '');
                 if (name && name.trim()) el.updateNode(node.path, { name: name.trim() });

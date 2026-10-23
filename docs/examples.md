@@ -37,7 +37,7 @@ tree.allowedDropPositionsMember = 'allowedDropPositions';
 For dynamic logic use `getAllowedDropPositionsCallback`:
 
 ```javascript
-tree.getAllowedDropPositionsCallback = (node) => {
+tree.getAllowedDropPositionsCallback = ({ node }) => {
   if (node.data.isReadOnly) return [];
   if (node.data.kind === 'file') return ['before', 'after'];
   return null; // null = all positions allowed
@@ -54,12 +54,12 @@ tree.dropZoneStart = '50%';  // Child zone starts at 50% (default: 33%)
 
 ### Drop validation / coercion
 
-`beforeDropCallback` runs before the drop is applied. Return `false` to cancel, or an object to override `position` / `operation`. Unlike the migrated `on*` events, it deliberately keeps its 5-arg positional signature `(dropNode, draggedNode, position, event, operation)`:
+`beforeDropCallback` runs before the drop is applied (it may be async). It takes one ctx — `{ target, dragged, position, operation, event, controller, element }`. Return `false` to cancel, an object to override `position` / `operation`, or a `DropGroup[]` to route the drop to several destinations:
 
 ```javascript
-tree.beforeDropCallback = (dropNode, draggedNode, position, event, operation) => {
-  // Cancel drops onto root nodes
-  if (draggedNode.level === 0) return false;
+tree.beforeDropCallback = ({ target, dragged }) => {
+  // Cancel drops of root nodes
+  if (dragged.some((ref) => ref.node?.level === 0)) return false;
 
   // Coerce: always treat as child drop
   return { position: 'child', operation: 'move' };
@@ -72,7 +72,7 @@ tree.beforeDropCallback = (dropNode, draggedNode, position, event, operation) =>
 <web-treeview drag-drop-mode="both" allow-copy></web-treeview>
 ```
 
-Hold Ctrl while dragging to copy instead of move. `shouldAutoHandleCopy` (default `true`) means the tree applies the copy itself; set `false` to receive `onNodeDrop` (`ctx.dropped === null`) and apply your own.
+Hold Ctrl while dragging to copy instead of move. `shouldAutoHandleCopy` (default `true`) means the tree applies the copy itself; set `false` to receive `node-drop` / `onNodeDrop` (`detail.dropped === null`) and apply your own.
 
 ## Multi-select
 
@@ -116,8 +116,8 @@ tree.addEventListener('selection-change', (e) => {
 Intercept a toggle (e.g. to require confirmation):
 
 ```javascript
-tree.beforeCheckboxToggleCallback = (node, checked, affectedPaths) => {
-  if (!confirm(`${checked ? 'Check' : 'Uncheck'} ${affectedPaths.length} node(s)?`)) {
+tree.beforeCheckboxToggleCallback = ({ node, isChecked, affectedPaths }) => {
+  if (!confirm(`${isChecked ? 'Check' : 'Uncheck'} ${affectedPaths.length} node(s)?`)) {
     return false; // cancel
   }
   // return an array to override which paths are affected
@@ -139,11 +139,13 @@ tree.cancelCut();             // Cancel a pending cut
 
 // Built-in keyboard shortcuts when the tree has focus:
 // Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V, Delete / Shift+Delete, Escape (cancel cut)
-// Set should-handle-keyboard-shortcuts="false" (shouldHandleKeyboardShortcuts) to opt out.
+// Set handle-keyboard-shortcuts="false" (shouldHandleKeyboardShortcuts) to opt out.
 //
-// onTreeKeydown runs first and can intercept any key — return true to suppress
-// both the default navigation and the built-in shortcuts:
-// tree.onTreeKeydown = (ctx) => { /* ctx = { event, focusedNode, selectedNodes, controller } */ };
+// beforeKeydownCallback runs first and can intercept any key — return false to suppress
+// both the default navigation and the built-in shortcuts for that key:
+tree.beforeKeydownCallback = ({ event, focusedNode, selectedNodes, controller }) => {
+  if (event.key === 'F2' && focusedNode) { startRename(focusedNode); return false; }
+};
 ```
 
 Cross-tree paste: the clipboard sits at the package level, so `cutNodes` on one tree and `pasteNodes` on another moves the nodes between trees.
@@ -151,16 +153,18 @@ Cross-tree paste: the clipboard sits at the package level, so `cutNodes` on one 
 ### Clipboard events and interceptors
 
 ```javascript
-// Fire-and-forget notifications (each gets one context object)
-tree.onCopy   = (ctx) => console.log('copied', ctx.paths, ctx.nodes);   // { operation, paths, nodes }
-tree.onCut    = (ctx) => console.log('cut', ctx.paths);                 // { operation, paths, nodes }
-tree.onPaste  = (result) => console.log('pasted', result.count, 'skipped', result.skipped);
-tree.onDelete = (ctx) => console.log('deleted', ctx.paths);            // { paths, nodes } (pre-removal snapshots)
+// Notifications — node-copy / node-cut / node-paste / node-delete events, or their on* twins
+// (the twin receives the event detail)
+tree.onNodeCopy   = ({ paths, nodes }) => console.log('copied', paths, nodes); // { operation, paths, nodes }
+tree.onNodeCut    = ({ paths }) => console.log('cut', paths);                  // { operation, paths, nodes }
+tree.onNodePaste  = ({ count, skipped }) => console.log('pasted', count, 'skipped', skipped); // the PasteResult
+tree.onNodeDelete = ({ paths }) => console.log('deleted', paths);              // { paths, nodes } (pre-removal snapshots)
+tree.addEventListener('node-paste', (e) => console.log('pasted', e.detail.count));
 
 // Interceptors — rewrite (return path[]) or block (return false)
-tree.beforeCopyCallback   = (ctx) => ctx.paths;          // { operation, paths, nodes }
-tree.beforeDeleteCallback = (ctx) => ctx.paths;          // { paths, nodes }
-tree.beforePasteCallback  = (ctx) => ({ position: 'child' }); // { operation, target: { path, node }, entries }
+tree.beforeCopyCallback   = ({ paths }) => paths;          // { operation, paths, nodes }
+tree.beforeDeleteCallback = ({ paths }) => paths;          // { paths, nodes }
+tree.beforePasteCallback  = () => ({ position: 'child' }); // { operation, target: { path, node }, entries }
 ```
 
 ### Paste transforms
@@ -170,27 +174,30 @@ Derive fresh ids / names as nodes land, or skip a node by returning `null` (skip
 ```javascript
 import { uniqueName } from '@keenmate/web-treeview';
 
-tree.copyNodeTransformationCallback = (data, ctx) => {
-  // phase 'copy' — clean/redact before the node hits the shared clipboard
+tree.nodeOutputTransformationCallback = ({ data }) => {
+  // phase 'output' — clean/redact before the node hits the shared clipboard
   const { internalToken, ...clean } = data;
   return clean;
 };
 
-tree.pasteNodeTransformationCallback = (data, ctx) => {
-  // phase 'paste' — ctx = { operation, phase, isRoot, index, position, source, target }
+tree.nodeInputTransformationCallback = ({ data, position, target }) => {
+  // phase 'input' — ctx = { data, operation, phase, isRoot, index, position, source, target }
   if (data.kind === 'archived') return null; // skip this node (and its subtree if a root)
-  const landing = ctx.position === 'child' && ctx.target?.node
-    ? Object.values(ctx.target.node.children)
-    : (ctx.target?.siblings ?? []);
+  const landing = position === 'child' && target?.node
+    ? Object.values(target.node.children)
+    : (target?.siblings ?? []);
   return { ...data, id: crypto.randomUUID(), name: uniqueName(data.name, landing.map((s) => s.data?.name)) };
 };
+
+// One-off transform for a single paste — same one-ctx shape:
+tree.pasteNodes('1.2', ({ data }) => ({ ...data, id: crypto.randomUUID() }));
 ```
 
 `uniqueName(base, taken, suffix?)` is an exported helper that returns a collision-free name (default `${base} Copy ${n}`).
 
 ### Empty-tree paste
 
-Set `should-show-drop-placeholder-when-empty` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `no-data-text`.
+Set `show-drop-placeholder-when-empty` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `no-data-text`.
 
 ## Per-node icons
 
@@ -212,81 +219,104 @@ The toggle/icon column is unified (`--wtv-column-width`, default 24px) and share
 ### Via callback
 
 ```javascript
-tree.iconCallback = (node) => {
+tree.getIconCallback = ({ node }) => {
   if (node.hasChildren) return 'icon-folder';
   const ext = node.data.name.split('.').pop();
   return { ts: 'icon-ts', css: 'icon-css' }[ext] || 'icon-file';
 };
 ```
 
-`iconCallback` takes priority over `iconMember`. Both return CSS class name(s) applied to the toggle column element. Return `null` to fall back to `leafIconClass`.
+`getIconCallback` takes priority over `iconMember`. Both return a CSS class list (or an emoji / symbol, rendered as text) for the node's `.wtv__node-icon`. Return `null` for no icon. Per-node color: `iconColorMember` / `getIconColorCallback({ node })`; full custom markup: `renderIconCallback({ node, value, iconElement })`.
 
 ## Render callbacks
 
 The default renderer paints the node label from `displayValueMember`. Override the content for any slot:
 
 ```javascript
-tree.renderNodeCallback = (node, container) => {
-  container.innerHTML = `
+tree.renderNodeCallback = ({ node, contentElement, isExpanded, level }) => {
+  contentElement.innerHTML = `
     <span class="icon">${node.hasChildren ? '📁' : '📄'}</span>
     <span class="label">${node.displayValue}</span>
     <span class="badge">${node.children?.length ?? 0}</span>
   `;
 };
 
-tree.renderEmptyStateCallback = (container) => {
-  container.innerHTML = '<p>No items to display</p>';
+tree.renderEmptyStateCallback = ({ containerElement }) => {
+  containerElement.innerHTML = '<p>No items to display</p>';
 };
 
-tree.renderLoadingCallback = (container) => {
-  container.innerHTML = '<div class="my-spinner"></div>';
+tree.renderLoadingCallback = ({ containerElement }) => {
+  containerElement.innerHTML = '<div class="my-spinner"></div>';
 };
 ```
 
-Other slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`, `renderContextMenuCallback`, `renderContextMenuItemCallback`.
+`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`). Other slots (all one ctx with `containerElement`): `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`; plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
 
 ## Context menu
 
-Right-click context menus are defined via `contextMenuCallback`:
+Right-click context menus are defined via `getContextMenuItemsCallback`. It receives one ctx — `{ node, path, parent, siblings, controller, element }` — and returns core action items, dividers, or built-in names:
 
 ```javascript
-tree.contextMenuCallback = (node, closeMenu) => [
-  { label: 'Edit', icon: 'fa fa-edit', shortcut: 'E', onclick: () => editNode(node) },
-  { label: 'Duplicate', icon: 'fa fa-copy', onclick: () => duplicateNode(node) },
-  { divider: true, label: 'Danger zone' },
-  { label: 'Delete', className: 'danger', shortcut: 'Delete', onclick: () => deleteNode(node) },
+import { menuDivider } from '@keenmate/web-treeview';
+
+tree.getContextMenuItemsCallback = ({ node }) => [
+  { id: 'edit', text: 'Edit', icon: 'fa fa-edit', shortcut: 'E', onClick: () => editNode(node) },
+  { id: 'duplicate', text: 'Duplicate', icon: 'fa fa-copy', onClick: () => duplicateNode(node) },
+  'copy', 'cut', 'paste',                       // built-ins (act on the node or the selection)
+  menuDivider('Danger zone'),                   // or { divider: true, text: 'Danger zone' }
+  { id: 'delete', text: 'Delete', isDanger: true, shortcut: 'Delete', onClick: () => deleteNode(node) },
 ];
 ```
 
-### `ContextMenuItem`
+An enabled leaf closes the menu after it activates (no `close()` to call); set `shouldCloseOnClick: false` to keep it open. Every activation also fires the `action` event (+ `el.onAction`), and `beforeActionCallback(detail)` can cancel it by returning `false`:
+
+```javascript
+tree.addEventListener('action', (e) => {
+  const { action, id, node } = e.detail;   // action: built-in name or 'custom'
+  console.log(action, id, node.path);
+});
+tree.beforeActionCallback = ({ action }) => action === 'delete' ? confirm('Delete?') : undefined;
+```
+
+### Action item (`TreeMenuItem`)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `label` | `string` | Display text (required) |
-| `id` | `string` | Optional identifier |
+| `id` | `string` | Identifier (reported as `detail.id`, rendered as `data-id`) |
+| `text` | `string` | Display text |
 | `icon` | `string` | CSS class(es) for the item icon |
 | `shortcut` | `string` | Keyboard shortcut text (displayed + active while menu is open) |
+| `tooltip` | `string` | Tooltip text |
+| `cssClass` | `string` | CSS class(es) on the item button |
+| `isDanger` | `boolean` | Danger styling |
 | `isDisabled` | `boolean` | Grey out and prevent interaction |
 | `isVisible` | `boolean` | Set `false` to hide the item |
-| `className` | `string` | CSS class(es) on the item button (e.g. `'danger'`) |
-| `onclick` | `() => void \| Promise<void>` | Action handler |
-| `children` | `ContextMenuEntry[]` | Nested submenu items |
+| `isActive` | `boolean` | Toggled-on state (`aria-pressed`) |
+| `onClick` | `(detail) => void \| Promise<void>` | Handler; gets the `action` detail (the menu ctx + `action`, `id`, `item`, `source: 'context-menu'`) |
+| `children` | `TreeMenuEntry[]` | Nested submenu items |
+| `getChildrenCallback` | `(ctx) => TreeMenuEntry[] \| Promise<…>` | Lazy submenu (a loading row shows meanwhile) |
+| `shouldCloseOnClick` | `boolean` | `false` keeps the menu open after activation |
+| `getTextCallback`, `getIconCallback`, `getTooltipCallback`, `getClassCallback`, `getIsVisibleCallback`, `getIsDisabledCallback`, `getIsActiveCallback` | `(ctx) => …` | Dynamic variants of the static fields |
 
-### `ContextMenuDivider`
+### Divider
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `divider` | `true` | Discriminator (required) |
-| `label` | `string` | Optional label rendered as `──── label ────` |
+| `text` | `string` | Optional label rendered as `──── text ────` |
+
+### Built-ins
+
+`'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` as plain strings — default text, disabled state (paste with an empty clipboard, expand/collapse on a leaf) and danger state (delete). They act on the node, or on the whole selection when the node is in it. Buttons carry `data-action` (built-in name or `custom`) and `data-id`.
 
 ### Per-item custom rendering
 
-`renderContextMenuItemCallback` uses a "fill or fall through" pattern — populate the container for custom markup, or leave it empty to get the default rendering:
+`renderContextMenuItemCallback` uses a "fill or fall through" pattern — populate `buttonElement` for custom markup, or leave it empty to get the default rendering:
 
 ```javascript
-tree.renderContextMenuItemCallback = (item, node, container) => {
-  if (item.id === 'profile') {
-    container.innerHTML = `
+tree.renderContextMenuItemCallback = ({ node, menuItem, buttonElement }) => {
+  if (menuItem.id === 'profile') {
+    buttonElement.innerHTML = `
       <div class="avatar">${node.data.name[0]}</div>
       <div>
         <strong>${node.data.name}</strong>
@@ -295,7 +325,7 @@ tree.renderContextMenuItemCallback = (item, node, container) => {
     `;
     return;
   }
-  // Other items: leave container empty → default rendering
+  // Other items: leave buttonElement empty → default rendering
 };
 ```
 
@@ -332,7 +362,7 @@ import { WebTreeView } from '@keenmate/web-treeview';
 import type { TreeViewRenderer } from '@keenmate/web-treeview';
 
 const customRenderer: TreeViewRenderer<MyData> = {
-  mount(container, controller, config) { /* ... */ },
+  mount(container, engine, config) { /* engine = the internal TreeEngine */ },
   updateConfig(config) { /* ... */ },
   destroy() { /* ... */ },
 };

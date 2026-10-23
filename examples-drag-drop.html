@@ -463,7 +463,8 @@
         // A root whose name already exists in the destination becomes "Name Copy N".
         // Landing neighbours depend on ctx.position: a 'child' paste lands among
         // target.node's children, a 'before'/'after' paste among target.siblings.
-        function transformPasted(data, ctx) {
+        function transformPasted(ctx) {
+            const { data } = ctx;
             const landing =
                 ctx.position === 'child' && ctx.target?.node
                     ? Object.values(ctx.target.node.children)
@@ -532,7 +533,7 @@
                 const result = targetTreeEl.copyNodeWithDescendants(
                     srcNode,
                     useParent,
-                    (data) => ({
+                    ({ data }) => ({
                         ...data,
                         id: nextId++,
                         path: '',
@@ -581,17 +582,17 @@
             // svelte demo's getIsDraggableCallback — a pinned node shows no grab
             // cursor and won't start a drag (it's still a valid drop TARGET). Wired
             // via initTree BEFORE .data so the stored isDraggable field is correct.
-            const isDraggableCb = (node) => node.data?.isDraggable !== false;
+            const isDraggableCb = ({ node }) => node.data?.isDraggable !== false;
 
             function wireClipboard(el, treeName) {
                 el.clickBehavior = 'select';
                 el.selectedNodeClass = 'wtv__node-content--selected-bold';
                 el.nodeInputTransformationCallback = transformPasted;
                 el.beforePasteCallback = selfPasteRedirect;
-                el.onCopy = (c) => addLog(`Copied ${c.paths.length} from ${treeName}`);
-                el.onCut = (c) => addLog(`Cut ${c.paths.length} from ${treeName}`);
-                el.onPaste = (r) => addLog(`Pasted ${r.count} into ${treeName}${r.skipped ? ` (skipped ${r.skipped})` : ''}`);
-                el.onDelete = (c) => addLog(`Deleted ${c.paths.length} node(s) from ${treeName}`);
+                el.onNodeCopy = (c) => addLog(`Copied ${c.paths.length} from ${treeName}`);
+                el.onNodeCut = (c) => addLog(`Cut ${c.paths.length} from ${treeName}`);
+                el.onNodePaste = (r) => addLog(`Pasted ${r.count} into ${treeName}${r.skipped ? ` (skipped ${r.skipped})` : ''}`);
+                el.onNodeDelete = (c) => addLog(`Deleted ${c.paths.length} node(s) from ${treeName}`);
             }
 
             // Reflect a tree's selected set into its output panel (mirrors the
@@ -640,7 +641,7 @@
             const restrictedTree = initTree('tree-restricted', restrictedData, { dragDropMode: 'both' });
             restrictedTree.allowedDropPositionsMember = 'allowedDropPositions';
             restrictedTree.orderMember = 'sortOrder';
-            restrictedTree.renderNodeCallback = (node, el) => {
+            restrictedTree.renderNodeCallback = ({ node, contentElement: el }) => {
                 const label = document.createElement('span');
                 const icon = node.data?.icon ? node.data.icon + ' ' : '';
                 label.textContent = icon + (node.data?.name || String(node.id));
@@ -692,8 +693,8 @@
                 multiSelectedEl.textContent = `${paths.length} selected — ${names}`;
             });
 
-            multiTreeEl.addEventListener('focused-node-changed', (e) => {
-                const n = e.detail.focusedNode;
+            multiTreeEl.addEventListener('focus-change', (e) => {
+                const { focusedNode: n } = e.detail;
                 multiFocusedEl.textContent = n ? `${n.data?.name} (${n.path})` : '(none)';
             });
 

@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Dark mode no longer follows the OS on its own — it follows the page, like web-multiselect.**
+  The `@media (prefers-color-scheme: dark)` rule is gone, so on a page that gives no signal a
+  tree on a dark-mode OS stays light, matching the page instead of turning dark on a light page.
+  To follow the OS, declare `html { color-scheme: light dark }` on the page; every component then
+  follows it, including live OS switches. Page signals (`data-theme`, `data-bs-theme`, `.dark`,
+  `theme-source`, `setThemeMode()`) and per-instance `theme` / `data-theme` are unchanged.
 - **Built on `@keenmate/web-components-core` 1.0.0-rc15** (its naming-review renames: `shouldReflect`
   in the input table, `shouldFollowCursor` for row tooltips). No change to the element's
   attributes, properties or events.

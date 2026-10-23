@@ -20,8 +20,9 @@ import { test, expect, Page, Locator } from '@playwright/test';
  *      against the inherited color-scheme.
  *
  *   C. OS prefers-color-scheme: dark
- *      Triggers the @media :host rule inside the shadow stylesheet, which
- *      re-declares --wtv-bg-color with the dark fallback (#1a1a1a).
+ *      The component has NO prefers-color-scheme rule: with no signal it
+ *      inherits the page's color-scheme, so an unsignalled page stays light and
+ *      a page declaring `color-scheme: light dark` follows the OS (live).
  *
  *   D. Page signals ([data-theme], [data-bs-theme], .dark on <html>) and
  *      theme-source — mirrored onto the host as data-context-theme by
@@ -102,14 +103,27 @@ test.describe('Theming — brand theme with light-dark() inherits through Shadow
   });
 });
 
-test.describe('Theming — library default reacts to OS preference via :host @media', () => {
-  test('7. OS prefers-color-scheme=dark → library dark default on baseline tree', async ({ browser }) => {
+test.describe('Theming — OS preference only through the page color-scheme', () => {
+  test('7. OS dark, page declares nothing → tree stays light (matches the page)', async ({ browser }) => {
     const context = await browser.newContext({ colorScheme: 'dark' });
     const page = await context.newPage();
     await page.goto(PAGE);
     await page.locator('h1').first().waitFor();
     const tree = ltreeContainer(scenarioCard(page, 'baseline-light'));
-    expect(await backgroundColor(tree)).toBe(DARK_BG);
+    expect(await backgroundColor(tree)).toBe(LIGHT_BG);
+    await context.close();
+  });
+
+  test('7b. Page color-scheme: light dark → tree follows the OS, live', async ({ browser }) => {
+    const context = await browser.newContext({ colorScheme: 'dark' });
+    const page = await context.newPage();
+    await page.goto(PAGE);
+    await page.locator('h1').first().waitFor();
+    await page.evaluate(() => { document.documentElement.style.colorScheme = 'light dark'; });
+    const tree = ltreeContainer(scenarioCard(page, 'baseline-light'));
+    await expect.poll(() => backgroundColor(tree)).toBe(DARK_BG);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect.poll(() => backgroundColor(tree)).toBe(LIGHT_BG);
     await context.close();
   });
 });

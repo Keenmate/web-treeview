@@ -77,9 +77,10 @@
      COLORS & THEME (Strategy B: light-dark() + color-scheme flipping)
      ==========================================================================
      Every color fallback uses light-dark(<light>, <dark>). The active value is
-     picked by `color-scheme` at this level: the user-agent default tracks
-     `prefers-color-scheme`, and `dark-mode.css` overrides it with
-     `color-scheme: dark` / `color-scheme: light` on conditional selectors.
+     picked by `color-scheme`, inherited from the page (`normal` = light unless
+     the page declares e.g. `color-scheme: light dark` to follow the OS);
+     `dark-mode.css` overrides it with `color-scheme: dark` / `light` only when
+     a page or per-instance signal asks for it.
      Hover/active/selected use color-mix chains so the highlight stays visible
      against any base luminance (avoids the bare-literal fallback footgun). */
 

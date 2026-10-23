@@ -38,16 +38,14 @@ web-treeview {
 
 ## Dark mode — how it flips
 
-Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The active branch follows the inherited `color-scheme`. `dark-mode.css` sets `color-scheme: dark` (or `light`) on four signal selectors, in increasing specificity:
+Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The active branch follows the `color-scheme` the tree inherits from the page. With no signal at all the tree matches the page: light by default, and following the OS — live — when the page declares `html { color-scheme: light dark }`. There is deliberately no `prefers-color-scheme` rule in the component (same as web-multiselect), so a tree never turns dark on a light page. `dark-mode.css` sets `color-scheme: dark` (or `light`) on these signal selectors, in increasing specificity:
 
-1. **OS preference**: `@media (prefers-color-scheme: dark) { :host { color-scheme: dark } }`. Default behavior — the component follows the user's OS choice with no consumer setup.
-2. **Page signal**: `data-theme`, `data-bs-theme` or `.dark` / `.light` on `<html>` (then `<body>`) — Bootstrap 5.3+, Tailwind, Pure Admin. `@keenmate/web-components-core` detects it once per page, shares it with every Keenmate component and mirrors it onto the host as `data-context-theme`; `dark-mode.css` reads `:host([data-context-theme="dark|light"])`. No `:host-context()`, so it works in Firefox and Safari, and a page set to light beats an OS set to dark.
+1. **Page signal**: `data-theme`, `data-bs-theme` or `.dark` / `.light` on `<html>` (then `<body>`) — Bootstrap 5.3+, Tailwind, Pure Admin. `@keenmate/web-components-core` detects it once per page, shares it with every Keenmate component and mirrors it onto the host as `data-context-theme`; `dark-mode.css` reads `:host([data-context-theme="dark|light"])`. No `:host-context()`, so it works in Firefox and Safari.
    - **A themed section** (signal on a wrapper, not `<html>` / `<body>`): add `theme-source="closest"` (nearest ancestor with a signal) or `theme-source="<selector>"` to the tree.
    - **Force every component**: `import { setThemeMode } from '@keenmate/web-components-core'; setThemeMode('dark')` (`'light' | 'dark' | 'auto'`).
-3. **Per-instance attribute**: `:host([data-theme="dark"])` and `.wtv__container[data-theme="dark"]` — set `<web-treeview data-theme="dark">` to force a single tree against the page default.
-4. **`theme` prop forwarding**: setting `tree.theme = 'dark'` is equivalent to `data-theme="dark"` (forwarded on the inner container).
+2. **Per-instance attribute**: `:host([data-theme="dark"])` and `.wtv__container[data-theme="dark"]` — set `<web-treeview data-theme="dark">` to force a single tree against the page default.
+3. **`theme` prop forwarding**: setting `tree.theme = 'dark'` is equivalent to `data-theme="dark"` (forwarded on the inner container).
 
-Edge case: if the consumer FORCES light (`:root { color-scheme: light }`) but the OS prefers dark, the component still flips to dark via signal #1. To lock a single instance to light in that case, use signal #3 (`<web-treeview data-theme="light">`).
 
 ## Cascade layers
 

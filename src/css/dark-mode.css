@@ -10,7 +10,12 @@
    Resolution precedence (highest specificity wins):
      per-instance :host([data-theme]) / .wtv__container[data-theme]
        → page / theme-source signal :host([data-context-theme])
-         → OS preference via @media
+         → the inherited `color-scheme` (no rule here)
+
+   No `prefers-color-scheme` rule, on purpose (same as web-multiselect): with no
+   signal the tree inherits the page's `color-scheme`, so it always matches the
+   page around it. A page that wants to follow the OS declares
+   `html { color-scheme: light dark }` once and every component follows it, live.
 
    Wins vs Strategy A (variable-redeclaration):
      - One declaration per signal, not N variables × M signals.
@@ -22,27 +27,7 @@
    ============================================================================== */
 
 /* =============================================================================
-   SIGNAL #1 — OS preference
-   =============================================================================
-   Flip `color-scheme: dark` on :host when the user prefers dark. light-dark()
-   in variables.css then resolves to the dark branch automatically. This is
-   the standalone case (no consumer color-scheme declaration on :root) — when
-   the consumer DOES set color-scheme on :root, the inherited value flows into
-   the shadow root naturally; this @media just adds the missing OS signal.
-
-   Edge case: if the consumer FORCES light (`:root { color-scheme: light }`)
-   but OS prefers dark, this @media still flips :host to dark. Consumers who
-   want to lock the component to light in that case should use the explicit
-   SIGNAL #3 escape hatch (`<web-treeview data-theme="light">`).
-   ============================================================================= */
-@media (prefers-color-scheme: dark) {
-  :host {
-    color-scheme: dark;
-  }
-}
-
-/* =============================================================================
-   SIGNAL #2 — Page theme signal (Bootstrap 5.3+, Tailwind, generic)
+   SIGNAL #1 — Page theme signal (Bootstrap 5.3+, Tailwind, generic)
    =============================================================================
    Detected ONCE per page by @keenmate/web-components-core (1.0.0-rc13+):
    `data-theme`, `data-bs-theme`, `.dark` / `.light` on <html>, then <body>;
@@ -50,8 +35,7 @@
    ancestor with a signal); or forced for every component with
    `setThemeMode()`. BlissElement mirrors the result onto the host as
    `data-context-theme`. Replaces `:host-context()`, which Firefox doesn't
-   support and Safari only partly. `:host([...])` outranks the bare `:host`
-   in the @media rule above, so a page set to light beats an OS set to dark.
+   support and Safari only partly.
    ============================================================================= */
 :host([data-context-theme="dark"]) {
   color-scheme: dark;
@@ -62,7 +46,7 @@
 }
 
 /* =============================================================================
-   SIGNAL #3 — Per-instance override via the `theme` prop / `data-theme` attribute
+   SIGNAL #2 — Per-instance override via the `theme` prop / `data-theme` attribute
    =============================================================================
    Highest specificity. WebTreeViewElement forwards the `theme` attribute as
    `data-theme` on the .wtv__container. The :host([data-theme=...]) selector

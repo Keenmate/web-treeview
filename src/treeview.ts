@@ -688,10 +688,6 @@ export class WebTreeView<T = any> {
       nodeClass: this.nodeCallback(o.getNodeClassCallback),
       nodeContentClass: this.nodeCallback(o.getNodeContentClassCallback),
 
-      renderStartCallback: this.wrap(o.onRenderStart, 'event0', (f) => () => f(this.ctx({}))),
-      renderProgressCallback: this.event(o.onRenderProgress),
-      renderCompleteCallback: this.event(o.onRenderComplete),
-
       rangeSelectionMode: o.rangeSelectionMode,
       selectionMode: o.selectionMode,
       shouldShowCheckboxes: o.shouldShowCheckboxes,

@@ -51,7 +51,6 @@ import type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
-  RenderEventDetail,
   TreeEventDetail,
   TreeViewActionEventDetail,
 } from './interaction';
@@ -270,9 +269,6 @@ type TreeViewEvents = {
   'focus-change': FocusChangeEventDetail;
   'tree-change': TreeEventDetail;
   'action': TreeViewActionEventDetail;
-  'render-start': TreeEventDetail;
-  'render-progress': RenderEventDetail;
-  'render-complete': RenderEventDetail;
 };
 const EVENTS: readonly EventDef[] = [
   { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
@@ -291,9 +287,6 @@ const EVENTS: readonly EventDef[] = [
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
-  { name: 'render-start', description: 'A progressive render started. Twin: `onRenderStart(detail)`.' },
-  { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
-  { name: 'render-complete', description: 'A progressive render completed. `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' },
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. */
@@ -321,9 +314,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
   declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
   declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
-  declare onRenderStart: ((detail: TreeEventDetail<T>) => void) | null;
-  declare onRenderProgress: ((detail: RenderEventDetail<T>) => void) | null;
-  declare onRenderComplete: ((detail: RenderEventDetail<T>) => void) | null;
 
   /**
    * The tree's notifications → `emit()` (which calls the twin, then dispatches). Built
@@ -346,9 +336,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onFocusChange: (d) => this.emit('focus-change', d),
     onTreeChange: (d) => this.emit('tree-change', d),
     onAction: (d) => this.emit('action', d),
-    onRenderStart: (d) => this.emit('render-start', d),
-    onRenderProgress: (d) => this.emit('render-progress', d),
-    onRenderComplete: (d) => this.emit('render-complete', d),
   };
 
   #shadow: ShadowRoot;

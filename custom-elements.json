@@ -2918,14 +2918,6 @@
         },
         {
           "kind": "js",
-          "name": "RenderEventDetail",
-          "declaration": {
-            "name": "RenderEventDetail",
-            "module": "./interaction"
-          }
-        },
-        {
-          "kind": "js",
           "name": "TreeEventDetail",
           "declaration": {
             "name": "TreeEventDetail",
@@ -3262,7 +3254,7 @@
               "name": "events",
               "privacy": "protected",
               "static": true,
-              "default": "[ { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' }, { name: 'node-double-click', description: 'A node was double-clicked. `detail`: the node context. Twin: `onNodeDoubleClick(detail)`.' }, { name: 'node-copy', description: 'Nodes were copied. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCopy(detail)`.' }, { name: 'node-cut', description: 'Nodes were cut. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCut(detail)`.' }, { name: 'node-paste', description: 'A paste ran (not fired when `beforePasteCallback` blocked it). `detail`: the PasteResult (`success`, `count`, `skipped`, `error?`, `entries?`, …). Twin: `onNodePaste(detail)`.' }, { name: 'node-delete', description: 'Nodes were deleted. `detail`: `{ paths, nodes }` (pre-removal snapshots). Twin: `onNodeDelete(detail)`.' }, { name: 'node-drag-start', description: 'A node drag started. `detail`: the drag context (`event`, `dragged`). Twin: `onNodeDragStart(detail)`.' }, { name: 'node-drag-over', description: 'A node was dragged over. `detail`: the drag context. Twin: `onNodeDragOver(detail)`.' }, { name: 'node-drop', description: 'A drop completed. `detail`: `{ source, target, dragged, dropped, position, operation, event }`. Twin: `onNodeDrop(detail)`.' }, { name: 'node-drag-reject', description: 'A locked node was long-pressed / an undraggable drag was attempted. `detail`: the node context. Twin: `onNodeDragReject(detail)`.' }, { name: 'node-drop-reject', description: 'A drop was rejected by the target. `detail`: the node context. Twin: `onNodeDropReject(detail)`.' }, { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' }, { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' }, { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' }, { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' }, { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: \"context-menu\"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' }, { name: 'render-start', description: 'A progressive render started. Twin: `onRenderStart(detail)`.' }, { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' }, { name: 'render-complete', description: 'A progressive render completed. `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' }, ]",
+              "default": "[ { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' }, { name: 'node-double-click', description: 'A node was double-clicked. `detail`: the node context. Twin: `onNodeDoubleClick(detail)`.' }, { name: 'node-copy', description: 'Nodes were copied. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCopy(detail)`.' }, { name: 'node-cut', description: 'Nodes were cut. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCut(detail)`.' }, { name: 'node-paste', description: 'A paste ran (not fired when `beforePasteCallback` blocked it). `detail`: the PasteResult (`success`, `count`, `skipped`, `error?`, `entries?`, …). Twin: `onNodePaste(detail)`.' }, { name: 'node-delete', description: 'Nodes were deleted. `detail`: `{ paths, nodes }` (pre-removal snapshots). Twin: `onNodeDelete(detail)`.' }, { name: 'node-drag-start', description: 'A node drag started. `detail`: the drag context (`event`, `dragged`). Twin: `onNodeDragStart(detail)`.' }, { name: 'node-drag-over', description: 'A node was dragged over. `detail`: the drag context. Twin: `onNodeDragOver(detail)`.' }, { name: 'node-drop', description: 'A drop completed. `detail`: `{ source, target, dragged, dropped, position, operation, event }`. Twin: `onNodeDrop(detail)`.' }, { name: 'node-drag-reject', description: 'A locked node was long-pressed / an undraggable drag was attempted. `detail`: the node context. Twin: `onNodeDragReject(detail)`.' }, { name: 'node-drop-reject', description: 'A drop was rejected by the target. `detail`: the node context. Twin: `onNodeDropReject(detail)`.' }, { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' }, { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' }, { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' }, { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' }, { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: \"context-menu\"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' }, ]",
               "type": {
                 "text": "readonly EventDef[]"
               }
@@ -3381,34 +3373,13 @@
             },
             {
               "kind": "field",
-              "name": "onRenderStart",
-              "type": {
-                "text": "((detail: TreeEventDetail<T>) => void) | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "onRenderProgress",
-              "type": {
-                "text": "((detail: RenderEventDetail<T>) => void) | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "onRenderComplete",
-              "type": {
-                "text": "((detail: RenderEventDetail<T>) => void) | null"
-              }
-            },
-            {
-              "kind": "field",
               "name": "#bridges",
               "privacy": "private",
               "type": {
                 "text": "Partial<TreeViewConfig<T>>"
               },
               "readonly": true,
-              "default": "{ onNodeClick: (d) => this.emit('node-click', d), onNodeDoubleClick: (d) => this.emit('node-double-click', d), onNodeCopy: (d) => this.emit('node-copy', d), onNodeCut: (d) => this.emit('node-cut', d), onNodePaste: (d) => this.emit('node-paste', d), onNodeDelete: (d) => this.emit('node-delete', d), onNodeDragStart: (d) => this.emit('node-drag-start', d), onNodeDragOver: (d) => this.emit('node-drag-over', d), onNodeDrop: (d) => this.emit('node-drop', d), onNodeDragReject: (d) => this.emit('node-drag-reject', d), onNodeDropReject: (d) => this.emit('node-drop-reject', d), onSelectionChange: (d) => this.emit('selection-change', d), onCheckedChange: (d) => this.emit('checked-change', d), onFocusChange: (d) => this.emit('focus-change', d), onTreeChange: (d) => this.emit('tree-change', d), onAction: (d) => this.emit('action', d), onRenderStart: (d) => this.emit('render-start', d), onRenderProgress: (d) => this.emit('render-progress', d), onRenderComplete: (d) => this.emit('render-complete', d), }",
+              "default": "{ onNodeClick: (d) => this.emit('node-click', d), onNodeDoubleClick: (d) => this.emit('node-double-click', d), onNodeCopy: (d) => this.emit('node-copy', d), onNodeCut: (d) => this.emit('node-cut', d), onNodePaste: (d) => this.emit('node-paste', d), onNodeDelete: (d) => this.emit('node-delete', d), onNodeDragStart: (d) => this.emit('node-drag-start', d), onNodeDragOver: (d) => this.emit('node-drag-over', d), onNodeDrop: (d) => this.emit('node-drop', d), onNodeDragReject: (d) => this.emit('node-drag-reject', d), onNodeDropReject: (d) => this.emit('node-drop-reject', d), onSelectionChange: (d) => this.emit('selection-change', d), onCheckedChange: (d) => this.emit('checked-change', d), onFocusChange: (d) => this.emit('focus-change', d), onTreeChange: (d) => this.emit('tree-change', d), onAction: (d) => this.emit('action', d), }",
               "description": "The tree's notifications → `emit()` (which calls the twin, then dispatches). Built\nonce, so WebTreeView's memoized adapters keep their identity across updates."
             },
             {
@@ -6728,18 +6699,6 @@
             {
               "name": "action",
               "description": "A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: \"context-menu\"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`."
-            },
-            {
-              "name": "render-start",
-              "description": "A progressive render started. Twin: `onRenderStart(detail)`."
-            },
-            {
-              "name": "render-progress",
-              "description": "A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`."
-            },
-            {
-              "name": "render-complete",
-              "description": "A progressive render completed. `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`."
             }
           ],
           "tagName": "web-treeview",

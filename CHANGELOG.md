@@ -60,9 +60,8 @@ camelCase `on*` twin (core) that receives the **detail**.
 | `node-drag-denied` / `node-drop-denied` (+ `onNodeDragDenied` / `onNodeDropDenied`) | `node-drag-reject` / `node-drop-reject` (+ `onNodeDragReject` / `onNodeDropReject`) |
 | `tree-changed` (dispatched twice — once from an inner container) | `tree-change` (+ `onTreeChange`), once |
 | `focused-node-changed` | `focus-change` (+ `onFocusChange`) |
-| `renderStartCallback` / `renderProgressCallback(stats)` / `renderCompleteCallback(stats)` | `render-start` / `render-progress` / `render-complete` events (+ `onRenderStart` / `onRenderProgress` / `onRenderComplete`) |
 | — | `action` (+ `onAction`): a context-menu item was activated |
-| `data-changed`, `search-text-changed` (typed, never emitted), `indexingCompleteCallback` (never called) | removed |
+| `data-changed`, `search-text-changed` (typed, never emitted), `indexingCompleteCallback`, `renderStartCallback` / `renderProgressCallback` / `renderCompleteCallback` (never called — the progressive render coordinator is created but never scheduled) | removed |
 | `on*` element properties were bridged config inputs | core twins: `el.onNodeClick = (detail) => …`; all events `composed: false` |
 | `TreeEventMap` details `unknown` / `CustomEvent<{ result }>` | typed: `NodeEventDetail`, `NodeDragEventDetail`, `NodeDropEventDetail`, `NodeClipboardEventDetail`, `NodePasteEventDetail`, `SelectionChangeEventDetail`, `FocusChangeEventDetail`, `RenderEventDetail`, `TreeEventDetail`, `TreeViewActionEventDetail` |
 

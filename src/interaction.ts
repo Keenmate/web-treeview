@@ -28,7 +28,6 @@ import type {
   TreeMutationOptions,
 } from './controller/types';
 import type { PasteResult } from './clipboard';
-import type { RenderStats } from './renderer/render-coordinator';
 import type { ScrollToPathOptions } from './types';
 
 /**
@@ -229,7 +228,5 @@ export type SelectionChangeEventDetail<T = any> = SelectionChangeContext<T> & Tr
 export interface FocusChangeEventDetail<T = any> extends TreeViewContext<T> {
   focusedNode: LTreeNode<T> | null;
 }
-/** `render-progress` / `render-complete`. */
-export type RenderEventDetail<T = any> = RenderStats & TreeViewContext<T>;
-/** `tree-change`, `render-start`: the context only. */
+/** `tree-change`: the context only. */
 export type TreeEventDetail<T = any> = TreeViewContext<T>;

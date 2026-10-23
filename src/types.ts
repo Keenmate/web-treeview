@@ -43,7 +43,6 @@ export type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
-  RenderEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -130,7 +129,6 @@ import type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
-  RenderEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -443,10 +441,6 @@ export interface TreeViewConfig<T = any> {
    *  `target = null` regardless of per-node `getIsDropAllowedCallback`. Default `false`. */
   shouldEnableTreeDropZone?: boolean | null;
 
-  // Progressive-render notifications (twins of `render-start` / `render-progress` / `render-complete`)
-  onRenderStart?: (detail: TreeEventDetail<T>) => void;
-  onRenderProgress?: (detail: RenderEventDetail<T>) => void;
-  onRenderComplete?: (detail: RenderEventDetail<T>) => void;
   // Render callbacks (for DomRenderer) — one ctx each
   /** Fill `ctx.contentElement` for `ctx.node` (render state on the ctx: device, container, isExpanded, …). */
   renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => void;
@@ -581,9 +575,6 @@ export interface TreeEventMap<T = any> {
   'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
   'tree-change': CustomEvent<TreeEventDetail<T>>;
   'action': CustomEvent<TreeViewActionEventDetail<T>>;
-  'render-start': CustomEvent<TreeEventDetail<T>>;
-  'render-progress': CustomEvent<RenderEventDetail<T>>;
-  'render-complete': CustomEvent<RenderEventDetail<T>>;
 }
 
 // ── Scroll Options ─────────────────────────────────────────────────────

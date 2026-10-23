@@ -651,14 +651,23 @@
   cursor: not-allowed;
 }
 
-.wtv__context-menu .wtv__context-menu-item.wtv__context-menu-item--danger,
-.wtv__context-menu .wtv__context-menu-item.danger {
+.wtv__context-menu .wtv__context-menu-item.wtv__context-menu-item--danger {
   color: var(--wtv-context-menu-danger-color);
 }
 
-.wtv__context-menu .wtv__context-menu-item.wtv__context-menu-item--danger:hover,
-.wtv__context-menu .wtv__context-menu-item.danger:hover {
+.wtv__context-menu .wtv__context-menu-item.wtv__context-menu-item--danger:hover {
   background: var(--wtv-context-menu-danger-bg-hover);
+}
+
+/* `isActive` — toggle state ("pressed"), rendered with aria-pressed="true" */
+.wtv__context-menu .wtv__context-menu-item.wtv__context-menu-item--active {
+  color: var(--wtv-context-menu-active-color);
+}
+
+/* A lazy submenu (getChildrenCallback) while its entries load */
+.wtv__context-menu .wtv__context-menu-loading {
+  padding: var(--wtv-context-menu-item-padding);
+  opacity: var(--wtv-context-menu-disabled-opacity);
 }
 
 .wtv__context-menu .wtv__context-menu-icon {

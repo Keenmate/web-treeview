@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Interaction model (contexts, menu items, events)</title>
+    <style>
+        main { padding: 1rem; font-family: sans-serif; max-width: 700px; }
+        .tree-container { border: 1px solid #e2e8f0; padding: 0.5rem; max-width: 420px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Interaction model</h1>
+        <p>Targeted by <code>e2e/interaction-model.spec.ts</code>: context-menu core action items
+           (built-ins, <code>action</code> event, <code>beforeActionCallback</code>, lazy
+           <code>getChildrenCallback</code>), single-ctx callbacks, <code>on*</code> twins, and
+           <code>el.controller</code>.</p>
+        <div class="tree-container">
+            <web-treeview id="tree" expand-level="3" show-checkboxes="true" selection-mode="multi"></web-treeview>
+        </div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        const data = [
+            { id: 1, path: '1', name: 'Documents' },
+            { id: 2, path: '1.1', name: 'Reports' },
+            { id: 3, path: '1.2', name: 'Notes.txt' },
+            { id: 4, path: '2', name: 'Images' },
+        ];
+
+        window.__log = [];
+        window.__details = [];
+        window.__vetoBuiltIns = false;
+        window.__ctxSeen = null;
+
+        customElements.whenDefined('web-treeview').then(() => {
+            const tree = document.getElementById('tree');
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            tree.sortCallback = ({ items }) => [...items].sort((a, b) => a.path.localeCompare(b.path));
+            tree.getNodeClassCallback = (ctx) => {
+                if (ctx.node.path === '1' && !window.__ctxSeen) {
+                    window.__ctxSeen = {
+                        hasController: typeof ctx.controller?.expandAll === 'function',
+                        elementIsHost: ctx.element === tree,
+                        keys: Object.keys(ctx),
+                    };
+                }
+                return ctx.node.path === '2' ? 'js-images' : null;
+            };
+            tree.getContextMenuItemsCallback = ({ node }) => [
+                'expand',
+                'collapse',
+                'copy',
+                'paste',
+                { divider: true },
+                { id: 'rename', text: 'Rename', icon: '✎', onClick: (d) => window.__log.push('onClick:' + d.id + ':' + d.node.path) },
+                { id: 'toggle', text: 'Pinned', getIsActiveCallback: () => true },
+                {
+                    id: 'more',
+                    text: 'More',
+                    getChildrenCallback: async (ctx) => {
+                        await new Promise((r) => setTimeout(r, 30));
+                        return [{ id: 'lazy', text: 'Lazy ' + ctx.node.path }];
+                    },
+                },
+                { id: 'hidden', text: 'Hidden', isVisible: false },
+                'delete',
+            ];
+            tree.beforeActionCallback = (d) => {
+                window.__log.push('before:' + d.action);
+                if (window.__vetoBuiltIns && d.action !== 'custom') return false;
+            };
+            tree.onAction = (d) => window.__log.push('onAction:' + d.action);
+            tree.addEventListener('action', (e) => {
+                window.__log.push('event:' + e.detail.action);
+                window.__details.push({
+                    json: JSON.parse(JSON.stringify(e.detail, (k, v) => (['item', 'sourceEvent', 'triggerElement', 'node', 'parent', 'siblings'].includes(k) ? undefined : v))),
+                    nodePath: e.detail.node?.path,
+                    hasController: typeof e.detail.controller?.expandAll === 'function',
+                    elementIsHost: e.detail.element === tree,
+                    composed: e.composed,
+                });
+            });
+            tree.onNodeClick = (d) => window.__log.push('onNodeClick:' + d.path + ':' + (d instanceof Event));
+            tree.addEventListener('node-click', (e) => window.__log.push('node-click:' + e.detail.path));
+            tree.addEventListener('checked-change', (e) => window.__log.push('checked-change:' + [...e.detail.paths].join(',')));
+            tree.data = data;
+        });
+    </script>
+</body>
+</html>

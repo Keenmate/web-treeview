@@ -1,16 +1,18 @@
 /**
  * Pluggable renderer interface.
  * External packages (Svelte, React, Vue) can implement TreeViewRenderer
- * to provide framework-native rendering while using the shared TreeController.
+ * to provide framework-native rendering while using the shared TreeEngine.
  */
 
-import type { TreeController } from '../controller/tree-controller';
+import type { TreeEngine } from '../controller/tree-engine';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { NodeRenderContext } from '../controller/types';
+import type { ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import type { TreeMenuContext, TreeMenuItem, TreeViewAction } from '../interaction';
 
 export interface TreeViewRenderer<T = any> {
   /** Mount the renderer into a container, subscribing to controller state changes. */
-  mount(container: HTMLElement, controller: TreeController<T>, config: RendererConfig<T>): void;
+  mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void;
   /** Update renderer configuration without full re-mount. */
   updateConfig(config: Partial<RendererConfig<T>>): void;
   /** Tear down DOM and unsubscribe from controller events. */
@@ -46,5 +48,16 @@ export interface RendererConfig<T> {
   /** Full context menu renderer (takes over entire menu). */
   renderContextMenuCallback?: (node: LTreeNode<T>, close: () => void, container: HTMLElement) => void;
   /** Per-item context menu renderer. Receives item, node, and container for custom item content. */
-  renderContextMenuItemCallback?: (item: import('../ltree/types').ContextMenuItem, node: LTreeNode<T>, container: HTMLElement) => void;
+  renderContextMenuItemCallback?: (item: TreeMenuItem<T>, node: LTreeNode<T>, container: HTMLElement) => void;
+
+  // ── Interaction model (supplied by WebTreeView) ───────────────────────
+  /** The context menu's surface ctx for `node` (NodeRef + controller / element). */
+  contextMenuContext?: (node: LTreeNode<T>) => TreeMenuContext<T>;
+  /** Built-in state of an item (text / shortcut / disabled / danger of `copy`, `paste`, …). */
+  contextMenuItemDefaults?: (item: TreeMenuItem<T>, ctx: TreeMenuContext<T>) => Partial<ResolvedActionItem<TreeViewAction>> | undefined;
+  /**
+   * Activate an item (core `runAction`: `beforeActionCallback` → `onClick` → `action`
+   * event → built-in). Resolves `false` when cancelled.
+   */
+  activateContextMenuItem?: (item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger: HTMLElement, event: Event) => Promise<boolean>;
 }

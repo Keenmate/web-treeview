@@ -1,6 +1,6 @@
 /**
- * TreeController — all tree state & logic.
- * Ported from TreeController.svelte.ts to vanilla TypeScript.
+ * TreeEngine — all tree state & logic.
+ * Ported from TreeEngine.svelte.ts to vanilla TypeScript.
  *
  * Svelte → vanilla conversions:
  *   $state<X>        → plain property + _scheduleNotify()
@@ -16,7 +16,6 @@ import { createLTree } from '../ltree/ltree';
 import {
   type Ltree,
   type InsertArrayResult,
-  type ContextMenuItem,
   type DropPosition,
   type DragDropMode,
   type DropOperation,
@@ -35,9 +34,9 @@ import type {
   SelectionModifiers,
   SelectMode,
   TreeMutationOptions,
-  TreeControllerConfig,
-  TreeControllerSnapshot,
-  TreeControllerEvents,
+  TreeEngineConfig,
+  TreeEngineSnapshot,
+  TreeEngineEvents,
   NodeRef,
   NodeDragContext,
   NodeDropContext,
@@ -70,9 +69,9 @@ import {
 import { initLogger, uiLogger, dragLogger } from '../logger';
 import { perfStart, perfEnd } from '../perf-logger';
 
-// ─── TreeController ───────────────────────────────────────────────────────
+// ─── TreeEngine ───────────────────────────────────────────────────────
 
-export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
+export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── LTree instance ──────────────────────────────────────────────────
   tree!: Ltree<T>;
 
@@ -168,41 +167,41 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   // _checkedPaths). Only applies when checkboxMode === 'cascade'. rc14.
   private _cascadeCheckPolicy: import('./types').CascadeCheckPolicy = 'rolled-up';
   private _shouldClickToggleCheckbox: boolean = false;
-  private beforeCheckboxToggleCb: TreeControllerConfig<T>['beforeCheckboxToggleCallback'];
+  private beforeCheckboxToggleCb: TreeEngineConfig<T>['beforeCheckboxToggleCallback'];
 
   // Clipboard (cut paths for dimming)
   private _cutPaths: Set<string> = new Set();
 
   // Events / callbacks (ctx-object signatures — rc07 parity)
-  private checkedChangeCb: TreeControllerConfig<T>['onCheckedChange'];
-  private selectionChangeCb: TreeControllerConfig<T>['onSelectionChange'];
-  private nodeClickedCb: TreeControllerConfig<T>['onNodeClick'];
-  private onNodeDoubleClickCb: TreeControllerConfig<T>['onNodeDoubleClick'];
-  private beforeCopyCb: TreeControllerConfig<T>['beforeCopyCallback'];
-  private beforeCutCb: TreeControllerConfig<T>['beforeCutCallback'];
-  private beforePasteCb: TreeControllerConfig<T>['beforePasteCallback'];
-  private beforeDeleteCb: TreeControllerConfig<T>['beforeDeleteCallback'];
-  private onCopyCb: TreeControllerConfig<T>['onCopy'];
-  private onCutCb: TreeControllerConfig<T>['onCut'];
-  private onPasteCb: TreeControllerConfig<T>['onPaste'];
-  private onDeleteCb: TreeControllerConfig<T>['onDelete'];
-  private outputTransformCb: TreeControllerConfig<T>['nodeOutputTransformationCallback'];
-  private inputTransformCb: TreeControllerConfig<T>['nodeInputTransformationCallback'];
+  private checkedChangeCb: TreeEngineConfig<T>['onCheckedChange'];
+  private selectionChangeCb: TreeEngineConfig<T>['onSelectionChange'];
+  private nodeClickedCb: TreeEngineConfig<T>['onNodeClick'];
+  private onNodeDoubleClickCb: TreeEngineConfig<T>['onNodeDoubleClick'];
+  private beforeCopyCb: TreeEngineConfig<T>['beforeCopyCallback'];
+  private beforeCutCb: TreeEngineConfig<T>['beforeCutCallback'];
+  private beforePasteCb: TreeEngineConfig<T>['beforePasteCallback'];
+  private beforeDeleteCb: TreeEngineConfig<T>['beforeDeleteCallback'];
+  private onCopyCb: TreeEngineConfig<T>['onCopy'];
+  private onCutCb: TreeEngineConfig<T>['onCut'];
+  private onPasteCb: TreeEngineConfig<T>['onPaste'];
+  private onDeleteCb: TreeEngineConfig<T>['onDelete'];
+  private outputTransformCb: TreeEngineConfig<T>['nodeOutputTransformationCallback'];
+  private inputTransformCb: TreeEngineConfig<T>['nodeInputTransformationCallback'];
   // Manual double-click detection — the flat diff reconciler patches a row's
   // attributes on the first click (focus/selection bumps _rev), which makes the
   // browser's native dblclick unreliable. Tracks the last plain UI click.
   private _lastClickPath: string | null = null;
   private _lastClickTime: number = 0;
-  private nodeDragStartCb: TreeControllerConfig<T>['onNodeDragStart'];
-  private nodeDragOverCb: TreeControllerConfig<T>['onNodeDragOver'];
-  private beforeDropCallbackCb: TreeControllerConfig<T>['beforeDropCallback'];
-  private beforeDragStartCb: TreeControllerConfig<T>['beforeDragStartCallback'];
-  private nodeDropCb: TreeControllerConfig<T>['onNodeDrop'];
-  private nodeDragDeniedCb: TreeControllerConfig<T>['onNodeDragDenied'];
-  private nodeDropDeniedCb: TreeControllerConfig<T>['onNodeDropDenied'];
-  private onTreeKeydownCb: TreeControllerConfig<T>['onTreeKeydown'];
+  private nodeDragStartCb: TreeEngineConfig<T>['onNodeDragStart'];
+  private nodeDragOverCb: TreeEngineConfig<T>['onNodeDragOver'];
+  private beforeDropCallbackCb: TreeEngineConfig<T>['beforeDropCallback'];
+  private beforeDragStartCb: TreeEngineConfig<T>['beforeDragStartCallback'];
+  private nodeDropCb: TreeEngineConfig<T>['onNodeDrop'];
+  private nodeDragDeniedCb: TreeEngineConfig<T>['onNodeDragDenied'];
+  private nodeDropDeniedCb: TreeEngineConfig<T>['onNodeDropDenied'];
+  private onTreeKeydownCb: TreeEngineConfig<T>['onTreeKeydown'];
   /** @internal Used by renderers to check if a callback is available */
-  contextMenuCallbackCb: TreeControllerConfig<T>['contextMenuCallback'];
+  contextMenuCallbackCb: TreeEngineConfig<T>['contextMenuCallback'];
   private renderStartCb: (() => void) | undefined;
   private renderProgressCb: ((stats: RenderStats) => void) | undefined;
   private renderCompleteCb: ((stats: RenderStats) => void) | undefined;
@@ -717,7 +716,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   // ── Constructor ─────────────────────────────────────────────────────
 
-  constructor(props: TreeControllerConfig<T>) {
+  constructor(props: TreeEngineConfig<T>) {
     super();
 
     // Assign prop values (with defaults)
@@ -869,7 +868,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       }
     );
 
-    initLogger.debug(`[${this._treeId}] TreeController created`, {
+    initLogger.debug(`[${this._treeId}] TreeEngine created`, {
       idMember: props.idMember,
       pathMember: props.pathMember,
       displayValueMember: props.displayValueMember,
@@ -2099,7 +2098,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       }
     }
 
-    this.nodeClickedCb?.(this.nodeRef(node));
+    // A checkbox toggle is not a node click — `checked-change` reports it.
     this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2504,9 +2503,8 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
         entries: workEntries
       });
       if (result === false) {
-        const blocked: PasteResult<T> = { success: false, count: 0, skipped: 0, error: 'Paste blocked by beforePasteCallback' };
-        this.onPasteCb?.(blocked);
-        return blocked;
+        // Blocked by the hook: nothing happened, so no paste event.
+        return { success: false, count: 0, skipped: 0, error: 'Paste blocked by beforePasteCallback' };
       }
       if (result && typeof result === 'object') {
         if (result.targetPath !== undefined) targetPath = result.targetPath;
@@ -2819,8 +2817,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
       const suppressed = this.onTreeKeydownCb({
         event,
         focusedNode: this._focusedNode ?? null,
-        selectedNodes: this.getSelectedNodes(),
-        controller: this
+        selectedNodes: this.getSelectedNodes()
       });
       if (suppressed === true) return true;
     }
@@ -3254,7 +3251,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
 
   // ── updateProps (batch property updates) ────────────────────────────
 
-  updateProps(updates: Partial<TreeControllerConfig<T>>) {
+  updateProps(updates: Partial<TreeEngineConfig<T>>) {
     if ((globalThis as any).__WTV_DEBUG) {
       const has = (k: string) => k in updates;
       console.log('[wtv:cfg] updateProps IN',
@@ -3584,7 +3581,7 @@ export class TreeController<T> extends EventEmitter<TreeControllerEvents<T>> {
   }
 
   /** Get a snapshot of the current state for the renderer. */
-  getSnapshot(): TreeControllerSnapshot<T> {
+  getSnapshot(): TreeEngineSnapshot<T> {
     return {
       flatNodesToRender: this.flatNodesToRender,
       draggedNodePath: this._draggedNode?.path ?? null,

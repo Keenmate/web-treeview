@@ -65,7 +65,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByPath;
+            tree.sortCallback = ({ items }) => sortByPath(items);
             tree.isSorted = true;
             tree.data = sampleData;
 
@@ -73,7 +73,7 @@
             const sizeEl = document.querySelector('[data-testid="selected-size"]');
             const sortedEl = document.querySelector('[data-testid="selected-sorted"]');
 
-            tree.addEventListener('focused-node-changed', (e) => {
+            tree.addEventListener('focus-change', (e) => {
                 focusedEl.textContent = e.detail.focusedNode?.path ?? '';
             });
 

@@ -9,10 +9,12 @@
  */
 
 import type { TreeViewRenderer, RendererConfig } from './types';
-import type { TreeController } from '../controller/tree-controller';
-import type { TreeControllerSnapshot, NodeConfig } from '../controller/types';
+import type { TreeEngine } from '../controller/tree-engine';
+import type { TreeEngineSnapshot, NodeConfig } from '../controller/types';
 import type { LTreeNode } from '../ltree/ltree-node';
-import type { DropPosition, ContextMenuItem, ContextMenuEntry } from '../ltree/types';
+import type { DropPosition } from '../ltree/types';
+import { resolveMenuEntries, getMenuChildren } from '@keenmate/web-components-core/actions';
+import type { TreeMenuContext, TreeMenuEntry, TreeMenuItem } from '../interaction';
 import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
 import { createTooltip, type TooltipHandle } from '@keenmate/web-components-core/positioning';
 import {
@@ -51,7 +53,7 @@ function toggleClasses(el: HTMLElement, classes: string, force: boolean): void {
 
 export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private container: HTMLElement | null = null;
-  private controller: TreeController<T> | null = null;
+  private controller: TreeEngine<T> | null = null;
   private config: RendererConfig<T> = {};
 
   // DOM elements
@@ -81,7 +83,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private unsubConfig: (() => void) | null = null;
 
   // Last snapshot for diffing
-  private lastSnapshot: TreeControllerSnapshot<T> | null = null;
+  private lastSnapshot: TreeEngineSnapshot<T> | null = null;
   private lastNodeConfig: NodeConfig | null = null;
   // Hover/focus tooltip handles, keyed like nodeElements (id || path). Created per
   // row via the shared core createTooltip; rebuilt only when the node's data changes
@@ -103,7 +105,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _stopEnvObserve: (() => void) | null = null;
   private _stopSizeObserve: (() => void) | null = null;
 
-  mount(container: HTMLElement, controller: TreeController<T>, config: RendererConfig<T>): void {
+  mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void {
     this.container = container;
     this.controller = controller;
     this.config = config;
@@ -743,7 +745,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Virtual scroll structure ───────────────────────────────────────
 
-  private _ensureVirtualScrollStructure(snapshot: TreeControllerSnapshot<T>): void {
+  private _ensureVirtualScrollStructure(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.bodyEl) return;
 
     if (snapshot.isVirtualScrollEnabled && !this.vsSpacerEl) {
@@ -795,7 +797,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _updateVirtualScrollPositioning(snapshot: TreeControllerSnapshot<T>): void {
+  private _updateVirtualScrollPositioning(snapshot: TreeEngineSnapshot<T>): void {
     if (!snapshot.isVirtualScrollEnabled || !this.vsSpacerEl || !this.vsContentEl || !this.bodyEl) return;
 
     // Update container height if changed
@@ -828,7 +830,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── State change handler ────────────────────────────────────────────
 
-  private _onStateChange(snapshot: TreeControllerSnapshot<T>): void {
+  private _onStateChange(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.bodyEl || !this.controller) return;
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
@@ -904,7 +906,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     return this.vsContentEl ?? this.bodyEl;
   }
 
-  private _reconcileNodes(snapshot: TreeControllerSnapshot<T>): void {
+  private _reconcileNodes(snapshot: TreeEngineSnapshot<T>): void {
     const target = this._renderTarget;
     if (!target || !this.controller) return;
 
@@ -987,7 +989,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _renderEmpty(snapshot: TreeControllerSnapshot<T>): void {
+  private _renderEmpty(snapshot: TreeEngineSnapshot<T>): void {
     const target = this._renderTarget;
     if (!target) return;
 
@@ -1202,7 +1204,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _createNodeElement(node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): HTMLElement {
+  private _createNodeElement(node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): HTMLElement {
     const el = document.createElement('div');
     el.className = 'wtv__node';
     el.setAttribute('data-tree-path', node.path);
@@ -1352,7 +1354,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   /** Build the NodeRenderContext for the render callbacks: device + container + live state. */
-  private _buildRenderContext(node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): NodeRenderContext {
+  private _buildRenderContext(node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): NodeRenderContext {
     return {
       deviceClass: this._deviceClass,
       container: { width: this._containerBox.width, height: this._containerBox.height },
@@ -1408,7 +1410,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.tooltipRevs.clear();
   }
 
-  private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeControllerSnapshot<T>): void {
+  private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): void {
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
     el.setAttribute('data-has-children', String(!!node.hasChildren));
@@ -1535,7 +1537,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Drag CSS classes ────────────────────────────────────────────────
 
-  private _updateDragClasses(snapshot: TreeControllerSnapshot<T>): void {
+  private _updateDragClasses(snapshot: TreeEngineSnapshot<T>): void {
     // Dragged node
     for (const [, el] of this.nodeElements) {
       const path = el.getAttribute('data-tree-path');
@@ -1572,7 +1574,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Drop zones (floating mode) ─────────────────────────────────────
 
-  private _updateDropZones(snapshot: TreeControllerSnapshot<T>): void {
+  private _updateDropZones(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.bodyEl || !this.controller) return;
 
     const shouldShow =
@@ -1646,7 +1648,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Context menu (Floating UI) ──────────────────────────────────────
 
-  private _updateContextMenu(snapshot: TreeControllerSnapshot<T>): void {
+  private _updateContextMenu(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.contextMenuEl || !this.controller) return;
 
     if (!snapshot.contextMenuVisible || !snapshot.contextMenuNode) {
@@ -1672,16 +1674,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       return;
     }
 
-    // Default: render items from contextMenuCallback
+    // Default: render items from contextMenuCallback (the public getContextMenuItemsCallback).
+    // One surface ctx per open: every item callback, onClick and submenu share it.
     const callbackRef = this.controller.contextMenuCallbackCb;
     if (callbackRef) {
-      const items: ContextMenuEntry[] = callbackRef(
-        snapshot.contextMenuNode,
-        () => this.controller!.closeContextMenu()
-      );
+      const node = snapshot.contextMenuNode;
+      const ctx = this.config.contextMenuContext?.(node)
+        ?? (this.controller.nodeRef(node) as unknown as TreeMenuContext<T>);
+      const items = callbackRef(node);
       this.contextMenuEl.innerHTML = '';
       this.contextMenuEl.style.display = 'block';
-      this._renderContextMenuItems(items, this.contextMenuEl, snapshot.contextMenuNode);
+      this._renderContextMenuItems(items, this.contextMenuEl, ctx, node);
       this._positionAtCursor(this.contextMenuEl, snapshot.contextMenuX, snapshot.contextMenuY, snapshot.contextMenuXOffset, snapshot.contextMenuYOffset);
       this._installCtxKeydownHandler();
     }
@@ -1728,73 +1731,85 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     });
   }
 
-  private _renderContextMenuItems(entries: ContextMenuEntry[], container: HTMLElement, contextNode: LTreeNode<T>, cancelParentHide?: () => void): void {
-    // Check if any item in this level has an icon — if so, reserve column for all items
-    const hasAnyIcon = entries.some(e => !('divider' in e && e.divider) && (e as ContextMenuItem).icon);
+  /**
+   * Render one menu level (core `resolveMenuEntries`: hidden items dropped, dividers
+   * trimmed; each field resolves `get*Callback(ctx)` → static → built-in default).
+   * Buttons carry `data-action` (built-in name or `custom`) and `data-id`. A leaf
+   * activates through `activateContextMenuItem` (runAction); an item with `children` /
+   * `getChildrenCallback` opens a submenu on hover (a lazy one shows a loading row).
+   */
+  private _renderContextMenuItems(entries: TreeMenuEntry<T>[], container: HTMLElement, ctx: TreeMenuContext<T>, contextNode: LTreeNode<T>, cancelParentHide?: () => void): void {
+    const resolvedEntries = resolveMenuEntries(entries, ctx, (item) => this.config.contextMenuItemDefaults?.(item, ctx));
+    // If any item at this level has an icon, reserve the icon column for all of them.
+    const hasAnyIcon = resolvedEntries.some(e => e.kind === 'item' && !!e.resolved.icon);
 
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-
-      // Divider entry
-      if ('divider' in entry && entry.divider) {
+    for (const entry of resolvedEntries) {
+      if (entry.kind === 'divider') {
         const divider = document.createElement('div');
         divider.className = 'wtv__context-menu-divider';
-        if (entry.label) {
+        if (entry.text) {
           divider.classList.add('wtv__context-menu-divider--named');
-          divider.textContent = entry.label;
+          divider.textContent = entry.text;
         }
         container.appendChild(divider);
         continue;
       }
 
-      const item = entry as ContextMenuItem;
-
-      // Skip hidden items
-      if (item.isVisible === false) continue;
-
+      const { item, resolved, hasChildren } = entry;
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.className = 'wtv__context-menu-item';
-      if (item.id) btn.setAttribute('data-item-id', item.id);
-      if (item.shortcut) btn.setAttribute('data-shortcut', item.shortcut);
-      if (item.isDisabled) btn.classList.add('wtv__context-menu-item--disabled');
-      if (item.children?.length) btn.classList.add('wtv__context-menu-item--has-children');
-      if (item.className) btn.classList.add(item.className);
+      btn.dataset.action = resolved.action;
+      if (resolved.id) btn.dataset.id = resolved.id;
+      if (resolved.shortcut) btn.setAttribute('data-shortcut', resolved.shortcut);
+      if (resolved.isDisabled) {
+        btn.classList.add('wtv__context-menu-item--disabled');
+        btn.setAttribute('aria-disabled', 'true');
+      }
+      if (resolved.isDanger) btn.classList.add('wtv__context-menu-item--danger');
+      if (resolved.isActive) {
+        btn.classList.add('wtv__context-menu-item--active');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+      if (hasChildren) btn.classList.add('wtv__context-menu-item--has-children');
+      if (resolved.cssClass) btn.classList.add(...resolved.cssClass.split(' '));
+      if (resolved.tooltip) btn.title = resolved.tooltip;
 
       // Custom item rendering: callback gets first shot, default fills in if empty
       if (this.config.renderContextMenuItemCallback) {
         this.config.renderContextMenuItemCallback(item, contextNode, btn);
       }
-      // Default rendering if callback didn't populate the button
+      // Default rendering if callback didn't populate the button (text, never HTML)
       if (!btn.hasChildNodes()) {
         if (hasAnyIcon) {
           const icon = document.createElement('span');
           icon.className = 'wtv__context-menu-icon';
-          if (item.icon) icon.textContent = item.icon;
+          if (resolved.icon) icon.textContent = resolved.icon;
           btn.appendChild(icon);
         }
 
         const labelSpan = document.createElement('span');
         labelSpan.className = 'wtv__context-menu-label';
-        labelSpan.textContent = item.label;
+        labelSpan.textContent = resolved.text;
         btn.appendChild(labelSpan);
 
-        if (item.shortcut) {
+        if (resolved.shortcut) {
           const shortcutSpan = document.createElement('span');
           shortcutSpan.className = 'wtv__context-menu-shortcut';
-          shortcutSpan.textContent = item.shortcut;
+          shortcutSpan.textContent = resolved.shortcut;
           btn.appendChild(shortcutSpan);
         }
 
-        if (item.children?.length) {
+        if (hasChildren) {
           const arrow = document.createElement('span');
           arrow.className = 'wtv__context-menu-arrow';
-          arrow.textContent = '\u25B8'; // ▸
+          arrow.textContent = '▸'; // ▸
           btn.appendChild(arrow);
         }
       }
 
       // Submenu hover logic
-      if (item.children?.length) {
+      if (hasChildren) {
         let submenuEl: HTMLElement | null = null;
         let cleanupPos: (() => void) | null = null;
         let hideTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -1807,19 +1822,29 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         const showSubmenu = () => {
           cancelHide();
           if (submenuEl) return;
-          submenuEl = document.createElement('div');
-          submenuEl.className = 'wtv__context-menu wtv__context-submenu';
-          submenuEl.style.display = 'block';
-          submenuEl.style.position = 'fixed';
-          this._renderContextMenuItems(item.children!, submenuEl, contextNode, cancelHide);
-          this.container!.appendChild(submenuEl);
-          this._ctxSubmenus.push(submenuEl);
-          cleanupPos = this._positionSubmenu(btn, submenuEl);
+          const el = document.createElement('div');
+          submenuEl = el;
+          el.className = 'wtv__context-menu wtv__context-submenu';
+          el.style.display = 'block';
+          el.style.position = 'fixed';
+          // Static children render now; a getChildrenCallback (maybe async) shows a loading row first.
+          const loading = document.createElement('div');
+          loading.className = 'wtv__context-menu-loading';
+          loading.textContent = '…';
+          el.appendChild(loading);
+          this.container!.appendChild(el);
+          this._ctxSubmenus.push(el);
+          cleanupPos = this._positionSubmenu(btn, el);
+          void getMenuChildren(item, ctx).then((children) => {
+            if (submenuEl !== el) return; // hidden meanwhile
+            el.innerHTML = '';
+            this._renderContextMenuItems(children as TreeMenuEntry<T>[], el, ctx, contextNode, cancelHide);
+          });
 
-          submenuEl.addEventListener('mouseenter', () => {
+          el.addEventListener('mouseenter', () => {
             cancelHide();
           });
-          submenuEl.addEventListener('mouseleave', () => {
+          el.addEventListener('mouseleave', () => {
             hideTimeout = setTimeout(hideSubmenu, 150);
           });
         };
@@ -1838,16 +1863,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         btn.addEventListener('mouseleave', () => {
           hideTimeout = setTimeout(hideSubmenu, 150);
         });
-      } else if (!item.isDisabled && item.onclick) {
-        btn.addEventListener('click', async () => {
+      } else if (!resolved.isDisabled) {
+        btn.addEventListener('click', async (event) => {
           try {
-            await item.onclick?.();
-          } catch (error) {
-            console.error('Context menu callback error:', error);
+            if (this.config.activateContextMenuItem) {
+              await this.config.activateContextMenuItem(item as TreeMenuItem<T>, ctx, btn, event);
+            }
           } finally {
-            // Auto-close after activating a leaf item — like every native menu.
-            // Opt out with shouldCloseOnClick:false to keep the menu open for
-            // incremental actions; the handler then dismisses it via close().
+            // Auto-close after activating a leaf item — like every native menu. Opt out
+            // with shouldCloseOnClick:false to keep the menu open for incremental actions;
+            // the handler then dismisses it via controller.closeContextMenu().
             if (item.shouldCloseOnClick !== false) this.controller?.closeContextMenu();
           }
         });
@@ -1894,7 +1919,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Debug info ──────────────────────────────────────────────────────
 
-  private _updateDebugInfo(snapshot: TreeControllerSnapshot<T>): void {
+  private _updateDebugInfo(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.debugEl || !this.controller) return;
 
     if (!snapshot.shouldDisplayDebugInformation) {
@@ -1923,7 +1948,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Full render (for config changes) ────────────────────────────────
 
-  private _fullRender(snapshot: TreeControllerSnapshot<T>): void {
+  private _fullRender(snapshot: TreeEngineSnapshot<T>): void {
     // Clear all node elements and re-create
     for (const [, el] of this.nodeElements) {
       el.remove();

@@ -83,11 +83,11 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByPath;
+            tree.sortCallback = ({ items }) => sortByPath(items);
             tree.isSorted = true;
             tree.data = data;
 
-            tree.addEventListener('node-clicked', (e) => {
+            tree.addEventListener('node-click', (e) => {
                 bump('click');
                 setText('last-clicked', e.detail.node.path);
             });

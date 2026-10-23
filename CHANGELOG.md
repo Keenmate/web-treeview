@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (interaction model, web-components-core rc15)
+
+Callbacks, events and the context menu follow the shared KeenMate interaction model
+(web-components-core `/actions`). No aliases — rename on upgrade.
+
+**Every callback takes ONE `ctx` argument**; every ctx and every event detail carries
+`controller` (the public facade, also `el.controller`) and `element` (the host) — both
+non-enumerable, so `JSON.stringify` / logs see only the data.
+
+| Old | New |
+|---|---|
+| `getDisplayValueCallback(node)`, `getSearchValueCallback`, `getIsExpandedCallback`, `getIsCheckedCallback`, `getIsSelectableCallback`, `getIsDraggableCallback`, `getIsDropAllowedCallback`, `getIsCollapsibleCallback`, `getAllowedDropPositionsCallback`, `getNodeTooltipCallback` | same names, `({ node })` |
+| `iconCallback(node)`, `iconColorCallback(node)` | `getIconCallback({ node })`, `getIconColorCallback({ node })` |
+| `nodeClass(node)`, `nodeContentClass(node)` | `getNodeClassCallback({ node })`, `getNodeContentClassCallback({ node })` |
+| `sortCallback(items)` | `sortCallback({ items })` |
+| `renderNodeCallback(node, container, renderCtx)` | `renderNodeCallback({ node, contentElement, isExpanded, level, … })` |
+| `renderIconCallback(node, value, iconEl, renderCtx)` | `renderIconCallback({ node, value, iconElement, … })` |
+| `renderEmptyStateCallback(container)` (+ EmptyZone / Loading / Header / Footer) | `(ctx)` → `ctx.containerElement` |
+| `renderContextMenuCallback(node, close, container)` | `({ node, path, parent, siblings, containerElement })` — close via `ctx.controller.closeContextMenu()` |
+| `renderContextMenuItemCallback(item, node, button)` | `({ node, …, menuItem, buttonElement })` |
+| `beforeCheckboxToggleCallback(node, checked, affectedPaths)` | `beforeCheckboxToggleCallback({ node, isChecked, affectedPaths })` (now also a settable element property) |
+| `nodeOutputTransformationCallback(data, ctx)` / `nodeInputTransformationCallback(data, ctx)` | `({ data, operation, phase, source, target, … })` |
+| `pasteNodes(path, (data, ctx) => …)`, `duplicateNodes(…, transform)`, `copyNodeWithDescendants(…, (data, node) => …)` | the transform takes one ctx: `({ data, … })` |
+| `onTreeKeydown(ctx)` → `true` suppresses | `beforeKeydownCallback(ctx)` → `false` suppresses; `ctx.controller` is the public facade (was the engine) |
+| `customStylesCallback()` | `getCustomStylesCallback(ctx)` |
+| before-hooks `beforeCopy/Cut/Paste/Delete/DragStartCallback(ctx)` | same contracts, plus `controller` / `element` on the ctx; a throwing hook now cancels (logged) |
+| `beforeDropCallback(ctx)` | same contract (async), ctx gains `controller` / `element` |
+| — | `beforeActionCallback(detail)` → `false` cancels a context-menu item |
+
+**Context menu** — entries are core action items.
+
+| Old | New |
+|---|---|
+| `contextMenuCallback(node, close)` | `getContextMenuItemsCallback(ctx)` — `ctx` = `{ node, path, parent, siblings, controller, element }` |
+| `{ label, className, onclick() }` | `{ id, text, cssClass, onClick(detail) }` — `onClick` gets the `action` detail (the menu ctx + `action`, `id`, `item`, `source: 'context-menu'`, …) |
+| `className: 'danger'` | `isDanger: true` |
+| `{ divider: true, label }` | `{ divider: true, text }` (or `menuDivider(text)`, exported) |
+| `data-item-id` on the button | `data-action` (built-in name or `custom`) + `data-id` |
+| — | built-ins by name: `'copy' \| 'cut' \| 'paste' \| 'delete' \| 'expand' \| 'collapse'` (act on the node, or on the whole selection when the node is in it; default text / disabled / danger state) |
+| — | `get*Callback(ctx)` on items (text, icon, tooltip, class, visible, disabled, active), `isActive` (`aria-pressed`), `tooltip`, lazy submenus via `getChildrenCallback(ctx)` (sync or async — a loading row shows meanwhile) |
+| an item without `onclick` did nothing and kept the menu open | every enabled leaf activates (`onClick` → `action` event → built-in) and closes the menu unless `shouldCloseOnClick: false` |
+
+**Events** — present tense, no native collisions, typed details; every event has a
+camelCase `on*` twin (core) that receives the **detail**.
+
+| Old | New |
+|---|---|
+| `node-clicked` | `node-click` (+ `onNodeClick`) — **no longer fired by a checkbox toggle** (`checked-change` reports it) |
+| `copy` / `cut` / `paste` / `delete` (collided with native clipboard events) | `node-copy` / `node-cut` / `node-paste` / `node-delete` (+ `onNodeCopy` / `onNodeCut` / `onNodePaste` / `onNodeDelete`) |
+| `paste` detail `{ result }`; also fired when `beforePasteCallback` blocked the paste | `node-paste` detail = the PasteResult itself; not fired when blocked |
+| `node-drag-denied` / `node-drop-denied` (+ `onNodeDragDenied` / `onNodeDropDenied`) | `node-drag-reject` / `node-drop-reject` (+ `onNodeDragReject` / `onNodeDropReject`) |
+| `tree-changed` (dispatched twice — once from an inner container) | `tree-change` (+ `onTreeChange`), once |
+| `focused-node-changed` | `focus-change` (+ `onFocusChange`) |
+| `renderStartCallback` / `renderProgressCallback(stats)` / `renderCompleteCallback(stats)` | `render-start` / `render-progress` / `render-complete` events (+ `onRenderStart` / `onRenderProgress` / `onRenderComplete`) |
+| — | `action` (+ `onAction`): a context-menu item was activated |
+| `data-changed`, `search-text-changed` (typed, never emitted), `indexingCompleteCallback` (never called) | removed |
+| `on*` element properties were bridged config inputs | core twins: `el.onNodeClick = (detail) => …`; all events `composed: false` |
+| `TreeEventMap` details `unknown` / `CustomEvent<{ result }>` | typed: `NodeEventDetail`, `NodeDragEventDetail`, `NodeDropEventDetail`, `NodeClipboardEventDetail`, `NodePasteEventDetail`, `SelectionChangeEventDetail`, `FocusChangeEventDetail`, `RenderEventDetail`, `TreeEventDetail`, `TreeViewActionEventDetail` |
+
+**Controller / engine**
+
+| Old | New |
+|---|---|
+| `el.getController()` → the internal engine | `el.controller` — the public `TreeViewController` facade (the element's methods + `getNodeRef`, `getFocusedNode`, `getChildren`, `getSiblings`, `openContextMenu(path, x, y)`, `applyChanges`). The element gained those methods too. |
+| `TreeController` (exported) | `TreeEngine` (internal; still exported for renderer authors), `TreeControllerConfig` / `Snapshot` / `Events` → `TreeEngine*`; `WebTreeView.getController()` → `getEngine()` |
+| `ContextMenuItem` / `ContextMenuDivider` / `ContextMenuEntry` | `TreeMenuItem` / core `MenuDivider` / `TreeMenuEntry` |
+| callback inputs `on:'none'` (a callback assigned after the build waited for the next update) | every callback is live (`on:'update'`; adapters are memoized, so an unchanged callback never rebuilds the tree) |
+
+### Added
+
+- `--wtv-context-menu-active-color`; `.wtv__context-menu-item--active`, `.wtv__context-menu-loading`.
+- Exported types for every ctx and event detail (`TreeViewController`, `TreeViewContext`,
+  `NodeContext`, `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`,
+  `KeydownContext`, `BeforeCheckboxToggleContext`, `NodeTransformCallbackContext`, …), and
+  `BeforeDropContext`, `DragStartContext`, `DropGroup`, `SelectMode`, `TreeMutationOptions`,
+  `CheckboxMode`, `CascadeCheckPolicy`; `menuDivider` re-exported from core.
+- Element inputs that were config-only: `getIsExpandedCallback`, `getIsCheckedCallback`,
+  `getIsSelectableCallback`, `getIsDropAllowedCallback`, `beforeCheckboxToggleCallback`.
+
 ### Fixed
 
 - **Emoji icons render.** An `iconMember` / `iconCallback` value that isn't a CSS class list

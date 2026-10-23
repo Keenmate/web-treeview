@@ -11,8 +11,41 @@ export type {
   DropOperation
 } from './ltree/types';
 
-// Re-export context menu types from ltree types
-export type { ContextMenuItem, ContextMenuDivider, ContextMenuEntry } from './ltree/types';
+// The interaction model: controller facade, callback contexts, menu items, event details.
+export type {
+  TreeViewController,
+  TreeViewContext,
+  NodeContext,
+  SortContext,
+  NodeRenderCallbackContext,
+  IconRenderContext,
+  ContainerRenderContext,
+  TreeMenuContext,
+  TreeViewAction,
+  TreeMenuItem,
+  TreeMenuEntry,
+  ContextMenuRenderContext,
+  ContextMenuItemRenderContext,
+  TreeViewActionEventDetail,
+  BeforeCheckboxToggleContext,
+  KeydownContext,
+  NodeTransformCallbackContext,
+  NodeTransformCallback,
+  BeforeCopyCallbackContext,
+  BeforeDeleteCallbackContext,
+  BeforePasteCallbackContext,
+  BeforeDropCallbackContext,
+  BeforeDragStartContext,
+  NodeEventDetail,
+  NodeDragEventDetail,
+  NodeDropEventDetail,
+  NodeClipboardEventDetail,
+  NodePasteEventDetail,
+  SelectionChangeEventDetail,
+  FocusChangeEventDetail,
+  RenderEventDetail,
+  TreeEventDetail,
+} from './interaction';
 
 // Re-export controller types
 export type {
@@ -25,9 +58,9 @@ export type {
   RangeSelectionMode,
   SelectMode,
   TreeMutationOptions,
-  TreeControllerConfig,
-  TreeControllerSnapshot,
-  TreeControllerEvents,
+  TreeEngineConfig,
+  TreeEngineSnapshot,
+  TreeEngineEvents,
   // ctx-object context types (rc07 parity with svelte-treeview)
   NodeRef,
   NodeEventContext,
@@ -60,29 +93,46 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 
 import type { LTreeNode } from './ltree/ltree-node';
 import type { DropPosition } from './ltree/ltree-node';
-import type { DragDropMode, DropOperation, ContextMenuItem, ContextMenuEntry } from './ltree/types';
+import type { DragDropMode, DropOperation } from './ltree/types';
 import type {
   ClickBehavior,
   RangeSelectionMode,
   SelectMode,
   TreeMutationOptions,
-  NodeEventContext,
-  NodeDragContext,
-  NodeDropContext,
-  ClipboardEventContext,
-  SelectionChangeContext,
-  TreeKeydownContext,
-  NodeTransformContext,
-  BeforeCopyContext,
-  BeforeDeleteContext,
-  BeforePasteContext,
-  BeforeDropContext,
-  DragStartContext,
   DropGroup,
-  NodeRenderContext
 } from './controller/types';
 import type { PasteResult } from './clipboard';
-import type { RenderStats } from './renderer/render-coordinator';
+import type {
+  TreeViewController,
+  NodeContext,
+  SortContext,
+  NodeRenderCallbackContext,
+  IconRenderContext,
+  ContainerRenderContext,
+  TreeMenuContext,
+  TreeMenuEntry,
+  ContextMenuRenderContext,
+  ContextMenuItemRenderContext,
+  TreeViewActionEventDetail,
+  BeforeCheckboxToggleContext,
+  KeydownContext,
+  NodeTransformCallbackContext,
+  NodeTransformCallback,
+  BeforeCopyCallbackContext,
+  BeforeDeleteCallbackContext,
+  BeforePasteCallbackContext,
+  BeforeDropCallbackContext,
+  BeforeDragStartContext,
+  NodeEventDetail,
+  NodeDragEventDetail,
+  NodeDropEventDetail,
+  NodeClipboardEventDetail,
+  NodePasteEventDetail,
+  SelectionChangeEventDetail,
+  FocusChangeEventDetail,
+  RenderEventDetail,
+  TreeEventDetail,
+} from './interaction';
 
 export interface TreeViewConfig<T = any> {
   // Required
@@ -170,7 +220,7 @@ export interface TreeViewConfig<T = any> {
   shouldShowNodeTooltips?: boolean;
   /** Tooltip content for a node — plain text OR a built `HTMLElement` for rich content
    *  (the wtv analog of svelte-treeview's `tooltip` snippet). Return null/empty to skip. */
-  getNodeTooltipCallback?: (node: LTreeNode<T>) => string | HTMLElement | null | undefined;
+  getNodeTooltipCallback?: (ctx: NodeContext<T>) => string | HTMLElement | null | undefined;
   /** Tooltip placement relative to the row. Default `'top-start'`. */
   tooltipPlacement?:
     | 'top' | 'top-start' | 'top-end'
@@ -197,27 +247,27 @@ export interface TreeViewConfig<T = any> {
   scrollHighlightClass?: string | null;
 
   // Per-node icons — rendered as a dedicated .wtv__node-icon element on EVERY node
-  // (branch + leaf). VALUE from iconMember/iconCallback (default <i class={value}>,
+  // (branch + leaf). VALUE from iconMember/getIconCallback (default <i class={value}>,
   // FontAwesome-friendly); override the render with renderIconCallback. COLOR from
-  // iconColorMember/iconColorCallback. shouldAlignNodeIcons reserves the icon column.
+  // iconColorMember/getIconColorCallback. shouldAlignNodeIcons reserves the icon column.
   iconMember?: string | null;
-  iconCallback?: (node: LTreeNode<T>) => string | null;
+  getIconCallback?: (ctx: NodeContext<T>) => string | null;
   /** Per-node icon COLOR from a data key (applied to the icon element). */
   iconColorMember?: string | null;
   /** Per-node icon COLOR from a callback (overrides iconColorMember). */
-  iconColorCallback?: (node: LTreeNode<T>) => string | null;
-  /** Custom per-node icon renderer. Receives (node, resolvedValue, iconEl, ctx) to populate —
-   *  for inline SVG, unicode, or custom markup. ctx is the NodeRenderContext (device + container
-   *  + live node state). Wins over the default class-based `<i>`. */
-  renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
+  getIconColorCallback?: (ctx: NodeContext<T>) => string | null;
+  /** Custom per-node icon renderer: populate `ctx.iconElement` (inline SVG, unicode, custom
+   *  markup) from `ctx.node` / `ctx.value` (the resolved icon value) / the render state
+   *  (device + container + live node state). Wins over the default class-based `<i>`. */
+  renderIconCallback?: (ctx: IconRenderContext<T>) => void;
   shouldAlignNodeIcons?: boolean | null;
 
   // Data-driven per-row class hooks
   /** Returns class(es) applied to the node's outer `.wtv__node` element.
    *  Recomputes per render (on the node's `data-rev` bump). */
-  nodeClass?: (node: LTreeNode<T>) => string | null | undefined;
+  getNodeClassCallback?: (ctx: NodeContext<T>) => string | null | undefined;
   /** Returns class(es) applied to the node's inner `.wtv__node-content`. */
-  nodeContentClass?: (node: LTreeNode<T>) => string | null | undefined;
+  getNodeContentClassCallback?: (ctx: NodeContext<T>) => string | null | undefined;
 
   // Bindable properties
   searchText?: string | null;
@@ -233,19 +283,28 @@ export interface TreeViewConfig<T = any> {
   // Loading
   isLoading?: boolean | null;
 
-  // Callbacks
-  getDisplayValueCallback?: (node: LTreeNode<T>) => string;
-  getSearchValueCallback?: (node: LTreeNode<T>) => string;
-  getIsExpandedCallback?: (node: LTreeNode<T>) => boolean;
-  getIsSelectableCallback?: (node: LTreeNode<T>) => boolean;
-  getIsCheckedCallback?: (node: LTreeNode<T>) => boolean;
-  getIsDraggableCallback?: (node: LTreeNode<T>) => boolean;
-  getIsDropAllowedCallback?: (node: LTreeNode<T>) => boolean;
-  getIsCollapsibleCallback?: (node: LTreeNode<T>) => boolean;
-  getAllowedDropPositionsCallback?: (node: LTreeNode<T>) => DropPosition[] | null | undefined;
-  sortCallback?: (items: LTreeNode<T>[]) => LTreeNode<T>[];
-  contextMenuCallback?: (node: LTreeNode<T>, closeMenuCallback: () => void) => ContextMenuEntry[];
-  indexingCompleteCallback?: () => void;
+  // Callbacks — every one takes ONE ctx (`ctx.node` for the per-node ones)
+  getDisplayValueCallback?: (ctx: NodeContext<T>) => string;
+  getSearchValueCallback?: (ctx: NodeContext<T>) => string;
+  getIsExpandedCallback?: (ctx: NodeContext<T>) => boolean;
+  getIsSelectableCallback?: (ctx: NodeContext<T>) => boolean;
+  getIsCheckedCallback?: (ctx: NodeContext<T>) => boolean;
+  getIsDraggableCallback?: (ctx: NodeContext<T>) => boolean;
+  getIsDropAllowedCallback?: (ctx: NodeContext<T>) => boolean;
+  getIsCollapsibleCallback?: (ctx: NodeContext<T>) => boolean;
+  getAllowedDropPositionsCallback?: (ctx: NodeContext<T>) => DropPosition[] | null | undefined;
+  /** Sort siblings: return `ctx.items` in the new order. */
+  sortCallback?: (ctx: SortContext<T>) => LTreeNode<T>[];
+  /**
+   * The context-menu entries for the node right-clicked (`ctx.node`, with `parent` /
+   * `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`,
+   * `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a
+   * built-in name (`'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`). Every
+   * activation fires the `action` event.
+   */
+  getContextMenuItemsCallback?: (ctx: TreeMenuContext<T>) => TreeMenuEntry<T>[];
+  /** Runs before a context-menu item activates: return `false` to cancel its `onClick`, the `action` event and the built-in. May be async. */
+  beforeActionCallback?: (detail: TreeViewActionEventDetail<T>) => void | false | Promise<void | false>;
 
   // Context Menu
   contextMenuXOffset?: number | null;
@@ -271,19 +330,15 @@ export interface TreeViewConfig<T = any> {
   /** When `true`, plain clicks on a selectable node toggle its checkbox
    *  instead of focusing/selecting. Requires `shouldShowCheckboxes=true`. */
   shouldClickToggleCheckbox?: boolean;
-  /** Interceptor invoked before applying a checkbox toggle. Return `false`
-   *  to cancel, return a `string[]` to override which paths are affected,
-   *  or return `void` to apply unchanged. */
-  beforeCheckboxToggleCallback?: (
-    node: LTreeNode<T>,
-    checked: boolean,
-    affectedPaths: string[]
-  ) => boolean | string[] | void;
+  /** Runs before a checkbox toggle (`ctx.node`, `ctx.isChecked` = the new state,
+   *  `ctx.affectedPaths`). Return `false` to cancel, a `string[]` to override which paths
+   *  are affected, or nothing to apply unchanged. */
+  beforeCheckboxToggleCallback?: (ctx: BeforeCheckboxToggleContext<T>) => string[] | false | void;
   rangeSelectionMode?: RangeSelectionMode;
-  /** Fires on changes to the checkbox / data-state checked set (checkedPaths). */
-  onCheckedChange?: (ctx: SelectionChangeContext<T>) => void;
-  /** Fires on changes to the selected set (Ctrl/Shift+click, arrow keys). */
-  onSelectionChange?: (ctx: SelectionChangeContext<T>) => void;
+  /** Twin of `checked-change` (engine use; on the element assign `el.onCheckedChange`). */
+  onCheckedChange?: (detail: SelectionChangeEventDetail<T>) => void;
+  /** Twin of `selection-change`. */
+  onSelectionChange?: (detail: SelectionChangeEventDetail<T>) => void;
 
   // Debug
   shouldDisplayDebugInformation?: boolean | null;
@@ -305,47 +360,49 @@ export interface TreeViewConfig<T = any> {
    *  to receive the cleaned entries via `PasteResult.entries` for manual placement. */
   shouldAutoHandlePaste?: boolean;
 
-  // Event handlers (on* = fire-and-forget; each takes ONE context object)
-  /** Fires on a plain node click. ctx = NodeRef of the clicked node. */
-  onNodeClick?: (ctx: NodeEventContext<T>) => void;
-  /** Fires on a detected node double-click. Uses manual detection (last path +
-   *  timestamp, 400ms) rather than the native `dblclick`, which is unreliable
-   *  under the flat diff reconciler. Fires for every `clickBehavior`. */
-  onNodeDoubleClick?: (ctx: NodeEventContext<T>) => void;
-  /** Interceptor before `copyNodes`. Return `false` to block, or a `string[]` to
+  // Event twins (engine use — on the element, core installs them from the event table).
+  // Each gets the event detail (the data + controller / element).
+  /** Twin of `node-click`: the clicked node with parent + siblings. */
+  onNodeClick?: (detail: NodeEventDetail<T>) => void;
+  /** Twin of `node-double-click`. Uses manual detection (last path + timestamp, 400ms)
+   *  rather than the native `dblclick`, which is unreliable under the flat diff
+   *  reconciler. Fires for every `clickBehavior`. */
+  onNodeDoubleClick?: (detail: NodeEventDetail<T>) => void;
+  /** Runs before `copyNodes` (synchronous). Return `false` to block, or a `string[]` to
    *  override which paths are copied. */
-  beforeCopyCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;
-  /** Interceptor before `cutNodes`. Return `false` to block, or a `string[]` to
+  beforeCopyCallback?: (ctx: BeforeCopyCallbackContext<T>) => string[] | false | void;
+  /** Runs before `cutNodes` (synchronous). Return `false` to block, or a `string[]` to
    *  override which paths are cut. */
-  beforeCutCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;
-  /** Interceptor before `pasteNodes`. Return `false` to block, or `{ targetPath?,
-   *  position? }` to redirect the paste target / position. */
+  beforeCutCallback?: (ctx: BeforeCopyCallbackContext<T>) => string[] | false | void;
+  /** Runs before `pasteNodes` (synchronous). Return `false` to block (no `node-paste`
+   *  event), or `{ targetPath?, position? }` to redirect the paste target / position. */
   beforePasteCallback?: (
-    ctx: BeforePasteContext<T>
+    ctx: BeforePasteCallbackContext<T>
   ) => { targetPath?: string; position?: DropPosition } | false | void;
-  /** Narrow (return path[]) or block (false) the built-in Delete set. */
-  beforeDeleteCallback?: (ctx: BeforeDeleteContext<T>) => string[] | false | void;
+  /** Runs before the built-in Delete / `deleteNodes()` (synchronous): narrow (return path[]) or block (false). */
+  beforeDeleteCallback?: (ctx: BeforeDeleteCallbackContext<T>) => string[] | false | void;
   /** OUTPUT (egress) transform — per-node clean/redact at snapshot time (copy/cut +
-   *  the capture side of a copy-drop) before data hits the shared clipboard. */
-  nodeOutputTransformationCallback?: (data: T, ctx: NodeTransformContext<T>) => T;
+   *  the capture side of a copy-drop) before data hits the shared clipboard. `ctx.data`
+   *  is the snapshot; return the cleaned data. */
+  nodeOutputTransformationCallback?: (ctx: NodeTransformCallbackContext<T>) => T;
   /** INPUT (ingress) transform — per-node at insert time (paste + the insert side of
-   *  a copy-drop); derive ids/values/names; return null to SKIP a node (+ subtree). */
-  nodeInputTransformationCallback?: (data: T, ctx: NodeTransformContext<T>) => T | null;
-  /** Fires after `copyNodes` succeeds. ctx = { operation:'copy', paths, nodes }. */
-  onCopy?: (ctx: ClipboardEventContext<T>) => void;
-  /** Fires after `cutNodes` succeeds. ctx = { operation:'cut', paths, nodes }. */
-  onCut?: (ctx: ClipboardEventContext<T>) => void;
-  /** Fires after `pasteNodes` succeeds, with the paste result. */
-  onPaste?: (result: PasteResult<T>) => void;
-  /** Fires after the built-in Delete (or `deleteNodes()`); nodes are pre-removal snapshots. */
-  onDelete?: (ctx: ClipboardEventContext<T>) => void;
-  onNodeDragStart?: (ctx: NodeDragContext<T>) => void;
-  onNodeDragOver?: (ctx: NodeDragContext<T>) => void;
+   *  a copy-drop); derive ids/values/names from `ctx.data`; return null to SKIP a node (+ subtree). */
+  nodeInputTransformationCallback?: NodeTransformCallback<T>;
+  /** Twin of `node-copy`: `{ operation: 'copy', paths, nodes }`. */
+  onNodeCopy?: (detail: NodeClipboardEventDetail<T>) => void;
+  /** Twin of `node-cut`. */
+  onNodeCut?: (detail: NodeClipboardEventDetail<T>) => void;
+  /** Twin of `node-paste`: the paste result. */
+  onNodePaste?: (detail: NodePasteEventDetail<T>) => void;
+  /** Twin of `node-delete`; nodes are pre-removal snapshots. */
+  onNodeDelete?: (detail: NodeClipboardEventDetail<T>) => void;
+  onNodeDragStart?: (detail: NodeDragEventDetail<T>) => void;
+  onNodeDragOver?: (detail: NodeDragEventDetail<T>) => void;
   /** Intercept — modify/block/route a drop. `false` blocks, `{ position?, operation? }`
-   *  redirects, a `DropGroup[]` fans it out to several destinations, `void` proceeds.
-   *  Async-capable. (Migrated rc13 from its 5-arg positional form.) */
+   *  redirects, a `DropGroup[]` fans it out to several destinations, nothing proceeds.
+   *  Async-capable. */
   beforeDropCallback?: (
-    ctx: BeforeDropContext<T>
+    ctx: BeforeDropCallbackContext<T>
   ) =>
     | boolean
     | { position?: DropPosition; operation?: DropOperation }
@@ -357,18 +414,25 @@ export interface TreeViewConfig<T = any> {
         | DropGroup[]
         | void
       >;
-  onNodeDrop?: (ctx: NodeDropContext<T>) => void;
-  /** Source-side blocked-action event — a locked node was long-pressed / an
-   *  undraggable drag was attempted. Fires the `node-drag-denied` DOM event. */
-  onNodeDragDenied?: (ctx: NodeEventContext<T>) => void;
-  /** Target-side blocked-action event — a drop was rejected because the target
-   *  refuses it. Fires the `node-drop-denied` DOM event. */
-  onNodeDropDenied?: (ctx: NodeEventContext<T>) => void;
-  /** Set-level PRE-drag interceptor: prune/augment/veto the dragged set. Return a
-   *  `string[]` manifest (landing order), `false` to cancel, or `void` for default. */
-  beforeDragStartCallback?: (ctx: DragStartContext<T>) => string[] | false | void;
-  /** Interceptor — return `true` to suppress default + built-in shortcuts. Runs first. */
-  onTreeKeydown?: (ctx: TreeKeydownContext<T>) => boolean | void;
+  onNodeDrop?: (detail: NodeDropEventDetail<T>) => void;
+  /** Twin of `node-drag-reject` — source side: a locked node was long-pressed / an
+   *  undraggable drag was attempted. */
+  onNodeDragReject?: (detail: NodeEventDetail<T>) => void;
+  /** Twin of `node-drop-reject` — target side: a drop was rejected because the target refuses it. */
+  onNodeDropReject?: (detail: NodeEventDetail<T>) => void;
+  /** Set-level PRE-drag interceptor (synchronous — dragstart needs the answer now):
+   *  prune/augment/veto the dragged set. Return a `string[]` manifest (landing order),
+   *  `false` to cancel, or nothing for the default. */
+  beforeDragStartCallback?: (ctx: BeforeDragStartContext<T>) => string[] | false | void;
+  /** Runs before the built-in keyboard handling (synchronous). Return `false` to
+   *  suppress the default + built-in shortcuts for this key. */
+  beforeKeydownCallback?: (ctx: KeydownContext<T>) => void | false;
+  /** Twin of `action` (a context-menu item was activated). */
+  onAction?: (detail: TreeViewActionEventDetail<T>) => void;
+  /** Twin of `tree-change` (bulk notification after any state change). */
+  onTreeChange?: (detail: TreeEventDetail<T>) => void;
+  /** Twin of `focus-change`. */
+  onFocusChange?: (detail: FocusChangeEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
   shouldHandleKeyboardShortcuts?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
@@ -379,25 +443,33 @@ export interface TreeViewConfig<T = any> {
    *  `target = null` regardless of per-node `getIsDropAllowedCallback`. Default `false`. */
   shouldEnableTreeDropZone?: boolean | null;
 
-  // Render callbacks
-  renderStartCallback?: () => void;
-  renderProgressCallback?: (stats: RenderStats) => void;
-  renderCompleteCallback?: (stats: RenderStats) => void;
-
-  // Render callbacks (for DomRenderer)
-  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement, ctx: NodeRenderContext) => void;
-  renderEmptyStateCallback?: (container: HTMLElement) => void;
+  // Progressive-render notifications (twins of `render-start` / `render-progress` / `render-complete`)
+  onRenderStart?: (detail: TreeEventDetail<T>) => void;
+  onRenderProgress?: (detail: RenderEventDetail<T>) => void;
+  onRenderComplete?: (detail: RenderEventDetail<T>) => void;
+  // Render callbacks (for DomRenderer) — one ctx each
+  /** Fill `ctx.contentElement` for `ctx.node` (render state on the ctx: device, container, isExpanded, …). */
+  renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => void;
+  renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => void;
   /** Fallback text for an empty tree when no renderEmptyStateCallback is given. Default "No data". */
   noDataText?: string | null;
-  renderEmptyZoneCallback?: (container: HTMLElement) => void;
+  renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */
   shouldShowDropPlaceholderWhenEmpty?: boolean | null;
-  renderLoadingCallback?: (container: HTMLElement) => void;
-  renderHeaderCallback?: (container: HTMLElement) => void;
-  renderFooterCallback?: (container: HTMLElement) => void;
-  renderContextMenuCallback?: (node: LTreeNode<T>, close: () => void, container: HTMLElement) => void;
-  renderContextMenuItemCallback?: (item: ContextMenuItem, node: LTreeNode<T>, container: HTMLElement) => void;
+  renderLoadingCallback?: (ctx: ContainerRenderContext<T>) => void;
+  renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => void;
+  renderFooterCallback?: (ctx: ContainerRenderContext<T>) => void;
+  /** Take over the whole context menu: fill `ctx.containerElement` (close it via `ctx.controller.closeContextMenu()`). */
+  renderContextMenuCallback?: (ctx: ContextMenuRenderContext<T>) => void;
+  /** Fill one item's `ctx.buttonElement` (leave it empty for the default). */
+  renderContextMenuItemCallback?: (ctx: ContextMenuItemRenderContext<T>) => void;
+
+  // Context (passed by <web-treeview>; a standalone WebTreeView defaults them)
+  /** The host element — `element` on every ctx / event detail. */
+  hostElement?: HTMLElement;
+  /** The public facade — `controller` on every ctx / event detail. */
+  controller?: TreeViewController<T>;
 }
 
 // ── Methods ────────────────────────────────────────────────────────────
@@ -475,7 +547,7 @@ export interface TreeViewMethods<T = any> {
   cutNodes(paths?: string[]): void;
   pasteNodes(
     targetPath: string,
-    transformData?: ((data: T, ctx: NodeTransformContext<T>) => T | null) | null,
+    transform?: NodeTransformCallback<T> | null,
     position?: DropPosition
   ): PasteResult<T>;
   cancelCut(): void;
@@ -490,26 +562,28 @@ export interface TreeViewMethods<T = any> {
 
 // ── Events ─────────────────────────────────────────────────────────────
 
-// DOM CustomEvent details mirror the ctx object each on* callback receives — so
-// `event.detail` IS the NodeRef / NodeDropContext / SelectionChangeContext / etc.
+// Each event's detail is the same object its `on*` twin receives, with `controller` /
+// `element` attached (non-enumerable).
 export interface TreeEventMap<T = any> {
-  'node-clicked': CustomEvent<NodeEventContext<T>>;
-  'node-double-click': CustomEvent<NodeEventContext<T>>;
-  'copy': CustomEvent<ClipboardEventContext<T>>;
-  'cut': CustomEvent<ClipboardEventContext<T>>;
-  'paste': CustomEvent<{ result: PasteResult<T> }>;
-  'delete': CustomEvent<ClipboardEventContext<T>>;
-  'node-drag-start': CustomEvent<NodeDragContext<T>>;
-  'node-drag-over': CustomEvent<NodeDragContext<T>>;
-  'node-drop': CustomEvent<NodeDropContext<T>>;
-  'node-drag-denied': CustomEvent<NodeEventContext<T>>;
-  'node-drop-denied': CustomEvent<NodeEventContext<T>>;
-  'data-changed': CustomEvent<{ data: T[] }>;
-  'focused-node-changed': CustomEvent<{ focusedNode: LTreeNode<T> | null }>;
-  'search-text-changed': CustomEvent<{ searchText: string }>;
-  'selection-change': CustomEvent<SelectionChangeContext<T>>;
-  'checked-change': CustomEvent<SelectionChangeContext<T>>;
-  'tree-changed': CustomEvent<void>;
+  'node-click': CustomEvent<NodeEventDetail<T>>;
+  'node-double-click': CustomEvent<NodeEventDetail<T>>;
+  'node-copy': CustomEvent<NodeClipboardEventDetail<T>>;
+  'node-cut': CustomEvent<NodeClipboardEventDetail<T>>;
+  'node-paste': CustomEvent<NodePasteEventDetail<T>>;
+  'node-delete': CustomEvent<NodeClipboardEventDetail<T>>;
+  'node-drag-start': CustomEvent<NodeDragEventDetail<T>>;
+  'node-drag-over': CustomEvent<NodeDragEventDetail<T>>;
+  'node-drop': CustomEvent<NodeDropEventDetail<T>>;
+  'node-drag-reject': CustomEvent<NodeEventDetail<T>>;
+  'node-drop-reject': CustomEvent<NodeEventDetail<T>>;
+  'selection-change': CustomEvent<SelectionChangeEventDetail<T>>;
+  'checked-change': CustomEvent<SelectionChangeEventDetail<T>>;
+  'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
+  'tree-change': CustomEvent<TreeEventDetail<T>>;
+  'action': CustomEvent<TreeViewActionEventDetail<T>>;
+  'render-start': CustomEvent<TreeEventDetail<T>>;
+  'render-progress': CustomEvent<RenderEventDetail<T>>;
+  'render-complete': CustomEvent<RenderEventDetail<T>>;
 }
 
 // ── Scroll Options ─────────────────────────────────────────────────────

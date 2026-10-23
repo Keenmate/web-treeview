@@ -24,7 +24,7 @@
                 <button id="btn-copy-reports">Copy 1.1</button>
                 <button id="btn-paste-images">Paste into 2</button>
                 <label><input type="checkbox" id="block-delete"> beforeDelete → block</label>
-                <label><input type="checkbox" id="intercept-keys"> onTreeKeydown → suppress</label>
+                <label><input type="checkbox" id="intercept-keys"> beforeKeydownCallback → suppress</label>
             </div>
             <div class="tree-container">
                 <web-treeview id="tree" expand-level="3" click-behavior="select"></web-treeview>
@@ -55,7 +55,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
             tree.selectionMode = 'multi';
 
@@ -66,8 +66,8 @@
             const plog = (m) => { pasteLog.textContent = (pasteLog.textContent ? pasteLog.textContent + '\n' : '') + m; };
             const klog = (m) => { keyLog.textContent = (keyLog.textContent ? keyLog.textContent + '\n' : '') + m; };
 
-            // onDelete gets PRE-REMOVAL node snapshots.
-            tree.onDelete = (ctx) => del(`deleted ${ctx.nodes.map(n => n.data?.name).join(',')}`);
+            // onNodeDelete gets PRE-REMOVAL node snapshots.
+            tree.onNodeDelete = (ctx) => del(`deleted ${ctx.nodes.map(n => n.data?.name).join(',')}`);
 
             // beforeDeleteCallback can block the whole delete.
             tree.beforeDeleteCallback = (ctx) =>
@@ -76,16 +76,16 @@
             // Paste transform: skip files named "Q2.txt" (return null → skipped),
             // re-id everything else so pasted ids don't collide.
             let nextId = 1000;
-            tree.nodeInputTransformationCallback = (d, ctx) => {
+            tree.nodeInputTransformationCallback = ({ data: d }) => {
                 if (d.name === 'Q2.txt') return null;
                 return { ...d, id: ++nextId };
             };
 
-            // onTreeKeydown interceptor — when armed, suppress everything and log.
-            tree.onTreeKeydown = (ctx) => {
+            // beforeKeydownCallback interceptor — when armed, suppress everything and log.
+            tree.beforeKeydownCallback = (ctx) => {
                 if (!document.getElementById('intercept-keys').checked) return;
                 klog(`intercept ${ctx.event.key}`);
-                return true;
+                return false;
             };
 
             document.getElementById('btn-delete-api').addEventListener('click', () => {

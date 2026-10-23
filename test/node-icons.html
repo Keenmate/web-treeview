@@ -19,7 +19,7 @@
         <h2>default (class on &lt;i&gt; + icon-color-member)</h2>
         <div class="tree"><web-treeview id="default" expand-level="3" icon-member="icon" icon-color-member="color" align-node-icons></web-treeview></div>
 
-        <h2>iconCallback returning emoji (text, not a class)</h2>
+        <h2>getIconCallback returning emoji (text, not a class)</h2>
         <div class="tree"><web-treeview id="emoji" expand-level="3"></web-treeview></div>
 
         <h2>renderIconCallback (inline SVG / custom)</h2>
@@ -43,10 +43,10 @@
             const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', data };
             Object.assign(d, common);
             Object.assign(e, common, {
-                iconCallback: (node) => (node.path === '1.2' ? 'fa-building' : node.path === '1' ? '🗂️' : '👤')
+                getIconCallback: ({ node }) => (node.path === '1.2' ? 'fa-building' : node.path === '1' ? '🗂️' : '👤')
             });
             Object.assign(c, common, {
-                renderIconCallback: (node, value, iconEl) => {
+                renderIconCallback: ({ value, iconElement: iconEl }) => {
                     iconEl.setAttribute('data-testid', 'custom-icon');
                     iconEl.setAttribute('data-value', value ?? '');
                     iconEl.textContent = '★';

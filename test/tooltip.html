@@ -56,10 +56,10 @@
             const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', data };
 
             Object.assign(text, common, {
-                getNodeTooltipCallback: (node) => node.data?.desc ?? null
+                getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
             Object.assign(rich, common, {
-                getNodeTooltipCallback: (node) => {
+                getNodeTooltipCallback: ({ node }) => {
                     const d = node.data;
                     if (!d) return null;
                     const el = document.createElement('div');
@@ -71,7 +71,7 @@
 
             Object.assign(cursor, {
                 idMember: 'id', pathMember: 'path', displayValueMember: 'name', data: wideData,
-                getNodeTooltipCallback: (node) => node.data?.desc ?? null
+                getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
 
             document.getElementById('toggle').addEventListener('click', () => {

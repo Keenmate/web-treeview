@@ -9,16 +9,15 @@
  * as a core input table (`static inputs`) plus an event table (`static events`).
  * Core owns parsing, validation, reactivity coalescing, and reflection. This file
  * keeps only what is genuinely treeview-specific: the bridge from the merged
- * `config` to the real engine (`WebTreeView` in `treeview.ts`), the DOM-event
- * wrappers, and the custom-styles injection.
+ * `config` to the tree (`WebTreeView` in `treeview.ts`, which adapts the public
+ * single-ctx callbacks to the internal `TreeEngine`), the public `el.controller`
+ * facade, the event bridges, and the custom-styles injection.
  *
- * Reactivity model: the engine (`WebTreeView` → controller + renderer) applies
- * every config change in place via `update()`; it is built once per connect and
- * destroyed on disconnect (a DOM move rebuilds it, matching the old element,
- * which also re-initialized on every reconnect). So every reactive input is
- * `on:'update'`; inputs whose old setter did NOT schedule an update (search-index
- * config, the pure/bridged callbacks) are `on:'none'` — read from `this.config`
- * at engine-build time, exactly as before.
+ * Reactivity model: the tree (`WebTreeView` → engine + renderer) applies every
+ * config change in place via `update()`; it is built once per connect and
+ * destroyed on disconnect (a DOM move rebuilds it). Every input is `on:'update'`:
+ * `update()` sends the full config, and WebTreeView memoizes its callback
+ * adapters, so re-sending an unchanged callback costs nothing.
  */
 import {
   BlissElement,
@@ -34,14 +33,28 @@ import {
   type InputDef,
   type EventDef,
 } from '@keenmate/web-components-core';
-import { WebTreeView } from './treeview';
+import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree } from './ltree/types';
+import type { Ltree, TreeChange, ApplyChangesResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
-import type { SelectMode, TreeMutationOptions, NodeTransformContext } from './controller/types';
+import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import type { PasteResult } from './clipboard';
-import type { TreeController } from './controller/tree-controller';
+import type {
+  TreeViewController,
+  TreeViewContext,
+  NodeTransformCallback,
+  NodeEventDetail,
+  NodeDragEventDetail,
+  NodeDropEventDetail,
+  NodeClipboardEventDetail,
+  NodePasteEventDetail,
+  SelectionChangeEventDetail,
+  FocusChangeEventDetail,
+  RenderEventDetail,
+  TreeEventDetail,
+  TreeViewActionEventDetail,
+} from './interaction';
 import { initLogger } from './logger';
 import styles from './css/main.css?inline';
 
@@ -191,114 +204,152 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldDisplayContextMenuInDebugMode', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Show the built-in context menu even while debug info is displayed.' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
-  { configKey: 'customStylesCallback', converter: cb(), on: 'update', type: '() => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
+  { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
 
-  // ── Callbacks: data shape / behavior (reactive → update) ───────────────────
-  { configKey: 'iconCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null', description: 'Compute a per-node icon value (overrides iconMember).' },
-  { configKey: 'iconColorCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null', description: 'Compute a per-node icon color (overrides iconColorMember).' },
-  { configKey: 'renderIconCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, value: string | null, iconEl: HTMLElement) => void', description: 'Custom per-node icon render (SVG / unicode / markup). Wins over the default class-based <i>.' },
-  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(items: LTreeNode[]) => LTreeNode[]', description: 'Custom sibling sort.' },
-  { configKey: 'contextMenuCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, close: () => void) => ContextMenuEntry[]', description: 'Build the context-menu entries for a node.' },
-  { configKey: 'nodeClass', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null | undefined', description: 'Extra class(es) for a node row.' },
-  { configKey: 'nodeContentClass', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | null | undefined', description: 'Extra class(es) for a node content element.' },
-  { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(node: LTreeNode) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
+  // ── Callbacks — every one takes ONE ctx (`ctx.node` for the per-node ones) ──
+  { configKey: 'getDisplayValueCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string', description: 'Compute a node display label (overrides displayValueMember).' },
+  { configKey: 'getSearchValueCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string', description: 'Compute the text a node is searched against.' },
+  { configKey: 'getIsExpandedCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a node starts expanded (overrides isExpandedMember).' },
+  { configKey: 'getIsCheckedCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a node starts checked (overrides isCheckedMember).' },
+  { configKey: 'getIsSelectableCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a node can be selected (overrides isSelectableMember).' },
+  { configKey: 'getIsDraggableCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a node is draggable (overrides isDraggableMember).' },
+  { configKey: 'getIsDropAllowedCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a drop onto a node is allowed (overrides isDropAllowedMember).' },
+  { configKey: 'getIsCollapsibleCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => boolean', description: 'Whether a node is collapsible (overrides isCollapsibleMember).' },
+  { configKey: 'getAllowedDropPositionsCallback', converter: cb(), on: 'update', type: "(ctx: NodeContext) => ('before' | 'after' | 'child')[] | null | undefined", description: 'Which drop positions a node allows.' },
+  { configKey: 'getIconCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null', description: 'Compute a per-node icon value (overrides iconMember).' },
+  { configKey: 'getIconColorCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null', description: 'Compute a per-node icon color (overrides iconColorMember).' },
+  { configKey: 'getNodeClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node row (`.wtv__node`).' },
+  { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
+  { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
+  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Custom sibling sort: return `ctx.items` in the new order.' },
+  { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'). Every activation fires `action`." },
 
-  // ── Callbacks: render hooks (reactive → update) ────────────────────────────
-  { configKey: 'renderNodeCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, container: HTMLElement) => void', description: 'Custom render for a node row.' },
-  { configKey: 'renderEmptyStateCallback', converter: cb(), on: 'update', type: '(container: HTMLElement) => void', description: 'Custom render for the empty-tree state.' },
-  { configKey: 'renderEmptyZoneCallback', converter: cb(), on: 'update', type: '(container: HTMLElement) => void', description: 'Custom render for an empty drop zone.' },
-  { configKey: 'renderLoadingCallback', converter: cb(), on: 'update', type: '(container: HTMLElement) => void', description: 'Custom render for the loading state.' },
-  { configKey: 'renderHeaderCallback', converter: cb(), on: 'update', type: '(container: HTMLElement) => void', description: 'Custom render for the tree header.' },
-  { configKey: 'renderFooterCallback', converter: cb(), on: 'update', type: '(container: HTMLElement) => void', description: 'Custom render for the tree footer.' },
-  { configKey: 'renderContextMenuCallback', converter: cb(), on: 'update', type: '(node: LTreeNode, close: () => void, container: HTMLElement) => void', description: 'Custom render for the whole context menu.' },
-  { configKey: 'renderContextMenuItemCallback', converter: cb(), on: 'update', type: '(item: ContextMenuItem, node: LTreeNode, container: HTMLElement) => void', description: 'Custom render for one context-menu item.' },
+  // ── Callbacks: render hooks ──────────────────────────────────────────────
+  { configKey: 'renderNodeCallback', converter: cb(), on: 'update', type: '(ctx: NodeRenderCallbackContext) => void', description: 'Custom render for a node row: fill `ctx.contentElement` (render state on the ctx).' },
+  { configKey: 'renderIconCallback', converter: cb(), on: 'update', type: '(ctx: IconRenderContext) => void', description: 'Custom per-node icon render (SVG / unicode / markup) into `ctx.iconElement`. Wins over the default class-based <i>.' },
+  { configKey: 'renderEmptyStateCallback', converter: cb(), on: 'update', type: '(ctx: ContainerRenderContext) => void', description: 'Custom render for the empty-tree state into `ctx.containerElement`.' },
+  { configKey: 'renderEmptyZoneCallback', converter: cb(), on: 'update', type: '(ctx: ContainerRenderContext) => void', description: 'Custom render for an empty drop zone.' },
+  { configKey: 'renderLoadingCallback', converter: cb(), on: 'update', type: '(ctx: ContainerRenderContext) => void', description: 'Custom render for the loading state.' },
+  { configKey: 'renderHeaderCallback', converter: cb(), on: 'update', type: '(ctx: ContainerRenderContext) => void', description: 'Custom render for the tree header.' },
+  { configKey: 'renderFooterCallback', converter: cb(), on: 'update', type: '(ctx: ContainerRenderContext) => void', description: 'Custom render for the tree footer.' },
+  { configKey: 'renderContextMenuCallback', converter: cb(), on: 'update', type: '(ctx: ContextMenuRenderContext) => void', description: 'Take over the whole context menu: fill `ctx.containerElement` (close via `ctx.controller.closeContextMenu()`).' },
+  { configKey: 'renderContextMenuItemCallback', converter: cb(), on: 'update', type: '(ctx: ContextMenuItemRenderContext) => void', description: 'Fill one context-menu item button (`ctx.buttonElement`, `ctx.menuItem`); leave it empty for the default.' },
 
-  // ── Callbacks: bridged to DOM events (non-reactive → none; wrapped at build)
-  // Setting one updates `this.config`; the stable engine wrapper reads it lazily,
-  // so the change takes effect on the next event without breaking the bridge.
-  { configKey: 'onNodeClick', converter: cb(), on: 'none', type: '(ctx: NodeEventContext) => void', description: 'A node was clicked (also fires the `node-clicked` DOM event).' },
-  { configKey: 'onNodeDoubleClick', converter: cb(), on: 'none', type: '(ctx: NodeEventContext) => void', description: 'A node was double-clicked (also fires `node-double-click`).' },
-  { configKey: 'onCopy', converter: cb(), on: 'none', type: '(ctx: ClipboardEventContext) => void', description: 'A copy happened (also fires `copy`).' },
-  { configKey: 'onCut', converter: cb(), on: 'none', type: '(ctx: ClipboardEventContext) => void', description: 'A cut happened (also fires `cut`).' },
-  { configKey: 'onPaste', converter: cb(), on: 'none', type: '(result: PasteResult) => void', description: 'A paste happened (also fires `paste` with `detail.result`).' },
-  { configKey: 'onDelete', converter: cb(), on: 'none', type: '(ctx: unknown) => void', description: 'A delete happened (also fires `delete`).' },
-  { configKey: 'onNodeDragStart', converter: cb(), on: 'none', type: '(ctx: NodeDragContext) => void', description: 'A node drag started (also fires `node-drag-start`).' },
-  { configKey: 'onNodeDragOver', converter: cb(), on: 'none', type: '(ctx: NodeDragContext) => void', description: 'A node was dragged over (also fires `node-drag-over`).' },
-  { configKey: 'onNodeDrop', converter: cb(), on: 'none', type: '(ctx: NodeDropContext) => void', description: 'A drop completed (also fires `node-drop`).' },
-  { configKey: 'onSelectionChange', converter: cb(), on: 'none', type: '(ctx: unknown) => void', description: 'The selected set changed (also fires `selection-change`).' },
-  { configKey: 'onCheckedChange', converter: cb(), on: 'none', type: '(ctx: SelectionChangeContext) => void', description: 'The checked (checkbox) set changed (also fires `checked-change`).' },
-
-  // ── Callbacks: pure engine hooks (non-reactive → none) ─────────────────────
-  { configKey: 'beforeCopyCallback', converter: cb(), on: 'none', type: '(ctx: BeforeCopyContext) => boolean | void', description: 'Runs before a copy; return false to veto.' },
-  { configKey: 'beforeCutCallback', converter: cb(), on: 'none', type: '(ctx: BeforeCopyContext) => boolean | void', description: 'Runs before a cut; return false to veto.' },
-  { configKey: 'beforePasteCallback', converter: cb(), on: 'none', type: '(ctx: BeforePasteContext) => boolean | void', description: 'Runs before a paste; return false to veto.' },
-  { configKey: 'beforeDeleteCallback', converter: cb(), on: 'none', type: '(ctx: BeforeDeleteContext) => boolean | void', description: 'Runs before a delete; return false to veto.' },
-  { configKey: 'beforeDropCallback', converter: cb(), on: 'none', type: '(ctx: BeforeDropContext) => boolean | { position?, operation? } | DropGroup[] | void', description: 'Runs before a drop; false blocks, an object redirects, a DropGroup[] routes it to several destinations.' },
-  { configKey: 'beforeDragStartCallback', converter: cb(), on: 'none', type: '(ctx: DragStartContext) => string[] | false | void', description: 'Set-level pre-drag interceptor: prune/augment/veto the dragged set.' },
-  { configKey: 'onNodeDragDenied', converter: cb(), on: 'none', type: '(ctx: NodeEventContext) => void', description: 'A locked node was long-pressed (also fires `node-drag-denied`).' },
-  { configKey: 'onNodeDropDenied', converter: cb(), on: 'none', type: '(ctx: NodeEventContext) => void', description: 'A drop was rejected by the target (also fires `node-drop-denied`).' },
-  { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'none', type: '(data, ctx: NodeTransformContext) => data', description: 'OUTPUT (egress) transform — clean/redact a node data object as it leaves the source (copy/cut/copy-drop).' },
-  { configKey: 'nodeInputTransformationCallback', converter: cb(), on: 'none', type: '(data, ctx: NodeTransformContext) => data | null', description: 'INPUT (ingress) transform — derive ids/values as a node lands (paste/copy-drop); return null to skip.' },
-  { configKey: 'onTreeKeydown', converter: cb(), on: 'none', type: '(ctx: TreeKeydownContext) => void', description: 'Intercept keydown before the tree handles it.' },
-  { configKey: 'getDisplayValueCallback', converter: cb(), on: 'none', type: '(node: LTreeNode) => string', description: 'Compute a node display label (overrides displayValueMember).' },
-  { configKey: 'getSearchValueCallback', converter: cb(), on: 'none', type: '(node: LTreeNode) => string', description: 'Compute the text a node is searched against.' },
-  { configKey: 'getIsDraggableCallback', converter: cb(), on: 'none', type: '(node: LTreeNode) => boolean', description: 'Whether a node is draggable (overrides isDraggableMember).' },
-  { configKey: 'getIsCollapsibleCallback', converter: cb(), on: 'none', type: '(node: LTreeNode) => boolean', description: 'Whether a node is collapsible (overrides isCollapsibleMember).' },
-  { configKey: 'getAllowedDropPositionsCallback', converter: cb(), on: 'none', type: '(node: LTreeNode) => DropPosition[] | null | undefined', description: 'Which drop positions a node allows.' },
-  { configKey: 'indexingCompleteCallback', converter: cb(), on: 'none', type: '() => void', description: 'Fires when the search index finishes building.' },
-  { configKey: 'renderStartCallback', converter: cb(), on: 'none', type: '() => void', description: 'Fires when a progressive render starts.' },
-  { configKey: 'renderProgressCallback', converter: cb(), on: 'none', type: '(stats) => void', description: 'Fires on each progressive-render batch.' },
-  { configKey: 'renderCompleteCallback', converter: cb(), on: 'none', type: '(stats) => void', description: 'Fires when a progressive render completes.' },
+  // ── Callbacks: before-hooks (`false` cancels; a value replaces) ───────────
+  { configKey: 'beforeCopyCallback', converter: cb(), on: 'update', type: '(ctx: BeforeCopyCallbackContext) => string[] | false | void', description: 'Runs before a copy (synchronous): `false` blocks, a `string[]` replaces the paths.' },
+  { configKey: 'beforeCutCallback', converter: cb(), on: 'update', type: '(ctx: BeforeCopyCallbackContext) => string[] | false | void', description: 'Runs before a cut (synchronous): `false` blocks, a `string[]` replaces the paths.' },
+  { configKey: 'beforePasteCallback', converter: cb(), on: 'update', type: '(ctx: BeforePasteCallbackContext) => { targetPath?, position? } | false | void', description: 'Runs before a paste (synchronous): `false` blocks (no `node-paste` event), an object redirects the target / position.' },
+  { configKey: 'beforeDeleteCallback', converter: cb(), on: 'update', type: '(ctx: BeforeDeleteCallbackContext) => string[] | false | void', description: 'Runs before a delete (synchronous): `false` blocks, a `string[]` narrows the paths.' },
+  { configKey: 'beforeDropCallback', converter: cb(), on: 'update', type: '(ctx: BeforeDropCallbackContext) => false | { position?, operation? } | DropGroup[] | void | Promise<…>', description: 'Runs before a drop (async OK): `false` blocks, an object redirects, a DropGroup[] routes it to several destinations.' },
+  { configKey: 'beforeDragStartCallback', converter: cb(), on: 'update', type: '(ctx: BeforeDragStartContext) => string[] | false | void', description: 'Set-level pre-drag interceptor (synchronous — dragstart): prune/augment/veto the dragged set.' },
+  { configKey: 'beforeCheckboxToggleCallback', converter: cb(), on: 'update', type: '(ctx: BeforeCheckboxToggleContext) => string[] | false | void', description: 'Runs before a checkbox toggle (`ctx.node`, `ctx.isChecked`, `ctx.affectedPaths`): `false` cancels, a `string[]` overrides the affected paths.' },
+  { configKey: 'beforeKeydownCallback', converter: cb(), on: 'update', type: '(ctx: KeydownContext) => void | false', description: 'Runs before the built-in keyboard handling (synchronous): return `false` to suppress it for this key. Drive the tree via `ctx.controller`.' },
+  { configKey: 'beforeActionCallback', converter: cb(), on: 'update', type: '(detail: TreeViewActionEventDetail) => void | false | Promise<void | false>', description: 'Runs before a context-menu item activates: `false` cancels its onClick, the `action` event and the built-in.' },
+  { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data', description: 'OUTPUT (egress) transform — clean/redact `ctx.data` as a node leaves the source (copy/cut/copy-drop).' },
+  { configKey: 'nodeInputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data | null', description: 'INPUT (ingress) transform — derive ids/values from `ctx.data` as a node lands (paste/copy-drop); return null to skip.' },
 ];
 
 // ── Outward DOM events (core §12.5) ──────────────────────────────────────────
-// Every event is declared with `property: false`: web-treeview has never exposed
-// managed `on<Name>` handler PROPERTIES for these (consumers use
-// addEventListener), and the default handler-property names would collide with
-// the identically-named engine callback inputs above (`onCopy`, `onNodeDrop`,
-// `onCheckedChange`, …). Declaring them here still gives `emit()` its typing
-// and feeds the CEM manifest.
+// Each installs a camelCase `on<Name>` twin that core calls with the detail (not
+// the CustomEvent) right before dispatching. Every detail carries `controller` /
+// `element` (non-enumerable).
 type TreeViewEvents = {
-  'node-clicked': unknown;
-  'node-double-click': unknown;
-  'copy': unknown;
-  'cut': unknown;
-  'paste': { result: unknown };
-  'delete': unknown;
-  'node-drag-start': unknown;
-  'node-drag-over': unknown;
-  'node-drop': unknown;
-  'node-drag-denied': unknown;
-  'node-drop-denied': unknown;
-  'selection-change': unknown;
-  'checked-change': unknown;
-  'tree-changed': undefined;
-  'focused-node-changed': { focusedNode: unknown };
+  'node-click': NodeEventDetail;
+  'node-double-click': NodeEventDetail;
+  'node-copy': NodeClipboardEventDetail;
+  'node-cut': NodeClipboardEventDetail;
+  'node-paste': NodePasteEventDetail;
+  'node-delete': NodeClipboardEventDetail;
+  'node-drag-start': NodeDragEventDetail;
+  'node-drag-over': NodeDragEventDetail;
+  'node-drop': NodeDropEventDetail;
+  'node-drag-reject': NodeEventDetail;
+  'node-drop-reject': NodeEventDetail;
+  'selection-change': SelectionChangeEventDetail;
+  'checked-change': SelectionChangeEventDetail;
+  'focus-change': FocusChangeEventDetail;
+  'tree-change': TreeEventDetail;
+  'action': TreeViewActionEventDetail;
+  'render-start': TreeEventDetail;
+  'render-progress': RenderEventDetail;
+  'render-complete': RenderEventDetail;
 };
 const EVENTS: readonly EventDef[] = [
-  { name: 'node-clicked', property: false, description: 'A node was clicked. `detail` is the node context (NodeRef).' },
-  { name: 'node-double-click', property: false, description: 'A node was double-clicked. `detail` is the node context.' },
-  { name: 'copy', property: false, description: 'A copy operation ran. `detail` is `{ operation, paths, nodes }`.' },
-  { name: 'cut', property: false, description: 'A cut operation ran. `detail` is `{ operation, paths, nodes }`.' },
-  { name: 'paste', property: false, description: 'A paste operation ran. `detail.result` is the PasteResult.' },
-  { name: 'delete', property: false, description: 'A delete operation ran. `detail` is the delete context.' },
-  { name: 'node-drag-start', property: false, description: 'A node drag started. `detail` is the drag context.' },
-  { name: 'node-drag-over', property: false, description: 'A node was dragged over. `detail` is the drag context.' },
-  { name: 'node-drop', property: false, description: 'A drop completed. `detail` is the NodeDropContext.' },
-  { name: 'node-drag-denied', property: false, description: 'A locked node was long-pressed / an undraggable drag was attempted. `detail` is the NodeRef.' },
-  { name: 'node-drop-denied', property: false, description: 'A drop was rejected by the target. `detail` is the NodeRef.' },
-  { name: 'selection-change', property: false, description: 'The selected set changed. `detail` is `{ paths, nodes }`.' },
-  { name: 'checked-change', property: false, description: 'The checked (checkbox) set changed. `detail` is `{ paths, nodes }`.' },
-  { name: 'tree-changed', property: false, description: 'The tree state changed (bulk notification; no detail).' },
-  { name: 'focused-node-changed', property: false, description: 'The focused node changed. `detail` is `{ focusedNode }`.' },
+  { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
+  { name: 'node-double-click', description: 'A node was double-clicked. `detail`: the node context. Twin: `onNodeDoubleClick(detail)`.' },
+  { name: 'node-copy', description: 'Nodes were copied. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCopy(detail)`.' },
+  { name: 'node-cut', description: 'Nodes were cut. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCut(detail)`.' },
+  { name: 'node-paste', description: 'A paste ran (not fired when `beforePasteCallback` blocked it). `detail`: the PasteResult (`success`, `count`, `skipped`, `error?`, `entries?`, …). Twin: `onNodePaste(detail)`.' },
+  { name: 'node-delete', description: 'Nodes were deleted. `detail`: `{ paths, nodes }` (pre-removal snapshots). Twin: `onNodeDelete(detail)`.' },
+  { name: 'node-drag-start', description: 'A node drag started. `detail`: the drag context (`event`, `dragged`). Twin: `onNodeDragStart(detail)`.' },
+  { name: 'node-drag-over', description: 'A node was dragged over. `detail`: the drag context. Twin: `onNodeDragOver(detail)`.' },
+  { name: 'node-drop', description: 'A drop completed. `detail`: `{ source, target, dragged, dropped, position, operation, event }`. Twin: `onNodeDrop(detail)`.' },
+  { name: 'node-drag-reject', description: 'A locked node was long-pressed / an undraggable drag was attempted. `detail`: the node context. Twin: `onNodeDragReject(detail)`.' },
+  { name: 'node-drop-reject', description: 'A drop was rejected by the target. `detail`: the node context. Twin: `onNodeDropReject(detail)`.' },
+  { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' },
+  { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
+  { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
+  { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
+  { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
+  { name: 'render-start', description: 'A progressive render started. Twin: `onRenderStart(detail)`.' },
+  { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
+  { name: 'render-complete', description: 'A progressive render completed. `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' },
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. */
-const NON_ENGINE_KEYS = new Set(['customStylesCallback']);
+const NON_ENGINE_KEYS = new Set(['getCustomStylesCallback']);
 
-export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
+export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
   protected static override events = EVENTS;
+
+  // Type-only: core installs the `on<Name>` twins at runtime (§12.5); each is
+  // called with the event detail (not the CustomEvent), right before the event.
+  declare onNodeClick: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onNodeDoubleClick: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onNodeCopy: ((detail: NodeClipboardEventDetail<T>) => void) | null;
+  declare onNodeCut: ((detail: NodeClipboardEventDetail<T>) => void) | null;
+  declare onNodePaste: ((detail: NodePasteEventDetail<T>) => void) | null;
+  declare onNodeDelete: ((detail: NodeClipboardEventDetail<T>) => void) | null;
+  declare onNodeDragStart: ((detail: NodeDragEventDetail<T>) => void) | null;
+  declare onNodeDragOver: ((detail: NodeDragEventDetail<T>) => void) | null;
+  declare onNodeDrop: ((detail: NodeDropEventDetail<T>) => void) | null;
+  declare onNodeDragReject: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onNodeDropReject: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onSelectionChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
+  declare onCheckedChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
+  declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
+  declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
+  declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
+  declare onRenderStart: ((detail: TreeEventDetail<T>) => void) | null;
+  declare onRenderProgress: ((detail: RenderEventDetail<T>) => void) | null;
+  declare onRenderComplete: ((detail: RenderEventDetail<T>) => void) | null;
+
+  /**
+   * The tree's notifications → `emit()` (which calls the twin, then dispatches). Built
+   * once, so WebTreeView's memoized adapters keep their identity across updates.
+   */
+  readonly #bridges: Partial<TreeViewConfig<T>> = {
+    onNodeClick: (d) => this.emit('node-click', d),
+    onNodeDoubleClick: (d) => this.emit('node-double-click', d),
+    onNodeCopy: (d) => this.emit('node-copy', d),
+    onNodeCut: (d) => this.emit('node-cut', d),
+    onNodePaste: (d) => this.emit('node-paste', d),
+    onNodeDelete: (d) => this.emit('node-delete', d),
+    onNodeDragStart: (d) => this.emit('node-drag-start', d),
+    onNodeDragOver: (d) => this.emit('node-drag-over', d),
+    onNodeDrop: (d) => this.emit('node-drop', d),
+    onNodeDragReject: (d) => this.emit('node-drag-reject', d),
+    onNodeDropReject: (d) => this.emit('node-drop-reject', d),
+    onSelectionChange: (d) => this.emit('selection-change', d),
+    onCheckedChange: (d) => this.emit('checked-change', d),
+    onFocusChange: (d) => this.emit('focus-change', d),
+    onTreeChange: (d) => this.emit('tree-change', d),
+    onAction: (d) => this.emit('action', d),
+    onRenderStart: (d) => this.emit('render-start', d),
+    onRenderProgress: (d) => this.emit('render-progress', d),
+    onRenderComplete: (d) => this.emit('render-complete', d),
+  };
 
   #shadow: ShadowRoot;
   #treeview?: WebTreeView<T>;
@@ -344,7 +395,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
    * Any explicit `partial` (imperative caller) is folded over the assembled config.
    */
   override update(partial: Partial<TreeViewConfig<T>> = {}): void {
-    if ('customStylesCallback' in partial) this.#applyCustomStyles();
+    if ('getCustomStylesCallback' in partial) this.#applyCustomStyles();
     if (!this.#treeview) return;
     const cfg = this.#assembleConfig() as Record<string, unknown>;
     for (const [key, value] of Object.entries(partial)) {
@@ -387,20 +438,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     });
 
     this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer);
-
-    // State-change drives the bulk `tree-changed` event and the
-    // `focused-node-changed` event (no silent option on those two).
-    const ctrl = this.#treeview.getController();
-    let prevFocusedPath: string | null = null;
-    ctrl.on('state-change', (snapshot: any) => {
-      this.emit('tree-changed', undefined);
-      const currentPath = snapshot.focusedNode?.path ?? null;
-      if (currentPath !== prevFocusedPath) {
-        prevFocusedPath = currentPath;
-        this.emit('focused-node-changed', { focusedNode: snapshot.focusedNode ?? null });
-      }
-    });
-
     this.#applyCustomStyles();
   }
 
@@ -413,37 +450,18 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
   }
 
   /**
-   * Build the engine config from the merged `this.config`: drop element-only
+   * Build the tree config from the merged `this.config`: drop element-only
    * keys (NON_ENGINE_KEYS) via core's `engineConfig`, which **preserves `null`**
    * as the clear signal (SPEC §6.1 — the engine resolves it per field), then
-   * install the DOM-event bridge wrappers. Wrappers read `this.config` at CALL
-   * time so assigning a bridged callback later takes effect without rebuilding —
-   * and without ever replacing the stable wrapper the engine holds.
+   * add the event bridges and the context (this element + its rebuild-proof
+   * controller, so every ctx / detail carries them).
    */
   #assembleConfig(): Partial<TreeViewConfig<T>> {
-    const cfg = this.engineConfig(NON_ENGINE_KEYS);
-
-    const bridge = (key: keyof TreeViewEvents, engineKey: string, mapDetail?: (arg: any) => any): void => {
-      cfg[engineKey] = (arg: any) => {
-        (this.config[engineKey] as ((a: any) => void) | null | undefined)?.(arg);
-        this.emit(key as any, mapDetail ? mapDetail(arg) : arg);
-      };
-    };
-    bridge('node-clicked', 'onNodeClick');
-    bridge('node-double-click', 'onNodeDoubleClick');
-    bridge('copy', 'onCopy');
-    bridge('cut', 'onCut');
-    bridge('paste', 'onPaste', (result) => ({ result }));
-    bridge('delete', 'onDelete');
-    bridge('node-drag-start', 'onNodeDragStart');
-    bridge('node-drag-over', 'onNodeDragOver');
-    bridge('node-drop', 'onNodeDrop');
-    bridge('node-drag-denied', 'onNodeDragDenied');
-    bridge('node-drop-denied', 'onNodeDropDenied');
-    bridge('selection-change', 'onSelectionChange');
-    bridge('checked-change', 'onCheckedChange');
-
-    return cfg as Partial<TreeViewConfig<T>>;
+    const cfg = this.engineConfig(NON_ENGINE_KEYS) as Partial<TreeViewConfig<T>>;
+    Object.assign(cfg, this.#bridges);
+    cfg.hostElement = this;
+    cfg.controller = this.controller;
+    return cfg;
   }
 
   // ── custom styles injection (ported verbatim; component-specific @import /
@@ -464,10 +482,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
       this.#customDocLinks = undefined;
     }
 
-    const callback = this.config.customStylesCallback as (() => string) | null | undefined;
+    const callback = this.config.getCustomStylesCallback as ((ctx: TreeViewContext<T>) => string) | null | undefined;
     if (typeof callback !== 'function') return;
 
-    const css = callback();
+    const css = callback(this.withContext({}) as unknown as TreeViewContext<T>);
     if (!css) return;
 
     // Extract @import url(...) rules and inject as <link> elements (@import in a
@@ -598,14 +616,15 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     return this.#treeview?.updateNode(path, dataUpdates);
   }
 
+  /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
   copyNodeWithDescendants(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
-    dataTransform: (data: T, node: LTreeNode<T>) => T | null,
+    transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null,
     siblingPath?: string,
     position?: 'before' | 'after'
   ): any {
-    return this.#treeview?.copyNodeWithDescendants(sourceNode, targetParentPath, dataTransform, siblingPath, position);
+    return this.#treeview?.copyNodeWithDescendants(sourceNode, targetParentPath, transform, siblingPath, position);
   }
 
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any {
@@ -616,10 +635,15 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     paths: string[],
     targetPath: string,
     position: DropPosition,
-    transform?: (data: T, ctx: NodeTransformContext<T>) => T | null,
+    transform?: NodeTransformCallback<T>,
     sourceTree?: Ltree<T>
   ): any {
     return this.#treeview?.duplicateNodes(paths, targetPath, position, transform, sourceTree);
+  }
+
+  /** Apply a batch of add / update / remove changes. */
+  applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
+    return this.#treeview?.applyChanges(changes) ?? { successful: 0, failed: [] };
   }
 
   /** Access the underlying LTree for advanced programmatic usage. */
@@ -627,9 +651,26 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     return this.#treeview?.getTree();
   }
 
-  /** Access the TreeController directly. */
-  getController(): TreeController<T> | undefined {
-    return this.#treeview?.getController();
+  getChildren(parentPath: string): LTreeNode<T>[] {
+    return this.#treeview?.getChildren(parentPath) ?? [];
+  }
+
+  getSiblings(path: string): LTreeNode<T>[] {
+    return this.#treeview?.getSiblings(path) ?? [];
+  }
+
+  /** The node at `path` with its live parent and siblings. */
+  getNodeRef(path: string): NodeRef<T> {
+    return this.#treeview?.getNodeRef(path) ?? { path, node: null, parent: null, siblings: [] };
+  }
+
+  getFocusedNode(): LTreeNode<T> | null {
+    return this.#treeview?.getFocusedNode() ?? null;
+  }
+
+  /** Open the context menu for the node at `path` at viewport coordinates. */
+  openContextMenu(path: string, x: number, y: number): void {
+    this.#treeview?.openContextMenu(path, x, y);
   }
 
   // ── Bulk operations ─────────────────────────────────────────────────────────
@@ -765,12 +806,13 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
     this.#treeview?.cutNodes(paths);
   }
 
+  /** Paste under / beside `targetPath`; `transform(ctx{ data, … })` overrides nodeInputTransformationCallback. */
   pasteNodes(
     targetPath: string,
-    transformData?: ((data: T, ctx: NodeTransformContext<T>) => T | null) | null,
+    transform?: NodeTransformCallback<T> | null,
     position?: DropPosition
   ): PasteResult<T> {
-    return this.#treeview?.pasteNodes(targetPath, transformData, position) ?? { success: false, count: 0, skipped: 0, error: 'Not initialized' };
+    return this.#treeview?.pasteNodes(targetPath, transform, position) ?? { success: false, count: 0, skipped: 0, error: 'Not initialized' };
   }
 
   cancelCut(): void {
@@ -787,6 +829,18 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents> {
 
   getClipboardOperation(): 'copy' | 'cut' | null {
     return this.#treeview?.getClipboardOperation() ?? null;
+  }
+
+  /**
+   * The public facade (`el.controller`, and `controller` on every callback ctx and event
+   * detail). Delegates to the current tree, so it survives rebuilds; applies pending
+   * property writes first (`flush`). Reads return empty values before the first build.
+   */
+  protected override createController(): TreeViewController<T> {
+    return createTreeViewController<T>(() => {
+      this.flush();
+      return this.#treeview;
+    });
   }
 }
 

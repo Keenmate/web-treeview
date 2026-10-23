@@ -1,5 +1,5 @@
 /**
- * Typed event emitter for TreeController notifications.
+ * Typed event emitter for TreeEngine notifications.
  * Lightweight (~50 lines), no dependencies.
  */
 

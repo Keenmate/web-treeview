@@ -113,7 +113,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
             tree.data = sampleData;
         }
@@ -166,7 +166,7 @@
                 }
             });
 
-            tree1.addEventListener('focused-node-changed', (e) => {
+            tree1.addEventListener('focus-change', (e) => {
                 const node = e.detail.focusedNode;
                 setText('out-1-focused', node ? `${node.data?.name} (${node.path})` : '(none)');
             });
@@ -188,7 +188,7 @@
             const tree2 = document.getElementById('tree-2');
             configure(tree2);
 
-            tree2.addEventListener('focused-node-changed', (e) => {
+            tree2.addEventListener('focus-change', (e) => {
                 const node = e.detail.focusedNode;
                 setText('out-2-focused', node ? `${node.data?.name} (${node.path})` : '(none)');
             });
@@ -209,13 +209,13 @@
             const logWrap = document.getElementById('out-3-log-wrap');
             const log = [];
 
-            tree3.addEventListener('focused-node-changed', (e) => {
+            tree3.addEventListener('focus-change', (e) => {
                 const node = e.detail.focusedNode;
                 if (!node) { focusedWrap.hidden = true; return; }
                 focusedWrap.hidden = false;
                 focusedWrap.querySelector('pre').textContent = `${node.data?.name} (${node.path})`;
             });
-            tree3.addEventListener('node-clicked', (e) => {
+            tree3.addEventListener('node-click', (e) => {
                 const node = e.detail.node;
                 log.unshift(`Navigated to: ${node.data?.name} (${node.path})`);
                 if (log.length > 10) log.length = 10;

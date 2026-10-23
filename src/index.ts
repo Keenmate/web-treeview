@@ -17,8 +17,9 @@ export type { Ltree } from './ltree/types';
 export type { LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
 
-// Controller
-export { TreeController } from './controller/tree-controller';
+// Engine (internal state; for renderer authors / advanced use — element consumers use
+// `el.controller`, the public TreeViewController facade)
+export { TreeEngine } from './controller/tree-engine';
 export { EventEmitter } from './controller/event-emitter';
 export type {
   NodeCallbacks,
@@ -26,10 +27,10 @@ export type {
   ClickBehavior,
   SelectionModifiers,
   RangeSelectionMode,
-  TreeControllerConfig,
-  TreeControllerSnapshot,
-  TreeControllerEvents,
-  // ctx-object context types (rc07 parity with svelte-treeview)
+  TreeEngineConfig,
+  TreeEngineSnapshot,
+  TreeEngineEvents,
+  // engine-side shapes the public ctx / detail types build on
   NodeRef,
   NodeEventContext,
   NodeDragContext,
@@ -41,6 +42,13 @@ export type {
   BeforeCopyContext,
   BeforeDeleteContext,
   BeforePasteContext,
+  BeforeDropContext,
+  DragStartContext,
+  DropGroup,
+  SelectMode,
+  TreeMutationOptions,
+  CheckboxMode,
+  CascadeCheckPolicy,
   TooltipPlacement,
   TooltipDelay,
   NodeRenderContext
@@ -84,9 +92,6 @@ export type {
   TreeViewConfig,
   TreeViewMethods,
   TreeEventMap,
-  ContextMenuItem,
-  ContextMenuDivider,
-  ContextMenuEntry,
   ScrollToPathOptions,
   InsertArrayResult,
   TreeChange,
@@ -95,6 +100,11 @@ export type {
   DropZoneLayout,
   DropOperation
 } from './types';
+
+// The interaction model: controller facade, callback contexts, menu items, event details.
+export type * from './interaction';
+// Menu dividers for getContextMenuItemsCallback: `menuDivider('Group')`.
+export { menuDivider } from '@keenmate/web-components-core/actions';
 
 // Logging — now a thin shim over @keenmate/web-components-core (SPEC §12.1).
 export {

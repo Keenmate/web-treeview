@@ -53,13 +53,13 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
             tree.selectionMode = 'multi';
 
             // Data-driven per-row class hooks
-            tree.nodeClass = (node) => node.data?.type === 'folder' ? 'is-folder' : 'is-file';
-            tree.nodeContentClass = (node) => `row-${node.data?.type}`;
+            tree.getNodeClassCallback = ({ node }) => node.data?.type === 'folder' ? 'is-folder' : 'is-file';
+            tree.getNodeContentClassCallback = ({ node }) => `row-${node.data?.type}`;
 
             const dblLog = document.getElementById('dbl-log');
             const clipLog = document.getElementById('clip-log');
@@ -72,9 +72,9 @@
             tree.onNodeDoubleClick = (ctx) => dbl(`dblclick "${ctx.node?.data?.name}"`);
 
             // Clipboard events (ctx = ClipboardEventContext { operation, paths, nodes })
-            tree.onCopy = (ctx) => clip(`copy ${ctx.paths.join(',')}`);
-            tree.onCut = (ctx) => clip(`cut ${ctx.paths.join(',')}`);
-            tree.onPaste = (result) => clip(`paste ${result.count}`);
+            tree.onNodeCopy = (ctx) => clip(`copy ${ctx.paths.join(',')}`);
+            tree.onNodeCut = (ctx) => clip(`cut ${ctx.paths.join(',')}`);
+            tree.onNodePaste = (result) => clip(`paste ${result.count}`);
 
             // Clipboard interceptors — gated on the checkboxes so the spec can
             // toggle them. beforeCopy overrides the copied paths; beforePaste
@@ -85,7 +85,7 @@
                 document.getElementById('block-paste').checked ? false : undefined;
 
             let nextId = 1000;
-            const transform = (d) => ({ ...d, id: ++nextId });
+            const transform = ({ data }) => ({ ...data, id: ++nextId });
 
             document.getElementById('btn-copy').addEventListener('click', () => tree.copyNodes(['1.1']));
             document.getElementById('btn-cut').addEventListener('click', () => tree.cutNodes(['1.2']));

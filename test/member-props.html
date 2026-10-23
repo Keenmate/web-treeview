@@ -54,7 +54,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
             tree.data = data;
 

@@ -59,7 +59,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
 
             const logLines = [];
@@ -83,45 +83,50 @@
                 tree.shouldDisplayContextMenuInDebugMode = e.target.checked;
             });
 
-            tree.contextMenuCallback = (node, close) => {
+            // Core menu items: `text`, `onClick(detail)`, `isDanger`, `children`; dividers
+            // `{ divider: true, text? }`. A leaf closes the menu after its onClick unless
+            // `shouldCloseOnClick: false`.
+            tree.getContextMenuItemsCallback = ({ node }) => {
                 const isFolder = node.data?.type === 'folder';
                 const isReadonly = !!node.data?.readonly;
                 const entries = [];
 
                 if (isFolder) {
-                    entries.push({ label: 'New File', onclick: () => { append(`New File in "${node.data?.name}"`); close(); } });
-                    entries.push({ label: 'New Folder', onclick: () => { append(`New Folder in "${node.data?.name}"`); close(); } });
+                    entries.push({ id: 'new-file', text: 'New File', onClick: () => append(`New File in "${node.data?.name}"`) });
+                    entries.push({ id: 'new-folder', text: 'New Folder', onClick: () => append(`New Folder in "${node.data?.name}"`) });
                     entries.push({ divider: true });
                 }
 
-                entries.push({ label: 'Copy', onclick: () => { append(`Copied "${node.data?.name}"`); close(); } });
-                entries.push({ label: 'Cut', isDisabled: isReadonly, onclick: () => { append(`Cut "${node.data?.name}"`); close(); } });
-                entries.push({ label: 'Paste', isDisabled: !isFolder, onclick: () => { append(`Pasted into "${node.data?.name}"`); close(); } });
+                entries.push({ id: 'copy', text: 'Copy', onClick: () => append(`Copied "${node.data?.name}"`) });
+                entries.push({ id: 'cut', text: 'Cut', isDisabled: isReadonly, onClick: () => append(`Cut "${node.data?.name}"`) });
+                entries.push({ id: 'paste', text: 'Paste', isDisabled: !isFolder, onClick: () => append(`Pasted into "${node.data?.name}"`) });
                 entries.push({
-                    label: 'Export As...',
+                    id: 'export',
+                    text: 'Export As...',
                     children: [
-                        { label: 'JSON', onclick: () => { append(`Export "${node.data?.name}" as JSON`); close(); } },
-                        { label: 'XML', onclick: () => { append(`Export "${node.data?.name}" as XML`); close(); } },
-                        { label: 'CSV', onclick: () => { append(`Export "${node.data?.name}" as CSV`); close(); } }
+                        { id: 'json', text: 'JSON', onClick: () => append(`Export "${node.data?.name}" as JSON`) },
+                        { id: 'xml', text: 'XML', onClick: () => append(`Export "${node.data?.name}" as XML`) },
+                        { id: 'csv', text: 'CSV', onClick: () => append(`Export "${node.data?.name}" as CSV`) }
                     ]
                 });
-                entries.push({ label: 'Rename', isDisabled: isReadonly, onclick: () => { append(`Renamed "${node.data?.name}"`); close(); } });
-                entries.push({ divider: true, label: 'Danger zone' });
-                entries.push({ label: 'Delete', isDisabled: isReadonly, className: 'danger', onclick: () => { append(`Deleted "${node.data?.name}"`); close(); } });
+                entries.push({ id: 'rename', text: 'Rename', isDisabled: isReadonly, onClick: () => append(`Renamed "${node.data?.name}"`) });
+                entries.push({ divider: true, text: 'Danger zone' });
+                entries.push({ id: 'delete', text: 'Delete', isDisabled: isReadonly, isDanger: true, onClick: () => append(`Deleted "${node.data?.name}"`) });
 
                 if (isReadonly) {
                     entries.push({ divider: true });
-                    entries.push({ label: 'Read-only file', isDisabled: true, isVisible: true });
+                    entries.push({ id: 'readonly', text: 'Read-only file', isDisabled: true, isVisible: true });
                 }
 
                 // shouldCloseOnClick: false — the menu stays open so the item can be
                 // clicked repeatedly (an incremental action). The handler would call
-                // close() itself when finished; here it deliberately never does.
+                // controller.closeContextMenu() itself when finished; here it never does.
                 entries.push({ divider: true });
                 entries.push({
-                    label: 'Bump (stays open)',
+                    id: 'bump',
+                    text: 'Bump (stays open)',
                     shouldCloseOnClick: false,
-                    onclick: () => { pinClicks += 1; append(`Bump ×${pinClicks} on "${node.data?.name}"`); }
+                    onClick: () => { pinClicks += 1; append(`Bump ×${pinClicks} on "${node.data?.name}"`); }
                 });
 
                 return entries;

@@ -160,7 +160,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByOrder;
+            tree.sortCallback = ({ items }) => sortByOrder(items);
             tree.isSorted = true;
             tree.data = initialData();
 

@@ -23,34 +23,6 @@ export interface ApplyChangesResult {
 	failed: Array<{ index: number; operation: string; path: string; error: string }>;
 }
 
-export interface ContextMenuDivider {
-	divider: true;
-	label?: string;  // named divider: ──── [label] ────
-}
-
-export interface ContextMenuItem {
-	id?: string;
-	label: string;
-	icon?: string;
-	shortcut?: string;
-	isDisabled?: boolean;
-	isVisible?: boolean;
-	className?: string;
-	onclick?: () => void | Promise<void>;
-	/**
-	 * Whether activating this item auto-closes the menu. Default `true` —
-	 * selecting an entry dismisses the menu like every native/desktop menu.
-	 * Set `false` for items that act incrementally (toggle a flag, run a
-	 * multi-step action) and want the menu to stay open; the handler is then
-	 * responsible for dismissing it via the `close` callback passed to
-	 * contextMenuCallback (or the snippet's close prop).
-	 */
-	shouldCloseOnClick?: boolean;
-	children?: ContextMenuEntry[];
-}
-
-export type ContextMenuEntry = ContextMenuItem | ContextMenuDivider;
-
 export interface InsertArrayResult<T> {
 	successful: number;
 	failed: Array<{
@@ -96,8 +68,6 @@ export interface Ltree<T> {
 
 	isSorted: boolean | null | undefined;
 	sortCallback?: (items: LTreeNode<T>[]) => LTreeNode<T>[];
-
-	indexingCompleteCallback?: () => void;
 
 	// Filtering properties
 	filteredTree: LTreeNode<T>[] | null;

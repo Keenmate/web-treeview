@@ -111,7 +111,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = sortByName;
+            tree.sortCallback = ({ items }) => sortByName(items);
             tree.isSorted = true;
             tree.data = sampleData;
         }
@@ -129,13 +129,13 @@
             const focusedOut = document.getElementById('simple-focused');
             const clickedOut = document.getElementById('simple-clicked');
 
-            simple.addEventListener('focused-node-changed', (e) => {
+            simple.addEventListener('focus-change', (e) => {
                 const node = e.detail.focusedNode;
                 if (!node) { focusedOut.hidden = true; return; }
                 show(focusedOut, JSON.stringify({ path: node.path, name: node.data?.name }, null, 2));
             });
 
-            simple.addEventListener('node-clicked', (e) => {
+            simple.addEventListener('node-click', (e) => {
                 const node = e.detail.node;
                 show(clickedOut, `${node.data?.name} (path: ${node.path})`);
             });

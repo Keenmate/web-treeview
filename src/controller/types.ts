@@ -1,14 +1,14 @@
 /**
  * Controller-layer type definitions.
- * Ported from TreeController.svelte.ts interfaces.
+ * Ported from TreeEngine.svelte.ts interfaces.
  */
 
 import type { LTreeNode } from '../ltree/ltree-node';
+import type { TreeMenuEntry } from '../interaction';
 import type {
   DropPosition,
   DragDropMode,
   DropOperation,
-  ContextMenuEntry,
   InsertArrayResult,
   TreeChange,
   ApplyChangesResult
@@ -285,15 +285,15 @@ export interface SelectionChangeContext<T> {
 }
 
 /**
- * Context for the onTreeKeydown interceptor. A keydown is tree-level (no single
- * anchor node), so it carries BOTH sets plus the controller for imperative
- * actions. Return `true` to suppress the default + built-in shortcut handling.
+ * Engine-internal context of the keydown interceptor (the public ctx is
+ * `KeydownContext` — this plus `controller` / `element`). A keydown is tree-level
+ * (no single anchor node), so it carries BOTH sets. Return `true` to suppress the
+ * default + built-in shortcut handling.
  */
 export interface TreeKeydownContext<T> {
   event: KeyboardEvent;
   focusedNode: LTreeNode<T> | null;
   selectedNodes: LTreeNode<T>[];
-  controller: import('./tree-controller').TreeController<T>;
 }
 
 /**
@@ -378,7 +378,7 @@ export interface BeforePasteContext<T> {
 
 // ─── Controller props ─────────────────────────────────────────────────────
 
-export interface TreeControllerConfig<T> {
+export interface TreeEngineConfig<T> {
   // MAPPINGS
   idMember: string;
   pathMember: string;
@@ -553,10 +553,8 @@ export interface TreeControllerConfig<T> {
   beforeDragStartCallback?: (ctx: DragStartContext<T>) => string[] | false | void;
   /** Interceptor — return true to suppress default + built-in shortcuts. Runs first. */
   onTreeKeydown?: (ctx: TreeKeydownContext<T>) => boolean | void;
-  contextMenuCallback?: (
-    node: LTreeNode<T>,
-    closeMenuCallback: () => void
-  ) => ContextMenuEntry[];
+  /** The context-menu entries for `node` (the public getContextMenuItemsCallback, adapted by WebTreeView). */
+  contextMenuCallback?: (node: LTreeNode<T>) => TreeMenuEntry<T>[];
 
   // Tells the controller whether a context menu renderer exists
   hasContextMenuRenderer?: boolean;
@@ -604,7 +602,7 @@ export interface TreeControllerConfig<T> {
 
 // ─── Snapshot ─────────────────────────────────────────────────────────────
 
-export interface TreeControllerSnapshot<T> {
+export interface TreeEngineSnapshot<T> {
   flatNodesToRender: LTreeNode<T>[];
   draggedNodePath: string | null;
   /** Every TRAVELING path in the active drag — the complete placement manifest (lead +
@@ -642,10 +640,10 @@ export interface TreeControllerSnapshot<T> {
   virtualOffsetY: number;
 }
 
-// ─── Events emitted by TreeController ─────────────────────────────────────
+// ─── Events emitted by TreeEngine ─────────────────────────────────────
 
-export interface TreeControllerEvents<T> {
-  'state-change': TreeControllerSnapshot<T>;
+export interface TreeEngineEvents<T> {
+  'state-change': TreeEngineSnapshot<T>;
   'config-change': NodeConfig;
   'data-change': { nodes: LTreeNode<T>[] };
 }

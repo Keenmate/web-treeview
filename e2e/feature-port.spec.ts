@@ -4,7 +4,7 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * E2E coverage for /test/feature-port.html — the rc-cycle features ported from
  * svelte-treeview: data-driven per-row class hooks (nodeClass / nodeContentClass),
  * the onNodeDoubleClick event (manual detection), and the post-operation
- * clipboard events (onCopy / onCut / onPaste).
+ * clipboard events (onNodeCopy / onNodeCut / onNodePaste).
  *
  * Data (sorted by name):
  *   '1'   Documents (folder)
@@ -75,7 +75,7 @@ test.describe('onNodeDoubleClick', () => {
 });
 
 test.describe('Clipboard events', () => {
-  test('copy then paste fires onCopy + onPaste and adds a node', async ({ page }) => {
+  test('copy then paste fires onNodeCopy + onNodePaste and adds a node', async ({ page }) => {
     await goto(page);
     const before = await tree(page).locator('.wtv__node').count();
 
@@ -101,7 +101,7 @@ test.describe('Clipboard interceptors', () => {
     await page.getByText('beforeCopy → 1.2').click();
 
     await page.getByRole('button', { name: 'Copy 1.1' }).click();
-    // The interceptor redirected the copy to 1.2 (Notes.txt), so onCopy reports 1.2.
+    // The interceptor redirected the copy to 1.2 (Notes.txt), so onNodeCopy reports 1.2.
     await expect(clipLog(page)).toContainText('copy 1.2');
     await expect(clipLog(page)).not.toContainText('copy 1.1');
   });
@@ -114,9 +114,9 @@ test.describe('Clipboard interceptors', () => {
     await page.getByRole('button', { name: 'Copy 1.1' }).click();
     await page.getByRole('button', { name: 'Paste into 2' }).click();
 
-    // Paste was blocked: no node added. onPaste still fires with the blocked
-    // result (success:false, count:0) — mirrors svelte-treeview parity.
+    // Paste was blocked: no node added, and no node-paste event (nothing happened).
+    await expect(clipLog(page)).toContainText('copy 1.1');
     await expect(tree(page).locator('.wtv__node')).toHaveCount(before);
-    await expect(clipLog(page)).toContainText('paste 0');
+    await expect(clipLog(page)).not.toContainText('paste');
   });
 });

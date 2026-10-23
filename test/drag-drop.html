@@ -200,7 +200,7 @@
             single.idMember = 'id';
             single.pathMember = 'path';
             single.displayValueMember = 'name';
-            single.sortCallback = sortByOrder;
+            single.sortCallback = ({ items }) => sortByOrder(items);
             single.isSorted = true;
             wireDrop(single, 'single', 'single');
             single.data = singleData;
@@ -210,7 +210,7 @@
             rMember.idMember = 'id';
             rMember.pathMember = 'path';
             rMember.displayValueMember = 'name';
-            rMember.sortCallback = sortByOrder;
+            rMember.sortCallback = ({ items }) => sortByOrder(items);
             rMember.isSorted = true;
             wireDrop(rMember, 'r-member', 'rMember');
             rMember.data = restrictedMemberData;
@@ -220,9 +220,9 @@
             rCallback.idMember = 'id';
             rCallback.pathMember = 'path';
             rCallback.displayValueMember = 'name';
-            rCallback.sortCallback = sortByOrder;
+            rCallback.sortCallback = ({ items }) => sortByOrder(items);
             rCallback.isSorted = true;
-            rCallback.getAllowedDropPositionsCallback = (node) => {
+            rCallback.getAllowedDropPositionsCallback = ({ node }) => {
                 const id = node.data?.id ?? 0;
                 if (id === 4) return null; // source can land anywhere
                 return id % 2 === 0 ? ['child'] : ['before'];
@@ -235,14 +235,14 @@
             multi.idMember = 'id';
             multi.pathMember = 'path';
             multi.displayValueMember = 'name';
-            multi.renderNodeCallback = (node, container) => {
+            multi.renderNodeCallback = ({ node, contentElement: container }) => {
                 container.innerHTML = '';
                 const span = document.createElement('span');
                 span.setAttribute('data-testid', `multi-node-${node.data?.id}`);
                 span.textContent = node.data?.name ?? '';
                 container.appendChild(span);
             };
-            multi.sortCallback = sortByOrder;
+            multi.sortCallback = ({ items }) => sortByOrder(items);
             multi.isSorted = true;
             wireDrop(multi, 'multi', 'multi');
             multi.addEventListener('selection-change', (e) => {
@@ -256,16 +256,16 @@
             locked.idMember = 'id';
             locked.pathMember = 'path';
             locked.displayValueMember = 'name';
-            locked.renderNodeCallback = (node, container) => {
+            locked.renderNodeCallback = ({ node, contentElement: container }) => {
                 container.innerHTML = '';
                 const span = document.createElement('span');
                 span.setAttribute('data-testid', `locked-node-${node.data?.id}`);
                 span.textContent = node.data?.name ?? '';
                 container.appendChild(span);
             };
-            locked.sortCallback = sortByOrder;
+            locked.sortCallback = ({ items }) => sortByOrder(items);
             locked.isSorted = true;
-            locked.getIsDraggableCallback = (node) => node.data?.draggable !== false;
+            locked.getIsDraggableCallback = ({ node }) => node.data?.draggable !== false;
             wireDrop(locked, 'locked', 'locked');
             locked.addEventListener('selection-change', (e) => {
                 setText('locked-selected-size', String(e.detail.paths.size));
@@ -278,7 +278,7 @@
             noDrop.idMember = 'id';
             noDrop.pathMember = 'path';
             noDrop.displayValueMember = 'name';
-            noDrop.sortCallback = sortByOrder;
+            noDrop.sortCallback = ({ items }) => sortByOrder(items);
             noDrop.isSorted = true;
             noDrop.onNodeDrop = (ctx) => {
                 counters.noDrop++;

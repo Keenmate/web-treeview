@@ -38,7 +38,7 @@ export interface PasteResult<T> {
 }
 
 // ── Module singleton ────────────────────────────────────────────────────
-// Shared across all TreeController instances on the page.
+// Shared across all TreeEngine instances on the page.
 
 let _clipboard: TreeClipboard<any> | null = null;
 
@@ -66,7 +66,7 @@ export function getClipboardOperation(): ClipboardOperation | null {
 // Minimal registry so a paste can reach back to the SOURCE tree it came from
 // (identified by clipboard.sourceTreeId) — needed to remove the originals on a
 // cross-tree CUT (a same-tree cut removes them directly). Kept to a tiny surface
-// (just removeNode) to avoid a circular type dependency on TreeController.
+// (just removeNode) to avoid a circular type dependency on TreeEngine.
 export interface ClipboardSourceTree {
   removeNode(path: string, includeDescendants?: boolean): unknown;
   /** The source tree's live Ltree — read by a cross-tree AUTO-copy so the library

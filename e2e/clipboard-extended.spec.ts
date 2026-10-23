@@ -80,10 +80,10 @@ test.describe('Paste transform', () => {
   });
 });
 
-test.describe('onTreeKeydown interceptor', () => {
+test.describe('beforeKeydownCallback interceptor', () => {
   test('returning true suppresses the built-in Delete', async ({ page }) => {
     await goto(page);
-    await page.getByText('onTreeKeydown → suppress').click();
+    await page.getByText('beforeKeydownCallback → suppress').click();
 
     await contentOf(nodeAt(page, '1.2')).click();
     await page.keyboard.press('Delete');

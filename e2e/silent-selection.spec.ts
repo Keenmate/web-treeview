@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 /**
  * E2E coverage for the `silent: true` option on selectNode / selectNodes /
@@ -35,7 +35,7 @@ async function checkedSize(page: Page): Promise<number> {
 // ── selectNode ───────────────────────────────────────────────────────────
 
 test.describe('selectNode', () => {
-  test('loud: fires node-clicked? actually only fires selection-change; state updates', async ({ page }) => {
+  test('loud: fires selection-change (no node-click) and updates state', async ({ page }) => {
     // Note: selectNode is a programmatic call — it doesn't synthesize a
     // node-clicked event (that's only for user clicks). The spec just checks
     // that selection-change fires and state updates.

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 /**
  * Regression: an API call to `expandNodes(path, { exclusive: true })` must

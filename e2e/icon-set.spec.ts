@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 /**
  * The disclosure toggle is ONE mask-image glyph read from ONE variable set

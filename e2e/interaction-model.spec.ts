@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Locator } from '@playwright/test';
+import { test, expect, type Page, type Locator } from './fixtures';
 
 /**
  * The core interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):

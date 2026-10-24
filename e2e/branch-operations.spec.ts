@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for the branch-operations test fixture at /test/branch-operations.html.
@@ -20,10 +20,6 @@ const PAGE = '/test/branch-operations.html';
 async function gotoFixture(page: Page) {
   await page.goto(PAGE);
   await expect(page.locator('.wtv__node').first()).toBeVisible();
-}
-
-function nodeByPath(scope: Locator | Page, path: string): Locator {
-  return scope.locator(`.wtv__node[data-tree-path="${path}"]`).first();
 }
 
 function readCount(page: Page, testId: string): Promise<number> {

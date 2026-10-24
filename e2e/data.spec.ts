@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeByPath, cssAttrEscape } from './fixtures';
 
 /**
  * E2E coverage for /test/data.html.
@@ -47,14 +47,6 @@ function colonTree(page: Page): Locator {
 
 function treeInCard(card: Locator): Locator {
   return card.locator('.tree-container').first();
-}
-
-function nodeByPath(tree: Locator, path: string): Locator {
-  return tree.locator(`.wtv__node[data-tree-path="${cssAttrEscape(path)}"]`).first();
-}
-
-function cssAttrEscape(s: string): string {
-  return s.replace(/"/g, '\\"');
 }
 
 async function gotoData(page: Page) {

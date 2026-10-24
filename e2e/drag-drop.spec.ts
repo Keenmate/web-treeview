@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for the drag-and-drop test fixture at /test/drag-drop.html.
@@ -16,10 +16,6 @@ const PAGE = '/test/drag-drop.html';
 async function gotoFixture(page: Page) {
   await page.goto(PAGE);
   await expect(page.locator('.wtv__node').first()).toBeVisible();
-}
-
-function nodeByPath(scope: Locator | Page, path: string): Locator {
-  return scope.locator(`.wtv__node[data-tree-path="${path}"]`).first();
 }
 
 function nodeRow(node: Locator): Locator {
@@ -315,8 +311,7 @@ test.describe('drag-drop-mode same-tree gate', () => {
 });
 
 // ── Sections NOT ported ───────────────────────────────────────────────────
-// Two-tree drag, Ctrl-drag copy, touch drag — kept as skipped placeholders
-// so future runs can plumb in their fixtures incrementally.
+// Two-tree drag, Ctrl-drag copy — kept as skipped placeholders so future runs
+// can plumb in their fixtures incrementally. (Touch drag: touch-drag.spec.ts.)
 test.skip('two-tree drag — not ported (cross-tree fixture)', () => {});
 test.skip('Ctrl-drag copy — not ported (Chromium native-drag synth flake)', () => {});
-test.skip('touch drag — not ported (touch context fixture needed)', () => {});

@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeContent, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for /test/clipboard-extended.html — the rc07 structural port from
@@ -22,11 +22,7 @@ function tree(page: Page): Locator {
 }
 
 function nodeAt(page: Page, path: string): Locator {
-  return tree(page).locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function contentOf(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
+  return nodeByPath(tree(page), path);
 }
 
 async function goto(page: Page) {
@@ -40,7 +36,7 @@ test.describe('Built-in Delete', () => {
     await expect(nodeAt(page, '1.2')).toBeVisible();
 
     // Click to focus/selection Notes.txt, then press Delete.
-    await contentOf(nodeAt(page, '1.2')).click();
+    await nodeContent(nodeAt(page, '1.2')).click();
     await page.keyboard.press('Delete');
 
     await expect(nodeAt(page, '1.2')).toHaveCount(0);
@@ -68,7 +64,7 @@ test.describe('Built-in Delete', () => {
 });
 
 test.describe('Paste transform', () => {
-  test('pasteNodeTransformationCallback returning null skips a node and counts it', async ({ page }) => {
+  test('nodeInputTransformationCallback returning null skips a node and counts it', async ({ page }) => {
     await goto(page);
 
     // Copy Reports (1.1) — subtree Reports + Q1.txt + Q2.txt. The transform
@@ -81,11 +77,11 @@ test.describe('Paste transform', () => {
 });
 
 test.describe('beforeKeydownCallback interceptor', () => {
-  test('returning true suppresses the built-in Delete', async ({ page }) => {
+  test('returning false suppresses the built-in Delete', async ({ page }) => {
     await goto(page);
     await page.getByText('beforeKeydownCallback → suppress').click();
 
-    await contentOf(nodeAt(page, '1.2')).click();
+    await nodeContent(nodeAt(page, '1.2')).click();
     await page.keyboard.press('Delete');
 
     // Interceptor consumed the key — the node survives and the interceptor logged.

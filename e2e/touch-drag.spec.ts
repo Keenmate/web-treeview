@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 /**
  * Touch drag inside the shadow root. The ghost, the drop-target lookup and the

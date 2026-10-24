@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeByPath } from './fixtures';
 
 /**
  * Tests for the isSelectableMember + isCheckedMember props.
@@ -17,10 +17,6 @@ import { test, expect, Page, Locator } from '@playwright/test';
  */
 
 const PAGE = '/test/member-props.html';
-
-function nodeByPath(page: Page, path: string): Locator {
-  return page.locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
 
 function checkbox(node: Locator): Locator {
   return node.locator('> .wtv__node-row .wtv__checkbox').first();

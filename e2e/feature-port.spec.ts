@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeContent, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for /test/feature-port.html — the rc-cycle features ported from
@@ -21,11 +21,7 @@ function tree(page: Page): Locator {
 }
 
 function nodeAt(page: Page, path: string): Locator {
-  return tree(page).locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function contentOf(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
+  return nodeByPath(tree(page), path);
 }
 
 function dblLog(page: Page): Locator {
@@ -47,11 +43,11 @@ test.describe('Per-row class hooks', () => {
 
     // Folder row
     await expect(nodeAt(page, '1')).toHaveClass(/is-folder/);
-    await expect(contentOf(nodeAt(page, '1'))).toHaveClass(/row-folder/);
+    await expect(nodeContent(nodeAt(page, '1'))).toHaveClass(/row-folder/);
 
     // File row
     await expect(nodeAt(page, '1.2')).toHaveClass(/is-file/);
-    await expect(contentOf(nodeAt(page, '1.2'))).toHaveClass(/row-file/);
+    await expect(nodeContent(nodeAt(page, '1.2'))).toHaveClass(/row-file/);
 
     // The two are mutually exclusive — a folder is not tagged is-file.
     await expect(nodeAt(page, '1')).not.toHaveClass(/is-file/);
@@ -61,13 +57,13 @@ test.describe('Per-row class hooks', () => {
 test.describe('onNodeDoubleClick', () => {
   test('double-clicking a node fires the event', async ({ page }) => {
     await goto(page);
-    await contentOf(nodeAt(page, '1')).dblclick();
+    await nodeContent(nodeAt(page, '1')).dblclick();
     await expect(dblLog(page)).toContainText('dblclick "Documents"');
   });
 
   test('a single click does not fire it', async ({ page }) => {
     await goto(page);
-    await contentOf(nodeAt(page, '1')).click();
+    await nodeContent(nodeAt(page, '1')).click();
     // Give any (incorrect) double-click detection a chance to flush.
     await page.waitForTimeout(450);
     await expect(dblLog(page)).toHaveText('');

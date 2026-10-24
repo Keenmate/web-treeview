@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 /**
  * Regression: Esc-cancelling a drag must restore the pre-drag selection.

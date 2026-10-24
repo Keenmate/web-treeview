@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 /**
  * Node tooltips (show-node-tooltips + getNodeTooltipCallback), built on the shared

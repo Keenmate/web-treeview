@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from './fixtures';
 
 /**
  * Per-node icons (iconMember/iconCallback + iconColorMember/iconColorCallback +

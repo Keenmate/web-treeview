@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeContent, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for /test/basic.html (minimal fixture page for the basic-
@@ -57,11 +57,7 @@ function treeIn(card: Locator): Locator {
 }
 
 function nodeIn(card: Locator, path: string): Locator {
-  return treeIn(card).locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function nodeContent(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
+  return nodeByPath(treeIn(card), path);
 }
 
 function outputValue(card: Locator, label: string): Locator {

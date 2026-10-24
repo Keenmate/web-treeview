@@ -1,4 +1,7 @@
 import { chromium, FullConfig } from '@playwright/test';
+import { readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Pre-warm the Vite dev server by visiting every fixture page the suite uses.
@@ -11,23 +14,13 @@ import { chromium, FullConfig } from '@playwright/test';
 export default async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:21111';
 
-  const routes = [
-    '/test/basic.html',
-    '/test/expand-collapse.html',
-    '/test/interaction.html',
-    '/test/theming.html',
-    '/test/keyboard-nav.html',
-    '/test/search.html',
-    '/test/search-deep.html',
-    '/test/member-props.html',
-    '/test/data.html',
-    '/test/context-menu.html',
-    '/test/silent-selection.html',
-    '/test/drag-esc-cancel.html',
-    '/test/drag-drop.html',
-    '/test/branch-operations.html',
-    '/test/exclusive-expand.html'
-  ];
+  // Every fixture page under test/ — read from disk so new fixtures are warmed
+  // without editing this list.
+  const testDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'test');
+  const routes = readdirSync(testDir)
+    .filter((f) => f.endsWith('.html'))
+    .sort()
+    .map((f) => `/test/${f}`);
 
   const browser = await chromium.launch();
   const page = await browser.newPage();

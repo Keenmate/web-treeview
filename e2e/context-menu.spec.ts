@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeContent, escapeRe, nodeByPath } from './fixtures';
 
 /**
  * E2E coverage for /test/context-menu.html. Single tree with the callback API.
@@ -33,11 +33,7 @@ function treeIn(card: Locator): Locator {
 }
 
 function nodeIn(card: Locator, path: string): Locator {
-  return treeIn(card).locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function nodeContent(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
+  return nodeByPath(treeIn(card), path);
 }
 
 function menuIn(card: Locator): Locator {
@@ -45,10 +41,6 @@ function menuIn(card: Locator): Locator {
   // pierces it but the menu element is NOT a descendant of the card. Use a
   // page-level locator instead.
   return card.page().locator('.wtv__context-menu').first();
-}
-
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function menuItem(card: Locator, label: string): Locator {

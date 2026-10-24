@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeContent } from './fixtures';
 
 /**
  * E2E coverage for /test/interaction.html — three trees exercising the rc03
@@ -44,10 +44,6 @@ function keyboardNavCard(page: Page): Locator {
 
 function nodeInCard(card: Locator, path: string): Locator {
   return card.locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function nodeContent(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
 }
 
 function checkboxOf(node: Locator): Locator {

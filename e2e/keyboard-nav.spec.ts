@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator, nodeByPath, nodeContent } from './fixtures';
 
 /**
  * E2E coverage for /test/keyboard-nav.html.
@@ -35,14 +35,6 @@ import { test, expect, Page, Locator } from '@playwright/test';
  */
 
 const PAGE = '/test/keyboard-nav.html';
-
-function nodeByPath(scope: Locator | Page, path: string): Locator {
-  return scope.locator(`.wtv__node[data-tree-path="${path}"]`).first();
-}
-
-function nodeContent(node: Locator): Locator {
-  return node.locator('> .wtv__node-row .wtv__node-content').first();
-}
 
 async function gotoFixture(page: Page) {
   await page.goto(PAGE);

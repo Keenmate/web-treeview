@@ -38,9 +38,10 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `no-data-text`, `is-loading` | ✗ | | |
 | `getCustomStylesCallback` lands in the shadow root | ✗ | | |
 | `body-class`, `leaf-icon-class`, `align-node-icons` | ✗ | | |
-| Virtual scroll (DOM rows ≈ viewport + overscan, far `scrollToPath`) | ✗ | | |
-| `use-flat-rendering`, `progressive-render` batches | ✗ | | |
-| Lazy load (`hasChildrenMember` toggle → expand → `insertBranch`) | ✗ | | |
+| Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `use-flat-rendering` + `flat-indent-size` (runtime change: NOTES #9) | △ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `progressive-render` batches complete (NOTES #10) | ✗ (test.fail) | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| Lazy load (`hasChildrenMember` toggle → expand → `insertBranch`) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 
 ## 2. Expand / collapse
 
@@ -65,8 +66,11 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Double-click (`node-double-click`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Selected / focused markers, `selected-node-class`, `focused-node-class` | ✓ | `selection-focus.spec.ts`, `focused-style-bug.spec.ts` | `selection-focus.html` |
 | `selectNode` / `selectNodes` / `clearSelection` / `clearChecked` loud + silent | ✓ | `silent-selection.spec.ts` | `silent-selection.html` |
-| `rangeSelectionMode` logical includes collapsed descendants | ✗ | | |
-| `selectionMode='single'` blocks Ctrl/Shift | ✗ | | |
+| `rangeSelectionMode` visual | ✓ | `range-selection.spec.ts` | `range-selection.html` |
+| `rangeSelectionMode` logical includes collapsed descendants (NOTES #7) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
+| `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
+| `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
+| `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll`, `setSelectedPaths`, `focusNode` / `clearFocus`, `focus-change` | ✗ | | |
 | Runtime state survives a config-change re-insert | ✓ | `state-persistence.spec.ts` | `selection-focus.html` |
 
@@ -78,9 +82,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `checkbox-mode` switch re-derives indeterminate | ✓ | `checkbox-mode.spec.ts` | `checkbox-mode.html` |
 | `click-toggles-checkbox` | ✓ | `interaction.spec.ts` | `interaction.html` |
 | `isSelectableMember` / `isCheckedMember` / `checkedPaths` | ✓ | `member-props.spec.ts` | `member-props.html` |
-| `checkNode/checkNodes/setCheckedPaths/checkAll/uncheckNode` | ✗ | | |
-| `cascade-check-policy` rolled-up / leaves / all | ✗ | | |
-| `beforeCheckboxToggleCallback` (false cancels, `string[]` overrides) | ✗ | | |
+| `checkNode/checkNodes/setCheckedPaths/checkAll/uncheckNode` (+ silent) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
+| `cascade-check-policy` rolled-up / leaves / all | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
+| `beforeCheckboxToggleCallback` (ctx, false cancels, `string[]` overrides) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 
 ## 5. Keyboard
 
@@ -90,9 +94,11 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | PageUp/PageDown + Shift-extend | ✗ (feature gap, NOTES #4) | `keyboard-nav.spec.ts` (skipped) | `keyboard-nav.html` |
 | Delete key + `beforeDeleteCallback` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `beforeKeydownCallback` returning false suppresses | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
-| Ctrl+C/X/V, Shift+Del/Insert, Esc cancels cut | ✗ | | |
-| `handle-keyboard-shortcuts=false` | ✗ | | |
-| Ctrl+A selects visible selectable; Esc clears selection | ✗ | | |
+| Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| Cut rows are dimmed (NOTES #6) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| Copy + paste keeps both rows rendered (NOTES #8) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `navTo/Next/Prev/Into/Toggle` API | ✗ | | |
 
 ## 6. Clipboard & mutation API
@@ -108,7 +114,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `beforeCutCallback`, `nodeOutputTransformationCallback` | ✗ | | |
 | `cancelCut` / `hasClipboardContent` / `getClipboardOperation`, `allow-copy` | ✗ | | |
 | `auto-handle-copy/paste=false` | ✗ | | |
-| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/applyChanges` | ✗ | | |
+| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/copyNodeWithDescendants/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
+| `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✗ (test.fail) | `mutation-api.spec.ts` | `mutation-api.html` |
 
 ## 7. Drag & drop
 
@@ -117,11 +124,12 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Single-tree drag, before / child positions | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | `allowedDropPositionsMember` / `getAllowedDropPositionsCallback` | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Multi-drag (child / after, locked node) | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
-| Multi-drag top-level absorption (NOTES #5) | ✗ (skip) | `drag-drop.spec.ts` | `drag-drop.html` |
+| Multi-drag top-level absorption (NOTES #5, not reproducible) | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | `isDropAllowed=false`, `drag-drop-mode` self/cross | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Esc during drag restores selection | ✓ | `drag-esc-cancel.spec.ts` | `drag-esc-cancel.html` |
 | Touch drag (ghost, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
-| `beforeDropCallback` / `beforeDragStartCallback` | ✗ | | |
+| `beforeDropCallback` false / redirect / copy / `DropGroup[]` / async | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
+| `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | Cross-tree drag, Ctrl-drag copy | ✗ | | |
 | Drag visuals (reject classes, `indicate-undraggable`, tree drop zone, `drop-zone-*`) | ✗ | | |
 

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Range selection / selection mode</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!-- ?range=visual|logical  ?mode=multi|single -->
+    <web-treeview id="tree" expand-level="1" click-behavior="select"></web-treeview>
+    <pre data-testid="rs-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        // 1.1 and 2.1 are collapsed (expand-level=1) — their children are hidden.
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 111, path: '1.1.1', name: 'A1x' },
+            { id: 112, path: '1.1.2', name: 'A1y' },
+            { id: 12, path: '1.2', name: 'A2' },
+            { id: 2, path: '2', name: 'B' },
+            { id: 21, path: '2.1', name: 'B1' },
+            { id: 211, path: '2.1.1', name: 'B1x' },
+            { id: 3, path: '3', name: 'C' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        tree.setAttribute('selection-mode', params.get('mode') ?? 'multi');
+        tree.setAttribute('range-selection-mode', params.get('range') ?? 'visual');
+        setupTree(tree, data);
+        logEvents(tree, 'rs-log', ['selection-change', 'focus-change']);
+        window.tree = tree;
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Keyboard clipboard shortcuts</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!-- expand-level=1 → roots + level 2 visible; 1.1.1 stays hidden. -->
+    <web-treeview id="tree" expand-level="1" selection-mode="multi" show-checkboxes="true"
+        is-selectable-member="selectable"></web-treeview>
+    <pre data-testid="kc-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const data = [
+            { id: 1, path: '1', name: 'Docs', selectable: true },
+            { id: 11, path: '1.1', name: 'Reports', selectable: true },
+            { id: 111, path: '1.1.1', name: 'Q1', selectable: true },
+            { id: 12, path: '1.2', name: 'Notes', selectable: true },
+            { id: 2, path: '2', name: 'Images', selectable: true },
+            { id: 21, path: '2.1', name: 'Pic', selectable: true },
+            { id: 3, path: '3', name: 'Locked', selectable: false }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        if (params.get('shortcuts') === 'off') tree.setAttribute('handle-keyboard-shortcuts', 'false');
+        setupTree(tree, data);
+        logEvents(tree, 'kc-log', ['node-copy', 'node-cut', 'node-paste', 'node-delete', 'selection-change']);
+        window.tree = tree;
+        window.childNames = (p) => tree.getChildren(p).map((n) => n.data.name).sort();
+    </script>
+</body>
+</html>

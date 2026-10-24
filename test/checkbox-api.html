@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Checkbox API</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!-- ?mode=cascade|independent  ?policy=rolled-up|leaves|all  ?before=veto|override -->
+    <web-treeview id="tree" expand-level="3" show-checkboxes="true" is-selectable-member="selectable"></web-treeview>
+    <pre data-testid="cb-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents, logTo, fmtPaths } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const data = [
+            { id: 1, path: '1', name: 'A', selectable: true },
+            { id: 11, path: '1.1', name: 'A1', selectable: true },
+            { id: 12, path: '1.2', name: 'A2', selectable: true },
+            { id: 2, path: '2', name: 'B', selectable: true },
+            { id: 21, path: '2.1', name: 'B1', selectable: true },
+            { id: 22, path: '2.2', name: 'B2', selectable: true },
+            { id: 3, path: '3', name: 'Fixed', selectable: false }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        tree.setAttribute('checkbox-mode', params.get('mode') ?? 'cascade');
+        if (params.get('policy')) tree.setAttribute('cascade-check-policy', params.get('policy'));
+
+        const before = params.get('before');
+        const extra = {};
+        if (before) {
+            extra.beforeCheckboxToggleCallback = ({ node, isChecked, affectedPaths }) => {
+                logTo('cb-log', `before:${node.path}:${isChecked}:${fmtPaths(affectedPaths)}`);
+                if (before === 'veto') return false;
+                if (before === 'override') return ['2.2'];
+            };
+        }
+        setupTree(tree, data, extra);
+        logEvents(tree, 'cb-log', ['checked-change']);
+        window.tree = tree;
+    </script>
+</body>
+</html>

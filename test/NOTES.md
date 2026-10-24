@@ -51,7 +51,12 @@ visible node; it also sets `_focusedNode` to the last visible node without
 emitting `focus-change`.
 
 **Suggested fix:** no-op (or select only the focused node) when
-`selectionMode !== 'multi'`; don't move focus, or emit `focus-change` if it does.
+`selectionMode !== 'multi'`.
+
+**Test status:** `range-selection.spec.ts` "Ctrl+A does not select everything"
+(single mode) is `test.fail`. The focus half did NOT reproduce: `selectAll()`
+moves focus to the last visible row and a `focus-change` *is* emitted (pinned
+as a passing test in the same spec).
 
 ## 4. (TV-4) PageUp / PageDown / Shift-extend keyboard selection unimplemented
 
@@ -63,7 +68,7 @@ focus, Shift+Arrow/Home/End/PageUp/PageDown don't extend the selection.
 **Test status:** the 10 `keyboard-nav.spec.ts` placeholders stay `test.skip`.
 **Needs the user's go-ahead** (feature work, own WP) before implementing.
 
-## 5. (TV-5) Multi-drag top-level absorption doesn't move
+## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — not reproducible
 
 **Where:** multi-drag in `src/controller/tree-engine.ts` (drop of a selected set
 where one selected node is a descendant of another selected node).
@@ -72,5 +77,129 @@ where one selected node is a descendant of another selected node).
 descendants does nothing — the descendant should ride along inside its
 ancestor and the ancestor should move.
 
-**Test status:** `drag-drop.spec.ts` "top-level absorption" stays `test.skip`
-until fixed.
+**Status 2026-10-24: does NOT reproduce.** Written out as a real test
+(select A-1, Ctrl-select A and B, drag A onto D as child): A and B land under
+D, A-1 stays inside A, 6 rows. It passes (3/3 repeats), so the skip was
+replaced by a passing test in `drag-drop.spec.ts`. Likely fixed by the
+`moveNodes` manifest/holes rework; close TV-5 unless the user saw it in a
+different setup (e.g. absorption with an `after` drop or cross-tree).
+
+## 6. Cut rows are never dimmed (and never un-dimmed)
+
+**Where:** `src/renderer/dom-renderer.ts` keyed reconcile (~945-963) +
+`src/controller/tree-engine.ts` `cutNodes()` / `cancelCut()`.
+
+**Symptom:** Ctrl+X / `cutNodes()` sets `engine.cutPaths` but the row never
+gets `.wtv__node-content--cut`. The reconciler only calls
+`_updateNodeElement` when `_rev` / expanded / hasChildren / focused / selected
+changed, and cutting changes none of those, so the class toggle at ~1427
+never runs. The same goes for removing the class on `cancelCut()` / Escape
+(if the row was re-rendered for another reason while cut).
+
+**Repro:** `keyboard-clipboard.html` — click Notes, Ctrl+X → no dimming.
+
+**Suggested fix:** bump `_rev` on every node entering/leaving `cutPaths`
+(cut, cancel, paste), or add a `data-cut` attribute to the reconcile guard like
+`data-focused` / `data-selected`.
+
+**Test status:** `keyboard-clipboard.spec.ts` "a cut row … is dimmed" is
+`test.fail`.
+
+## 7. `range-selection-mode="logical"` only ranges over root nodes
+
+**Where:** `src/controller/tree-engine.ts` `_rangeSelect()` (~1697-1700) uses
+`this.tree.tree` for logical mode; `ltree.ts` `get tree()` (~168) returns
+`Object.values(root.children)` — the ROOTS only, not a flat depth-first list.
+
+**Symptom:** in logical mode a Shift+click whose anchor or target is not a
+root finds no index and silently does nothing (selection stays on the anchor);
+between two roots it selects only the roots, never their (collapsed)
+descendants — the opposite of what "logical" promises.
+
+**Repro:** `range-selection.html?range=logical` — click A1 (1.1), Shift+click
+B1 (2.1) → selection stays `['1.1']`.
+
+**Suggested fix:** walk the full tree depth-first in sort order (like
+`visibleFlatNodes` but ignoring `isExpanded`) for logical mode.
+
+**Test status:** two `test.fail` tests in `range-selection.spec.ts`.
+
+## 8. Copies keep the source `id` → the keyed renderer drops rows
+
+**Where:** `src/renderer/dom-renderer.ts` reconcile keys rows by
+`String(node.id || node.path)` (~931); copy paths
+(`tree-engine.ts` paste / `duplicateNodes` / copy-drop) keep `data.id` unless
+the consumer's `nodeInputTransformationCallback` / `transform` assigns a new one.
+
+**Symptom:** after a default copy + paste (Ctrl+C / Ctrl+V, `pasteNodes`,
+`duplicateNodes` without a transform) the model holds two nodes with the same
+id, both share one DOM key, and one of them (the original) disappears from
+the rendered tree. Nothing warns.
+
+**Repro:** `keyboard-clipboard.html` — click Notes, Ctrl+C, click Pic,
+Ctrl+V → `getChildren('2.1')` has Notes, but only one "Notes" row is rendered.
+`mutation-api.html` — `duplicateNodes(['1','1.1','1.2'], '3', 'child')` → the
+original Fruits/Apple/Banana rows vanish.
+
+**Suggested fix:** key rows by `path` (unique by construction) or by
+`treeId + path`, or have the copy path assign fresh ids when no transform did
+(and warn on duplicate ids in `insertArray`).
+
+**Test status:** `test.fail` in `keyboard-clipboard.spec.ts` ("both the
+original and the copy are rendered") and `mutation-api.spec.ts`
+("duplicateNodes without a transform keeps every row rendered").
+
+## 9. Flat / progressive inputs are construction-only (runtime changes ignored)
+
+**Where:** `src/controller/tree-engine.ts` — `flatIndentSize`,
+`isFlatRenderingEnabled`, `isProgressiveRender`, `initialBatchSize`,
+`maxBatchSize` are read in the constructor (~744-748) but the `update(updates)`
+handler (~3440-3460) never applies them, although the inputs are declared
+`on: 'update'` in `web-component.ts` (~179-183).
+
+**Symptom:** `el.setAttribute('flat-indent-size', '10px')` (or the property)
+after the tree was built changes nothing. Configured before the first connect
+it works.
+
+**Suggested fix:** apply them in `update()` (+ `_scheduleNotify()` / full
+render), or declare them `on: 'reinit'`.
+
+**Test status:** `virtual-scroll.spec.ts` "changing flat-indent-size at
+runtime re-indents the rows" is `test.fail`.
+
+## 10. Progressive rendering stalls — most rows of a large tree never render
+
+**Where:** `src/controller/tree-engine.ts` `_updateProgressiveRendering()`
+(~3753-3815). Likely cause: when it runs again while a batch queue is still
+pending, it *replaces* `flatRenderQueue` with the new call's remainder
+(`this.flatRenderQueue = [...remaining]`) instead of appending, so the old
+queue is lost.
+
+**Symptom:** `virtual-scroll.html?mode=progressive` (2000 rows,
+`use-flat-rendering` + `progressive-render`, configured before connect):
+the DOM grows 20 → 40 → 80 → 109 rows and stays at 109 forever
+(`getVisibleFlatNodes()` also reports 109). Flat + progressive are the
+DEFAULTS when virtual scroll is off, so any large, sorted, non-virtual tree
+is affected.
+
+**Bisect** (2000 rows, expand-level=1, element configured before connect,
+rows counted after 2.5 s):
+
+| config | rows rendered |
+| --- | --- |
+| defaults | 2000 ✓ |
+| `use-flat-rendering` + `progressive-render` explicit | 2000 ✓ |
+| + `initial-batch-size="10"` only | **1990** (the first batch is lost) |
+| + `isSorted` + `sortCallback` only | **119** (stalls) |
+| all of the above | **109** |
+
+So the trigger is a re-run of `_updateProgressiveRendering` (sorting re-inserts
+/ re-orders → new tracker) while a queue is pending, and a non-default initial
+batch loses rows on its own.
+
+**Suggested fix:** append new ids to the pending queue (de-duplicated) and
+keep the current batch size; make sure the immediate batch survives a
+`flatRenderedIds` reset; add unit tests for repeated calls.
+
+**Test status:** `virtual-scroll.spec.ts` "a large tree renders in growing
+batches until every row is in the DOM" is `test.fail`.

@@ -224,10 +224,27 @@ test.describe('multi-drag (selectionMode=multi)', () => {
     await expect(section.locator('.wtv__node[data-tree-path]')).toHaveCount(6);
   });
 
-  // Top-level absorption (ancestor + descendant both selected) currently
-  // doesn't fire the move on web-treeview's controller. Skipped pending a
-  // follow-up — the other multi-drag positions cover the bulk of the path.
-  test.skip('top-level absorption: descendant of a selected ancestor rides along inside — controller bug', () => {});
+  // Top-level absorption (ancestor + descendant both selected): the descendant
+  // rides along INSIDE its moved ancestor (was skipped as TV-5 — NOTES.md #5).
+  test('top-level absorption: descendant of a selected ancestor rides along inside', async ({ page }) => {
+    await gotoFixture(page);
+    const section = page.getByTestId('section-multi');
+
+    await nodeRow(nodeByPath(section, '1.1')).click();
+    await nodeRow(nodeByPath(section, '1')).click({ modifiers: ['Control'] });
+    await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('3');
+
+    await dragNodeTo(nodeRow(nodeByPath(section, '1')), nodeRow(nodeByPath(section, '4')), 'child');
+
+    await expect.poll(() => rootNodeNamesInOrder(section)).toEqual(['Multi-C', 'Multi-D']);
+    await expect(section.locator('.wtv__node[data-tree-path]')).toHaveCount(6);
+    // A-1 is still A's child (now 3 levels deep under D), not a sibling of A.
+    const a1Path = await section.locator('.wtv__node[data-tree-path]').evaluateAll((els) =>
+      els.find((el) => el.querySelector('.wtv__node-content > span')?.textContent?.trim() === 'A-1')
+        ?.getAttribute('data-tree-path'));
+    expect(a1Path?.split('.').length).toBe(3);
+  });
 
   test('locked node (isDraggable=false) in the selected set does NOT ride along on multi-drag', async ({ page }) => {
     await gotoFixture(page);

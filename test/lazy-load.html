@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Lazy loading (hasChildrenMember)</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!-- ?via=click → load on node-click; ?via=change → load on tree-change (any expand). -->
+    <web-treeview id="tree" expand-level="0" has-children-member="hasChildren"></web-treeview>
+    <pre data-testid="ll-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logTo } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const via = params.get('via') ?? 'click';
+
+        // Roots only — "Remote" says it has children but none are loaded yet.
+        const data = [
+            { id: 1, path: '1', name: 'Remote', hasChildren: true },
+            { id: 2, path: '2', name: 'Local leaf', hasChildren: false }
+        ];
+        // What the "server" returns for a parent path.
+        const server = {
+            '1': [
+                { id: 11, path: '1.1', name: 'Remote child A', hasChildren: false },
+                { id: 12, path: '1.2', name: 'Remote child B', hasChildren: false }
+            ]
+        };
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        setupTree(tree, data);
+        window.tree = tree;
+
+        const loaded = new Set();
+        async function loadIfNeeded(node) {
+            if (!node?.hasChildren || !node.isExpanded || loaded.has(node.path)) return;
+            if (tree.getChildren(node.path).length > 0) return;
+            loaded.add(node.path);
+            logTo('ll-log', `load:${node.path}`);
+            await new Promise((r) => setTimeout(r, 30)); // simulated fetch
+            const r = tree.insertBranch(node.path, server[node.path] ?? []);
+            logTo('ll-log', `inserted:${node.path}:${r.count}`);
+        }
+
+        if (via === 'click') {
+            tree.addEventListener('node-click', (e) => loadIfNeeded(tree.getNodeByPath(e.detail.node.path)));
+        } else {
+            tree.addEventListener('tree-change', () => {
+                for (const n of tree.getVisibleFlatNodes()) loadIfNeeded(n);
+            });
+        }
+    </script>
+</body>
+</html>

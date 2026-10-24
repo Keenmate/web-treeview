@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Drag hooks (beforeDropCallback / beforeDragStartCallback)</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!-- ?drop=veto|redirect-after|redirect-copy|groups|async-veto|async-allow  ?start=prune|veto -->
+    <web-treeview id="tree" expand-level="3" drag-drop-mode="both" selection-mode="multi" click-behavior="select" allow-copy="true"></web-treeview>
+    <pre data-testid="dh-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents, logTo } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const data = [
+            { id: 1, path: '1', name: 'Inbox' },
+            { id: 11, path: '1.1', name: 'Mail1' },
+            { id: 2, path: '2', name: 'Archive' },
+            { id: 21, path: '2.1', name: 'Old' },
+            { id: 3, path: '3', name: 'Drafts' },
+            { id: 31, path: '3.1', name: 'D1' },
+            { id: 32, path: '3.2', name: 'D2' },
+            { id: 4, path: '4', name: 'Trash' }
+        ];
+
+        const names = (refs) => (refs ?? []).map((r) => r?.node?.data?.name ?? r?.data?.name ?? r?.path).join('+');
+        const delay = (ms, v) => new Promise((r) => setTimeout(() => r(v), ms));
+
+        const drop = params.get('drop');
+        const start = params.get('start');
+        const extra = {};
+        if (drop) {
+            extra.beforeDropCallback = (ctx) => {
+                logTo('dh-log', `before-drop:${names(ctx.dragged)}:${ctx.position}:${ctx.target?.node?.data?.name ?? 'null'}:${ctx.operation}`);
+                switch (drop) {
+                    case 'veto': return false;
+                    case 'redirect-after': return { position: 'after' };
+                    case 'redirect-copy': return { operation: 'copy' };
+                    case 'groups': {
+                        // Fan out: first dragged node → Inbox, the rest → Archive.
+                        const [first, ...rest] = ctx.dragged.map((r) => r.path);
+                        return [
+                            { targetPath: '1', position: 'child', paths: [first] },
+                            { targetPath: '2', position: 'child', paths: rest }
+                        ];
+                    }
+                    case 'async-veto': return delay(50, false);
+                    case 'async-allow': return delay(50, true);
+                }
+            };
+        }
+        if (start) {
+            extra.beforeDragStartCallback = (ctx) => {
+                logTo('dh-log', `before-drag-start:${(ctx.paths ?? ctx.dragged?.map((r) => r.path) ?? []).join('+')}`);
+                if (start === 'veto') return false;
+                if (start === 'prune') return [(ctx.paths ?? ctx.dragged.map((r) => r.path))[0]];
+            };
+        }
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        setupTree(tree, data, extra);
+        tree.addEventListener('node-drop', (e) => {
+            const d = e.detail;
+            logTo('dh-log', `node-drop:${names(d.dragged)}:${d.position}:${d.target?.node?.data?.name ?? 'null'}:${d.operation}`);
+        });
+        window.tree = tree;
+        // Parent name of the (first) node with this display name; '' for a root.
+        window.parentOf = (name) => {
+            const flat = tree.getVisibleFlatNodes();
+            const n = flat.find((x) => x.data?.name === name);
+            if (!n) return null;
+            const sep = n.path.lastIndexOf('.');
+            return sep < 0 ? '' : tree.getNodeByPath(n.path.slice(0, sep))?.data?.name ?? '?';
+        };
+        window.countOf = (name) => tree.getVisibleFlatNodes().filter((x) => x.data?.name === name).length;
+    </script>
+</body>
+</html>

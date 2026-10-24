@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Selection / focus API</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <web-treeview id="tree" expand-level="1" selection-mode="multi" is-selectable-member="selectable"></web-treeview>
+    <pre data-testid="sa-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents } from './fixture-kit.js';
+
+        // 1.1.1 is hidden (1.1 collapsed at expand-level=1); 3 is not selectable.
+        const data = [
+            { id: 1, path: '1', name: 'A', selectable: true },
+            { id: 11, path: '1.1', name: 'A1', selectable: true },
+            { id: 111, path: '1.1.1', name: 'A1x', selectable: true },
+            { id: 12, path: '1.2', name: 'A2', selectable: true },
+            { id: 2, path: '2', name: 'B', selectable: true },
+            { id: 3, path: '3', name: 'C', selectable: false }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        setupTree(tree, data);
+        // focus-change carries { focusedNode } — log its path ('' when cleared).
+        logEvents(tree, 'sa-log', ['selection-change', 'focus-change']);
+        window.tree = tree;
+        window.clearLog = () => { document.querySelector('[data-testid="sa-log"]').textContent = ''; };
+    </script>
+</body>
+</html>

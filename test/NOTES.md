@@ -203,3 +203,95 @@ keep the current batch size; make sure the immediate batch survives a
 
 **Test status:** `virtual-scroll.spec.ts` "a large tree renders in growing
 batches until every row is in the DOM" is `test.fail`.
+
+## 11. Silent focus / selection still fire `focus-change`
+
+**Where:** `src/treeview.ts` (~106-116) emits `focus-change` from the
+engine's `state-change` whenever the focused path differs; the engine's
+`focusNode(path, _options)` / `clearFocus(_options)` ignore `silent`, and a
+silent `selectNode` moves focus too.
+
+**Symptom:** `focusNode('1.2', { silent: true })`, `clearFocus({ silent: true })`
+and `selectNode('1.2', 'replace', { silent: true })` each fire `focus-change`.
+That breaks the URL-restore use case the silent flag exists for (restoring
+state without echoing events).
+
+**Suggested fix:** let the engine mark a silent focus move (e.g. set
+`lastFocusedPath` through a silent channel / carry a `silentFocus` flag on the
+snapshot) so the facade skips that one `focus-change`.
+
+**Test status:** two `test.fail` in `selection-api.spec.ts`.
+
+## 12. Per-node `get*Callback`s see `node.data === undefined` during the initial load
+
+**Where:** `src/ltree/ltree.ts` `insertArray()` (~292-314): the per-node
+callbacks (`getIsExpandedCallback`, `getIsSelectableCallback`,
+`getIsCheckedCallback`, `getIsDraggableCallback`, `getIsDropAllowedCallback`)
+run BEFORE `node.data = row` is assigned (~314). `addNode()` (~1260) assigns
+`data` first, so the two paths disagree.
+
+**Symptom:** `getIsExpandedCallback = ({ node }) => node.data.name.startsWith('Open')`
+throws `Cannot read properties of undefined (reading 'name')` on load and the
+tree renders nothing.
+
+**Suggested fix:** assign `node.data = row` right after the path is validated,
+before any callback runs.
+
+**Test status:** `expand-members.spec.ts` "getIsExpandedCallback seeds
+expansion per node" is `test.fail`.
+
+## 13. Public element methods don't `flush()` pending property writes
+
+**Where:** `src/web-component.ts` — the proxied methods (`getNodeByPath`,
+`checkNode`, `expandAll`, …, ~536-820) call `this.#treeview?.x()` directly.
+Only `createController()` (~826) calls `this.flush()`. Core's rule (CLAUDE.md
+"whenSettled()/flush()"): an imperative method that reads/mutates live state
+calls `this.flush()` first, so `el.prop = x; el.method()` sees `x`.
+
+**Symptom:** `el.data = more; el.getNodeByPath('3.1')` → `null`;
+`el.checkboxMode = 'independent'; el.checkNode('1')` still cascades. The same
+sequence through `el.controller` works.
+
+**Suggested fix:** `this.flush()` at the top of every public method (a small
+`#live()` helper returning `this.#treeview` after a flush).
+
+**Test status:** two `test.fail` in `attr-reactivity.spec.ts`.
+
+## 14. Removing `expand-level` is a no-op
+
+**Where:** `src/web-component.ts` ~116 — `expandLevel` has no `default`, so
+removing the attribute resets it to `undefined`; the engine's update guard
+(`updates.expandLevel !== undefined`, `tree-engine.ts` ~3310) then ignores it.
+
+**Symptom:** `<web-treeview expand-level="2">` → `removeAttribute('expand-level')`
+keeps level 2 open; core's contract is "absent == default" (roots only).
+
+**Suggested fix:** `default: 0` on the input (or a nullable converter so the
+removal forwards `null`, which the engine already treats as "no auto-expand").
+Worth auditing the other inputs without a `default` for the same pattern.
+
+**Test status:** `attr-reactivity.spec.ts` "expand-level removed" is `test.fail`.
+
+## 15. A DOM move rebuilds the tree — expansion, selection, checks, focus lost
+
+**Where:** `src/web-component.ts` `disconnect()` (~404-407) destroys the
+`WebTreeView` (engine + renderer); `connect()` (~399-401) builds a fresh one
+from config. Core's lifecycle is build-once + activate/deactivate: a move is
+`disconnect()` → `connect()` and should re-activate without a rebuild.
+
+**Symptom:** expand A, select A1 + B, check A2, then `appendChild` the tree
+elsewhere → back to the `expand-level` seed, selection / checks / focus gone
+(runtime state not in `data`). Same for remove + re-append. Listeners do
+re-attach (clicks / keys work, no duplicates).
+
+**Decision context:** D1 in `web-components-core/docs/e2e-coverage-plan.md`
+decided "a DOM move keeps state" for dropzone / editor / daterangepicker; the
+WP-TV row asks the same of the treeview (re-parent keeps expansion /
+selection / listeners). **Confirm with the user** that D1 applies here too.
+
+**Suggested fix:** keep the `WebTreeView` across disconnect; in
+`disconnect()` only stop live resources (environment observers, tooltips'
+autoUpdate, document-level listeners, context menu), restart them in
+`connect()`; destroy on `reinit()` only.
+
+**Test status:** two `test.fail` in `lifecycle.spec.ts`.

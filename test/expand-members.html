@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Expansion members / API</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <!--
+      ?mode=api         (default) expand-level=0, no expansion members
+      ?mode=member      is-expanded-member="open"
+      ?mode=callback    getIsExpandedCallback: expand nodes whose name starts with "Open"
+      ?mode=collapsible is-collapsible-member="collapsible" (1 is pinned open), expand-level=1
+    -->
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const mode = new URLSearchParams(location.search).get('mode') ?? 'api';
+        const data = [
+            { id: 1, path: '1', name: 'Open A', open: true, collapsible: false },
+            { id: 11, path: '1.1', name: 'A1', open: false, collapsible: true },
+            { id: 111, path: '1.1.1', name: 'A1x', open: false, collapsible: true },
+            { id: 2, path: '2', name: 'Closed B', open: false, collapsible: true },
+            { id: 21, path: '2.1', name: 'B1', open: false, collapsible: true },
+            { id: 3, path: '3', name: 'Open C', open: true, collapsible: true },
+            { id: 31, path: '3.1', name: 'C1', open: false, collapsible: true }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('expand-level', mode === 'collapsible' ? '1' : '0');
+        const extra = {};
+        if (mode === 'member') tree.setAttribute('is-expanded-member', 'open');
+        if (mode === 'callback') extra.getIsExpandedCallback = ({ node }) => String(node.data.name).startsWith('Open');
+        if (mode === 'collapsible') tree.setAttribute('is-collapsible-member', 'collapsible');
+        setupTree(tree, data, extra);
+        document.getElementById('host').appendChild(tree);
+        window.tree = tree;
+        window.rowPaths = () => [...tree.shadowRoot.querySelectorAll('.wtv__node')].map((e) => e.getAttribute('data-tree-path'));
+    </script>
+</body>
+</html>

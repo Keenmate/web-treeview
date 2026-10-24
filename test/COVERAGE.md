@@ -52,9 +52,10 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `accordion-expand` | ✓ | `basic.spec.ts` | `basic.html` |
 | Exclusive expand collapses previously-open sibling | ✓ | `exclusive-expand.spec.ts` | `exclusive-expand.html` |
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
-| `get/setExpandedPaths` round-trip | ✗ | | |
-| `isExpandedMember` / `getIsExpandedCallback` | ✗ | | |
-| `isCollapsibleMember` ignores toggle | ✗ | | |
+| `get/setExpandedPaths` round-trip | ✓ | `expand-members.spec.ts` | `expand-members.html` |
+| `is-expanded-member` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
+| `getIsExpandedCallback` reading `node.data` (NOTES #12) | ✗ (test.fail) | `expand-members.spec.ts` | `expand-members.html` |
+| `is-collapsible-member` ignores toggle | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `scroll-highlight-class` / `-timeout` | ✗ | | |
 
 ## 3. Click, selection & focus
@@ -71,7 +72,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |
-| `selectAll`, `setSelectedPaths`, `focusNode` / `clearFocus`, `focus-change` | ✗ | | |
+| `selectAll`, `setSelectedPaths` (+ silent), `focusNode` / `clearFocus`, `focus-change` payload | ✓ | `selection-api.spec.ts` | `selection-api.html` |
+| Silent focus / select fire no `focus-change` (NOTES #11) | ✗ (test.fail) | `selection-api.spec.ts` | `selection-api.html` |
 | Runtime state survives a config-change re-insert | ✓ | `state-persistence.spec.ts` | `selection-focus.html` |
 
 ## 4. Checkboxes
@@ -159,7 +161,11 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Node tooltips (text, rich, follow-cursor, toggle off) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
 | `tooltip-placement` / `-offset` / `-delay` | ✗ | | |
 | Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
-| Attribute removal resets to default; `setAttributes` batch; prop→method sync | ✗ | | |
-| Lifecycle: re-parent keeps expansion/selection/listeners | ✗ | | |
+| Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Removing `expand-level` resets (NOTES #14) | ✗ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| `el.prop = x; el.method()` sees x (NOTES #13; via `el.controller` ✓) | △ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
+| Lifecycle: re-parent keeps expansion/selection/checks (NOTES #15) | ✗ (test.fail) | `lifecycle.spec.ts` | `lifecycle.html` |
 | Logging silent by default; `should-display-debug-information`, `tree-id` | ✗ | | |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

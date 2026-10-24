@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Lifecycle (DOM move)</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        .slot { border: 1px dashed #999; padding: 0.5rem; margin-bottom: 0.5rem; min-height: 2rem; }
+        web-treeview { display: block; max-width: 480px; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <div class="slot" id="slot-a"><web-treeview id="tree" expand-level="0" selection-mode="multi" show-checkboxes="true"></web-treeview></div>
+    <div class="slot" id="slot-b"></div>
+    <pre data-testid="lc-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 12, path: '1.2', name: 'A2' },
+            { id: 2, path: '2', name: 'B' },
+            { id: 21, path: '2.1', name: 'B1' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        setupTree(tree, data);
+        logEvents(tree, 'lc-log', ['node-click', 'selection-change', 'checked-change']);
+        window.tree = tree;
+        window.moveTo = (slot) => document.getElementById(slot).appendChild(tree);
+        window.detachFor = async (ms) => {
+            const parent = tree.parentElement;
+            tree.remove();
+            await new Promise((r) => setTimeout(r, ms));
+            parent.appendChild(tree);
+        };
+    </script>
+</body>
+</html>

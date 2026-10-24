@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Attribute / property reactivity</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <web-treeview id="tree" expand-level="2" show-checkboxes="true" selected-node-class="picked" checkbox-mode="cascade"></web-treeview>
+    <pre data-testid="ar-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logEvents } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 12, path: '1.2', name: 'A2' },
+            { id: 2, path: '2', name: 'B' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        setupTree(tree, data);
+        logEvents(tree, 'ar-log', ['checked-change']);
+        window.tree = tree;
+        window.moreData = [...data, { id: 3, path: '3', name: 'C' }, { id: 31, path: '3.1', name: 'C1' }];
+    </script>
+</body>
+</html>

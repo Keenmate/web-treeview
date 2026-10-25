@@ -32,7 +32,6 @@ test.describe('rangeSelectionMode', () => {
   });
 
   test('logical: Shift+click also selects the collapsed (hidden) descendants in the range', async ({ page }) => {
-    test.fail(true, 'NOTES.md #7');
     await load(page, '?range=logical');
     await click(page, '1.1');
     await click(page, '2.1', ['Shift']);
@@ -42,7 +41,6 @@ test.describe('rangeSelectionMode', () => {
   });
 
   test('logical: a backwards range (Shift+click above the anchor) works the same', async ({ page }) => {
-    test.fail(true, 'NOTES.md #7');
     await load(page, '?range=logical');
     await click(page, '2');
     await click(page, '1.1', ['Shift']);

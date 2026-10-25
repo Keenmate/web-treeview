@@ -73,7 +73,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Selected / focused markers, `selected-node-class`, `focused-node-class` | ✓ | `selection-focus.spec.ts`, `focused-style-bug.spec.ts` | `selection-focus.html` |
 | `selectNode` / `selectNodes` / `clearSelection` / `clearChecked` loud + silent | ✓ | `silent-selection.spec.ts` | `silent-selection.html` |
 | `rangeSelectionMode` visual | ✓ | `range-selection.spec.ts` | `range-selection.html` |
-| `rangeSelectionMode` logical includes collapsed descendants (NOTES #7) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
+| `rangeSelectionMode` logical includes collapsed descendants, forwards + backwards (NOTES #7) | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |

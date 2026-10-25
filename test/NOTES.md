@@ -179,7 +179,11 @@ never runs. The same goes for removing the class on `cancelCut()` / Escape
 **Test status:** `keyboard-clipboard.spec.ts` "a cut row … is dimmed" is
 `test.fail`.
 
-## 7. `range-selection-mode="logical"` only ranges over root nodes
+## 7. ~~`range-selection-mode="logical"` only ranges over root nodes~~ — fixed
+
+**Fixed 2026-10-25:** logical mode ranges over every node depth-first in display order (`_allNodesDepthFirst()`, collapsed descendants included) instead of `tree.tree` (roots only). Both `test.fail`s in `range-selection.spec.ts` pass.
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` `_rangeSelect()` (~1697-1700) uses
 `this.tree.tree` for logical mode; `ltree.ts` `get tree()` (~168) returns

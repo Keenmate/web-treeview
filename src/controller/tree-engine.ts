@@ -1826,11 +1826,24 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
   }
 
+  /** Every node depth-first in display (children) order, ignoring expansion. */
+  private _allNodesDepthFirst(): LTreeNode<T>[] {
+    const out: LTreeNode<T>[] = [];
+    const walk = (node: LTreeNode<T>) => {
+      out.push(node);
+      for (const child of Object.values(node.children) as LTreeNode<T>[]) walk(child);
+    };
+    for (const root of this.tree?.tree ?? []) walk(root);
+    return out;
+  }
+
   /** Range-select between two paths. */
   private _rangeSelect(fromPath: string, toPath: string): void {
+    // visual: the rendered rows; logical: every node depth-first in display order,
+    // collapsed descendants included (NOTES #7 — `tree.tree` is the roots only).
     const nodes = this._rangeSelectionMode === 'visual'
       ? (this.tree?.visibleFlatNodes ?? [])
-      : (this.tree?.tree ?? []);
+      : this._allNodesDepthFirst();
 
     let fromIndex = -1;
     let toIndex = -1;

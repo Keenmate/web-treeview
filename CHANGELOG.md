@@ -53,6 +53,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - `replaceBranch` notifies the tree once and `removed` counts all descendants (NOTES #2 — verified, fixed by the insertBranch rework).
 - Cut rows are dimmed on Ctrl+X / `cutNodes()` and un-dimmed on Escape / `cancelCut()` (NOTES #6).
 - A pasted / duplicated copy that keeps its source `id` no longer hides the original row: rows are keyed by `path` (NOTES #8). `scrollToPath` finds rows by path too.
+- `range-selection-mode="logical"` ranges over all nodes depth-first (collapsed descendants included), not just the roots (NOTES #7).
 
 ### Added
 

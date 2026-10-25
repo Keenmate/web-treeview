@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Cross-tree drag / copy-drop</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; display: flex; gap: 1rem; }
+        web-treeview { display: block; width: 320px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; width: 360px; }
+    </style>
+</head>
+<body>
+    <!--
+      ?autocopy=off   auto-handle-copy="false" on both trees
+      ?nocopy         allow-copy unset (copy not allowed)
+      ?redact         source tree has nodeOutputTransformationCallback (" (copy)" suffix)
+    -->
+    <web-treeview id="tree-a" tree-id="A" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
+    <web-treeview id="tree-b" tree-id="B" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
+    <pre data-testid="xt-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logTo } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const dataA = [
+            { id: 'a1', path: '1', name: 'A-Folder' },
+            { id: 'a11', path: '1.1', name: 'A-File' },
+            { id: 'a2', path: '2', name: 'A-Leaf' }
+        ];
+        const dataB = [
+            { id: 'b1', path: '1', name: 'B-Folder' },
+            { id: 'b11', path: '1.1', name: 'B-File' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const a = document.getElementById('tree-a');
+        const b = document.getElementById('tree-b');
+        for (const t of [a, b]) {
+            if (params.has('nocopy')) t.removeAttribute('allow-copy');
+            if (params.get('autocopy') === 'off') t.setAttribute('auto-handle-copy', 'false');
+        }
+        let nextId = 1;
+        const extraA = {};
+        if (params.has('redact')) extraA.nodeOutputTransformationCallback = ({ data }) => ({ ...data, name: `${data.name} (copy)` });
+        setupTree(a, dataA, extraA);
+        setupTree(b, dataB);
+        for (const [t, label] of [[a, 'A'], [b, 'B']]) {
+            t.addEventListener('node-drop', (e) => {
+                const d = e.detail;
+                logTo('xt-log', `${label}:node-drop:${d.operation}:${d.source?.node?.data?.name}:${d.position}:${d.target?.node?.data?.name ?? 'null'}:dropped=${d.dropped ? d.dropped.length : 'null'}`);
+            });
+        }
+        window.trees = { A: a, B: b };
+        window.names = (id) => window.trees[id].getVisibleFlatNodes().map((n) => '  '.repeat(n.level - 1) + n.data.name);
+
+        /**
+         * Synthesized HTML5 drag (Playwright's mouse drag can't carry Ctrl reliably):
+         * dragstart on the source row → dragenter/dragover/drop on the target row's
+         * right part ("child") → dragend on the source.
+         */
+        window.synthDrag = async (fromId, fromPath, toId, toPath, { ctrl = false } = {}) => {
+            const row = (id, p) => window.trees[id].shadowRoot
+                .querySelector(`.wtv__node[data-tree-path="${p}"] > .wtv__node-row .wtv__node-content`);
+            const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+            const dt = new DataTransfer();
+            row(fromId, fromPath).dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true }));
+            await frame();
+            const target = row(toId, toPath);
+            const r = target.getBoundingClientRect();
+            const at = { clientX: r.left + r.width * 0.8, clientY: r.top + r.height / 2, ctrlKey: ctrl };
+            for (const type of ['dragenter', 'dragover', 'dragover']) {
+                target.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at }));
+            }
+            target.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at }));
+            await frame();
+            const src = row(fromId, fromPath);
+            src?.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true, composed: true }));
+            await frame();
+        };
+    </script>
+</body>
+</html>

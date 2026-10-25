@@ -90,3 +90,68 @@ test.describe('beforeKeydownCallback interceptor', () => {
     await expect(page.getByTestId('del-log')).toHaveText('');
   });
 });
+
+// ── Extended: cut interceptor, output transform, clipboard state API, auto-handle-paste ──
+
+async function gotoWith(page: Page, query: string) {
+  await page.goto(PAGE + query);
+  await expect(nodeAt(page, '2')).toBeVisible();
+}
+
+const clip = (page: Page) =>
+  page.evaluate(() => ({ has: (window as any).tree.hasClipboardContent(), op: (window as any).tree.getClipboardOperation() }));
+const childNames = (page: Page, p: string): Promise<string[]> => page.evaluate((p) => (window as any).childNames(p), p);
+
+test.describe('beforeCutCallback', () => {
+  test('returning false blocks the cut (clipboard untouched, no node-cut)', async ({ page }) => {
+    await gotoWith(page, '?cut=veto');
+    await page.evaluate(() => (window as any).tree.cutNodes(['1.1']));
+    await expect(page.getByTestId('paste-log')).toContainText('before-cut 1.1');
+    expect(await clip(page)).toEqual({ has: false, op: null });
+    expect((await page.getByTestId('paste-log').textContent())!.split('\n')).not.toContain('cut 1.1');
+  });
+
+  test('returning string[] replaces the cut paths', async ({ page }) => {
+    await gotoWith(page, '?cut=override');
+    await page.evaluate(() => (window as any).tree.cutNodes(['1.1']));
+    await expect(page.getByTestId('paste-log')).toContainText('cut 1.2');
+    expect(await clip(page)).toEqual({ has: true, op: 'cut' });
+  });
+});
+
+test.describe('clipboard state API', () => {
+  test('hasClipboardContent / getClipboardOperation follow copy, cut and cancelCut', async ({ page }) => {
+    await gotoWith(page, '');
+    expect(await clip(page)).toEqual({ has: false, op: null });
+    await page.evaluate(() => (window as any).tree.copyNodes(['1.2']));
+    expect(await clip(page)).toEqual({ has: true, op: 'copy' });
+    await page.evaluate(() => (window as any).tree.cutNodes(['1.2']));
+    expect(await clip(page)).toEqual({ has: true, op: 'cut' });
+    await page.evaluate(() => (window as any).tree.cancelCut());
+    expect(await clip(page)).toEqual({ has: false, op: null });
+  });
+
+  test('cancelCut leaves a copy on the clipboard alone', async ({ page }) => {
+    await gotoWith(page, '');
+    await page.evaluate(() => (window as any).tree.copyNodes(['1.2']));
+    await page.evaluate(() => (window as any).tree.cancelCut());
+    expect(await clip(page)).toEqual({ has: true, op: 'copy' });
+  });
+});
+
+test('nodeOutputTransformationCallback cleans the data as it leaves the source', async ({ page }) => {
+  await gotoWith(page, '?output=redact');
+  await page.evaluate(() => (window as any).tree.copyNodes(['1.2']));
+  await page.evaluate(() => (window as any).tree.pasteNodes('2', undefined, 'child'));
+  await expect.poll(() => childNames(page, '2')).toEqual(['Notes.txt (copy)']);
+  // the source node is untouched
+  expect(await childNames(page, '1')).toEqual(['Notes.txt', 'Reports']);
+});
+
+test('auto-handle-paste="false": node-paste carries the entries, the tree is not mutated', async ({ page }) => {
+  await gotoWith(page, '?autopaste=off');
+  await page.evaluate(() => (window as any).tree.copyNodes(['1.2']));
+  await page.evaluate(() => (window as any).tree.pasteNodes('2', undefined, 'child'));
+  await expect(page.getByTestId('paste-log')).toContainText('node-paste success=true count=1 entries=Notes.txt');
+  expect(await childNames(page, '2')).toEqual([]);
+});

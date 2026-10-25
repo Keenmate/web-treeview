@@ -115,9 +115,10 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Copy/paste/cut events, `beforeCopyCallback`, `beforePasteCallback` | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | `nodeInputTransformationCallback` null skips | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `deleteNodes()` API | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
-| `beforeCutCallback`, `nodeOutputTransformationCallback` | ✗ | | |
-| `cancelCut` / `hasClipboardContent` / `getClipboardOperation`, `allow-copy` | ✗ | | |
-| `auto-handle-copy/paste=false` | ✗ | | |
+| `beforeCutCallback` veto / override, `nodeOutputTransformationCallback` on copy-paste | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
+| `cancelCut` / `hasClipboardContent` / `getClipboardOperation` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
+| `auto-handle-paste=false` (event with entries, no mutation) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
+| `auto-handle-copy=false` (copy-drop only notifies) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
 | `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/copyNodeWithDescendants/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 | `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✗ (test.fail) | `mutation-api.spec.ts` | `mutation-api.html` |
 
@@ -134,8 +135,12 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Touch drag (ghost, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
 | `beforeDropCallback` false / redirect / copy / `DropGroup[]` / async | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
-| Cross-tree drag, Ctrl-drag copy | ✗ | | |
-| Drag visuals (reject classes, `indicate-undraggable`, tree drop zone, `drop-zone-*`) | ✗ | | |
+| Cross-tree move (consumer-owned, `dropped=null`), Ctrl-drag copy same/cross tree, `allow-copy` | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
+| `nodeOutputTransformationCallback` on copy-drop (NOTES #21) | ✗ (test.fail) | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
+| Drag classes (`--dragged`, `dragged-node-class`, glow), floating `drop-zone-*` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Touch: `node-drag-reject` + 🚫, `indicate-undraggable=false`, `touch-drag-delay` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Desktop: drop on no-drop node refused | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Desktop: `node-drop-reject` + `enable-tree-drop-zone` routing (NOTES #22) | ✗ (test.fail) | `drag-visuals.spec.ts` | `drag-visuals.html` |
 
 ## 8. Search
 
@@ -154,8 +159,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `getContextMenuItemsCallback` items, submenu, disabled, divider | ✓ | `context-menu.spec.ts` | `context-menu.html` |
 | Core action items, built-ins, `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
-| `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✗ | | |
-| `openContextMenu(path,x,y)` + offsets; keyboard in menu | ✗ | | |
+| `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
+| `openContextMenu(path,x,y)` + offsets, `closeContextMenu`; shortcut keys + Escape in menu | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
 
 ## 10. Tooltips, theming, misc
 

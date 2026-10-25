@@ -6,8 +6,8 @@ import { test, expect, Page, Locator, nodeByPath } from './fixtures';
  * Covers (in this port): single-tree drag, allowedDropPositionsMember,
  * getAllowedDropPositionsCallback, and multi-drag.
  *
- * NOT ported (kept as skipped placeholders): two-tree drag, Ctrl-drag copy,
- * touch drag. Those need substantial extra fixture wiring and the Chromium
+ * Two-tree drag + Ctrl-drag copy live in drag-cross-tree.spec.ts (synthesized
+ * drag events carry Ctrl); touch drag in touch-drag.spec.ts. The Chromium
  * native-drag-synth chain is flaky for the modifier-aware paths.
  */
 
@@ -327,8 +327,4 @@ test.describe('drag-drop-mode same-tree gate', () => {
   });
 });
 
-// ── Sections NOT ported ───────────────────────────────────────────────────
-// Two-tree drag, Ctrl-drag copy — kept as skipped placeholders so future runs
-// can plumb in their fixtures incrementally. (Touch drag: touch-drag.spec.ts.)
-test.skip('two-tree drag — not ported (cross-tree fixture)', () => {});
-test.skip('Ctrl-drag copy — not ported (Chromium native-drag synth flake)', () => {});
+// Two-tree drag and Ctrl-drag copy: drag-cross-tree.spec.ts. Touch drag: touch-drag.spec.ts.

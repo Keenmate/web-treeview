@@ -143,7 +143,9 @@ original Fruits/Apple/Banana rows vanish.
 
 **Suggested fix:** key rows by `path` (unique by construction) or by
 `treeId + path`, or have the copy path assign fresh ids when no transform did
-(and warn on duplicate ids in `insertArray`).
+— copy-DROP already does this via `_defaultCopyTransform`
+(`tree-engine.ts` ~4325), paste / `duplicateNodes` don't (and warn on
+duplicate ids in `insertArray`).
 
 **Test status:** `test.fail` in `keyboard-clipboard.spec.ts` ("both the
 original and the copy are rendered") and `mutation-api.spec.ts`
@@ -393,3 +395,42 @@ empty render.)
 
 **Test status:** `render-callbacks.spec.ts` "renderEmptyZoneCallback (assigned
 after markup upgrade) fills the zone" is `test.fail`.
+
+## 21. `nodeOutputTransformationCallback` is not applied on copy-drop
+
+**Where:** `src/controller/tree-engine.ts` — the output transform runs only in
+`_collectClipboardEntry()` (~2841, clipboard copy/cut). The copy-drop branches
+of `_handleDrop()` (~4320 same-tree, ~4341 cross-tree) call `duplicateNodes()`
+with only the INPUT transform (or `_defaultCopyTransform`).
+
+**Symptom:** the input doc says "OUTPUT (egress) transform — clean/redact
+`ctx.data` as a node leaves the source (copy/cut/copy-drop)", but a Ctrl-drop
+copy (same tree or A → B) lands the unredacted data.
+
+**Suggested fix:** in both copy-drop branches, run the SOURCE tree's output
+transform over each manifest node before the input transform (phase
+`'output'`, `target` = the drop ref), as the clipboard path does.
+
+**Test status:** two `test.fail` in `drag-cross-tree.spec.ts`.
+
+## 22. Desktop drops on a refusing node: no `node-drop-reject`, tree drop zone bypassed
+
+**Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a
+node drop to the engine's public `drop()` (`tree-engine.ts` ~2986), which
+silently skips a node with `isDropAllowed=false`. The reject feedback
+(`_indicateDropDenied` → `onNodeDropDenied` → `node-drop-reject`, 🚫 flash)
+and the `enable-tree-drop-zone` rerouting live in `_onNodeDropInternal`
+(~4465-4495), which the DOM renderer never calls. (A real browser also needs
+`dragover` to be accepted on the refusing row for `drop` to fire at all.)
+
+**Symptom:** a real (Playwright) drag onto "NoDrop" does nothing visible:
+no `node-drop-reject`, no 🚫; with `enable-tree-drop-zone` the drop is not
+routed to the tree (no `node-drop` with `target=null`). The touch path
+(long-press a locked node → `node-drag-reject`) works.
+
+**Suggested fix:** have the renderer use the same gate as
+`_onNodeDropInternal` (or make `drop()` call `_indicateDropDenied` /
+`handleTreeZoneDrop`), and accept `dragover` on refusing rows when a tree drop
+zone or reject feedback is wanted.
+
+**Test status:** two `test.fail` in `drag-visuals.spec.ts`.

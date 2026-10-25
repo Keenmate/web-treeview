@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Context menu rendering / programmatic open</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; width: 420px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!--
+      ?mode=items   (default) getContextMenuItemsCallback + renderContextMenuItemCallback
+      ?mode=custom  renderContextMenuCallback renders the whole menu
+      other params are set as attributes (context-menu-x-offset, context-menu-y-offset)
+    -->
+    <div id="host"></div>
+    <pre data-testid="cm-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logTo } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        const mode = params.get('mode') ?? 'items';
+        const data = [
+            { id: 1, path: '1', name: 'Docs' },
+            { id: 11, path: '1.1', name: 'Readme' },
+            { id: 2, path: '2', name: 'Pics' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('expand-level', '2');
+        for (const [k, v] of params) if (k !== 'mode') tree.setAttribute(k, v);
+        const extra = {};
+        if (mode === 'items') {
+            extra.getContextMenuItemsCallback = ({ node }) => [
+                { id: 'open', text: 'Open', shortcut: 'o', onClick: (d) => logTo('cm-log', `click:open:${d.node.path}`) },
+                { id: 'star', text: 'Star', shortcut: 's', onClick: (d) => logTo('cm-log', `click:star:${d.node.path}`) },
+                { id: 'off', text: 'Disabled', shortcut: 'd', isDisabled: true, onClick: () => logTo('cm-log', 'click:off') }
+            ];
+            // Fill only the "star" item; others fall back to the default rendering.
+            extra.renderContextMenuItemCallback = ({ menuItem, node, buttonElement }) => {
+                if (menuItem.id !== 'star') return;
+                buttonElement.innerHTML = `<em class="custom-item">★ Star ${node.data.name}</em>`;
+            };
+        } else {
+            extra.renderContextMenuCallback = ({ node, containerElement, controller }) => {
+                containerElement.innerHTML = `<div class="custom-menu">Menu for ${node.data.name} <button class="custom-close">close</button></div>`;
+                containerElement.querySelector('.custom-close').addEventListener('click', () => {
+                    logTo('cm-log', `custom-close:${node.path}`);
+                    controller.closeContextMenu();
+                });
+            };
+        }
+        setupTree(tree, data, extra);
+        document.getElementById('host').appendChild(tree);
+        window.tree = tree;
+    </script>
+</body>
+</html>

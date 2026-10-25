@@ -98,6 +98,29 @@
                 plog(`paste count=${r.count} skipped=${r.skipped}`);
             });
 
+            // ── Query-param variants (extended spec) ──
+            //   ?cut=veto|override   beforeCutCallback blocks / replaces the paths with ['1.2']
+            //   ?output=redact       nodeOutputTransformationCallback appends " (copy)" to the name
+            //   ?autopaste=off       auto-handle-paste="false"
+            const params = new URLSearchParams(location.search);
+            const cut = params.get('cut');
+            if (cut) {
+                tree.beforeCutCallback = ({ paths }) => {
+                    plog(`before-cut ${paths.join(',')}`);
+                    if (cut === 'veto') return false;
+                    if (cut === 'override') return ['1.2'];
+                };
+            }
+            tree.onNodeCut = (ctx) => plog(`cut ${ctx.paths.join(',')}`);
+            if (params.get('output') === 'redact') {
+                tree.nodeOutputTransformationCallback = ({ data: d }) => ({ ...d, name: `${d.name} (copy)` });
+            }
+            if (params.get('autopaste') === 'off') tree.setAttribute('auto-handle-paste', 'false');
+            tree.onNodePaste = (r) =>
+                plog(`node-paste success=${r.success} count=${r.count} entries=${(r.entries ?? []).map((e) => e.data?.name).join('|')}`);
+            window.tree = tree;
+            window.childNames = (p) => tree.getChildren(p).map((n) => n.data.name).sort();
+
             tree.data = data;
         });
     </script>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Drag visuals / reject feedback / tree drop zone</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; width: 420px; border: 1px solid #ccc; }
+        pre { font-size: 12px; background: #f6f6f6; min-height: 2em; }
+    </style>
+</head>
+<body>
+    <!--
+      Attributes come straight from the query string (?drop-zone-mode=glow&…),
+      applied before the element connects. Data: 3 "Locked" is not draggable,
+      2 "NoDrop" refuses drops.
+    -->
+    <div id="host"></div>
+    <pre data-testid="dv-log"></pre>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logTo } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'Alpha', draggable: true, canDrop: true },
+            { id: 11, path: '1.1', name: 'Alpha-1', draggable: true, canDrop: true },
+            { id: 2, path: '2', name: 'NoDrop', draggable: true, canDrop: false },
+            { id: 3, path: '3', name: 'Locked', draggable: false, canDrop: true },
+            { id: 4, path: '4', name: 'Delta', draggable: true, canDrop: true }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('expand-level', '2');
+        tree.setAttribute('drag-drop-mode', 'both');
+        tree.setAttribute('is-draggable-member', 'draggable');
+        tree.setAttribute('is-drop-allowed-member', 'canDrop');
+        for (const [k, v] of new URLSearchParams(location.search)) tree.setAttribute(k, v);
+        setupTree(tree, data);
+        document.getElementById('host').appendChild(tree);
+        for (const type of ['node-drag-reject', 'node-drop-reject']) {
+            tree.addEventListener(type, (e) => logTo('dv-log', `${type}:${e.detail.node?.path ?? e.detail.path}`));
+        }
+        tree.addEventListener('node-drop', (e) =>
+            logTo('dv-log', `node-drop:${e.detail.source?.path}:${e.detail.position}:${e.detail.target?.path ?? 'null'}`));
+        window.tree = tree;
+
+        // ── Step-wise synthesized HTML5 drag (so a spec can assert mid-drag) ──
+        const row = (p) => tree.shadowRoot.querySelector(`.wtv__node[data-tree-path="${p}"] > .wtv__node-row .wtv__node-content`);
+        const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+        let dt = null;
+        let src = null;
+        const at = (el, fx) => {
+            const r = el.getBoundingClientRect();
+            return { clientX: r.left + r.width * fx, clientY: r.top + r.height / 2 };
+        };
+        window.drag = {
+            async start(p) {
+                dt = new DataTransfer();
+                src = p;
+                row(p).dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true }));
+                await frame();
+            },
+            async over(p, fx = 0.8) {
+                const el = row(p);
+                for (const type of ['dragenter', 'dragover', 'dragover']) {
+                    el.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) }));
+                }
+                await frame();
+            },
+            async drop(p, fx = 0.8) {
+                const el = row(p);
+                el.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) }));
+                await frame();
+            },
+            async end() {
+                row(src)?.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true, composed: true }));
+                await frame();
+            }
+        };
+    </script>
+</body>
+</html>

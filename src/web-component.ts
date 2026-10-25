@@ -145,13 +145,13 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'expandLevel', attribute: 'expand-level', converter: toInt({ default: 0 }), on: 'update', description: 'Depth to auto-expand on load (0 = roots only, the default).' },
   { configKey: 'treePathSeparator', attribute: 'tree-path-separator', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Separator between segments in a materialized tree path.' },
   { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus.' },
-  { configKey: 'isAccordionExpand', attribute: 'accordion-expand', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
-  { configKey: 'isSorted', attribute: 'is-sorted', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
+  { configKey: 'isAccordionExpand', attribute: 'accordion-expand', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
+  { configKey: 'isSorted', attribute: 'is-sorted', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
 
   // ── Search / indexer ───────────────────────────────────────────────────────
-  { configKey: 'shouldUseInternalSearchIndex', attribute: 'should-use-internal-search-index', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Build an internal FlexSearch index for search.' },
-  { configKey: 'indexerBatchSize', attribute: 'indexer-batch-size', converter: toInt(), on: 'update', description: 'Nodes indexed per batch when building the search index.' },
-  { configKey: 'indexerTimeout', attribute: 'indexer-timeout', converter: toInt(), on: 'update', description: 'Idle timeout (ms) between search-index batches.' },
+  { configKey: 'shouldUseInternalSearchIndex', attribute: 'should-use-internal-search-index', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Build an internal FlexSearch index for search.' },
+  { configKey: 'indexerBatchSize', attribute: 'indexer-batch-size', converter: toInt(), default: 25, on: 'update', description: 'Nodes indexed per batch when building the search index.' },
+  { configKey: 'indexerTimeout', attribute: 'indexer-timeout', converter: toInt(), default: 50, on: 'update', description: 'Idle timeout (ms) between search-index batches.' },
   { configKey: 'searchText', attribute: 'search-text', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Active search/filter term.' },
 
   // ── Theme / visual classes ─────────────────────────────────────────────────
@@ -167,7 +167,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldShowNodeTooltips', attribute: 'show-node-tooltips', converter: toBool('default-false'), on: 'update', description: 'Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback).' },
   { configKey: 'tooltipPlacement', attribute: 'tooltip-placement', converter: toEnum(['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'] as const), on: 'update', description: 'Tooltip placement relative to the row. Default top-start.' },
   { configKey: 'tooltipDelay', attribute: 'tooltip-delay', converter: toTooltipDelay(), on: 'update', type: 'number | { show?: number; hide?: number }', description: 'Show/hide delay (ms). The attribute sets both; the JS property also accepts { show, hide }. Default { show: 400, hide: 100 }.' },
-  { configKey: 'tooltipOffset', attribute: 'tooltip-offset', converter: toInt(), on: 'update', description: 'Gap from the row (or cursor), px. Default 8.' },
+  { configKey: 'tooltipOffset', attribute: 'tooltip-offset', converter: toInt(), default: 8, on: 'update', description: 'Gap from the row (or cursor), px. Default 8.' },
   { configKey: 'tooltipFollowCursor', attribute: 'tooltip-follow-cursor', converter: toBool('default-false'), on: 'update', description: 'Anchor the tooltip to the pointer instead of the row.' },
   { configKey: 'iconSet', attribute: 'icon-set', converter: toEnum(['chevron', 'triangle', 'plus-minus', 'arrow'] as const), on: 'update', shouldReflect: true, description: 'Disclosure glyph set: chevron (default) | triangle | plus-minus | arrow. Re-points the --wtv-icon-* variables via a :host([icon-set]) rule; reflected to the attribute so the CSS matches when set via the JS property.' },
   { configKey: 'expandIconClass', attribute: 'expand-icon-class', converter: toText({ isNullable: true }), on: 'update', description: 'DEPRECATED — use icon-set. Escape hatch: a custom class attached to the expandable toggle.' },
@@ -175,46 +175,46 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'leafIconClass', attribute: 'leaf-icon-class', converter: toText({ isNullable: true }), on: 'update', description: 'Icon class for leaf nodes.' },
   { configKey: 'toggleIconMode', attribute: 'toggle-icon-mode', converter: toEnum(['rotate', 'swap'] as const), on: 'update', shouldReflect: true, description: 'Whether the toggle glyph rotates (single glyph) or swaps (expand↔collapse glyph). Reflected to the attribute so the :host([toggle-icon-mode="swap"]) CSS matches via the JS property.' },
   { configKey: 'scrollHighlightClass', attribute: 'scroll-highlight-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class flashed on a node after scrollToPath().' },
-  { configKey: 'scrollHighlightTimeout', attribute: 'scroll-highlight-timeout', converter: toInt(), on: 'update', description: 'How long (ms) the scroll highlight stays before clearing.' },
+  { configKey: 'scrollHighlightTimeout', attribute: 'scroll-highlight-timeout', converter: toInt(), default: 4000, on: 'update', description: 'How long (ms) the scroll highlight stays before clearing.' },
 
   // ── Per-node icons ─────────────────────────────────────────────────────────
-  { configKey: 'shouldAlignNodeIcons', attribute: 'align-node-icons', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Reserve a fixed icon column so node labels align.' },
+  { configKey: 'shouldAlignNodeIcons', attribute: 'align-node-icons', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Reserve a fixed icon column so node labels align.' },
 
   // ── Context menu ───────────────────────────────────────────────────────────
-  { configKey: 'contextMenuXOffset', attribute: 'context-menu-x-offset', converter: toInt(), on: 'update', description: 'Horizontal offset (px) of the context menu from the pointer.' },
-  { configKey: 'contextMenuYOffset', attribute: 'context-menu-y-offset', converter: toInt(), on: 'update', description: 'Vertical offset (px) of the context menu from the pointer.' },
+  { configKey: 'contextMenuXOffset', attribute: 'context-menu-x-offset', converter: toInt(), default: 8, on: 'update', description: 'Horizontal offset (px) of the context menu from the pointer.' },
+  { configKey: 'contextMenuYOffset', attribute: 'context-menu-y-offset', converter: toInt(), default: 0, on: 'update', description: 'Vertical offset (px) of the context menu from the pointer.' },
 
   // ── Debug / loading ────────────────────────────────────────────────────────
-  { configKey: 'shouldDisplayDebugInformation', attribute: 'should-display-debug-information', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Render in-tree debug diagnostics.' },
-  { configKey: 'isLoading', attribute: 'is-loading', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Show the loading state.' },
+  { configKey: 'shouldDisplayDebugInformation', attribute: 'should-display-debug-information', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Render in-tree debug diagnostics.' },
+  { configKey: 'isLoading', attribute: 'is-loading', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show the loading state.' },
 
   // ── Drag and drop ──────────────────────────────────────────────────────────
   { configKey: 'dragDropMode', attribute: 'drag-drop-mode', converter: toText({ isNullable: true }), on: 'update', description: 'Drag-drop mode: `none` (off), `self` (within this tree), `cross` (between trees), or `both`.' },
   { configKey: 'dropZoneMode', attribute: 'drop-zone-mode', converter: toEnum(['floating', 'glow'] as const), on: 'update', description: 'Drop-zone visual style: floating indicator or glow.' },
   { configKey: 'dropZoneLayout', attribute: 'drop-zone-layout', converter: toEnum(['around', 'before', 'after', 'wave', 'wave2'] as const), on: 'update', description: 'Where drop zones render relative to a node.' },
   { configKey: 'dropZoneStart', attribute: 'drop-zone-start', converter: toDropZoneStart(), on: 'update', type: 'number | string', description: 'Where drop zones begin. A number is a percentage of node width; a string is used as-is (`px` or `%`, e.g. "50px").' },
-  { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toInt(), on: 'update', description: 'Maximum drop-zone width (px).' },
-  { configKey: 'isCopyAllowed', attribute: 'allow-copy', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Allow the copy clipboard operation.' },
-  { configKey: 'shouldAutoHandleCopy', attribute: 'auto-handle-copy', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Let the tree perform the copy itself (vs delegating to onCopy).' },
-  { configKey: 'shouldAutoHandlePaste', attribute: 'auto-handle-paste', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Let the tree perform the paste itself (vs delegating to onPaste).' },
-  { configKey: 'shouldHandleKeyboardShortcuts', attribute: 'handle-keyboard-shortcuts', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Handle copy/cut/paste/delete keyboard shortcuts.' },
-  { configKey: 'touchDragDelay', attribute: 'touch-drag-delay', converter: toInt(), on: 'update', description: 'Long-press hold (ms) before a touch-drag engages (default 300).' },
-  { configKey: 'shouldIndicateUndraggable', attribute: 'indicate-undraggable', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Built-in "can\'t move/drop this" feedback (🚫 badge + haptic). Default true.' },
-  { configKey: 'shouldEnableTreeDropZone', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
+  { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toInt(), default: 120, on: 'update', description: 'Maximum drop-zone width (px).' },
+  { configKey: 'isCopyAllowed', attribute: 'allow-copy', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Allow the copy clipboard operation.' },
+  { configKey: 'shouldAutoHandleCopy', attribute: 'auto-handle-copy', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform the copy itself (vs delegating to onCopy).' },
+  { configKey: 'shouldAutoHandlePaste', attribute: 'auto-handle-paste', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform the paste itself (vs delegating to onPaste).' },
+  { configKey: 'shouldHandleKeyboardShortcuts', attribute: 'handle-keyboard-shortcuts', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Handle copy/cut/paste/delete keyboard shortcuts.' },
+  { configKey: 'touchDragDelay', attribute: 'touch-drag-delay', converter: toInt(), default: 300, on: 'update', description: 'Long-press hold (ms) before a touch-drag engages (default 300).' },
+  { configKey: 'shouldIndicateUndraggable', attribute: 'indicate-undraggable', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Built-in "can\'t move/drop this" feedback (🚫 badge + haptic). Default true.' },
+  { configKey: 'shouldEnableTreeDropZone', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
   { configKey: 'noDataText', attribute: 'no-data-text', converter: toText({ isNullable: true }), on: 'update', description: 'Text shown when the tree is empty.' },
-  { configKey: 'shouldShowDropPlaceholderWhenEmpty', attribute: 'show-drop-placeholder-when-empty', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
-  { configKey: 'isFlatRenderingEnabled', attribute: 'use-flat-rendering', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
+  { configKey: 'shouldShowDropPlaceholderWhenEmpty', attribute: 'show-drop-placeholder-when-empty', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
+  { configKey: 'isFlatRenderingEnabled', attribute: 'use-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
-  { configKey: 'isProgressiveRender', attribute: 'progressive-render', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
-  { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), on: 'update', description: 'Rows rendered in the first progressive batch.' },
-  { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), on: 'update', description: 'Maximum rows per progressive batch.' },
+  { configKey: 'isProgressiveRender', attribute: 'progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
+  { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), default: 20, on: 'update', description: 'Rows rendered in the first progressive batch.' },
+  { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), default: 500, on: 'update', description: 'Maximum rows per progressive batch.' },
 
   // ── Virtual scroll ─────────────────────────────────────────────────────────
-  { configKey: 'isVirtualScrollEnabled', attribute: 'virtual-scroll', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Enable virtual scrolling.' },
+  { configKey: 'isVirtualScrollEnabled', attribute: 'virtual-scroll', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Enable virtual scrolling.' },
   { configKey: 'virtualRowHeight', attribute: 'virtual-row-height', converter: toFloat(), on: 'update', description: 'Fixed row height (px) used by virtual scrolling.' },
-  { configKey: 'virtualOverscan', attribute: 'virtual-overscan', converter: toInt(), on: 'update', description: 'Extra rows rendered above/below the viewport when virtualizing.' },
+  { configKey: 'virtualOverscan', attribute: 'virtual-overscan', converter: toInt(), default: 5, on: 'update', description: 'Extra rows rendered above/below the viewport when virtualizing.' },
   { configKey: 'virtualContainerHeight', attribute: 'virtual-container-height', converter: toText({ isNullable: true }), on: 'update', description: 'Height (CSS length) of the virtual-scroll viewport.' },
 
   // ── Selection model ────────────────────────────────────────────────────────
@@ -232,7 +232,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldShowCheckboxes', attribute: 'show-checkboxes', converter: toBool('default-false'), on: 'update', description: 'Show a checkbox on each node.' },
   { configKey: 'checkboxMode', attribute: 'checkbox-mode', converter: toEnum(['independent', 'cascade'] as const), on: 'update', description: 'Checkbox interaction: `independent` toggles one node; `cascade` toggles the subtree with a tristate box on branches.' },
   { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
-  { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggles-checkbox', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
+  { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggles-checkbox', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
   // ── Complex property (data; too large for an attribute) ────────────────────
   { configKey: 'data', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', type: 'ReadonlyArray<Record<string, unknown>>', description: 'The array of node objects to render. Assign `el.data` directly (JS API).' },

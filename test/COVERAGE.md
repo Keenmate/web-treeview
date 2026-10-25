@@ -181,6 +181,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets to roots only (NOTES #14) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Removing number / boolean attributes resets to the engine default (is-loading, virtual-scroll, virtual-overscan, context-menu-x-offset; NOTES #14 follow-up) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `el.prop = x; el.method()` sees x (NOTES #13; element methods flush first) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |

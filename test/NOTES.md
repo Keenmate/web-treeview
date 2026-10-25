@@ -363,7 +363,7 @@ sequence through `el.controller` works.
 
 ## 14. ~~Removing `expand-level` is a no-op~~ — fixed
 
-**Fixed 2026-10-25:** `expandLevel` has `toInt({ default: 0 })`, so removing the attribute forwards 0 (roots only) and the engine re-seeds expansion. The `test.fail` in `attr-reactivity.spec.ts` passes. **Still open (audit):** ~30 other `toInt()` / `toFloat()` / `toBool('tristate')` inputs have no `default`, so removing their attribute forwards `undefined` and the engine's `!== undefined` guard keeps the old value (e.g. `virtual-overscan`, `context-menu-x-offset`, `is-loading`, `virtual-scroll`). Giving each its engine default is mechanical but touches many inputs — not done in this sweep.
+**Fixed 2026-10-25:** `expandLevel` has `toInt({ default: 0 })`, so removing the attribute forwards 0 (roots only) and the engine re-seeds expansion. The `test.fail` in `attr-reactivity.spec.ts` passes. **Audit:** ~30 other `toInt()` / `toFloat()` / `toBool('tristate')` inputs have no `default`, so removing their attribute forwards `undefined` and the engine's `!== undefined` guard keeps the old value (e.g. `virtual-overscan`, `context-menu-x-offset`, `is-loading`, `virtual-scroll`). Done 2026-10-25 (follow-up): those 28 rows now carry their engine default as the row `default` (property-only `shouldDisplayContextMenuInDebugMode` and auto-measured `virtualRowHeight` excepted). The tristate booleans already reset (removal → `null` → the engine's `?? default`); the numbers were the real no-ops. Tests: is-loading, virtual-scroll, virtual-overscan, context-menu-x-offset (incl. the menu position) in `attr-reactivity.spec.ts`.
 
 Original report:
 

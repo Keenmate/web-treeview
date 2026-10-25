@@ -42,6 +42,61 @@ test.describe('removing an attribute resets the input to its default', () => {
     await page.evaluate(() => (window as any).tree.removeAttribute('expand-level'));
     await expect(nodeByPath(page, '1.1')).toHaveCount(0);
   });
+  test('is-loading removed → the loading overlay hides', async ({ page }) => {
+    await load(page);
+    const overlay = page.locator('.wtv__loading-overlay');
+    await page.evaluate(() => (window as any).tree.setAttribute('is-loading', 'true'));
+    await expect(overlay).toBeVisible();
+    await page.evaluate(() => (window as any).tree.removeAttribute('is-loading'));
+    await expect(overlay).toBeHidden();
+  });
+
+  test('virtual-scroll removed → back to the plain (non-virtual) body', async ({ page }) => {
+    await load(page);
+    const body = page.locator('.wtv__tree').first();
+    await page.evaluate(() => (window as any).tree.setAttribute('virtual-scroll', 'true'));
+    await expect(body).toHaveClass(/wtv__virtual-scroll/);
+    await page.evaluate(() => (window as any).tree.removeAttribute('virtual-scroll'));
+    await expect(body).not.toHaveClass(/wtv__virtual-scroll/);
+  });
+
+  test('virtual-overscan / context-menu-x-offset removed → their defaults (5 / 8)', async ({ page }) => {
+    await load(page);
+    const read = () => page.evaluate(() => {
+      const t = (window as any).tree;
+      return [t.virtualOverscan, t.contextMenuXOffset];
+    });
+    await page.evaluate(() => {
+      const t = (window as any).tree;
+      t.setAttribute('virtual-overscan', '12');
+      t.setAttribute('context-menu-x-offset', '30');
+    });
+    await expect.poll(read).toEqual([12, 30]);
+    await page.evaluate(() => {
+      const t = (window as any).tree;
+      t.removeAttribute('virtual-overscan');
+      t.removeAttribute('context-menu-x-offset');
+    });
+    await expect.poll(read).toEqual([5, 8]);
+  });
+
+  test('context-menu-x-offset removed → the menu opens at the default offset again', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => {
+      const t = (window as any).tree;
+      t.getContextMenuItemsCallback = () => [{ id: 'x', text: 'X' }];
+      t.setAttribute('context-menu-x-offset', '60');
+    });
+    const menuLeft = async () => {
+      await page.evaluate(() => (window as any).tree.openContextMenu('2', 100, 100));
+      const left = await page.locator('.bliss-menu').first().evaluate((m) => m.getBoundingClientRect().left);
+      await page.evaluate(() => (window as any).tree.closeContextMenu());
+      return left;
+    };
+    expect(Math.round(await menuLeft())).toBe(160);
+    await page.evaluate(() => (window as any).tree.removeAttribute('context-menu-x-offset'));
+    await expect.poll(async () => Math.round(await menuLeft())).toBe(108);
+  });
 });
 
 test('setAttributes applies a batch at once (settled on return)', async ({ page }) => {

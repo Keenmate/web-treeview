@@ -17,7 +17,7 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 - ~~**TV-4** (PageUp/PageDown + Shift-extend)~~ — implemented 2026-10-25 (see #4).
 - ~~**D1 for the treeview** (#15)~~ — decided (a move keeps ALL state) and
   implemented 2026-10-25 (see #15).
-- **TV-5** (#5) no longer reproduces — close it?
+- ~~**TV-5** (#5)~~ — closed 2026-10-25 (child, after and cross-tree variants all pass).
 - **TV-1** (#1): the `insertBranch` mixed-validity test stays skipped — which
   items should count as invalid for `addNode` (empty / duplicate path? missing
   id?) needs a decision before the return shape (`failed`) can be specified.
@@ -93,7 +93,7 @@ merges over the defaults (svelte's `{ ...createDefaultNavigation(), ...overrides
 The 10 `keyboard-nav.spec.ts` skips are now real tests, plus anchor / single-mode
 / `navigationOverrides` tests (39 in the spec, all green).
 
-## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — not reproducible
+## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — closed (not reproducible)
 
 **Where:** multi-drag in `src/controller/tree-engine.ts` (drop of a selected set
 where one selected node is a descendant of another selected node).
@@ -108,6 +108,16 @@ D, A-1 stays inside A, 6 rows. It passes (3/3 repeats), so the skip was
 replaced by a passing test in `drag-drop.spec.ts`. Likely fixed by the
 `moveNodes` manifest/holes rework; close TV-5 unless the user saw it in a
 different setup (e.g. absorption with an `after` drop or cross-tree).
+
+**Closed 2026-10-25.** The other setups pass too (3/3 repeats each):
+- `drag-drop.spec.ts` — same selection dropped AFTER D: roots C, D, A, B;
+  A-1 / A-2 stay A's direct children; 6 rows, one `node-drop`.
+- `drag-cross-tree.spec.ts` (`drag-cross-tree.html?multi`) — dropped into
+  tree B as a child of B-Folder. A cross-tree MOVE is consumer-owned (trees
+  untouched, `dropped=null`): `node-drop` on B carries exactly the top-level
+  paths `['1', '2']` (A-1 absorbed, no duplicate). A Ctrl copy-drop lands
+  A (with A-1, A-2 inside) and B under B-Folder, no duplicates; tree A keeps
+  everything. One unrelated bug surfaced there — #26.
 
 ## 6. Cut rows are never dimmed (and never un-dimmed)
 
@@ -529,3 +539,24 @@ lifecycle tests (fast Playwright clicks); unlikely by hand but possible.
 (modifier click or checkbox toggle).
 
 **Test status:** none (the lifecycle test clicks a different row to stay clear).
+
+## 26. Cross-tree `dragged` refs resolve the source paths in the TARGET tree
+
+**Where:** `src/controller/tree-engine.ts` `_draggedRefs()` (~1117-1120) —
+the cross-tree branch maps the published source paths through
+`this.nodeRef(p)`, which looks the path up in THIS (the target) tree.
+
+**Symptom:** drag tree A's `1` + `2` onto tree B: `node-drop` on B has
+`dragged[0].node` = B's own node `1` (B-Folder) and `dragged[1].node` = null
+(B has no `2`). The paths are right; the nodes are wrong (or null where the
+doc comment promises null for every cross-tree ref). `source` is correct.
+
+**Repro:** `drag-cross-tree.html?multi`, select A-1, Ctrl A, Ctrl B in tree A,
+drag A onto B-Folder → `window.lastDrop.dragged` = `['B-Folder', undefined]`.
+
+**Suggested fix:** resolve cross-tree refs against the SOURCE tree
+(`getClipboardTree(sourceTreeId)` / the registry) or return path-only refs
+(`node: null`) as documented — never look them up in the target tree.
+
+**Test status:** `drag-cross-tree.spec.ts` "the cross-tree dragged refs carry
+the SOURCE nodes" is `test.fail`.

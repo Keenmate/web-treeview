@@ -246,6 +246,31 @@ test.describe('multi-drag (selectionMode=multi)', () => {
     expect(a1Path?.split('.').length).toBe(3);
   });
 
+  // TV-5 variant (NOTES.md #5): the same absorption selection dropped as a SIBLING.
+  test('top-level absorption, dropped AFTER D: A and B move, A-1 stays inside A, no duplicates', async ({ page }) => {
+    await gotoFixture(page);
+    const section = page.getByTestId('section-multi');
+
+    await nodeRow(nodeByPath(section, '1.1')).click();
+    await nodeRow(nodeByPath(section, '1')).click({ modifiers: ['Control'] });
+    await nodeRow(nodeByPath(section, '2')).click({ modifiers: ['Control'] });
+    await expect(page.getByTestId('multi-selected-size')).toHaveText('3');
+
+    await dragNodeTo(nodeRow(nodeByPath(section, '1')), nodeRow(nodeByPath(section, '4')), 'after');
+
+    await expect.poll(() => rootNodeNamesInOrder(section)).toEqual(['Multi-C', 'Multi-D', 'Multi-A', 'Multi-B']);
+    await expect(section.locator('.wtv__node[data-tree-path]')).toHaveCount(6);
+    const pathOf = await section.locator('.wtv__node[data-tree-path]').evaluateAll((els) =>
+      Object.fromEntries(els.map((el) => [
+        el.querySelector('.wtv__node-content > span')?.textContent?.trim(),
+        el.getAttribute('data-tree-path'),
+      ])));
+    // A-1 / A-2 are still direct children of A (not siblings of A, not duplicated).
+    expect(pathOf['A-1']?.split('.')).toEqual([pathOf['Multi-A'], expect.any(String)]);
+    expect(pathOf['A-2']?.split('.')).toEqual([pathOf['Multi-A'], expect.any(String)]);
+    await expect(page.getByTestId('multi-drop-count')).toHaveText('1');
+  });
+
   test('locked node (isDraggable=false) in the selected set does NOT ride along on multi-drag', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-multi-locked');

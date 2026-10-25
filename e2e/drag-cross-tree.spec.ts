@@ -84,3 +84,49 @@ test.describe('A → B', () => {
     expect(await names(page, 'B')).toEqual(['B-Folder', '  B-File']);
   });
 });
+
+// TV-5 (NOTES.md #5) cross-tree variant: absorption selection (A-1, Ctrl A, Ctrl B)
+// dropped into tree B as a child of B-Folder. A cross-tree MOVE is handed to the
+// consumer (trees untouched); a Ctrl copy-drop is auto-handled.
+test.describe('A → B with a top-level-absorbed selection (TV-5)', () => {
+  const rowA = (page: Page, path: string) =>
+    page.locator(`#tree-a .wtv__node[data-tree-path="${path}"] > .wtv__node-row .wtv__node-content`).first();
+
+  async function selectAbsorbed(page: Page) {
+    await rowA(page, '1.1').click();
+    await rowA(page, '1').click({ modifiers: ['Control'] });
+    await rowA(page, '2').click({ modifiers: ['Control'] });
+    expect(await page.evaluate(() => [...(window as any).trees.A.getSelectedPaths()].sort())).toEqual(['1', '1.1', '2']);
+  }
+
+  const lastDrop = (page: Page) => page.evaluate(() => (window as any).lastDrop);
+
+  test('move: node-drop on B carries exactly the top-level paths [A, B] (A-1 absorbed); trees untouched', async ({ page }) => {
+    await load(page, '?multi');
+    await selectAbsorbed(page);
+    await drag(page, 'A', '1', 'B', '1');
+    await expect.poll(() => lastDrop(page)).toMatchObject({
+      tree: 'B', operation: 'move', draggedPaths: ['1', '2'], dropped: null,
+    });
+    expect(await names(page, 'A')).toEqual(['Multi-A', '  A-1', '  A-2', 'Multi-B', 'Multi-C']);
+    expect(await names(page, 'B')).toEqual(['B-Folder', '  B-File']);
+  });
+
+  test('move: the cross-tree dragged refs carry the SOURCE nodes', async ({ page }) => {
+    test.fail(true, 'NOTES.md #26');
+    await load(page, '?multi');
+    await selectAbsorbed(page);
+    await drag(page, 'A', '1', 'B', '1');
+    await expect.poll(() => lastDrop(page), { timeout: 2000 }).toMatchObject({ dragged: ['Multi-A', 'Multi-B'] });
+  });
+
+  test('Ctrl copy-drop: B gets A (with A-1, A-2 inside) and B under B-Folder, no duplicates; A keeps all', async ({ page }) => {
+    await load(page, '?multi');
+    await selectAbsorbed(page);
+    await drag(page, 'A', '1', 'B', '1', true);
+    await expect.poll(() => names(page, 'B')).toEqual([
+      'B-Folder', '  B-File', '  Multi-A', '    A-1', '    A-2', '  Multi-B',
+    ]);
+    expect(await names(page, 'A')).toEqual(['Multi-A', '  A-1', '  A-2', 'Multi-B', 'Multi-C']);
+  });
+});

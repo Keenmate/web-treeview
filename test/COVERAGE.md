@@ -130,7 +130,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Single-tree drag, before / child positions | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | `allowedDropPositionsMember` / `getAllowedDropPositionsCallback` | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Multi-drag (child / after, locked node) | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
-| Multi-drag top-level absorption (NOTES #5, not reproducible) | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
+| Multi-drag top-level absorption — child + after drop (NOTES #5, closed) | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
+| Cross-tree absorption: move carries top-level paths only, Ctrl copy-drop no duplicates (NOTES #5) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html?multi` |
+| Cross-tree `dragged` refs resolve to the source nodes (NOTES #26) | ✗ (test.fail) | `drag-cross-tree.spec.ts` | `drag-cross-tree.html?multi` |
 | `isDropAllowed=false`, `drag-drop-mode` self/cross | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Esc during drag restores selection | ✓ | `drag-esc-cancel.spec.ts` | `drag-esc-cancel.html` |
 | Touch drag (ghost, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |

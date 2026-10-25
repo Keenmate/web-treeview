@@ -14,6 +14,7 @@
       ?autocopy=off   auto-handle-copy="false" on both trees
       ?nocopy         allow-copy unset (copy not allowed)
       ?redact         source tree has nodeOutputTransformationCallback (" (copy)" suffix)
+      ?multi          selection-mode="multi"; tree A = Multi-A (A-1, A-2), Multi-B, Multi-C (TV-5)
     -->
     <web-treeview id="tree-a" tree-id="A" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
     <web-treeview id="tree-b" tree-id="B" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
@@ -24,7 +25,13 @@
         import { setupTree, logTo } from './fixture-kit.js';
 
         const params = new URLSearchParams(location.search);
-        const dataA = [
+        const dataA = params.has('multi') ? [
+            { id: 'ma', path: '1', name: 'Multi-A' },
+            { id: 'ma1', path: '1.1', name: 'A-1' },
+            { id: 'ma2', path: '1.2', name: 'A-2' },
+            { id: 'mb', path: '2', name: 'Multi-B' },
+            { id: 'mc', path: '3', name: 'Multi-C' }
+        ] : [
             { id: 'a1', path: '1', name: 'A-Folder' },
             { id: 'a11', path: '1.1', name: 'A-File' },
             { id: 'a2', path: '2', name: 'A-Leaf' }
@@ -40,6 +47,7 @@
         for (const t of [a, b]) {
             if (params.has('nocopy')) t.removeAttribute('allow-copy');
             if (params.get('autocopy') === 'off') t.setAttribute('auto-handle-copy', 'false');
+            if (params.has('multi')) t.setAttribute('selection-mode', 'multi');
         }
         let nextId = 1;
         const extraA = {};
@@ -49,6 +57,7 @@
         for (const [t, label] of [[a, 'A'], [b, 'B']]) {
             t.addEventListener('node-drop', (e) => {
                 const d = e.detail;
+                window.lastDrop = { tree: label, operation: d.operation, dragged: (d.dragged ?? []).map((r) => r.node?.data?.name), draggedPaths: (d.dragged ?? []).map((r) => r.path), dropped: d.dropped ? d.dropped.map((r) => r.node?.data?.name) : null };
                 logTo('xt-log', `${label}:node-drop:${d.operation}:${d.source?.node?.data?.name}:${d.position}:${d.target?.node?.data?.name ?? 'null'}:dropped=${d.dropped ? d.dropped.length : 'null'}`);
             });
         }

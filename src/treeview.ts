@@ -18,7 +18,7 @@ import type {
   NodeTransformCallback,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { withComponentContext, runBeforeCallback, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { withComponentContext, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
@@ -667,6 +667,24 @@ export class WebTreeView<T = any> {
 
       onNodeClick: this.event(o.onNodeClick),
       onNodeDoubleClick: this.event(o.onNodeDoubleClick),
+      onNodeExpand: this.event(o.onNodeExpand),
+      onNodeCollapse: this.event(o.onNodeCollapse),
+      // Expand gate: core runBeforeCallbackEager keeps a sync hook synchronous; an async
+      // one yields a Promise. A rejected Promise is warned here and read as `false`.
+      beforeExpandCallback: this.wrap(o.beforeExpandCallback, 'expand', (f) => (engineCtx: object) => {
+        const guarded = (ctx: unknown) => {
+          const r = (f as (c: unknown) => unknown)(ctx);
+          if (r && typeof (r as PromiseLike<unknown>).then === 'function') {
+            return Promise.resolve(r).catch((error) => {
+              console.warn('[web-treeview] beforeExpandCallback rejected — the node stays collapsed', error);
+              return false;
+            });
+          }
+          return r;
+        };
+        const result = runBeforeCallbackEager(guarded, this.ctx(engineCtx), 'beforeExpandCallback');
+        return result instanceof Promise ? result.then(internalGate) : internalGate(result);
+      }),
       beforeCopyCallback: this.syncGate(o.beforeCopyCallback, 'beforeCopyCallback'),
       beforeCutCallback: this.syncGate(o.beforeCutCallback, 'beforeCutCallback'),
       beforePasteCallback: this.syncGate(o.beforePasteCallback, 'beforePasteCallback'),

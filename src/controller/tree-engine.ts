@@ -186,6 +186,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private selectionChangeCb: TreeEngineConfig<T>['onSelectionChange'];
   private nodeClickedCb: TreeEngineConfig<T>['onNodeClick'];
   private onNodeDoubleClickCb: TreeEngineConfig<T>['onNodeDoubleClick'];
+  private beforeExpandCb: TreeEngineConfig<T>['beforeExpandCallback'];
+  private nodeExpandCb: TreeEngineConfig<T>['onNodeExpand'];
+  private nodeCollapseCb: TreeEngineConfig<T>['onNodeCollapse'];
+  /** Paths whose async beforeExpandCallback is in flight (loading state; repeat toggles ignored). */
+  private _expandPending = new Set<string>();
   private beforeCopyCb: TreeEngineConfig<T>['beforeCopyCallback'];
   private beforeCutCb: TreeEngineConfig<T>['beforeCutCallback'];
   private beforePasteCb: TreeEngineConfig<T>['beforePasteCallback'];
@@ -814,6 +819,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.selectionChangeCb = props.onSelectionChange;
     this.nodeClickedCb = props.onNodeClick;
     this.onNodeDoubleClickCb = props.onNodeDoubleClick;
+    this.beforeExpandCb = props.beforeExpandCallback;
+    this.nodeExpandCb = props.onNodeExpand;
+    this.nodeCollapseCb = props.onNodeCollapse;
     this.beforeCopyCb = props.beforeCopyCallback;
     this.beforeCutCb = props.beforeCutCallback;
     this.beforePasteCb = props.beforePasteCallback;
@@ -947,18 +955,116 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // ── Public API methods ──────────────────────────────────────────────
 
+  /**
+   * Expand nodes (programmatic / context menu / keyboard). Each target that has
+   * children and is collapsed goes through `beforeExpandCallback` first (a
+   * `false` keeps it collapsed; an async hook defers it, showing the loading
+   * state). Fires `node-expand` for every node that actually expanded (the
+   * collapsed ancestors on the way included) unless `noEmit`. `exclusive`
+   * side-effect collapses fire no `node-collapse`.
+   */
   expandNodes(
     nodePath: string | string[],
     options?: { exclusive?: boolean; noEmit?: boolean }
   ) {
-    this.tree.expandNodes(nodePath, options);
+    const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
+    if (!this.beforeExpandCb) {
+      this._expandWithEvents(paths, options);
+      return;
+    }
+    const now: string[] = [];
+    let isSyncPhase = true;
+    for (const p of paths) {
+      const node = this.tree?.getNodeByPath(p);
+      if (!node || node.isExpanded || !node.hasChildren) {
+        now.push(p);
+        continue;
+      }
+      this._gateExpand(node, () => {
+        if (isSyncPhase) now.push(p);
+        else this._expandWithEvents([p], options);
+      });
+    }
+    isSyncPhase = false;
+    if (now.length) this._expandWithEvents(now, options);
   }
 
+  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `noEmit`). */
   collapseNodes(
     nodePath: string | string[],
     options?: { noEmit?: boolean }
   ) {
+    const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
+    const wereExpanded = paths
+      .map((p) => this.tree?.getNodeByPath(p))
+      .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
     this.tree.collapseNodes(nodePath, options);
+    if (options?.noEmit) return;
+    for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
+  }
+
+  /** Whether `path` has an async `beforeExpandCallback` in flight (renders the loading state). */
+  isExpandPending(path: string): boolean {
+    return this._expandPending.has(path);
+  }
+
+  /** Expand `paths` (no gate) and fire `node-expand` for each node that changed. */
+  private _expandWithEvents(paths: string[], options?: { exclusive?: boolean; noEmit?: boolean }): void {
+    const sep = this._treePathSeparator;
+    const changing = new Map<string, LTreeNode<T>>();
+    for (const p of paths) {
+      const segs = p.split(sep);
+      for (let i = 1; i <= segs.length; i++) {
+        const prefix = segs.slice(0, i).join(sep);
+        if (changing.has(prefix)) continue;
+        const n = this.tree?.getNodeByPath(prefix);
+        if (!n) break;
+        if (!n.isExpanded && n.hasChildren) changing.set(prefix, n);
+      }
+    }
+    this.tree.expandNodes(paths, options);
+    if (options?.noEmit) return;
+    for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
+  }
+
+  /**
+   * Run `beforeExpandCallback` for `node`, then `apply()` when allowed. A sync
+   * hook answers synchronously (`true` applied / `false` cancelled). An async
+   * hook marks the node pending (loading state, `isExpandPending`) and returns a
+   * Promise; on settle the pending mark clears and `apply()` runs unless the hook
+   * resolved `false` (a rejection was already turned into `false` by the adapter).
+   * A request for a node that is already pending is ignored (`false`).
+   */
+  private _gateExpand(node: LTreeNode<T>, apply: () => void): boolean | Promise<boolean> {
+    const path = node.path;
+    if (this._expandPending.has(path)) return false;
+    const cb = this.beforeExpandCb;
+    if (!cb) {
+      apply();
+      return true;
+    }
+    const result = cb(this.nodeRef(node));
+    if (result && typeof (result as PromiseLike<unknown>).then === 'function') {
+      this._expandPending.add(path);
+      node._rev++;
+      this.tree.refresh();
+      this._scheduleNotify();
+      return Promise.resolve(result).then(
+        (v) => v !== false,
+        () => false
+      ).then((isAllowed) => {
+        this._expandPending.delete(path);
+        const live = this.tree?.getNodeByPath(path) ?? null;
+        if (live) live._rev++;
+        if (isAllowed && live) apply();
+        this.tree?.refresh();
+        this._scheduleNotify();
+        return isAllowed && !!live;
+      });
+    }
+    if (result === false) return false;
+    apply();
+    return true;
   }
 
   /** Toggle expand/collapse for a node clicked via the toggle UI. Honors the
@@ -966,7 +1072,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  expanded sibling (whose `isCollapsible` allows it) is first collapsed
    *  in a single batch. Programmatic `expandNodes` / `expandAll` callers
    *  bypass the accordion. Mirrors svelte-treeview Node.svelte's
-   *  toggleExpanded() flow. */
+   *  toggleExpanded() flow. An expand goes through `beforeExpandCallback`;
+   *  a node whose async hook is pending ignores the toggle. */
   toggleNodeExpanded(path: string): void {
     const node = this.getNodeByPath(path);
     if (!node || !node.hasChildren) return;
@@ -974,6 +1081,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // a node is marked non-collapsible. Match that gate exactly so the
     // two packages behave the same way.
     if (!this.tree.getNodeIsCollapsible(node)) return;
+    if (this._expandPending.has(path)) return;
 
     const shouldExpand = !node.isExpanded;
 
@@ -983,18 +1091,31 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       accordion: shouldExpand && this._isAccordionExpand
     });
 
-    if (shouldExpand && this._isAccordionExpand) {
+    if (!shouldExpand) {
+      this.collapseNodes(path);
+      return;
+    }
+    this._gateExpand(node, () => this._toggleExpandApply(path));
+  }
+
+  /** The expand half of a UI toggle, after the gate: accordion side-effect + expand + events. */
+  private _toggleExpandApply(path: string): void {
+    const node = this.getNodeByPath(path);
+    if (!node || node.isExpanded) return;
+    const collapsedSiblings: LTreeNode<T>[] = [];
+    if (this._isAccordionExpand) {
       const siblings = this.tree.getSiblings(path);
       for (const sibling of siblings) {
         if (sibling.path !== path && sibling.isExpanded && this.tree.getNodeIsCollapsible(sibling)) {
           sibling.isExpanded = false;
           (sibling as any)._rev = ((sibling as any)._rev || 0) + 1;
+          collapsedSiblings.push(sibling);
         }
       }
     }
-
-    if (shouldExpand) this.tree.expandNodes(path);
-    else this.tree.collapseNodes(path);
+    this.tree.expandNodes(path);
+    for (const s of collapsedSiblings) this.nodeCollapseCb?.(this.nodeRef(s));
+    if (node.isExpanded) this.nodeExpandCb?.(this.nodeRef(node));
   }
 
   expandAll(
@@ -2371,11 +2492,21 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       navInto: () => {
         const node = this._focusedNode;
         if (!node || !node.hasChildren) return;
-        if (!node.isExpanded) this.tree?.expandNodes(node.path);
         // visibleFlatNodes updates synchronously — move to the first child.
-        const flat = visible();
-        const idx = flat.findIndex(n => n.path === node.path);
-        if (idx >= 0 && idx + 1 < flat.length) this._navigation.navTo(flat[idx + 1].path);
+        const moveIn = () => {
+          if (this._focusedNode?.path !== node.path) return; // focus moved while loading
+          const flat = visible();
+          const idx = flat.findIndex(n => n.path === node.path);
+          if (idx >= 0 && idx + 1 < flat.length) this._navigation.navTo(flat[idx + 1].path);
+        };
+        if (node.isExpanded) {
+          moveIn();
+          return;
+        }
+        // Expanding goes through beforeExpandCallback (may be async — lazy load).
+        const gated = this._gateExpand(node, () => this._expandWithEvents([node.path]));
+        if (gated instanceof Promise) gated.then((isExpanded) => { if (isExpanded) moveIn(); });
+        else if (gated) moveIn();
       },
 
       // To the parent, no collapse (matches svelte-treeview).
@@ -2391,15 +2522,15 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         if (!node) return;
         const parentPath = parentPathOf(node.path);
         if (!parentPath) return;
-        this.tree?.collapseNodes(parentPath);
+        this.collapseNodes(parentPath);
         this._navigation.navTo(parentPath);
       },
 
       navToggle: () => {
         const node = this._focusedNode;
         if (!node || !node.hasChildren) return;
-        if (node.isExpanded) this.tree?.collapseNodes(node.path);
-        else this.tree?.expandNodes(node.path);
+        if (node.isExpanded) this.collapseNodes(node.path);
+        else this.expandNodes(node.path);
         this._scheduleNotify();
       },
 
@@ -3584,6 +3715,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // Callbacks
     if (updates.onNodeClick !== undefined) this.nodeClickedCb = updates.onNodeClick;
     if (updates.onNodeDoubleClick !== undefined) this.onNodeDoubleClickCb = updates.onNodeDoubleClick;
+    if (updates.beforeExpandCallback !== undefined) this.beforeExpandCb = updates.beforeExpandCallback;
+    if (updates.onNodeExpand !== undefined) this.nodeExpandCb = updates.onNodeExpand;
+    if (updates.onNodeCollapse !== undefined) this.nodeCollapseCb = updates.onNodeCollapse;
     if (updates.beforeCopyCallback !== undefined) this.beforeCopyCb = updates.beforeCopyCallback;
     if (updates.beforeCutCallback !== undefined) this.beforeCutCb = updates.beforeCutCallback;
     if (updates.beforePasteCallback !== undefined) this.beforePasteCb = updates.beforePasteCallback;

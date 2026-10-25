@@ -505,6 +505,14 @@ export interface TreeEngineConfig<T> {
   onNodeClick?: (ctx: NodeEventContext<T>) => void;
   /** Fires on a detected node double-click (manual detection, all click behaviors). */
   onNodeDoubleClick?: (ctx: NodeEventContext<T>) => void;
+  /** Gate before a node expands (UI toggle, keyboard, expandNodes — not expandAll / seeding).
+   *  `false` keeps it collapsed; a Promise defers the expand (the node shows a loading
+   *  state meanwhile; resolving `false` cancels). The public hook is adapted by WebTreeView. */
+  beforeExpandCallback?: (ctx: NodeEventContext<T>) => unknown;
+  /** Fires after a node actually expanded (not for expandAll / seeding). */
+  onNodeExpand?: (ctx: NodeEventContext<T>) => void;
+  /** Fires after a node actually collapsed (not for collapseAll). */
+  onNodeCollapse?: (ctx: NodeEventContext<T>) => void;
   /** Clipboard interceptors — return `false` to block, a `string[]` to override the paths. */
   beforeCopyCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;
   beforeCutCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;

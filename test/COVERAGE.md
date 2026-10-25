@@ -43,7 +43,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `use-flat-rendering` + `flat-indent-size` (runtime change: NOTES #9) | △ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `progressive-render` batches complete (NOTES #10) | ✗ (test.fail) | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| Lazy load (`hasChildrenMember` toggle → expand → `insertBranch`) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
+| Lazy load via `beforeExpandCallback` (async load → `insertBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
+| `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
+| `node-expand` / `node-collapse` for click, keyboard, `expandNodes` / `collapseNodes`; none for `expandAll` / `collapseAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 
 ## 2. Expand / collapse
 

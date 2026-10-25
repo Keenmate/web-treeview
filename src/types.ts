@@ -31,6 +31,7 @@ export type {
   TreeViewActionEventDetail,
   BeforeCheckboxToggleContext,
   KeydownContext,
+  BeforeExpandContext,
   NodeTransformCallbackContext,
   NodeTransformCallback,
   BeforeCopyCallbackContext,
@@ -118,6 +119,7 @@ import type {
   TreeViewActionEventDetail,
   BeforeCheckboxToggleContext,
   KeydownContext,
+  BeforeExpandContext,
   NodeTransformCallbackContext,
   NodeTransformCallback,
   BeforeCopyCallbackContext,
@@ -376,6 +378,18 @@ export interface TreeViewConfig<T = any> {
    *  rather than the native `dblclick`, which is unreliable under the flat diff
    *  reconciler. Fires for every `clickBehavior`. */
   onNodeDoubleClick?: (detail: NodeEventDetail<T>) => void;
+  /** Twin of `node-expand` — a node actually expanded (UI, keyboard, `expandNodes`; not
+   *  `expandAll` / expand-level seeding, which only fire `tree-change`). */
+  onNodeExpand?: (detail: NodeEventDetail<T>) => void;
+  /** Twin of `node-collapse` — a node actually collapsed (UI, keyboard, `collapseNodes`,
+   *  an accordion sibling; not `collapseAll`). */
+  onNodeCollapse?: (detail: NodeEventDetail<T>) => void;
+  /** Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not
+   *  `expandAll()`, expand-level seeding or accordion side-effects). Return `false` to keep
+   *  it collapsed. Return a Promise (e.g. load + `insertBranch` the children) to defer the
+   *  expand: the node shows a loading state and ignores repeat toggles until it settles;
+   *  resolving `false` or rejecting (warned) keeps it collapsed. A sync hook stays sync. */
+  beforeExpandCallback?: (ctx: BeforeExpandContext<T>) => boolean | void | Promise<boolean | void>;
   /** Runs before `copyNodes` (synchronous). Return `false` to block, or a `string[]` to
    *  override which paths are copied. */
   beforeCopyCallback?: (ctx: BeforeCopyCallbackContext<T>) => string[] | false | void;

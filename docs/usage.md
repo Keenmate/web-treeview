@@ -278,6 +278,7 @@ Activation order: `beforeActionCallback` → item `onClick` → `action` event (
 | `beforeDragStartCallback` | `({ lead, dragged, … }) => string[] \| false \| void` | Prune / augment / veto the dragged set at drag start |
 | `beforeDropCallback` | `(ctx: BeforeDropContext) => false \| { position?, operation? } \| DropGroup[] \| void \| Promise<…>` | Drop validation / redirect / fan-out (async OK) |
 | `beforeKeydownCallback` | `({ event, focusedNode, selectedNodes, controller }) => void \| false` | Runs before built-in keyboard handling; return `false` to suppress default navigation + shortcuts for this key |
+| `beforeExpandCallback` | `({ node, path, parent, siblings, controller }) => boolean \| void \| Promise<boolean \| void>` | Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not `expandAll()`, expand-level seeding or accordion side-effects). `false` keeps it collapsed; a Promise defers the expand (loading state, repeat toggles ignored); resolving `false` or rejecting (warned) keeps it collapsed. See [Lazy loading](#lazy-loading) |
 
 A throwing before-hook cancels the operation (the error is logged).
 
@@ -405,6 +406,8 @@ tree.navigationOverrides = null; // back to the defaults
 |-------|--------|-------------|
 | `node-click` | `{ path, node, parent, siblings }` | Node was clicked (a checkbox toggle is not a click — see `checked-change`) |
 | `node-double-click` | `{ path, node, parent, siblings }` | Node was double-clicked |
+| `node-expand` | `{ path, node, parent, siblings }` | A node expanded — toggle, keyboard, `expandNodes()` (each collapsed ancestor it revealed too), after any `beforeExpandCallback` load. NOT for `expandAll()` / expand-level seeding |
+| `node-collapse` | `{ path, node, parent, siblings }` | A node collapsed — toggle, keyboard, `collapseNodes()`, an accordion sibling. NOT for `collapseAll()` |
 | `node-copy` | `{ operation, paths, nodes }` | Nodes copied to clipboard |
 | `node-cut` | `{ operation, paths, nodes }` | Nodes cut to clipboard (`nodes` still live — cut only dims until paste) |
 | `node-paste` | `PasteResult` = `{ success, count, skipped, error?, entries?, operation? }` | A paste ran (not fired when `beforePasteCallback` blocked it) |
@@ -420,7 +423,30 @@ tree.navigationOverrides = null; // back to the defaults
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
+Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only the usual single `tree-change`. `expandNodes` / `collapseNodes` with `{ noEmit: true }` fire neither.
+
 `silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
+
+## Lazy loading
+
+Flag the unloaded nodes with `has-children-member` (so they get an expand toggle), then load
+their children in `beforeExpandCallback`: return a Promise, `insertBranch` the children
+and resolve. While it is pending the node's toggle shows a spinner
+(`.wtv__toggle-icon--loading`, `--wtv-expand-spinner-*` variables), the row carries
+`aria-busy="true"` + `data-loading`, and repeat toggles of that node are ignored. The hook
+runs for the toggle, the keyboard (`ArrowRight` waits for the load, then moves into the first
+child) and `expandNodes()`; resolve `false` (or reject — it's warned) to keep the node
+collapsed.
+
+```js
+tree.hasChildrenMember = 'hasChildren';
+tree.beforeExpandCallback = async ({ node, controller }) => {
+  if (controller.getChildren(node.path).length > 0) return; // already loaded → expand now
+  const rows = await fetch(`/api/children?path=${node.path}`).then((r) => r.json());
+  controller.insertBranch(node.path, rows); // each row carries its full path
+};
+tree.addEventListener('node-expand', (e) => console.log('expanded', e.detail.path));
+```
 
 ## Architecture
 

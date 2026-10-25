@@ -399,6 +399,11 @@
   --wtv-spinner-track: var(--wtv-border-color);
   --wtv-spinner-color: var(--wtv-accent-color);
   --wtv-loading-bg: color-mix(in srgb, var(--wtv-bg-color) 80%, transparent);
+  /* Per-node loading spinner (async beforeExpandCallback) — replaces the toggle glyph. */
+  --wtv-expand-spinner-size: 0.9em;
+  --wtv-expand-spinner-width: 2px;
+  --wtv-expand-spinner-track: var(--wtv-spinner-track);
+  --wtv-expand-spinner-color: var(--wtv-spinner-color);
 
   /* ==========================================================================
      DROP PLACEHOLDER (empty tree)

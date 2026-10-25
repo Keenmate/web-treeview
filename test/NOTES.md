@@ -19,9 +19,8 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
   implemented 2026-10-25 (see #15).
 - ~~**TV-5** (#5)~~ — closed 2026-10-25 (child, after and cross-tree variants all pass).
 - ~~**TV-1** (#1)~~ — implemented 2026-10-25 (svelte port + not-under-parent rule, see #1).
-- **No expand/collapse event**: lazy loading has to hook `node-click` or
-  `tree-change` (a toggle click emits only `tree-change`). Add a
-  `node-expand` / `node-collapse` event (with a before-hook for async loads)?
+- ~~**No expand/collapse event**~~ — added 2026-10-25: `beforeExpandCallback` (async OK,
+  loading state) + `node-expand` / `node-collapse`; `lazy-load.html` uses the hook.
 - **Context menu keyboard**: only item shortcut letters + Escape work; no
   ArrowUp/Down/Enter navigation inside the menu (a11y). Wanted?
 - **#16 / is-sorted semantics**: fix the code (one sibling-sort meaning) or

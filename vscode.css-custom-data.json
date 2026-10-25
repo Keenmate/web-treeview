@@ -723,6 +723,26 @@
       "values": []
     },
     {
+      "name": "--wtv-expand-spinner-size",
+      "description": "Per-node loading spinner size while an async beforeExpandCallback is pending (0.9em)",
+      "values": []
+    },
+    {
+      "name": "--wtv-expand-spinner-width",
+      "description": "Per-node loading spinner ring width (2px)",
+      "values": []
+    },
+    {
+      "name": "--wtv-expand-spinner-track",
+      "description": "Per-node loading spinner track color (→ --wtv-spinner-track)",
+      "values": []
+    },
+    {
+      "name": "--wtv-expand-spinner-color",
+      "description": "Per-node loading spinner accent color (→ --wtv-spinner-color)",
+      "values": []
+    },
+    {
       "name": "--wtv-tree-min-height",
       "description": "Min height for empty and loading states (60px)",
       "values": []

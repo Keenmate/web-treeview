@@ -1171,6 +1171,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * stale --expand glyph. Resetting className first clears any stale icon/expanded
    * classes.
    */
+  /** Row-level loading state while an async beforeExpandCallback is pending: `aria-busy` +
+   *  `data-loading` on the row (the toggle shows the spinner, see _applyToggleClasses). */
+  private _applyExpandPending(el: HTMLElement, node: LTreeNode<T>): void {
+    if (this.controller?.isExpandPending(node.path)) {
+      el.setAttribute('aria-busy', 'true');
+      el.setAttribute('data-loading', '');
+    } else {
+      el.removeAttribute('aria-busy');
+      el.removeAttribute('data-loading');
+    }
+  }
+
   private _applyToggleClasses(toggle: HTMLElement, node: LTreeNode<T>): void {
     const nodeConfig = this.lastNodeConfig;
     toggle.className = 'wtv__toggle-icon';
@@ -1197,6 +1209,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         toggle.classList.add('expanded');
       }
       toggle.classList.add('wtv__clickable');
+      // Async beforeExpandCallback in flight (lazy load): spinner in place of the glyph.
+      if (this.controller?.isExpandPending(node.path)) toggle.classList.add('wtv__toggle-icon--loading');
     } else {
       // Leaf node: just the leaf spacer/marker. The per-node icon is NO LONGER folded
       // into the toggle slot — it renders as a dedicated .wtv__node-icon element on every
@@ -1301,6 +1315,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     el.setAttribute('data-tree-path', node.path);
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
+    this._applyExpandPending(el, node);
     // hasChildren is a DERIVED visual property not captured by _rev — adding/
     // removing a child doesn't bump the parent's _rev. Track it like data-expanded
     // so the reconcile-skip check (see updateNodes) re-renders a node that crossed
@@ -1504,6 +1519,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): void {
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
+    this._applyExpandPending(el, node);
     el.setAttribute('data-has-children', String(!!node.hasChildren));
     el.setAttribute('data-tree-path', node.path);
 

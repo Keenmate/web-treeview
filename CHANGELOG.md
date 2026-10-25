@@ -76,6 +76,19 @@ camelCase `on*` twin (core) that receives the **detail**.
 
 ### Added
 
+- **`beforeExpandCallback` + `node-expand` / `node-collapse` events (lazy loading).** The new
+  hook runs before a node expands via the toggle, the keyboard or `expandNodes()` (not
+  `expandAll()`, expand-level seeding or accordion side-effects): `false` keeps it collapsed;
+  a Promise defers the expand — load and `insertBranch` the children, then resolve. While it is
+  pending the toggle shows a spinner (`.wtv__toggle-icon--loading`, new
+  `--wtv-expand-spinner-size` / `-width` / `-track` / `-color`), the row gets
+  `aria-busy` + `data-loading`, and repeat toggles are ignored; resolving `false` or a
+  rejection (`console.warn`) keeps it collapsed. A synchronous hook stays synchronous (core
+  `runBeforeCallbackEager`). `node-expand` / `node-collapse` (+ `onNodeExpand` /
+  `onNodeCollapse`, detail = the node context) fire after the state actually changed —
+  toggle, keyboard, `expandNodes` / `collapseNodes`, accordion sibling collapses — but not
+  for bulk `expandAll` / `collapseAll`, which still fire one `tree-change`.
+  `BeforeExpandContext` is exported.
 - **Keyboard: PageUp / PageDown + Shift-extend (svelte-treeview parity, TV-4).** `PageDown` /
   `PageUp` move focus ~10 visible rows (clamped). In `selection-mode="multi"`, `Shift+ArrowDown/Up`,
   `Shift+Home/End` and `Shift+PageDown/PageUp` extend the selected range from an anchor (the clicked /

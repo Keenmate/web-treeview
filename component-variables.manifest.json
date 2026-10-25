@@ -216,6 +216,10 @@
     { "name": "wtv-spinner-track", "category": "loading", "usage": "Spinner track color" },
     { "name": "wtv-spinner-color", "category": "loading", "usage": "Spinner accent color" },
     { "name": "wtv-loading-bg", "category": "loading", "usage": "Loading overlay veil (tree surface at 80%)" },
+    { "name": "wtv-expand-spinner-size", "category": "loading", "usage": "Per-node loading spinner size while an async beforeExpandCallback is pending (0.9em)" },
+    { "name": "wtv-expand-spinner-width", "category": "loading", "usage": "Per-node loading spinner ring width (2px)" },
+    { "name": "wtv-expand-spinner-track", "category": "loading", "usage": "Per-node loading spinner track color (→ --wtv-spinner-track)" },
+    { "name": "wtv-expand-spinner-color", "category": "loading", "usage": "Per-node loading spinner accent color (→ --wtv-spinner-color)" },
 
     { "name": "wtv-tree-min-height", "category": "empty", "usage": "Min height for empty and loading states (60px)" },
     { "name": "wtv-empty-zone-border", "category": "empty", "usage": "Empty tree drop zone border" },

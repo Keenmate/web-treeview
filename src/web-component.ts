@@ -252,6 +252,15 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'beforeDropCallback', converter: cb(), on: 'update', type: '(ctx: BeforeDropCallbackContext) => false | { position?, operation? } | DropGroup[] | void | Promise<…>', description: 'Runs before a drop (async OK): `false` blocks, an object redirects, a DropGroup[] routes it to several destinations.' },
   { configKey: 'beforeDragStartCallback', converter: cb(), on: 'update', type: '(ctx: BeforeDragStartContext) => string[] | false | void', description: 'Set-level pre-drag interceptor (synchronous — dragstart): prune/augment/veto the dragged set.' },
   { configKey: 'beforeCheckboxToggleCallback', converter: cb(), on: 'update', type: '(ctx: BeforeCheckboxToggleContext) => string[] | false | void', description: 'Runs before a checkbox toggle (`ctx.node`, `ctx.isChecked`, `ctx.affectedPaths`): `false` cancels, a `string[]` overrides the affected paths.' },
+  /**
+   * Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not
+   * `expandAll()`, expand-level seeding or accordion side-effects). `false` keeps it
+   * collapsed. A Promise defers the expand — load the children (`ctx.controller.insertBranch`)
+   * and resolve: the node shows a loading state (`.wtv__toggle-icon--loading`, `aria-busy`)
+   * and ignores repeat toggles meanwhile; resolving `false` or rejecting (warned) keeps it
+   * collapsed. A synchronous hook stays synchronous.
+   */
+  { configKey: 'beforeExpandCallback', converter: cb(), on: 'update', type: '(ctx: BeforeExpandContext) => boolean | void | Promise<boolean | void>', description: 'Runs before a node expands (toggle, keyboard, expandNodes — not expandAll / seeding / accordion): `false` keeps it collapsed; a Promise defers the expand with a loading state (lazy loading: insertBranch the children, then resolve). Rejection = stays collapsed + console.warn.' },
   { configKey: 'beforeKeydownCallback', converter: cb(), on: 'update', type: '(ctx: KeydownContext) => void | false', description: 'Runs before the built-in keyboard handling (synchronous): return `false` to suppress it for this key. Drive the tree via `ctx.controller`.' },
   { configKey: 'beforeActionCallback', converter: cb(), on: 'update', type: '(detail: TreeViewActionEventDetail) => void | false | Promise<void | false>', description: 'Runs before a context-menu item activates: `false` cancels its onClick, the `action` event and the built-in.' },
   { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data', description: 'OUTPUT (egress) transform — clean/redact `ctx.data` as a node leaves the source (copy/cut/copy-drop).' },
@@ -265,6 +274,8 @@ const INPUTS: readonly InputDef[] = [
 type TreeViewEvents = {
   'node-click': NodeEventDetail;
   'node-double-click': NodeEventDetail;
+  'node-expand': NodeEventDetail;
+  'node-collapse': NodeEventDetail;
   'node-copy': NodeClipboardEventDetail;
   'node-cut': NodeClipboardEventDetail;
   'node-paste': NodePasteEventDetail;
@@ -283,6 +294,8 @@ type TreeViewEvents = {
 const EVENTS: readonly EventDef[] = [
   { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
   { name: 'node-double-click', description: 'A node was double-clicked. `detail`: the node context. Twin: `onNodeDoubleClick(detail)`.' },
+  { name: 'node-expand', description: 'A node expanded (toggle, keyboard, `expandNodes`, after any `beforeExpandCallback` load; NOT `expandAll` / expand-level seeding — those only fire `tree-change`). `detail`: the node context. Twin: `onNodeExpand(detail)`.' },
+  { name: 'node-collapse', description: 'A node collapsed (toggle, keyboard, `collapseNodes`, an accordion sibling; NOT `collapseAll`). `detail`: the node context. Twin: `onNodeCollapse(detail)`.' },
   { name: 'node-copy', description: 'Nodes were copied. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCopy(detail)`.' },
   { name: 'node-cut', description: 'Nodes were cut. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCut(detail)`.' },
   { name: 'node-paste', description: 'A paste ran (not fired when `beforePasteCallback` blocked it). `detail`: the PasteResult (`success`, `count`, `skipped`, `error?`, `entries?`, …). Twin: `onNodePaste(detail)`.' },
@@ -310,6 +323,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   // called with the event detail (not the CustomEvent), right before the event.
   declare onNodeClick: ((detail: NodeEventDetail<T>) => void) | null;
   declare onNodeDoubleClick: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onNodeExpand: ((detail: NodeEventDetail<T>) => void) | null;
+  declare onNodeCollapse: ((detail: NodeEventDetail<T>) => void) | null;
   declare onNodeCopy: ((detail: NodeClipboardEventDetail<T>) => void) | null;
   declare onNodeCut: ((detail: NodeClipboardEventDetail<T>) => void) | null;
   declare onNodePaste: ((detail: NodePasteEventDetail<T>) => void) | null;
@@ -332,6 +347,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   readonly #bridges: Partial<TreeViewConfig<T>> = {
     onNodeClick: (d) => this.emit('node-click', d),
     onNodeDoubleClick: (d) => this.emit('node-double-click', d),
+    onNodeExpand: (d) => this.emit('node-expand', d),
+    onNodeCollapse: (d) => this.emit('node-collapse', d),
     onNodeCopy: (d) => this.emit('node-copy', d),
     onNodeCut: (d) => this.emit('node-cut', d),
     onNodePaste: (d) => this.emit('node-paste', d),

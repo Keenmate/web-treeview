@@ -197,6 +197,13 @@ export interface BeforeCheckboxToggleContext<T = any> extends NodeContext<T> {
   affectedPaths: string[];
 }
 
+/**
+ * ctx of `beforeExpandCallback` — the node about to expand (`node`, `path`, `parent`,
+ * `siblings`) + `controller` / `element`. Return `false` (or resolve `false`) to keep it
+ * collapsed; return a Promise to load children first (e.g. `ctx.controller.insertBranch`).
+ */
+export type BeforeExpandContext<T = any> = NodeRef<T> & TreeViewContext<T>;
+
 /** ctx of `beforeKeydownCallback` — return `false` to suppress the built-in handling. Synchronous. */
 export interface KeydownContext<T = any> extends TreeViewContext<T> {
   event: KeyboardEvent;

@@ -111,10 +111,13 @@ export class WebTreeView<T = any> {
       this.options.onTreeChange?.(this.ctx({}));
       const focusedNode: LTreeNode<T> | null = snapshot.focusedNode ?? null;
       const path = focusedNode?.path ?? null;
+      // A focus produced by a `{ silent: true }` operation is not echoed (NOTES #11).
+      const silentPath = this.engine.takeSilentFocus();
       if (path !== this.lastFocusedPath) {
         const isFirst = this.lastFocusedPath === undefined;
         this.lastFocusedPath = path;
-        if (!isFirst || path !== null) this.options.onFocusChange?.(this.ctx({ focusedNode }));
+        const isSilent = silentPath !== undefined && silentPath === path;
+        if (!isSilent && (!isFirst || path !== null)) this.options.onFocusChange?.(this.ctx({ focusedNode }));
       }
     });
   }

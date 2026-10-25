@@ -100,7 +100,6 @@ test('focusNode on a missing path is a no-op', async ({ page }) => {
 });
 
 test('focusNode / clearFocus silent fire no focus-change', async ({ page }) => {
-  test.fail(true, 'NOTES.md #11');
   await load(page);
   await call(page, 'focusNode', '1.2', { silent: true });
   expect(await focused(page)).toBe('1.2');
@@ -109,7 +108,6 @@ test('focusNode / clearFocus silent fire no focus-change', async ({ page }) => {
 });
 
 test('selectNode silent fires nothing (no selection-change, no focus-change)', async ({ page }) => {
-  test.fail(true, 'NOTES.md #11');
   await load(page);
   await call(page, 'selectNode', '1.2', 'replace', { silent: true });
   expect(await selected(page)).toEqual(['1.2']);

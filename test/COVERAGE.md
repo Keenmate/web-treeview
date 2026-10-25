@@ -78,7 +78,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll`, `setSelectedPaths` (+ silent), `focusNode` / `clearFocus`, `focus-change` payload | ✓ | `selection-api.spec.ts` | `selection-api.html` |
-| Silent focus / select fire no `focus-change` (NOTES #11) | ✗ (test.fail) | `selection-api.spec.ts` | `selection-api.html` |
+| Silent focus / select fire no `focus-change` (NOTES #11) | ✓ | `selection-api.spec.ts` | `selection-api.html` |
 | Runtime state survives a config-change re-insert | ✓ | `state-persistence.spec.ts` | `selection-focus.html` |
 
 ## 4. Checkboxes

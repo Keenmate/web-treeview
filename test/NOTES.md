@@ -296,7 +296,11 @@ keep the current batch size; make sure the immediate batch survives a
 **Test status:** `virtual-scroll.spec.ts` "a large tree renders in growing
 batches until every row is in the DOM" is `test.fail`.
 
-## 11. Silent focus / selection still fire `focus-change`
+## 11. ~~Silent focus / selection still fire `focus-change`~~ — fixed
+
+**Fixed 2026-10-25:** a `{ silent: true }` focus / selection operation (`focusNode`, `clearFocus`, `selectNode`, `selectNodes`, `setSelectedPaths`, `clearSelection`, `selectAll`) marks the focus it produced (`engine.takeSilentFocus()`); the facade swallows exactly that `focus-change`. A later non-silent operation clears the marker. Both `test.fail`s in `selection-api.spec.ts` pass.
+
+Original report:
 
 **Where:** `src/treeview.ts` (~106-116) emits `focus-change` from the
 engine's `state-change` whenever the focused path differs; the engine's

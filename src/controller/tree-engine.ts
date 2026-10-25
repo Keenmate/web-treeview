@@ -1698,6 +1698,24 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       : mode === 'range' ? { ctrl: false, shift: true }
       : undefined;
     this._applySelection(path, modifiers, options);
+    this._markSilentFocus(options);
+  }
+
+  /** The focus a silent operation produced (`undefined` = none pending). The
+   *  facade swallows exactly that `focus-change` (NOTES #11). */
+  private _silentFocusPath: string | null | undefined = undefined;
+
+  private _markSilentFocus(options?: TreeMutationOptions): void {
+    // A later non-silent operation (e.g. setSelectedPaths around its internal
+    // silent selectNodes) clears the marker so its focus change is emitted.
+    this._silentFocusPath = options?.silent ? (this._focusedNode?.path ?? null) : undefined;
+  }
+
+  /** Consume the silent-focus marker (called by the facade on each state-change). */
+  takeSilentFocus(): string | null | undefined {
+    const path = this._silentFocusPath;
+    this._silentFocusPath = undefined;
+    return path;
   }
 
   /** Add nodes to the selected set (additive — existing selections are kept).
@@ -1722,6 +1740,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -1738,6 +1757,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -1767,6 +1787,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -1811,6 +1832,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -1925,6 +1947,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2151,19 +2174,21 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // ── Focus (single cursor) ────────────────────────────────────────────
 
-  /** Move focus to a node. `_options` is accepted for signature parity;
-   *  focus changes have no dedicated change callback. */
-  focusNode(path: string, _options?: TreeMutationOptions): void {
+  /** Move focus to a node. `{ silent: true }` suppresses the resulting
+   *  `focus-change` (URL / state restore). */
+  focusNode(path: string, options?: TreeMutationOptions): void {
     const node = this.tree?.getNodeByPath(path);
     if (!node) return;
     this._focusedNode = node;
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Clear the focused node. */
-  clearFocus(_options?: TreeMutationOptions): void {
+  clearFocus(options?: TreeMutationOptions): void {
     this._focusedNode = null;
+    this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
   }

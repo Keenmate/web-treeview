@@ -33,6 +33,23 @@ export interface InsertArrayResult<T> {
 	total: number;
 }
 
+/** Result of {@link Ltree.insertBranch}: `count` inserted, every skipped item in `failed` with the reason. */
+export interface InsertBranchResult<T> {
+	success: boolean;
+	count: number;
+	failed: Array<{ data: T; error: string }>;
+	/** The parent the branch went under (the root for ''); null when it wasn't found. */
+	parentNode: LTreeNode<T> | null;
+	/** Set when the whole call failed (e.g. the parent wasn't found). */
+	error?: string;
+}
+
+/** Result of {@link Ltree.replaceBranch}: the insert result plus `removed` descendants and `added` (= `count`). */
+export interface ReplaceBranchResult<T> extends InsertBranchResult<T> {
+	removed: number;
+	added: number;
+}
+
 export interface Ltree<T> {
 	// Properties (readonly getters)
 	treePathSeparator: string;
@@ -169,8 +186,8 @@ export interface Ltree<T> {
 	): { success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string };
 
 	// Bulk operations
-	insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string };
-	replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string };
+	insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+	replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
 	deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 
 	// State persistence methods

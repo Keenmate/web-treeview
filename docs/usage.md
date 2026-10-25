@@ -362,8 +362,8 @@ All methods are available on the element **and** on `el.controller`.
 | `navSelectNext` / `navSelectPrev` | `()` | Extend the selected range to the next / previous sibling (multi mode; no-op in single) |
 | `navSelectFirst` / `navSelectLast` | `()` | Extend the selected range to the first / last visible node (multi mode) |
 | `navSelectPageDown` / `navSelectPageUp` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
-| `insertBranch` | `(parentPath, data[]): result` | Insert multiple children at once |
-| `replaceBranch` | `(parentPath, data[]): result` | Replace all children of a node |
+| `insertBranch` | `(parentPath, data[]): InsertBranchResult` | Insert a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
+| `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `insertBranch`); adds `removed` / `added` |
 | `deleteBranch` | `(path, keepParent?): result` | Delete node and descendants |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |

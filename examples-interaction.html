@@ -718,7 +718,7 @@ function restoreFromUrl(nodePath) {
 
             function showBulkResult(result, isError) {
                 const el = document.getElementById('in6-bulk-result');
-                el.textContent = JSON.stringify(result);
+                el.textContent = JSON.stringify({ ...result, parentNode: result.parentNode?.path, failed: result.failed?.map((f) => f.error) });
                 el.className = 'bulk-result' + (isError ? ' error' : '');
                 el.style.display = 'block';
                 setTimeout(() => { el.style.display = 'none'; }, 4000);
@@ -726,16 +726,16 @@ function restoreFromUrl(nodePath) {
 
             document.getElementById('in6-insert').addEventListener('click', () => {
                 const r = in6bulk.insertBranch('1.1', [
-                    { id: nextId++, path: '', name: 'Angular' },
-                    { id: nextId++, path: '', name: 'Svelte' },
-                    { id: nextId++, path: '', name: 'Solid' },
+                    { id: nextId, path: `1.1.${nextId++}`, name: 'Angular' },
+                    { id: nextId, path: `1.1.${nextId++}`, name: 'Svelte' },
+                    { id: nextId, path: `1.1.${nextId++}`, name: 'Solid' },
                 ]);
                 showBulkResult(r, !r.success); updateBulkOutput();
             });
             document.getElementById('in6-replace').addEventListener('click', () => {
                 const r = in6bulk.replaceBranch('1.2', [
-                    { id: nextId++, path: '', name: 'Go' },
-                    { id: nextId++, path: '', name: 'Rust' },
+                    { id: nextId, path: `1.2.${nextId++}`, name: 'Go' },
+                    { id: nextId, path: `1.2.${nextId++}`, name: 'Rust' },
                 ]);
                 showBulkResult(r, !r.success); updateBulkOutput();
             });

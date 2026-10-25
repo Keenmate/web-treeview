@@ -212,6 +212,17 @@ export class Indexer<T> {
 		};
 	}
 
+	/**
+	 * Forget the given flat-list positions: drop them from the pending queue and
+	 * remove them from the search index, so a later search can't map a hit to a
+	 * position whose node was removed (positions are the index keys).
+	 */
+	dropItems(positions: Set<number>): void {
+		if (positions.size === 0) return;
+		this.processingQueue = this.processingQueue.filter((item) => !positions.has(item.index));
+		for (const i of positions) this.searchIndex.remove(i);
+	}
+
 	// Clear the queue and reset counters
 	clearQueue(): void {
 		this.processingQueue = [];

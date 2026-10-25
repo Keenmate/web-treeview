@@ -7,8 +7,8 @@ import { test, expect, type Page, nodeByPath, nodeContent, logLines } from './fi
  *   2 Local leaf  (hasChildren: false)
  *
  * The page's handler calls `insertBranch` (after a simulated fetch) when an
- * expanded node flagged hasChildren has no children yet. `insertBranch` derives
- * child paths from the parent + id (1.11, 1.12), so rows are found by label.
+ * expanded node flagged hasChildren has no children yet. `insertBranch` places
+ * each row by its own path (1.1, 1.2); rows are found by label.
  */
 
 const PAGE = '/test/lazy-load.html';

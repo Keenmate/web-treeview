@@ -6,13 +6,9 @@ import { test, expect, Page, Locator, nodeByPath } from './fixtures';
  * Exercises insertBranch / replaceBranch / deleteBranch plus a minimal
  * cut/paste flow and failure-path buttons.
  *
- * Web-treeview's return shapes differ slightly from svelte-treeview's:
- *   - insertBranch returns {success, count, error?} (no failed[]). The fixture
- *     computes a failed count from input length minus inserted count.
- *   - replaceBranch returns {success, removed, added, error?}. The fixture
- *     mirrors `added` into the `last-op-count` readout.
- *   - deleteBranch returns {success, count, error?}. The fixture mirrors
- *     `count` into `last-op-removed`.
+ * Return shapes: insertBranch → {success, count, failed[], parentNode, error?}
+ * (svelte-treeview's InsertBranchResult); replaceBranch adds {removed, added};
+ * deleteBranch → {success, count, error?}.
  */
 
 const PAGE = '/test/branch-operations.html';
@@ -205,10 +201,18 @@ test.describe('failure cases', () => {
     await expect(page.getByTestId('total-node-count')).toHaveText(String(totalBefore));
   });
 
-  // The Svelte build validates each item in insertBranch and rejects empty
-  // and null paths. Web-treeview's addNode is more lenient; the mixed-validity
-  // contract isn't currently honored. Tracked as a follow-up.
-  test.skip('insertBranch with mixed-validity items reports failed count — addNode validation gap', () => {});
+  test('insertBranch with mixed-validity items reports the failed ones', async ({ page }) => {
+    const totalBefore = await readCount(page, 'total-node-count');
+    await page.getByTestId('btn-fail-insert-items').click();
+
+    await expect(page.getByTestId('last-op-name')).toHaveText('insertBranch(mixed-validity)');
+    await expect(page.getByTestId('last-op-success')).toHaveText('true');
+    await expect(page.getByTestId('last-op-count')).toHaveText('2');
+    await expect(page.getByTestId('last-op-failed-count')).toHaveText('2');
+    await expect(page.getByTestId('total-node-count')).toHaveText(String(totalBefore + 2));
+    await expect(page.getByText('Valid-1', { exact: true })).toBeVisible();
+    await expect(page.getByText('Valid-2', { exact: true })).toBeVisible();
+  });
 
   test('replaceBranch on a missing parent returns success=false', async ({ page }) => {
     const totalBefore = await readCount(page, 'total-node-count');
@@ -289,4 +293,104 @@ test.describe('reset', () => {
     await expect(page.getByTestId('clipboard-source')).toHaveText('(empty)');
     await expect(page.getByTestId('last-op-name')).toHaveText('');
   });
+});
+
+// ── insertBranch: placement by path + per-item failure reasons (TV-1) ──────
+
+const insert = (page: Page, parentPath: string, items: unknown[]) =>
+  page.evaluate(([pp, data]) => {
+    const r = (window as any).tree.insertBranch(pp, data);
+    return {
+      success: r.success,
+      count: r.count,
+      parentPath: r.parentNode?.path ?? null,
+      failed: r.failed.map((f: { data: { name: string }; error: string }) => ({ name: f.data.name, error: f.error })),
+    };
+  }, [parentPath, items] as const);
+
+test.describe('insertBranch (TV-1)', () => {
+  test('places every item by its own path — a whole subtree in one call, any input order', async ({ page }) => {
+    const r = await insert(page, '2.1', [
+      { id: 903, path: '2.1.9.1.1', name: 'Deep-leaf', sortOrder: 10 },
+      { id: 902, path: '2.1.9.1', name: 'Deep-mid', sortOrder: 10 },
+      { id: 901, path: '2.1.9', name: 'Deep-top', sortOrder: 30 },
+    ]);
+    expect(r).toEqual({ success: true, count: 3, parentPath: '2.1', failed: [] });
+    expect(await page.evaluate(() => (window as any).tree.getNodeByPath('2.1.9.1.1')?.data?.name)).toBe('Deep-leaf');
+    expect(await page.evaluate(() => (window as any).tree.getNodeByPath('2.1.9.1')?.parentPath)).toBe('2.1.9');
+    expect(await page.evaluate(() => (window as any).tree.getChildren('2.1').map((n: any) => n.path))).toEqual(['2.1.1', '2.1.2', '2.1.9']);
+  });
+
+  test('failed reasons: empty path, duplicate path, not under the parent, missing parent', async ({ page }) => {
+    const r = await insert(page, '1', [
+      { id: 910, path: '1.10', name: 'Ok', sortOrder: 50 },
+      { id: 911, path: '', name: 'Empty' },
+      { id: 912, path: '1.1', name: 'Duplicate' },
+      { id: 913, path: '2.13', name: 'Elsewhere' },
+      { id: 914, path: '1.77.1', name: 'Orphan' },
+    ]);
+    expect(r.success).toBe(true);
+    expect(r.count).toBe(1);
+    const reason = (name: string) => r.failed.find((f) => f.name === name)?.error ?? '';
+    expect(r.failed.map((f) => f.name).sort()).toEqual(['Duplicate', 'Elsewhere', 'Empty', 'Orphan']);
+    expect(reason('Empty')).toContain('invalid path (empty string)');
+    expect(reason('Duplicate')).toContain('already exists');
+    expect(reason('Elsewhere')).toContain('is not under 1');
+    expect(reason('Orphan')).toContain('Could not find parent node: 1.77');
+    // Nothing failed was inserted; the duplicate kept the original node.
+    expect(await page.evaluate(() => (window as any).tree.getNodeByPath('1.1')?.data?.name)).toBe('A-child-1');
+    expect(await page.evaluate(() => (window as any).tree.getNodeByPath('2.13'))).toBeNull();
+  });
+
+  test('one console.warn summarises the failures; a clean insert warns nothing', async ({ page }) => {
+    const warnings: string[] = [];
+    page.on('console', (m) => { if (m.type() === 'warning') warnings.push(m.text()); });
+
+    await insert(page, '3', [{ id: 920, path: '3.1', name: 'Clean' }]);
+    expect(warnings.filter((w) => w.includes('insertBranch'))).toEqual([]);
+
+    await insert(page, '3', [{ id: 921, path: '', name: 'Bad-1' }, { id: 922, path: '9.9', name: 'Bad-2' }]);
+    await expect.poll(() => warnings.filter((w) => w.includes('insertBranch')).length).toBe(1);
+    expect(warnings.find((w) => w.includes('insertBranch'))).toContain('2 of 2 items failed');
+  });
+
+  test('replaceBranch returns the richer shape (failed, removed descendants, added)', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const res = (window as any).tree.replaceBranch('2', [
+        { id: 930, path: '2.5', name: 'R-1' },
+        { id: 931, path: '7', name: 'R-bad' },
+      ]);
+      return { success: res.success, count: res.count, added: res.added, removed: res.removed, failed: res.failed.length };
+    });
+    // '2' had 2.1, 2.1.1, 2.1.2 below it.
+    expect(r).toEqual({ success: true, count: 1, added: 1, removed: 3, failed: 1 });
+    expect(await page.evaluate(() => (window as any).tree.getChildren('2').map((n: any) => n.path))).toEqual(['2.5']);
+  });
+});
+
+test('replaceBranch keeps the search index aligned: a node after the replaced branch is still found', async ({ page }) => {
+  // Rebuild the fixture tree with the internal search index on (keyed by flat position).
+  await page.evaluate(() => {
+    const t = (window as any).tree;
+    t.shouldUseInternalSearchIndex = true;
+    t.searchValueMember = 'name';
+    t.data = [
+      { id: 1, path: '1', name: 'Root-A', sortOrder: 10 },
+      { id: 2, path: '1.1', name: 'A-child-1', sortOrder: 10 },
+      { id: 3, path: '1.2', name: 'A-child-2', sortOrder: 20 },
+      { id: 4, path: '2', name: 'Root-B', sortOrder: 20 },
+      { id: 5, path: '2.1', name: 'Bravo', sortOrder: 10 },
+      { id: 6, path: '3', name: 'Charlie', sortOrder: 30 },
+    ];
+  });
+  const find = (q: string) => page.evaluate((s) => (window as any).tree.searchNodes(s).map((n: any) => n?.path ?? null), q);
+  await expect.poll(() => find('Charlie')).toEqual(['3']);
+
+  // Replace 1's two children with one: the old positions of 1.1 / 1.2 go away.
+  await page.evaluate(() => (window as any).tree.replaceBranch('1', [{ id: 7, path: '1.9', name: 'Delta', sortOrder: 10 }]));
+
+  await expect.poll(() => find('Charlie')).toEqual(['3']);
+  await expect.poll(() => find('Bravo')).toEqual(['2.1']);
+  await expect.poll(() => find('Delta')).toEqual(['1.9']);
+  expect(await find('A-child')).toEqual([]);
 });

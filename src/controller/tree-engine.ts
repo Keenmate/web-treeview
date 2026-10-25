@@ -16,6 +16,8 @@ import { createLTree } from '../ltree/ltree';
 import {
   type Ltree,
   type InsertArrayResult,
+  type InsertBranchResult,
+  type ReplaceBranchResult,
   type DropPosition,
   type DragDropMode,
   type DropOperation,
@@ -1514,16 +1516,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return allOk;
   }
 
-  insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string } {
+  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
     this._skipInsertArray = true;
-    const result = this.tree?.insertBranch(parentPath, data) || { success: false, count: 0, error: 'Tree not initialized' };
+    const result = this.tree?.insertBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
     return result;
   }
 
-  replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string } {
+  replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
     this._skipInsertArray = true;
-    const result = this.tree?.replaceBranch(parentPath, data) || { success: false, removed: 0, added: 0, error: 'Tree not initialized' };
+    const result = this.tree?.replaceBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
     return result;
   }

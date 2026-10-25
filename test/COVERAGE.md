@@ -111,7 +111,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | `insertBranch` / `replaceBranch` / `deleteBranch` | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
-| `insertBranch` failed count (NOTES #1) | ✗ (skip) | `branch-operations.spec.ts` | `branch-operations.html` |
+| `insertBranch` failed[] (mixed validity, empty / duplicate / not-under-parent / orphan), subtree insert, warn once; `replaceBranch` shape (NOTES #1) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Cut / paste branch, paste-into-self error | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Copy/paste/cut events, `beforeCopyCallback`, `beforePasteCallback` | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | `nodeInputTransformationCallback` null skips | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |

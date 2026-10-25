@@ -10,7 +10,7 @@
 import type { ComponentContext } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, TreeChange, ApplyChangesResult, InsertArrayResult } from './ltree/types';
+import type { Ltree, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type {
   NodeRef,
   NodeRenderContext,
@@ -67,8 +67,8 @@ export interface TreeViewController<T = any> {
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any;
   duplicateNodes(paths: string[], targetPath: string, position: DropPosition, transform?: NodeTransformCallback<T>, sourceTree?: Ltree<T>): any;
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
-  insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string };
-  replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string };
+  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+  replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
   deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
   // selection
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;

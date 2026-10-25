@@ -1779,7 +1779,7 @@
               "name": "insertBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; count: number; error?: string }"
+                  "text": "InsertBranchResult<T>"
                 }
               },
               "parameters": [
@@ -1802,7 +1802,7 @@
               "name": "replaceBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; removed: number; added: number; error?: string }"
+                  "text": "ReplaceBranchResult<T>"
                 }
               },
               "parameters": [
@@ -2735,6 +2735,22 @@
           "name": "InsertArrayResult",
           "declaration": {
             "name": "InsertArrayResult",
+            "module": "./ltree/types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "InsertBranchResult",
+          "declaration": {
+            "name": "InsertBranchResult",
+            "module": "./ltree/types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ReplaceBranchResult",
+          "declaration": {
+            "name": "ReplaceBranchResult",
             "module": "./ltree/types"
           }
         },
@@ -4222,7 +4238,7 @@
               "name": "insertBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; count: number; error?: string }"
+                  "text": "InsertBranchResult<T>"
                 }
               },
               "parameters": [
@@ -4245,7 +4261,7 @@
               "name": "replaceBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; removed: number; added: number; error?: string }"
+                  "text": "ReplaceBranchResult<T>"
                 }
               },
               "parameters": [
@@ -10003,7 +10019,7 @@
               "name": "insertBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; count: number; error?: string }"
+                  "text": "InsertBranchResult<T>"
                 }
               },
               "parameters": [
@@ -10026,7 +10042,7 @@
               "name": "replaceBranch",
               "return": {
                 "type": {
-                  "text": "{ success: boolean; removed: number; added: number; error?: string }"
+                  "text": "ReplaceBranchResult<T>"
                 }
               },
               "parameters": [
@@ -12956,6 +12972,24 @@
                   "text": "{\r\n\t\tqueueSize: number;\r\n\t\tisProcessing: boolean;\r\n\t\tprocessed: number;\r\n\t\ttotal: number;\r\n\t\tbatchSize: number;\r\n\t}"
                 }
               }
+            },
+            {
+              "kind": "method",
+              "name": "dropItems",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "positions",
+                  "type": {
+                    "text": "Set<number>"
+                  }
+                }
+              ],
+              "description": "Forget the given flat-list positions: drop them from the pending queue and\r\nremove them from the search index, so a later search can't map a hit to a\r\nposition whose node was removed (positions are the index keys)."
             },
             {
               "kind": "method",

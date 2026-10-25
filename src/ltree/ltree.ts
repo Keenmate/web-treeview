@@ -10,7 +10,7 @@ import {
 	getRelativePath
 } from '../helpers/ltree-helpers';
 
-import type { Ltree, Tuple, InsertArrayResult } from './types';
+import type { Ltree, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './types';
 import { createSearchIndex } from './flex';
 import { Indexer } from './indexer';
 import { perfStart, perfEnd, perfSummary } from '../perf-logger';
@@ -95,6 +95,9 @@ export function createLTree<T>(
 	let maxLevel = 0;
 
 	let flatTreeNodes: LTreeNode<T>[] = [];
+	// Placeholder for a removed flatTreeNodes slot (positions are the search-index keys,
+	// so slots are never spliced out; the slot is also dropped from the index).
+	const searchTombstone: LTreeNode<T> = createLTreeNode<T>();
 	let filteredTree: LTreeNode<T>[] | null = null;
 	let isFiltered = false;
 
@@ -1533,56 +1536,243 @@ export function createLTree<T>(
 		},
 
 		/**
-		 * Insert multiple nodes as children of a parent
-		 * @param parentPath - Path of the parent node
-		 * @param data - Array of data objects to insert
-		 * @returns Object with success status and count of inserted nodes
+		 * Insert a batch of nodes under `parentPath` (svelte-treeview parity). Every
+		 * item is placed by its OWN path (`pathMember`), so a whole subtree can be
+		 * inserted at once; the batch is sorted parents-before-children (unless
+		 * `isSorted`), each affected parent's children are re-sorted, and the tree
+		 * emits ONE change. An item is reported in `failed` (and skipped) when its
+		 * path is missing / empty / not a string, is not under `parentPath`, already
+		 * exists, or its parent can't be found.
+		 * @param parentPath - Path of the parent node ('' = root)
+		 * @param data - Data rows to insert (each with its full path)
 		 */
-		insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string } {
-			const parent = this.getNodeByPath(parentPath);
-			if (!parent) {
-				return { success: false, count: 0, error: 'Parent not found: ' + parentPath };
+		insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+			const targetParent = parentPath ? this.getNodeByPath(parentPath) : root;
+			if (!targetParent && parentPath) {
+				return { success: false, count: 0, failed: [], parentNode: null, error: 'Parent not found: ' + parentPath };
+			}
+			const parentNode = targetParent || root;
+
+			data = data || [];
+			if (data.length === 0) {
+				return { success: true, count: 0, failed: [], parentNode };
 			}
 
-			let successCount = 0;
-			for (const item of data) {
-				const result = this.addNode(parentPath, item);
-				if (result.success) {
-					successCount++;
+			const failed: Array<{ data: T; error: string }> = [];
+			const sep = this.treePathSeparator;
+
+			// Convert raw data → LTreeNode (same mapping as insertArray)
+			let mappedData = data
+				.map((row, index) => {
+					const node = createLTreeNode<T>();
+					node.treeId = _treeId || '';
+					node.id = _idMember ? getField(row, _idMember) : undefined;
+					const rawPath = _pathMember ? getField(row, _pathMember) : undefined;
+
+					if (rawPath == null || rawPath === '' || typeof rawPath !== 'string') {
+						const pathDesc = rawPath === '' ? 'empty string'
+							: rawPath == null ? 'undefined/null'
+							: `non-string (${typeof rawPath})`;
+						failed.push({ data: row, error: `Item at index ${index} has invalid path (${pathDesc})` });
+						return null;
+					}
+					// web-treeview: the item must live under the target parent.
+					if (parentPath && !rawPath.startsWith(parentPath + sep)) {
+						failed.push({ data: row, error: `Item at index ${index} (path "${rawPath}") is not under ${parentPath}` });
+						return null;
+					}
+					node.path = rawPath;
+
+					if (shouldCalculateParentPath) {
+						node.parentPath = getParentPath(node.path, sep);
+					} else node.parentPath = getField(row, _parentPathMember!);
+
+					node.pathSegment = getPathSegments(getRelativePath(node.path, node.parentPath ?? '', sep), 0, 1, sep);
+
+					if (!shouldCalculateLevel) node.level = getField(row, _levelMember!);
+					else node.level = getLevel(node.path, sep);
+
+					// Assign data BEFORE the get*Callback evaluations so consumer
+					// callbacks reading node.data see the real row.
+					node.data = row;
+
+					// isExpanded: callback > member > expandLevel
+					if (_getIsExpandedCallback) node.isExpanded = _getIsExpandedCallback(node);
+					else if (!shouldCalculateIsExpanded) node.isExpanded = getField(row, _isExpandedMember!);
+					else if (_expandLevel) node.isExpanded = (node.level ?? 0) <= _expandLevel;
+
+					if (_getIsSelectableCallback) node.isSelectable = _getIsSelectableCallback(node);
+					else if (!shouldCalculateIsSelectable) node.isSelectable = getField(row, _isSelectableMember!);
+
+					if (_getIsCheckedCallback) node.isChecked = _getIsCheckedCallback(node);
+					else if (!shouldCalculateIsChecked) node.isChecked = getField(row, _isCheckedMember!);
+
+					if (_getIsDraggableCallback) node.isDraggable = _getIsDraggableCallback(node);
+					else if (!shouldCalculateIsDraggable) node.isDraggable = getField(row, _isDraggableMember!);
+					if (!shouldCalculateIsCollapsible) node.isCollapsible = getField(row, _isCollapsibleMember!);
+					if (_getIsDropAllowedCallback) node.isDropAllowed = _getIsDropAllowedCallback(node);
+					else if (!shouldCalculateIsDropAllowed) node.isDropAllowed = getField(row, _isDropAllowedMember!);
+					if (!shouldCalculateAllowedDropPositions) node.allowedDropPositions = getField(row, _allowedDropPositionsMember!);
+
+					if (!shouldCalculateHasChildren) node.hasChildren = getField(row, _hasChildrenMember!);
+
+					return node;
+				})
+				.filter((node): node is LTreeNode<T> => node !== null);
+
+			// Sort to ensure parents come before children
+			if (!this.isSorted) {
+				if (this.sortCallback) mappedData = this.sortCallback(mappedData);
+				else mappedData = this._defaultSort(this, mappedData);
+			}
+			// web-treeview: guarantee parents-before-children regardless of isSorted /
+			// a sibling-only sortCallback (stable by depth — sibling order is kept, and
+			// each parent's children are re-sorted below anyway).
+			mappedData = mappedData
+				.map((node, i) => ({ node, i, depth: node.path.split(sep).length }))
+				.sort((x, y) => x.depth - y.depth || x.i - y.i)
+				.map((x) => x.node);
+
+			// Insert all nodes silently (no emission per node)
+			const affectedParents = new Set<string>();
+			let insertedCount = 0;
+
+			for (const node of mappedData) {
+				// insertTreeNode silently keeps the existing node on a path clash — report it.
+				if (this.getNodeByPath(node.path)) {
+					failed.push({ data: node.data!, error: `Node: ${node.path} - a node with this path already exists` });
+					continue;
+				}
+				const result = this.insertTreeNode(node.parentPath ?? '', node, true);
+				if (result) {
+					failed.push({ data: node.data!, error: result });
+				} else {
+					insertedCount++;
+					affectedParents.add(node.parentPath ?? '');
+					if (_shouldUseInternalSearchIndex) flatTreeNodes.push(node);
 				}
 			}
 
+			// Re-sort each affected parent's children (without emitting — refreshSiblings emits)
+			for (const pp of affectedParents) {
+				const parent = pp ? this.getNodeByPath(pp) : root;
+				if (!parent) continue;
+				const children = Object.values(parent.children) as LTreeNode<T>[];
+				if (children.length === 0) continue;
+				let sorted: LTreeNode<T>[];
+				if (this.sortCallback) {
+					sorted = this.sortCallback(children);
+				} else {
+					sorted = [...children].sort((a, b) => {
+						if (this.orderMember && a.data && b.data) {
+							const aOrder = getField(a.data, this.orderMember) ?? 0;
+							const bOrder = getField(b.data, this.orderMember) ?? 0;
+							if (aOrder !== bOrder) return aOrder - bOrder;
+						}
+						return this.getNodeDisplayValue(a).localeCompare(this.getNodeDisplayValue(b));
+					});
+				}
+				const newChildren: Record<string, LTreeNode<T>> = {};
+				sorted.forEach((child) => {
+					newChildren[segmentPrefix + child.pathSegment] = child;
+				});
+				parent.children = newChildren;
+			}
+
+			// Update hasChildren (+ the hasChildren member) on every parent that received children
+			for (const pp of affectedParents) {
+				const parent = pp ? this.getNodeByPath(pp) : root;
+				if (!parent) continue;
+				parent.hasChildren = Object.keys(parent.children).length > 0;
+				if (_hasChildrenMember && parent.data) {
+					(parent.data as any)[_hasChildrenMember] = parent.hasChildren;
+				}
+			}
+
+			// Bump _rev on all affected parents AND their ancestors up to root
+			const bumpedPaths = new Set<string>();
+			for (const pp of affectedParents) {
+				let walkPath = pp;
+				while (walkPath && !bumpedPaths.has(walkPath)) {
+					bumpedPaths.add(walkPath);
+					const ancestor = this.getNodeByPath(walkPath);
+					if (ancestor) ancestor._rev = (ancestor._rev || 0) + 1;
+					const sepIdx = walkPath.lastIndexOf(sep);
+					walkPath = sepIdx > 0 ? walkPath.substring(0, sepIdx) : '';
+				}
+			}
+
+			// Batch add to indexer
+			if (_shouldUseInternalSearchIndex && indexer) {
+				const startIdx = flatTreeNodes.length - insertedCount;
+				const itemsToIndex: { node: LTreeNode<T>; index: number }[] = [];
+				for (let i = startIdx; i < flatTreeNodes.length; i++) {
+					itemsToIndex.push({ node: flatTreeNodes[i], index: i });
+				}
+				if (itemsToIndex.length > 0) indexer.addToQueue(itemsToIndex);
+			}
+
+			// One summary warning (like insertArray) — the details are in `failed`.
+			if (failed.length > 0) {
+				console.warn(
+					`[Tree ${_treeId}] insertBranch("${parentPath}"): ${failed.length} of ${data.length} items failed to insert:`,
+					failed.map((f) => f.error)
+				);
+			}
+
+			// Single emission
 			this._emitTreeChanged();
-			return { success: true, count: successCount };
+
+			return { success: true, count: insertedCount, failed, parentNode };
 		},
 
 		/**
-		 * Replace all children of a parent with new data
-		 * @param parentPath - Path of the parent node
-		 * @param data - Array of data objects to replace children with
-		 * @returns Object with success status, removed count, and added count
+		 * Replace all descendants of `parentPath` with `data` (same placement and
+		 * validation rules as {@link insertBranch}); one emission.
+		 * @returns the insertBranch result plus `removed` (descendants removed) and `added` (= count)
 		 */
-		replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string } {
-			const parent = this.getNodeByPath(parentPath);
-			if (!parent) {
-				return { success: false, removed: 0, added: 0, error: 'Parent not found: ' + parentPath };
+		replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
+			const targetParent = parentPath ? this.getNodeByPath(parentPath) : root;
+			if (!targetParent && parentPath) {
+				return { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Parent not found: ' + parentPath };
 			}
+			const parentNode = targetParent || root;
 
-			// Get children and remove them in reverse order
-			const children = this.getChildren(parentPath);
-			let removedCount = 0;
-			for (let i = children.length - 1; i >= 0; i--) {
-				const result = this.removeNode(children[i].path, true);
-				if (result.success) {
-					removedCount++;
+			// Collect every descendant path (search-index consistency + the removed count)
+			const pathsToRemove = new Set<string>();
+			const collectPaths = (n: LTreeNode<T>) => {
+				for (const child of Object.values(n.children)) {
+					pathsToRemove.add(child.path);
+					collectPaths(child);
 				}
+			};
+			collectPaths(parentNode);
+			const removedCount = pathsToRemove.size;
+			// The search index is keyed by flatTreeNodes POSITION — filtering the array
+			// would shift every later position and map hits to the wrong nodes. Tombstone
+			// the removed slots instead and drop them from the index (+ its pending queue).
+			if (removedCount > 0) {
+				const removedPositions = new Set<number>();
+				flatTreeNodes.forEach((n, i) => {
+					if (n !== searchTombstone && pathsToRemove.has(n.path)) removedPositions.add(i);
+				});
+				for (const i of removedPositions) flatTreeNodes[i] = searchTombstone;
+				indexer?.dropItems(removedPositions);
 			}
 
-			// Insert new data
-			const insertResult = this.insertBranch(parentPath, data);
+			// Clear children
+			parentNode.children = {};
+			parentNode.hasChildren = false;
+			if (_hasChildrenMember && parentNode.data) {
+				(parentNode.data as any)[_hasChildrenMember] = false;
+			}
+			parentNode._rev = (parentNode._rev || 0) + 1;
+			nodeCount -= removedCount;
 
-			this._emitTreeChanged();
-			return { success: true, removed: removedCount, added: insertResult.count };
+			// Delegate to insertBranch for the new data (it emits unless there is nothing to insert)
+			const result = this.insertBranch(parentPath, data);
+			if (!data || data.length === 0) this._emitTreeChanged();
+			return { ...result, removed: removedCount, added: result.count };
 		},
 
 		/**

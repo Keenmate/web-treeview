@@ -37,7 +37,7 @@ import {
 import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, TreeChange, ApplyChangesResult } from './ltree/types';
+import type { Ltree, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import type { PasteResult } from './clipboard';
@@ -681,12 +681,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Bulk operations ─────────────────────────────────────────────────────────
 
-  insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string } {
-    return this.#treeview?.insertBranch(parentPath, data) ?? { success: false, count: 0, error: 'Not initialized' };
+  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+    return this.#treeview?.insertBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
   }
 
-  replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string } {
-    return this.#treeview?.replaceBranch(parentPath, data) ?? { success: false, removed: 0, added: 0, error: 'Not initialized' };
+  replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
+    return this.#treeview?.replaceBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Not initialized' };
   }
 
   deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {

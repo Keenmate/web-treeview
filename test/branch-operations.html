@@ -97,10 +97,7 @@
             setText('last-op-success', String(result.success));
             setText('last-op-count', String(result.count ?? 0));
             setText('last-op-removed', '');
-            // Web-treeview's insertBranch return doesn't have a failed[] array;
-            // derive failed count from input vs. inserted count when it succeeded.
-            const failed = result.success ? Math.max(0, inputLength - (result.count ?? 0)) : 0;
-            setText('last-op-failed-count', String(failed));
+            setText('last-op-failed-count', String(result.failed?.length ?? 0));
             setText('last-op-error', result.error ?? '');
             refreshTotals(tree);
         }
@@ -112,7 +109,7 @@
             setText('last-op-success', String(result.success));
             setText('last-op-count', String(result.added ?? 0));
             setText('last-op-removed', String(result.removed ?? 0));
-            setText('last-op-failed-count', '0');
+            setText('last-op-failed-count', String(result.failed?.length ?? 0));
             setText('last-op-error', result.error ?? '');
             refreshTotals(tree);
         }
@@ -157,6 +154,7 @@
 
         customElements.whenDefined('web-treeview').then(() => {
             const tree = document.getElementById('tree');
+            window.tree = tree;
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';

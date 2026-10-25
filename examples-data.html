@@ -149,8 +149,10 @@ tree.data = [
             </div>
 
             <div class="code-block">
-<pre><code>// insertBranch(parentPath, data)  → { success, count }
-// replaceBranch(parentPath, data) → { success, removed, added }
+<pre><code>// insertBranch(parentPath, data)  → { success, count, failed: [{ data, error }], parentNode }
+//   every item is placed by its own path (whole subtrees OK); an item with a
+//   missing/empty path, a duplicate path, or a path not under parentPath is in `failed`
+// replaceBranch(parentPath, data) → the same + { removed, added }
 // deleteBranch(path, keepParent?) → { success, count }
 
 const res = tree.insertBranch('1.1', [
@@ -430,19 +432,18 @@ tree.displayValueMember = 'label';</code></pre>
                 ];
                 const res = ds04.insertBranch('1.1', nodes);
                 ds04.expandNodes('1.1');
-                logBranch(`insertBranch('1.1', 3 nodes) → ${JSON.stringify(res)}`);
+                logBranch(`insertBranch('1.1', 3 nodes) → ${JSON.stringify({ ...res, parentNode: res.parentNode?.path })}`);
             };
 
             window.replaceEng = () => {
                 const nodes = [
-                    { id: nextBranchId++, path: '1.1', name: 'Engineering (rebuilt)' },
-                    { id: nextBranchId++, path: '1.1.1', name: 'Platform' },
+                                        { id: nextBranchId++, path: '1.1.1', name: 'Platform' },
                     { id: nextBranchId++, path: '1.1.2', name: 'Infrastructure' },
                     { id: nextBranchId++, path: '1.1.3', name: 'Mobile' }
                 ];
                 const res = ds04.replaceBranch('1.1', nodes);
                 ds04.expandNodes('1.1');
-                logBranch(`replaceBranch('1.1', 4 nodes) → ${JSON.stringify(res)}`);
+                logBranch(`replaceBranch('1.1', 3 nodes) → ${JSON.stringify({ ...res, parentNode: res.parentNode?.path })}`);
             };
 
             window.clearDesign = () => {

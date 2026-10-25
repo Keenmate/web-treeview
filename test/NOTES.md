@@ -18,9 +18,7 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 - ~~**D1 for the treeview** (#15)~~ — decided (a move keeps ALL state) and
   implemented 2026-10-25 (see #15).
 - ~~**TV-5** (#5)~~ — closed 2026-10-25 (child, after and cross-tree variants all pass).
-- **TV-1** (#1): the `insertBranch` mixed-validity test stays skipped — which
-  items should count as invalid for `addNode` (empty / duplicate path? missing
-  id?) needs a decision before the return shape (`failed`) can be specified.
+- ~~**TV-1** (#1)~~ — implemented 2026-10-25 (svelte port + not-under-parent rule, see #1).
 - **No expand/collapse event**: lazy loading has to hook `node-click` or
   `tree-change` (a toggle click emits only `tree-change`). Add a
   `node-expand` / `node-collapse` event (with a before-hook for async loads)?
@@ -31,7 +29,26 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 
 ---
 
-## 1. (TV-1) `insertBranch` never reports failures
+## 1. ~~(TV-1) `insertBranch` never reports failures~~ — resolved
+
+**Resolved 2026-10-25:** ported svelte-treeview's `insertBranch` 1:1 (items placed
+by `pathMember`, invalid path → failed, insert errors → failed, parents-first
+sort, re-sort affected parents, single emission) plus the user's rules: a path
+not under `parentPath` → failed "is not under <parentPath>", a duplicate path →
+failed (svelte's insertTreeNode silently keeps the old node), one
+`console.warn` summary, and a stable depth sort so parents go first even with
+`is-sorted`. Returns `InsertBranchResult`; `replaceBranch` returns it +
+`removed` / `added`. `branch-operations.spec.ts`: the skip is a real test;
+added subtree insert, failure reasons, warn-once and replaceBranch-shape tests.
+`replaceBranch` does NOT copy svelte's `flatTreeNodes.filter(...)` (the search index
+is keyed by flat position — filtering shifts every later hit to the wrong node):
+removed slots are tombstoned and dropped from the index + indexer queue
+(`Indexer.dropItems`); tested by "replaceBranch keeps the search index aligned".
+The same position issue in `removeNode` / `deleteBranch` is NOT addressed here
+(separate package).
+
+Original report:
+
 
 **Where:** `src/ltree/ltree.ts` `insertBranch()` (~1541-1556).
 

@@ -13,7 +13,7 @@ export { WebTreeView } from './treeview';
 
 // Core LTree (for direct usage without web component)
 export { createLTree } from './ltree/ltree';
-export type { Ltree } from './ltree/types';
+export type { Ltree, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 export type { LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
 

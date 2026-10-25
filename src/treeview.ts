@@ -3,7 +3,7 @@ import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext
 import type { TreeViewRenderer, RendererConfig } from './renderer/types';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
-import type { Ltree, DropPosition, TreeChange, ApplyChangesResult } from './ltree/types';
+import type { Ltree, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
@@ -388,11 +388,11 @@ export class WebTreeView<T = any> {
     return this.engine.applyChanges(changes);
   }
 
-  insertBranch(parentPath: string, data: T[]): { success: boolean; count: number; error?: string } {
+  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
     return this.engine.insertBranch(parentPath, data);
   }
 
-  replaceBranch(parentPath: string, data: T[]): { success: boolean; removed: number; added: number; error?: string } {
+  replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
     return this.engine.replaceBranch(parentPath, data);
   }
 

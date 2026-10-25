@@ -120,6 +120,22 @@ camelCase `on*` twin (core) that receives the **detail**.
 
 ### Changed
 
+- **`insertBranch` places items by their own path and reports failures (svelte-treeview
+  parity, TV-1).** BEHAVIOUR CHANGE: it used to call `addNode` per item, which IGNORED the
+  item's `pathMember` and built a path from the parent + the item's id (or a random
+  `new_…` segment), so nested rows of a subtree all became direct children and a row
+  without a path still got inserted. Now every item is placed by its path (a whole subtree
+  in one call, any input order — parents are inserted first), each affected parent's
+  children are re-sorted, and the tree emits once. An item whose path is missing / empty /
+  not a string, **not under `parentPath`**, already taken, or whose parent can't be found
+  is skipped and reported. One `console.warn` summarises the failures. Returns
+  `InsertBranchResult` — `{ success, count, failed: [{ data, error }], parentNode, error? }`
+  (was `{ success, count, error? }`). `replaceBranch` delegates to it and returns the same
+  shape plus `removed` (now every removed descendant, was only the direct children) and
+  `added`; it also emits once. `InsertBranchResult` / `ReplaceBranchResult` are exported.
+  `replaceBranch` keeps the internal search index aligned: the index is keyed by flat-list
+  position, so removed slots are tombstoned and dropped from the index instead of spliced
+  out (splicing would make later searches return the wrong nodes).
 - **Dark mode no longer follows the OS on its own — it follows the page, like web-multiselect.**
   The `@media (prefers-color-scheme: dark)` rule is gone, so on a page that gives no signal a
   tree on a dark-mode OS stays light, matching the page instead of turning dark on a light page.

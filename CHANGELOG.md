@@ -48,6 +48,10 @@ The `--wtv-context-menu-*` variables keep working (mapped onto core's `--bliss-m
 An item's `icon` string is now inserted as HTML (was text) — like action buttons.
 `ctx.buttonElement` in `renderContextMenuItemCallback` is the item `<div>`.
 
+### Fixed — NOTES bug sweep
+
+- `replaceBranch` notifies the tree once and `removed` counts all descendants (NOTES #2 — verified, fixed by the insertBranch rework).
+
 ### Added
 
 - **Keyboard navigation scrolls the focused node into view** (svelte-treeview's navTo → scroll,

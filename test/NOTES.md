@@ -69,7 +69,11 @@ count: 1`, no failure info.
 **Test status:** `branch-operations.spec.ts` "insertBranch with mixed-validity
 items reports failed count" stays `test.skip` until the return shape exists.
 
-## 2. (TV-2) `replaceBranch` emits tree-changed twice; `removed` counts direct children only
+## 2. ~~(TV-2) `replaceBranch` emits tree-changed twice; `removed` counts direct children only~~ — fixed
+
+**Fixed 2026-10-25:** verified — both halves were already fixed by abe16dd (TV-1): `replaceBranch` emits once (`insertBranch` emits; the extra emit only runs when there is nothing to insert) and `removed` counts every removed descendant. New test `branch-operations.spec.ts` "replaceBranch notifies the tree once (NOTES #2)" counts LTree `onChange` calls (with data and with an empty batch).
+
+Original report:
 
 **Where:** `src/ltree/ltree.ts` `replaceBranch()` (~1582-1584).
 

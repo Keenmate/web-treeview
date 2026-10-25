@@ -368,6 +368,22 @@ test.describe('insertBranch (TV-1)', () => {
   });
 });
 
+test('replaceBranch notifies the tree once (NOTES #2)', async ({ page }) => {
+  const counts = await page.evaluate(async () => {
+    const { createLTree } = await import('/src/ltree/ltree.ts' as string);
+    const t = createLTree('id', 'path');
+    t.insertArray([{ id: 1, path: '1' }, { id: 2, path: '1.1' }, { id: 3, path: '1.1.1' }, { id: 4, path: '2' }]);
+    let n = 0;
+    t.onChange = () => { n++; };
+    const r1 = t.replaceBranch('1', [{ id: 5, path: '1.2' }, { id: 6, path: '1.2.1' }]);
+    const withData = n;
+    n = 0;
+    const r2 = t.replaceBranch('1', []);
+    return { withData, empty: n, removed1: r1.removed, removed2: r2.removed };
+  });
+  expect(counts).toEqual({ withData: 1, empty: 1, removed1: 2, removed2: 2 });
+});
+
 test('replaceBranch keeps the search index aligned: a node after the replaced branch is still found', async ({ page }) => {
   // Rebuild the fixture tree with the internal search index on (keyed by flat position).
   await page.evaluate(() => {

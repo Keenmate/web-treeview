@@ -113,7 +113,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `expand-level` | `number` | — | Auto-expand nodes up to this depth |
+| `expand-level` | `number` | `0` | Auto-expand nodes up to this depth (`0` = roots only) |
 | `tree-path-separator` | `string` | `'.'` | Separator character in paths |
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |

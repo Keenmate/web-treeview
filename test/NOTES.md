@@ -434,3 +434,41 @@ routed to the tree (no `node-drop` with `target=null`). The touch path
 zone or reject feedback is wanted.
 
 **Test status:** two `test.fail` in `drag-visuals.spec.ts`.
+
+## 23. `tooltipDelay = { show, hide }` is rejected by the input converter
+
+**Where:** `src/web-component.ts` ~140 — `tooltipDelay` uses `toInt()`, but
+its documented type is `number | { show?: number; hide?: number }` ("the JS
+property also accepts { show, hide }").
+
+**Symptom:** `el.tooltipDelay = { show: 0, hide: 800 }` →
+`[BlissElement] <web-treeview> rejected invalid value for property
+"tooltipDelay"` and the default `{ show: 400, hide: 100 }` stays.
+
+**Suggested fix:** a `toCustom` converter accepting an int (attribute: both)
+or a `{ show?, hide? }` object (property), validated in one place.
+
+**Test status:** `tooltip.spec.ts` "tooltipDelay = { show, hide }" is
+`test.fail`.
+
+## 24. Not silent by default: INIT debug on + raw `console.log` in drag paths
+
+**Where:**
+- `src/logger.ts` ~79-81: `logging.disableLogging()` then
+  `initLogger.setLevel('debug')` — INIT logs at debug by default ("historically"),
+  and the core logger persists that level to `localStorage`
+  (`km-log:TREEVIEW:INIT`), so it sticks even after a later default change.
+- Raw `console.log` calls bypassing `/logging`: `renderer/dom-renderer.ts`
+  ~458, 506, 511, 521, 593, 1005 (`[DomRenderer] _onBodyDragOver/…/renderEmpty`)
+  and `controller/tree-engine.ts` ~4930, 4942, 4973, 4990 (`[Controller]
+  handleTree*Drag*`), plus `[wtv:cfg]` ones gated by `globalThis.__WTV_DEBUG`.
+
+**Symptom:** a plain page logs `[TREEVIEW:INIT] build engine …`,
+`TreeEngine created …`, and every drag spams `[DomRenderer] …` /
+`[Controller] …` lines to the console.
+
+**Suggested fix:** leave INIT silent like the other categories (enable via
+`window.components['web-treeview'].logging`), and route the drag diagnostics
+through `dragLogger.debug` (or delete them).
+
+**Test status:** `logging.spec.ts` "silent by default" is `test.fail`.

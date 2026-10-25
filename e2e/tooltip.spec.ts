@@ -81,3 +81,35 @@ test('disabled: no tooltip when show-node-tooltips is toggled off', async ({ pag
 	await page.waitForTimeout(100);
 	await expect(page.locator('.wtv__tooltip')).toHaveCount(0);
 });
+
+// ── placement / offset / delay ──────────────────────────────────────────────
+
+test('tooltip-placement="right" + tooltip-offset=24: the tooltip sits 24px right of the row', async ({ page }) => {
+	const r = row(page, 'placed', '1.1');
+	await r.hover();
+	const tip = page.locator('#placed .wtv__tooltip.wtv__tooltip--visible');
+	await expect(tip).toBeVisible();
+	const rb = (await r.boundingBox())!;
+	const tb = (await tip.boundingBox())!;
+	expect(Math.abs(tb.x - (rb.x + rb.width + 24))).toBeLessThan(3);
+	// vertically centred on the row
+	expect(Math.abs(tb.y + tb.height / 2 - (rb.y + rb.height / 2))).toBeLessThan(3);
+});
+
+test('tooltip-delay attribute: no tooltip before the show delay, then it appears', async ({ page }) => {
+	await row(page, 'slow', '1.1').hover();
+	await page.waitForTimeout(350);
+	await expect(page.locator('#slow .wtv__tooltip.wtv__tooltip--visible')).toHaveCount(0);
+	await expect(page.locator('#slow .wtv__tooltip.wtv__tooltip--visible')).toBeVisible({ timeout: 2000 });
+});
+
+test('tooltipDelay = { show, hide } (JS property): instant show, delayed hide', async ({ page }) => {
+	test.fail(true, 'NOTES.md #23');
+	await row(page, 'delayed', '1.1').hover();
+	const tip = page.locator('#delayed .wtv__tooltip.wtv__tooltip--visible');
+	await expect(tip).toBeVisible({ timeout: 150 });
+	await page.mouse.move(0, 0);
+	await page.waitForTimeout(300);
+	await expect(tip).toBeVisible();
+	await expect(page.locator('#delayed .wtv__tooltip')).toHaveCount(0, { timeout: 2000 });
+});

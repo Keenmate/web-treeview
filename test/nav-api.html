@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Navigation API / scroll highlight</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; width: 420px; border: 1px solid #ccc; }
+        .zap { outline: 2px solid magenta; }
+    </style>
+</head>
+<body>
+    <!-- query params are applied as attributes (scroll-highlight-class, scroll-highlight-timeout) -->
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 12, path: '1.2', name: 'A2' },
+            { id: 2, path: '2', name: 'B' },
+            { id: 21, path: '2.1', name: 'B1' },
+            { id: 3, path: '3', name: 'C' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('expand-level', '1');
+        for (const [k, v] of new URLSearchParams(location.search)) tree.setAttribute(k, v);
+        setupTree(tree, data);
+        document.getElementById('host').appendChild(tree);
+        window.tree = tree;
+        window.state = () => ({
+            focused: tree.getFocusedNode()?.path ?? null,
+            selected: [...tree.getSelectedPaths()].sort(),
+            rows: [...tree.shadowRoot.querySelectorAll('.wtv__node')].map((e) => e.getAttribute('data-tree-path'))
+        });
+    </script>
+</body>
+</html>

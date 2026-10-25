@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Logging / debug info / tree-id</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; width: 420px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <!-- query params are applied as attributes (e.g. should-display-debug-information) -->
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 2, path: '2', name: 'B' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('tree-id', 'docs-tree');
+        tree.setAttribute('expand-level', '2');
+        tree.setAttribute('drag-drop-mode', 'both');
+        for (const [k, v] of new URLSearchParams(location.search)) tree.setAttribute(k, v);
+        setupTree(tree, data);
+        document.getElementById('host').appendChild(tree);
+        window.tree = tree;
+    </script>
+</body>
+</html>

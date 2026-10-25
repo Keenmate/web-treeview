@@ -58,7 +58,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `is-expanded-member` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `getIsExpandedCallback` reading `node.data` (NOTES #12) | ✗ (test.fail) | `expand-members.spec.ts` | `expand-members.html` |
 | `is-collapsible-member` ignores toggle | ✓ | `expand-members.spec.ts` | `expand-members.html` |
-| `scroll-highlight-class` / `-timeout` | ✗ | | |
+| `scroll-highlight-class` / `-timeout` | ✓ | `nav-api.spec.ts` | `nav-api.html` |
 
 ## 3. Click, selection & focus
 
@@ -103,7 +103,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Copy + paste keeps both rows rendered (NOTES #8) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
-| `navTo/Next/Prev/Into/Toggle` API | ✗ | | |
+| `navTo/Next/Prev/First/Last/Into/Out/Toggle/NextSibling/PrevSibling` API | ✓ | `nav-api.spec.ts` | `nav-api.html` |
 
 ## 6. Clipboard & mutation API
 
@@ -167,7 +167,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | Node tooltips (text, rich, follow-cursor, toggle off) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
-| `tooltip-placement` / `-offset` / `-delay` | ✗ | | |
+| `tooltip-placement` / `-offset`, `tooltip-delay` attribute | ✓ | `tooltip.spec.ts` | `tooltip.html` |
+| `tooltipDelay = { show, hide }` property (NOTES #23) | ✗ (test.fail) | `tooltip.spec.ts` | `tooltip.html` |
 | Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets (NOTES #14) | ✗ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
@@ -175,5 +176,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `el.prop = x; el.method()` sees x (NOTES #13; via `el.controller` ✓) | △ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Lifecycle: re-parent keeps expansion/selection/checks (NOTES #15) | ✗ (test.fail) | `lifecycle.spec.ts` | `lifecycle.html` |
-| Logging silent by default; `should-display-debug-information`, `tree-id` | ✗ | | |
+| Logging silent by default (NOTES #24) | ✗ (test.fail) | `logging.spec.ts` | `logging.html` |
+| `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
+| `should-display-debug-information`, `tree-id` | ✓ | `logging.spec.ts` | `logging.html` |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

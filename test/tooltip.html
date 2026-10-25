@@ -31,6 +31,13 @@
            tooltip to the row's corner; now it anchors to the cursor.</p>
         <div class="tree" style="width: 360px"><web-treeview id="cursor" expand-level="2"
             show-node-tooltips tooltip-follow-cursor tooltip-delay="150"></web-treeview></div>
+        <h2>placement / offset</h2>
+        <div class="tree"><web-treeview id="placed" expand-level="2" show-node-tooltips
+            tooltip-placement="right" tooltip-offset="24" tooltip-delay="0"></web-treeview></div>
+        <h2>delay object (JS property)</h2>
+        <div class="tree"><web-treeview id="delayed" expand-level="2" show-node-tooltips></web-treeview></div>
+        <h2>attribute delay</h2>
+        <div class="tree"><web-treeview id="slow" expand-level="2" show-node-tooltips tooltip-delay="700"></web-treeview></div>
     </main>
 
     <script type="module">
@@ -74,6 +81,13 @@
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
 
+            for (const id of ['placed', 'delayed', 'slow']) {
+                Object.assign(document.getElementById(id), common, {
+                    getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
+                });
+            }
+            // The JS property also accepts { show, hide } (per the input docs).
+            document.getElementById('delayed').tooltipDelay = { show: 0, hide: 800 };
             document.getElementById('toggle').addEventListener('click', () => {
                 const on = !text.shouldShowNodeTooltips;
                 text.shouldShowNodeTooltips = on;

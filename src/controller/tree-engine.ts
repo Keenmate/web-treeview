@@ -4355,6 +4355,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * `select` mode additionally toggles expand/collapse on the double (the other
    * modes already toggle on single click).
    */
+  /** Forget the pending first click — a modifier click, checkbox or toggle click
+   *  in between means the next plain click is NOT a double-click (NOTES #25). */
+  resetDoubleClick(): void {
+    this._lastClickPath = null;
+    this._lastClickTime = 0;
+  }
+
   detectDoubleClick(node: LTreeNode<T>): boolean {
     const now = Date.now();
     const isDouble =

@@ -67,6 +67,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - A Ctrl copy-drop (same tree or A → B) runs the source tree's `nodeOutputTransformationCallback` before the input transform, as the clipboard does (NOTES #21).
 - A desktop drop on a node with `isDropAllowed: false` fires `node-drop-reject` (+ 🚫), or lands on the tree with `enable-tree-drop-zone` (NOTES #22).
 - `el.tooltipDelay = { show, hide }` is accepted (the converter rejected the documented object form) (NOTES #23).
+- A Ctrl/Shift-click, checkbox or toggle click between two plain clicks no longer reads as a double-click (NOTES #25).
 
 ### Added
 

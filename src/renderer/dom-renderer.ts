@@ -342,6 +342,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const checkbox = target.closest('.wtv__checkbox') as HTMLInputElement | null;
     if (checkbox) {
       event.stopPropagation();
+      // Any non-plain click in between breaks a double-click (NOTES #25).
+      this.controller.resetDoubleClick();
       const nodeEl = checkbox.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
@@ -374,6 +376,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Toggle icon click
     const toggleIcon = target.closest('.wtv__toggle-icon') as HTMLElement;
     if (toggleIcon) {
+      this.controller.resetDoubleClick();
       const nodeEl = toggleIcon.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
@@ -403,7 +406,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // row). On a detected double the controller fires onNodeDoubleClick (and,
         // in select mode, toggles expand/collapse); we consume the 2nd click so
         // the gesture reads as a single open, not a re-toggle.
-        if (isPlainClick && this.controller.detectDoubleClick(node)) {
+        if (!isPlainClick) this.controller.resetDoubleClick(); // NOTES #25
+        else if (this.controller.detectDoubleClick(node)) {
           return;
         }
 

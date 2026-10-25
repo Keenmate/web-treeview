@@ -68,6 +68,34 @@ test.describe('onNodeDoubleClick', () => {
     await page.waitForTimeout(450);
     await expect(dblLog(page)).toHaveText('');
   });
+  test('a Ctrl+click on another node in between breaks the double-click (NOTES #25)', async ({ page }) => {
+    await goto(page);
+    // three quick clicks via raw events (no Playwright actionability delays)
+    await page.evaluate(() => {
+      const host = document.querySelector('web-treeview')!;
+      const content = (p: string) => host.shadowRoot!.querySelector(`.wtv__node[data-tree-path="${p}"] .wtv__node-content`) as HTMLElement;
+      content('1').dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      content('2').dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, ctrlKey: true }));
+      content('1').dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    });
+    await page.waitForTimeout(100);
+    await expect(dblLog(page)).toHaveText('');
+  });
+
+  test('a toggle click in between breaks it too', async ({ page }) => {
+    await goto(page);
+    await page.evaluate(() => {
+      const host = document.querySelector('web-treeview')!;
+      const row = (p: string) => host.shadowRoot!.querySelector(`.wtv__node[data-tree-path="${p}"]`) as HTMLElement;
+      const content = row('1').querySelector('.wtv__node-content') as HTMLElement;
+      const toggle = row('2').querySelector('.wtv__toggle-icon') as HTMLElement;
+      content.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      toggle.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      content.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    });
+    await page.waitForTimeout(100);
+    await expect(dblLog(page)).toHaveText('');
+  });
 });
 
 test.describe('Clipboard events', () => {

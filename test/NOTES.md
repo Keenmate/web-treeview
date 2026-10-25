@@ -643,7 +643,11 @@ through `dragLogger.debug` (or delete them).
 
 **Test status:** `logging.spec.ts` "silent by default" is `test.fail`.
 
-## 25. Double-click tracker ignores Ctrl/Shift-clicks and checkbox clicks in between
+## 25. ~~Double-click tracker ignores Ctrl/Shift-clicks and checkbox clicks in between~~ — fixed
+
+**Fixed 2026-10-25:** the renderer calls the new `engine.resetDoubleClick()` on any non-plain click (Ctrl/Shift), a checkbox click and a toggle click, so only two consecutive plain clicks on the same node read as a double-click. New tests in `feature-port.spec.ts` (Ctrl+click in between, toggle click in between) — both fail without the reset.
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` `detectDoubleClick()` (~4137) — only
 plain clicks update `_lastClickPath` / `_lastClickTime`.

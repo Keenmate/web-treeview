@@ -69,7 +69,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | `click-behavior` expand / select / expand-and-focus | ✓ | `interaction.spec.ts` | `interaction.html` |
 | Ctrl+click / Shift+click multi-selection | ✓ | `interaction.spec.ts` | `interaction.html` |
-| Double-click (`node-double-click`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
+| Double-click (`node-double-click`); an intervening Ctrl/toggle click breaks it (NOTES #25) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Selected / focused markers, `selected-node-class`, `focused-node-class` | ✓ | `selection-focus.spec.ts`, `focused-style-bug.spec.ts` | `selection-focus.html` |
 | `selectNode` / `selectNodes` / `clearSelection` / `clearChecked` loud + silent | ✓ | `silent-selection.spec.ts` | `silent-selection.html` |
 | `rangeSelectionMode` visual | ✓ | `range-selection.spec.ts` | `range-selection.html` |

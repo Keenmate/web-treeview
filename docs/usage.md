@@ -118,7 +118,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
 | `accordion-expand` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `isAccordionExpand`) |
-| `is-sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
+| `is-sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
 | `should-use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
@@ -139,9 +139,10 @@ way; a before/after move without `order-member` keeps the dropped position. Chil
 no render-time sorting.
 
 `is-sorted` is a **performance hint**, not a sort switch: "my data is already in insert
-order (parents first, siblings in display order)". The tree then skips all sorting on
-insert (no depth sort, no `sortCallback`; `insertBranch` appends new children after the
-existing ones) and renders the data as given. Ordering is the caller's responsibility:
+order (parents first, siblings in display order)". The tree then skips sorting the
+input (no depth sort, no `sortCallback`) and renders `data` as given. The hint covers
+the input batch only: `insertBranch` still re-sorts each affected parent's children
+(existing + new), so a new child lands in its sibling position. Ordering is the caller's responsibility:
 a child listed before its parent is dropped as an orphan and reported in
 `getInsertResult().failed`.
 
@@ -249,7 +250,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called under `is-sorted` |
+| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `is-sorted` (the per-parent re-sorts still use it) |
 | `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
 
 ### Render callbacks

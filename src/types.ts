@@ -174,10 +174,12 @@ export interface TreeViewConfig<T = any> {
    *  Respects `isCollapsibleMember` / `getIsCollapsibleCallback`.
    *  Mirrors svelte-treeview rc03. */
   isAccordionExpand?: boolean | null;
-  /** Performance hint: the data is already in insert order (parents before
-   *  children, siblings in display order) — insertArray / insertBranch skip all
-   *  sorting (no depth sort, no `sortCallback`). A child listed before its parent
-   *  is dropped as an orphan (`getInsertResult().failed`) — caller's responsibility. */
+  /** Performance hint: the input is already in insert order (parents before
+   *  children, siblings in display order) — `data` / insertBranch skip sorting the
+   *  input (no depth sort, no `sortCallback`). insertBranch still re-sorts each
+   *  affected parent's children, since the hint covers the batch, not the existing
+   *  tree. A child listed before its parent is dropped as an orphan
+   *  (`getInsertResult().failed`) — caller's responsibility. */
   isSorted?: boolean | null;
 
   // Search
@@ -302,7 +304,8 @@ export interface TreeViewConfig<T = any> {
   getAllowedDropPositionsCallback?: (ctx: NodeContext<T>) => DropPosition[] | null | undefined;
   /** Orders the children of ONE parent: `ctx.items` are siblings; return them in
    *  the new order. Without it siblings go by `orderMember`, then display value.
-   *  Insert order (parents first) is handled internally; not called under `isSorted`. */
+   *  Insert order (parents first) is handled internally; not called on the input under
+   *  `isSorted` (still used by the per-parent re-sorts). */
   sortCallback?: (ctx: SortContext<T>) => LTreeNode<T>[];
   /**
    * The context-menu entries for the node right-clicked (`ctx.node`, with `parent` /

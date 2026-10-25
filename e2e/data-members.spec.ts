@@ -61,6 +61,21 @@ test('is-sorted with badly ordered data drops orphans into getInsertResult().fai
   expect(await labels(page)).toEqual(['Apple', '  Cherry', 'Banana', 'Cucumber']);
 });
 
+test('is-sorted: insertBranch still re-sorts the affected parent (the hint covers the input only)', async ({ page }) => {
+  await load(page, 'presorted');
+  // as given: Apple's children Cherry, Date; the callback orders descending by name
+  const result = await page.evaluate(() => {
+    (window as any).sortCalls.length = 0;
+    const r = (window as any).tree.insertBranch('1', [{ key: 'k13', path: '1.3', name: 'Daisy', rank: 5, parent: '1', lvl: 2 }]);
+    return { count: r.count, failed: r.failed.length, calls: (window as any).sortCalls };
+  });
+  expect(result).toMatchObject({ count: 1, failed: 0 });
+  // one re-sort, of the affected parent only
+  expect(result.calls.map((c: string[]) => [...c].sort())).toEqual([['1.1', '1.2', '1.3']]);
+  // Daisy lands between Date and Cherry; the root (not affected) keeps the given order
+  await expect.poll(() => labels(page)).toEqual(['Cucumber', 'Apple', '  Date', '  Daisy', '  Cherry', 'Banana']);
+});
+
 test('getDisplayValueCallback supplies the label when the member is absent', async ({ page }) => {
   await load(page, 'display');
   await expect(nodeByPath(page, '1.1')).toContainText('#k11:DATE');

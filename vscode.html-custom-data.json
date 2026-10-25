@@ -127,7 +127,7 @@
         },
         {
           "name": "is-sorted",
-          "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data.",
+          "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.",
           "values": []
         },
         {

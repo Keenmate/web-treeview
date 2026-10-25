@@ -1515,9 +1515,10 @@ export function createLTree<T>(
 		/**
 		 * Insert a batch of nodes under `parentPath` (svelte-treeview parity). Every
 		 * item is placed by its OWN path (`pathMember`), so a whole subtree can be
-		 * inserted at once; the batch is sorted parents-before-children and each
-		 * affected parent's children are re-sorted (both skipped under the
-		 * `isSorted` hint — the caller guarantees insert order), and the tree
+		 * inserted at once; the batch is sorted parents-before-children (skipped
+		 * under the `isSorted` hint — the caller guarantees the batch's order), each
+		 * affected parent's children are re-sorted (always — the hint covers the
+		 * input only, not the existing siblings it merges into), and the tree
 		 * emits ONE change. An item is reported in `failed` (and skipped) when its
 		 * path is missing / empty / not a string, is not under `parentPath`, already
 		 * exists, or its parent can't be found.
@@ -1623,20 +1624,18 @@ export function createLTree<T>(
 			}
 
 			// Re-sort each affected parent's children (without emitting — refreshSiblings
-			// emits). Skipped under isSorted: no sorting at all, new items are appended
-			// after the existing siblings in the given order.
-			if (!this.isSorted) {
-				for (const pp of affectedParents) {
-					const parent = pp ? this.getNodeByPath(pp) : root;
-					if (!parent) continue;
-					const children = Object.values(parent.children) as LTreeNode<T>[];
-					if (children.length === 0) continue;
-					const newChildren: Record<string, LTreeNode<T>> = {};
-					this._sortSiblings(children).forEach((child) => {
-						newChildren[segmentPrefix + child.pathSegment] = child;
-					});
-					parent.children = newChildren;
-				}
+			// emits). Also under isSorted: the hint describes the input batch only, not
+			// the existing tree the batch is merged into (svelte-treeview parity).
+			for (const pp of affectedParents) {
+				const parent = pp ? this.getNodeByPath(pp) : root;
+				if (!parent) continue;
+				const children = Object.values(parent.children) as LTreeNode<T>[];
+				if (children.length === 0) continue;
+				const newChildren: Record<string, LTreeNode<T>> = {};
+				this._sortSiblings(children).forEach((child) => {
+					newChildren[segmentPrefix + child.pathSegment] = child;
+				});
+				parent.children = newChildren;
 			}
 
 			// Update hasChildren (+ the hasChildren member) on every parent that received children

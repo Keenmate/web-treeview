@@ -373,9 +373,10 @@ autoUpdate, document-level listeners, context menu), restart them in
 
 **Resolved 2026-10-25 (user decision, = svelte-treeview's original intent):**
 `is-sorted` is a performance hint — "the data is already in insert order (parents
-first, siblings ordered)": `insertArray` / `insertBranch` skip ALL sorting (no depth
-sort, no `sortCallback`, no per-parent re-sort after `insertBranch`; the stable
-depth sort added in abe16dd is gone). Without the hint, `_defaultSort` groups the
+first, siblings ordered)": `insertArray` / `insertBranch` skip sorting the input (no
+depth sort, no `sortCallback`; the stable depth sort added in abe16dd is gone).
+`insertBranch` still re-sorts each affected parent (user decision, = svelte): the
+hint describes the batch, not the existing tree. Without the hint, `_defaultSort` groups the
 batch by `parentPath`, orders the groups by level → parent path (parents first) and
 each group with `_sortSiblings` (`sortCallback` per sibling group, else
 `orderMember` → display value). `refreshSiblings` (addNode / moveNode /
@@ -385,7 +386,8 @@ The render-time sort in `visibleFlatNodes` is removed. Fixtures that set
 Tests: `data-members.spec.ts` — the former `test.fail` passes; added "sortCallback
 only ever sees the children of one parent", "is-sorted renders pre-sorted data
 exactly as given", "is-sorted skips all sorting on insert", "is-sorted with badly
-ordered data drops orphans into getInsertResult().failed".
+ordered data drops orphans into getInsertResult().failed", "is-sorted: insertBranch
+still re-sorts the affected parent".
 
 
 **Where:** `src/ltree/ltree.ts` — with `isSorted` unset, `insertArray()`

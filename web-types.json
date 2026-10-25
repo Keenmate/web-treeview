@@ -128,7 +128,7 @@
             },
             {
               "name": "is-sorted",
-              "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data.",
+              "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.",
               "value": { "type": "boolean" }
             },
             {
@@ -689,7 +689,7 @@
               },
               {
                 "name": "isSorted",
-                "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data.",
+                "description": "Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.",
                 "type": "boolean"
               },
               {
@@ -1069,7 +1069,7 @@
               },
               {
                 "name": "sortCallback",
-                "description": "Orders the children of one parent: `ctx.items` are siblings — return them in the new order. Not called under `is-sorted`.",
+                "description": "Orders the children of one parent: `ctx.items` are siblings — return them in the new order. Not called on the input under `is-sorted` (still used by insertBranch / addNode / move re-sorts).",
                 "type": "(ctx: SortContext) => LTreeNode[]"
               },
               {

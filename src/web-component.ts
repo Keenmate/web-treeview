@@ -118,7 +118,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'treePathSeparator', attribute: 'tree-path-separator', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Separator between segments in a materialized tree path.' },
   { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus.' },
   { configKey: 'isAccordionExpand', attribute: 'accordion-expand', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
-  { configKey: 'isSorted', attribute: 'is-sorted', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data.' },
+  { configKey: 'isSorted', attribute: 'is-sorted', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
 
   // ── Search / indexer ───────────────────────────────────────────────────────
   { configKey: 'shouldUseInternalSearchIndex', attribute: 'should-use-internal-search-index', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Build an internal FlexSearch index for search.' },
@@ -230,7 +230,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'getNodeClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node row (`.wtv__node`).' },
   { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
   { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
-  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.items` are siblings — return them in the new order. Not called under `is-sorted`.' },
+  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.items` are siblings — return them in the new order. Not called on the input under `is-sorted` (still used by insertBranch / addNode / move re-sorts).' },
   { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'). Every activation fires `action`." },
 
   // ── Callbacks: render hooks ──────────────────────────────────────────────

@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed — `is-sorted` meaning fixed, render-time sort removed (NOTES #16)
 
 - **`is-sorted` is a performance hint**: "the data is already in insert order (parents
-  before children, siblings in display order)". `data` / `insertBranch` then skip all
-  sorting (faster on big data sets) and render the data as given; a child listed before
+  before children, siblings in display order)". `data` / `insertBranch` then skip sorting
+  the input (faster on big data sets) and `data` renders as given; `insertBranch` still
+  re-sorts each affected parent's children (the hint covers the batch, not the existing
+  tree); a child listed before
   its parent is dropped into `getInsertResult().failed` (caller's responsibility). It no
   longer means "keep siblings sorted" — the render-time sibling sort it enabled is gone.
 - **`sortCallback` orders the children of ONE parent** (`ctx.items` are siblings). Insert

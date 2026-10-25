@@ -78,7 +78,6 @@ test.describe('use-flat-rendering', () => {
   });
 
   test('changing flat-indent-size at runtime re-indents the rows', async ({ page }) => {
-    test.fail(true, 'NOTES.md #9');
     await page.goto(`${PAGE}?mode=flat`);
     await expect(nodeByPath(page, '1.1.1')).toBeVisible();
     await page.evaluate(() => (window as any).tree.setAttribute('flat-indent-size', '10px'));
@@ -90,7 +89,6 @@ test.describe('use-flat-rendering', () => {
 
 test.describe('progressive-render', () => {
   test('a large tree renders in growing batches until every row is in the DOM', async ({ page }) => {
-    test.fail(true, 'NOTES.md #10');
     await page.goto(`${PAGE}?mode=progressive`);
     await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
     const counts: number[] = await page.evaluate(() => (window as any).rowCounts);
@@ -100,5 +98,21 @@ test.describe('progressive-render', () => {
     // … and the count only ever grows, over several frames.
     for (let i = 1; i < nonZero.length; i++) expect(nonZero[i]).toBeGreaterThanOrEqual(nonZero[i - 1]);
     expect(new Set(nonZero).size).toBeGreaterThan(2);
+  });
+  test('a tree change while batches are pending loses no rows (NOTES #10)', async ({ page }) => {
+    await page.goto(`${PAGE}?mode=progressive`);
+    await expect.poll(async () => (await rowPaths(page)).length).toBeGreaterThan(0);
+    // re-run the progressive pass mid-flight (collapse + expand → new trackers)
+    await page.evaluate(() => { const t = (window as any).tree; t.collapseNodes('1'); t.expandNodes('1'); });
+    await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
+  });
+
+  test('progressive-render can be switched at runtime (NOTES #9)', async ({ page }) => {
+    await page.goto(`${PAGE}?mode=progressive`);
+    await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
+    await page.evaluate(() => (window as any).tree.setAttribute('progressive-render', 'false'));
+    await page.evaluate(() => (window as any).tree.expandNodes('1'));
+    await page.evaluate(() => (window as any).tree.collapseNodes('1'));
+    await expect.poll(async () => (await rowPaths(page)).length).toBe(1901);
   });
 });

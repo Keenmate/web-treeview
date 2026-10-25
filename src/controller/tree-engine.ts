@@ -702,7 +702,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get allVisibleFlatNodes(): LTreeNode<T>[] {
     if (!this._isVirtualScrollEnabled && this._isFlatRenderingEnabled && this._isProgressiveRender) {
       return this.tree?.visibleFlatNodes?.filter(
-        (n) => this.flatRenderedIds.has(String(n.id))
+        (n) => this.flatRenderedIds.has(n.path)
       ) ?? [];
     }
     return this.tree?.visibleFlatNodes ?? [];
@@ -3750,6 +3750,27 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.contextMenuYOffset !== undefined)
       this._contextMenuYOffset = updates.contextMenuYOffset ?? 0;
 
+    // Flat / progressive rendering inputs apply at runtime too (NOTES #9).
+    if (updates.flatIndentSize !== undefined)
+      this._flatIndentSize = updates.flatIndentSize ?? 'var(--wtv-indent-size)';
+    if (updates.initialBatchSize !== undefined) this._initialBatchSize = updates.initialBatchSize ?? 20;
+    if (updates.maxBatchSize !== undefined) this._maxBatchSize = updates.maxBatchSize ?? 500;
+    const nextFlat = updates.isFlatRenderingEnabled !== undefined ? (updates.isFlatRenderingEnabled ?? true) : this._isFlatRenderingEnabled;
+    const nextProgressive = updates.isProgressiveRender !== undefined ? (updates.isProgressiveRender ?? true) : this._isProgressiveRender;
+    if (nextFlat !== this._isFlatRenderingEnabled || nextProgressive !== this._isProgressiveRender) {
+      this._isFlatRenderingEnabled = nextFlat;
+      this._isProgressiveRender = nextProgressive;
+      // Switching at runtime: show what is visible now (no re-batching of rows
+      // the user already sees); later inserts batch as usual.
+      if (this.flatRenderAnimationFrame) {
+        cancelAnimationFrame(this.flatRenderAnimationFrame);
+        this.flatRenderAnimationFrame = null;
+      }
+      this.flatRenderQueue = [];
+      this.flatRenderedIds = new Set((this.tree?.visibleFlatNodes ?? []).map((n) => n.path));
+      this.lastFlatNodesTracker = this.tree?.changeTracker;
+    }
+
     // Display-value fallback — mutable on the tree (member → callback → fallback).
     // A change re-renders the fallback labels; since the DOM renderer diffs on
     // data-rev, bump revs of the visible nodes so they repaint. (No recreation:
@@ -4108,58 +4129,42 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (tracker === this.lastFlatNodesTracker) return;
     this.lastFlatNodesTracker = tracker;
 
+    // Keys are node PATHS (unique; ids may be missing or repeat). The pending
+    // queue is recomputed from the visible list on every run — never replaced by
+    // just the latest delta — so a re-run while batches are pending loses nothing
+    // (NOTES #10). A run while a batch sequence is in flight keeps its batch size.
     const allNodes = this.tree.visibleFlatNodes;
-    const currentIds = new Set(allNodes.map((n) => String(n.id)));
+    const currentIds = new Set(allNodes.map((n) => n.path));
 
-    const renderedSnapshot = new Set(this.flatRenderedIds);
-    const queueSnapshot = new Set(this.flatRenderQueue);
+    for (const id of [...this.flatRenderedIds]) {
+      if (!currentIds.has(id)) this.flatRenderedIds.delete(id);
+    }
 
-    const newIds: string[] = [];
+    const pending: string[] = [];
     for (const node of allNodes) {
-      const id = String(node.id);
-      if (!renderedSnapshot.has(id) && !queueSnapshot.has(id)) {
-        newIds.push(id);
-      }
+      if (!this.flatRenderedIds.has(node.path)) pending.push(node.path);
+    }
+    if (pending.length === 0) {
+      this.flatRenderQueue = [];
+      return;
     }
 
-    const removedIds: string[] = [];
-    for (const id of renderedSnapshot) {
-      if (!currentIds.has(id)) {
-        removedIds.push(id);
-      }
+    // A few nodes added to an already large rendered tree: show them at once.
+    if (this.flatRenderedIds.size > 1000 && pending.length < 200 && this.flatRenderQueue.length === 0) {
+      for (const id of pending) this.flatRenderedIds.add(id);
+      return;
     }
 
-    if (removedIds.length > 0) {
-      const newRendered = new Set(renderedSnapshot);
-      for (const id of removedIds) {
-        newRendered.delete(id);
-      }
-      this.flatRenderedIds = newRendered;
+    const isBatching = this.flatRenderQueue.length > 0 || !!this.flatRenderAnimationFrame;
+    let rest = pending;
+    if (!isBatching) {
+      this.currentBatchSize = this._initialBatchSize;
+      for (const id of pending.slice(0, this.currentBatchSize)) this.flatRenderedIds.add(id);
+      rest = pending.slice(this.currentBatchSize);
+      this.currentBatchSize = Math.min(this.currentBatchSize * 2, this._maxBatchSize);
     }
-
-    if (newIds.length > 0) {
-      const alreadyHasManyNodes = renderedSnapshot.size > 1000;
-      const addingFewNodes = newIds.length < 200;
-
-      if (alreadyHasManyNodes && addingFewNodes) {
-        this.flatRenderedIds = new Set([...this.flatRenderedIds, ...newIds]);
-      } else {
-        this.currentBatchSize = this._initialBatchSize;
-        const immediateBatch = newIds.slice(0, this.currentBatchSize);
-        const remaining = newIds.slice(this.currentBatchSize);
-
-        if (immediateBatch.length > 0) {
-          this.flatRenderedIds = new Set([...this.flatRenderedIds, ...immediateBatch]);
-        }
-
-        this.currentBatchSize = Math.min(this.currentBatchSize * 2, this._maxBatchSize);
-
-        if (remaining.length > 0) {
-          this.flatRenderQueue = [...remaining];
-          this.scheduleFlatRenderBatch();
-        }
-      }
-    }
+    this.flatRenderQueue = rest;
+    if (rest.length > 0) this.scheduleFlatRenderBatch();
   }
 
   scheduleFlatRenderBatch() {
@@ -4173,7 +4178,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       const batch = this.flatRenderQueue.slice(0, batchSize);
       const remaining = this.flatRenderQueue.slice(batchSize);
 
-      this.flatRenderedIds = new Set([...this.flatRenderedIds, ...batch]);
+      for (const id of batch) this.flatRenderedIds.add(id);
       this.flatRenderQueue = remaining;
       this.currentBatchSize = Math.min(batchSize * 2, this._maxBatchSize);
 

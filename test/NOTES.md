@@ -233,7 +233,11 @@ duplicate ids in `insertArray`).
 original and the copy are rendered") and `mutation-api.spec.ts`
 ("duplicateNodes without a transform keeps every row rendered").
 
-## 9. Flat / progressive inputs are construction-only (runtime changes ignored)
+## 9. ~~Flat / progressive inputs are construction-only (runtime changes ignored)~~ — fixed
+
+**Fixed 2026-10-25:** `update()` applies `flatIndentSize`, `initialBatchSize`, `maxBatchSize`, `isFlatRenderingEnabled` and `isProgressiveRender` (switching flat/progressive at runtime shows the currently visible rows at once; later inserts batch as usual). The `test.fail` passes; added "progressive-render can be switched at runtime".
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` — `flatIndentSize`,
 `isFlatRenderingEnabled`, `isProgressiveRender`, `initialBatchSize`,
@@ -251,7 +255,11 @@ render), or declare them `on: 'reinit'`.
 **Test status:** `virtual-scroll.spec.ts` "changing flat-indent-size at
 runtime re-indents the rows" is `test.fail`.
 
-## 10. Progressive rendering stalls — most rows of a large tree never render
+## 10. ~~Progressive rendering stalls — most rows of a large tree never render~~ — fixed
+
+**Fixed 2026-10-25:** `_updateProgressiveRendering()` recomputes the pending queue from the visible list on every run (rendered rows minus removed ones; everything else pending, in display order) instead of replacing the queue with the latest delta, and keeps the batch size while a batch sequence is in flight. Progressive bookkeeping is keyed by node path (was `String(node.id)` — missing / repeated ids collapsed rows). The `test.fail` passes; added "a tree change while batches are pending loses no rows".
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` `_updateProgressiveRendering()`
 (~3753-3815). Likely cause: when it runs again while a batch queue is still

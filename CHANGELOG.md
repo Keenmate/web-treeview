@@ -54,6 +54,8 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - Cut rows are dimmed on Ctrl+X / `cutNodes()` and un-dimmed on Escape / `cancelCut()` (NOTES #6).
 - A pasted / duplicated copy that keeps its source `id` no longer hides the original row: rows are keyed by `path` (NOTES #8). `scrollToPath` finds rows by path too.
 - `range-selection-mode="logical"` ranges over all nodes depth-first (collapsed descendants included), not just the roots (NOTES #7).
+- Flat / progressive inputs (`flat-indent-size`, `use-flat-rendering`, `progressive-render`, `initial-batch-size`, `max-batch-size`) apply at runtime, not only at construction (NOTES #9).
+- Progressive rendering no longer stalls or drops rows when the tree changes while batches are pending; its bookkeeping is keyed by path, not id (NOTES #10).
 
 ### Added
 

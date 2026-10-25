@@ -511,7 +511,11 @@ re-insert (or re-apply the active filter after `insertArray`).
 
 **Test status:** two `test.fail` in `search-config.spec.ts`.
 
-## 19. `renderLoadingCallback` is never called
+## 19. ~~`renderLoadingCallback` is never called~~ — fixed
+
+**Fixed 2026-10-25:** the renderer fills the loading overlay through `_renderLoadingContent()`: `renderLoadingCallback(container)` when set, else the built-in spinner; re-run when the callback changes. The `test.fail` passes.
+
+Original report:
 
 **Where:** declared in `web-component.ts` (~231), mapped in `treeview.ts`
 (~719) and typed in `renderer/types.ts` (~43), but `dom-renderer.ts` never
@@ -527,7 +531,11 @@ clear `loadingEl` and call it (like header/footer).
 **Test status:** `render-callbacks.spec.ts` "renderLoadingCallback renders the
 loading content" is `test.fail`.
 
-## 20. `renderEmptyZoneCallback` assigned after the first render is ignored
+## 20. ~~`renderEmptyZoneCallback` assigned after the first render is ignored~~ — fixed
+
+**Fixed 2026-10-25:** the renderer remembers which `renderEmptyZoneCallback` built the current `.wtv__empty-zone`; when the callback changes (e.g. assigned after the markup upgraded and rendered), the zone is dropped and rebuilt. The `test.fail` passes.
+
+Original report:
 
 **Where:** `dom-renderer.ts` `_renderEmpty()` (~1015-1040): the
 `.wtv__empty-zone` is built (and the callback consulted) only when no zone

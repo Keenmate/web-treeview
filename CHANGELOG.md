@@ -62,6 +62,8 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - Removing the `expand-level` attribute resets to the default (roots only) instead of keeping the old level (NOTES #14).
 - Reassigning `data` keeps branches the user collapsed collapsed, also when none were open (NOTES #17).
 - A config change no longer re-inserts the whole `data` (only a new array does); `search-text` set at runtime filters, and the active filter survives a re-insert (NOTES #18).
+- `renderLoadingCallback` renders the loading overlay content (it was never called) (NOTES #19).
+- A `renderEmptyZoneCallback` assigned after the first render fills the empty drop zone (NOTES #20).
 
 ### Added
 

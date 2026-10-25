@@ -33,7 +33,6 @@ test.describe('empty tree', () => {
   });
 
   test('renderEmptyZoneCallback (assigned after markup upgrade) fills the zone', async ({ page }) => {
-    test.fail(true, 'NOTES.md #20');
     const t = tree(page, 'empty-zone');
     await expect(t.locator('.wtv__empty-zone .custom-zone')).toHaveText('Paste or drop here', { timeout: 2000 });
   });
@@ -54,7 +53,6 @@ test.describe('loading', () => {
   });
 
   test('renderLoadingCallback renders the loading content', async ({ page }) => {
-    test.fail(true, 'NOTES.md #19');
     await expect(tree(page, 'loading-cb').locator('.custom-loading')).toHaveText('Loading…', { timeout: 2000 });
   });
 });

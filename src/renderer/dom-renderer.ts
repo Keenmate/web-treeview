@@ -156,7 +156,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.loadingEl = document.createElement('div');
     this.loadingEl.className = 'wtv__loading-overlay';
     this.loadingEl.style.display = 'none';
-    this.loadingEl.innerHTML = '<div class="wtv__loading-spinner"></div>';
+    this._renderLoadingContent();
     this.container.appendChild(this.loadingEl);
 
     // Set controller container for scrollToPath
@@ -181,8 +181,31 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._onStateChange(controller.getSnapshot());
   }
 
+  /** The loading overlay's content: `renderLoadingCallback` when set, else the
+   *  built-in spinner (NOTES #19). Re-run when the callback changes. */
+  private _loadingContentCb: unknown = undefined;
+  private _renderLoadingContent(): void {
+    if (!this.loadingEl) return;
+    const cb = this.config.renderLoadingCallback;
+    this._loadingContentCb = cb;
+    this.loadingEl.innerHTML = '';
+    if (cb) cb(this.loadingEl);
+    else this.loadingEl.innerHTML = '<div class="wtv__loading-spinner"></div>';
+  }
+
+  /** The callback the current `.wtv__empty-zone` was built with (NOTES #20). */
+  private _emptyZoneCb: unknown = undefined;
+
   updateConfig(config: Partial<RendererConfig<T>>): void {
     Object.assign(this.config, config);
+    if (this.config.renderLoadingCallback !== this._loadingContentCb) this._renderLoadingContent();
+    if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
+      const zone = this._renderTarget?.querySelector('.wtv__empty-zone');
+      if (zone && this.controller) {
+        zone.remove();
+        this._fullRender(this.controller.getSnapshot());
+      }
+    }
     if ('theme' in config) this._applyTheme(config.theme);
     if (config.renderHeaderCallback && this.headerEl) {
       this.headerEl.innerHTML = '';
@@ -1126,6 +1149,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
         zone = document.createElement('div');
         zone.className = 'wtv__empty-zone';
+        this._emptyZoneCb = this.config.renderEmptyZoneCallback;
         if (this.config.renderEmptyZoneCallback) {
           this.config.renderEmptyZoneCallback(zone);
         } else {

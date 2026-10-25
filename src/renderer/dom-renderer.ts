@@ -25,6 +25,7 @@ import {
   type ElementSize
 } from '@keenmate/web-components-core';
 import type { NodeRenderContext } from '../controller/types';
+import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
  *  anything else (emoji, symbol, text) is rendered as the element's text. */
@@ -66,6 +67,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** The next menu open came from the keyboard (Shift+F10 / ContextMenu) → focus its first item. */
   private _isMenuOpeningFromKeyboard = false;
   private loadingEl: HTMLElement | null = null;
+  /** The engine's loggers (the element's instance loggers when hosted). */
+  private get log(): TreeLoggers { return this.controller?.log ?? defaultTreeLoggers; }
 
   // Virtual scroll DOM elements
   private vsSpacerEl: HTMLElement | null = null;
@@ -567,7 +570,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Log only on first dragover or target change to reduce noise
     const targetDesc = target.tagName + '.' + target.className;
     if (this._lastDragOverTarget !== targetDesc) {
-      console.log('[DomRenderer] _onBodyDragOver', { target: targetDesc, treeId: this.controller.treeId });
+      this.log.DRAG.debug('body dragover', { target: targetDesc });
       this._lastDragOverTarget = targetDesc;
     }
 
@@ -615,12 +618,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Empty tree or active drop placeholder dragover
     const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
     if (emptyOrPlaceholder) {
-      console.log('[DomRenderer] dragover on empty/placeholder element', emptyOrPlaceholder.className);
+      this.log.DRAG.debug('dragover on the empty state / placeholder', emptyOrPlaceholder.className);
       this.controller.handleEmptyTreeDragOver(event);
     } else {
       const bodyHit = target.closest('.wtv__tree');
       if (bodyHit && !contentEl && !zoneEl) {
-        console.log('[DomRenderer] dragover on tree body, but no node/zone/empty found. target:', target.tagName, target.className);
+        this.log.DRAG.debug('dragover on the tree body (no node / zone / empty state)', target.tagName, target.className);
       }
     }
   };
@@ -630,10 +633,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._lastDragOverTarget = '';
     const related = event.relatedTarget as HTMLElement;
     const target = event.target as HTMLElement;
-    console.log('[DomRenderer] _onBodyDragLeave', {
+    this.log.DRAG.debug('body dragleave', {
       target: target.tagName + '.' + target.className,
-      related: related ? related.tagName + '.' + related.className : null,
-      treeId: this.controller.treeId
+      related: related ? related.tagName + '.' + related.className : null
     });
     // Don't clear hover when cursor moves to a floating drop zone
     if (related?.closest?.('.wtv__drop-zones')) return;
@@ -702,10 +704,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _onBodyDragEnter = (event: DragEvent) => {
     const target = event.target as HTMLElement;
     const related = event.relatedTarget as HTMLElement;
-    console.log('[DomRenderer] _onBodyDragEnter', {
+    this.log.DRAG.debug('body dragenter', {
       target: target.tagName + '.' + target.className,
-      related: related ? related.tagName + '.' + related.className : null,
-      treeId: this.controller?.treeId
+      related: related ? related.tagName + '.' + related.className : null
     });
     this.controller?.handleTreeDragEnter(event);
   };
@@ -1012,7 +1013,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   private _onConfigChange(nodeConfig: NodeConfig): void {
-    if ((globalThis as any).__WTV_DEBUG) console.log('[wtv:render] _onConfigChange → _fullRender, focusedNodeClass=', JSON.stringify(nodeConfig.focusedNodeClass));
+    this.log.RENDER.debug('config-change → full render, focusedNodeClass =', JSON.stringify(nodeConfig.focusedNodeClass));
     this.lastNodeConfig = nodeConfig;
     // Re-render toggle icons if icon classes changed
     if (this.controller) {
@@ -1135,7 +1136,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Show empty zone (drop target during drag) or empty state (informational)
     const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}`;
     if (this._lastEmptyState !== emptyState) {
-      console.log('[DomRenderer] renderEmpty', { isDragInProgress: snapshot.isDragInProgress, isDropPlaceholderActive: snapshot.isDropPlaceholderActive, isLoading: snapshot.isLoading });
+      this.log.RENDER.debug('render empty', { isDragInProgress: snapshot.isDragInProgress, isDropPlaceholderActive: snapshot.isDropPlaceholderActive, isLoading: snapshot.isLoading });
       this._lastEmptyState = emptyState;
     }
     // Show the empty drop zone when a drag is over an empty tree, OR permanently
@@ -1586,8 +1587,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       const isFocused = snapshot.focusedNode?.path === node.path;
       contentEl.classList.toggle('wtv__node-content--focused', isFocused);
-      if ((globalThis as any).__WTV_DEBUG && isFocused)
-        console.log('[wtv:render] update-path focus node', node.path, 'focusedNodeClass=', JSON.stringify(nodeConfig?.focusedNodeClass), 'classesBefore=', contentEl.className);
+      if (isFocused)
+        this.log.RENDER.debug('update focused row', node.path, 'focusedNodeClass =', JSON.stringify(nodeConfig?.focusedNodeClass), 'classes before =', contentEl.className);
       if (nodeConfig?.focusedNodeClass) {
         contentEl.classList.toggle(nodeConfig.focusedNodeClass, isFocused);
         contentEl.classList.remove('wtv__node-content--focused-default');

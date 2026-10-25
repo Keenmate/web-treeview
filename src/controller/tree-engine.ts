@@ -68,7 +68,7 @@ import {
   type ClipboardOperation,
   type PasteResult
 } from '../clipboard';
-import { initLogger, uiLogger, dragLogger } from '../logger';
+import { initLogger, uiLogger, dragLogger, defaultTreeLoggers, type TreeLoggers } from '../logger';
 import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perfStart, perfEnd } from '../perf-logger';
 
@@ -343,6 +343,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // Container element (set by the host component for scrollToPath / debug menu)
   containerElement: HTMLElement | null = null;
+  /** Where this engine logs (the element's instance loggers when hosted). */
+  log: TreeLoggers = defaultTreeLoggers;
 
   // ── Batched notification ────────────────────────────────────────────
   private _dirty = false;
@@ -761,6 +763,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._bodyClass = props.bodyClass;
 
     this._expandLevel = props.expandLevel ?? null;
+    if (props.log) this.log = props.log;
     this._dragDropMode = props.dragDropMode ?? 'none';
     this._isCopyAllowed = props.isCopyAllowed ?? false;
     this._shouldAutoHandleCopy = props.shouldAutoHandleCopy ?? true;
@@ -877,6 +880,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       props.indexerTimeout,
       {
         shouldDisplayDebugInformation: props.shouldDisplayDebugInformation,
+        log: this.log,
         isSorted: props.isSorted,
         sortCallback: props.sortCallback,
         displayValueFallback: props.displayValueFallback ?? '[N/A]'
@@ -3511,7 +3515,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     const node = this.tree.getNodeByPath(path);
     if (!node || !node.id) {
-      console.warn(`[Tree ${this._treeId}] Node not found for path: ${path}`);
+      this.log.UI.warn(`scrollToPath: node not found for path ${path}`);
       perfEnd(`[${this._treeId}] scrollToPath`);
       return false;
     }
@@ -3574,7 +3578,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     if (!contentDiv) {
-      console.warn(`[Tree ${this._treeId}] DOM element not found for node ID: ${elementId}`);
+      this.log.UI.warn(`scrollToPath: no rendered row for ${path} (${elementId})`);
       perfEnd(`[${this._treeId}] scrollToPath`);
       return false;
     }
@@ -3625,9 +3629,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── updateProps (batch property updates) ────────────────────────────
 
   updateProps(updates: Partial<TreeEngineConfig<T>>) {
-    if ((globalThis as any).__WTV_DEBUG) {
+    {
       const has = (k: string) => k in updates;
-      console.log('[wtv:cfg] updateProps IN',
+      this.log.INIT.debug('updateProps: node classes',
         'focusedNodeClass:', has('focusedNodeClass') ? JSON.stringify((updates as any).focusedNodeClass) : '(absent)',
         '| selectedNodeClass:', has('selectedNodeClass') ? JSON.stringify((updates as any).selectedNodeClass) : '(absent)',
         '| checkedNodeClass:', has('checkedNodeClass') ? JSON.stringify((updates as any).checkedNodeClass) : '(absent)');
@@ -3747,8 +3751,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._selectedNodeClass = updates.selectedNodeClass;
     if (updates.focusedNodeClass !== undefined)
       this._focusedNodeClass = updates.focusedNodeClass;
-    else if ((globalThis as any).__WTV_DEBUG && 'focusedNodeClass' in updates)
-      console.log('[wtv:cfg] focusedNodeClass guard SKIPPED clear — value is undefined, stays', JSON.stringify(this._focusedNodeClass));
+    else if ('focusedNodeClass' in updates)
+      this.log.INIT.debug('focusedNodeClass: undefined keeps the current value', JSON.stringify(this._focusedNodeClass));
     if (updates.checkedNodeClass !== undefined)
       this._checkedNodeClass = updates.checkedNodeClass;
     if (updates.dragOverNodeClass !== undefined)
@@ -3939,6 +3943,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         updates.indexerTimeout,
         {
           shouldDisplayDebugInformation: this._shouldDisplayDebugInformation,
+          log: this.log,
           isSorted: updates.isSorted ?? this.tree.isSorted,
           sortCallback: updates.sortCallback,
           displayValueFallback: updates.displayValueFallback ?? this.tree.displayValueFallback
@@ -4291,8 +4296,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       nodeClass: this._nodeClass,
       nodeContentClass: this._nodeContentClass
     };
-    if ((globalThis as any).__WTV_DEBUG)
-      console.log('[wtv:cfg] emit config-change focusedNodeClass=', JSON.stringify(this._focusedNodeClass));
+    this.log.RENDER.debug('config-change, focusedNodeClass =', JSON.stringify(this._focusedNodeClass));
     this.emit('config-change', this._nodeConfig);
   }
 
@@ -5300,7 +5304,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
     // Only notify if state actually changed
     if (!this._isDragInProgress || !this._isDropPlaceholderActive) {
-      console.log('[Controller] handleEmptyTreeDragOver — activating', { treeId: this._treeId });
+      this.log.DRAG.debug('empty-tree dragover — activating the drop placeholder');
       this._isDragInProgress = true;
       this._isDropPlaceholderActive = true;
       this._scheduleNotify();
@@ -5312,7 +5316,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const x = event.clientX;
     const y = event.clientY;
     const outside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-    console.log('[Controller] handleEmptyTreeDragLeave', { treeId: this._treeId, outside, x, y, rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } });
+    this.log.DRAG.debug('empty-tree dragleave', { outside, x, y, rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } });
     if (outside) {
       this._isDragInProgress = false;
       this._isDropPlaceholderActive = false;
@@ -5343,7 +5347,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── Tree-level drag handlers ────────────────────────────────────────
 
   handleTreeDragEnter = (event: DragEvent) => {
-    console.log('[Controller] handleTreeDragEnter', { treeId: this._treeId, nodeCount: this.flatNodesToRender.length, hasMime: event.dataTransfer?.types.includes('application/svelte-treeview') });
+    this.log.DRAG.debug('tree dragenter', { nodeCount: this.flatNodesToRender.length, hasMime: event.dataTransfer?.types.includes('application/svelte-treeview') });
     if (event.dataTransfer?.types.includes('application/svelte-treeview')) {
       this._isDragInProgress = true;
       // For empty trees, also activate drop placeholder immediately
@@ -5360,7 +5364,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const x = event.clientX;
     const y = event.clientY;
     const outside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-    console.log('[Controller] handleTreeDragLeave', { treeId: this._treeId, outside, x, y, rect: { top: rect.top, bottom: rect.bottom } });
+    this.log.DRAG.debug('tree dragleave', { outside, x, y, rect: { top: rect.top, bottom: rect.bottom } });
     if (outside) {
       if (this._draggedNode?.treeId !== this._treeId) {
         this._isDragInProgress = false;

@@ -75,10 +75,14 @@ export function setCategoryLevel(category: string, level: LogLevelDesc = 'debug'
   logging.setCategoryLevel(bare, level);
 }
 
-// Start silent — matches the historical production default; enable via the API.
-logging.disableLogging();
-// INIT stayed enabled at debug by default historically (init diagnostics).
-initLogger.setLevel('debug');
+// No forced level here: core gives every bundle its default (`warn`), a persisted
+// `km-log:*` level wins, and `window.components.logging` is the page-wide switch.
+
+/** The per-category loggers the engine / LTree / renderer log through. The element
+ *  passes its instance loggers (`[TREEVIEW:CAT] #id …`); standalone use (no
+ *  element) falls back to the plain category loggers. */
+export type TreeLoggers = Record<Category, Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>>;
+export const defaultTreeLoggers: TreeLoggers = logging.loggers;
 
 // Back-compat default export: modules that did `import log from './logger'` use
 // it as a general sink → the INIT logger.

@@ -68,6 +68,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - A desktop drop on a node with `isDropAllowed: false` fires `node-drop-reject` (+ 🚫), or lands on the tree with `enable-tree-drop-zone` (NOTES #22).
 - `el.tooltipDelay = { show, hide }` is accepted (the converter rejected the documented object form) (NOTES #23).
 - A Ctrl/Shift-click, checkbox or toggle click between two plain clicks no longer reads as a double-click (NOTES #25).
+- Quiet by default (NOTES #24): no INIT debug at load and no raw `console.*` — every message goes through the `TREEVIEW:*` loggers (core default `warn`; lines carry `#id`). A rejected / throwing `beforeExpandCallback` is logged at error level by core (was a `console.warn` in the adapter).
 
 ### Added
 

@@ -66,12 +66,13 @@ test('returning false keeps the node collapsed (no expand event)', async ({ page
   expect(await log(page)).toEqual(['before:4']);
 });
 
-test('a rejected load keeps the node collapsed, clears the loading state and warns', async ({ page }) => {
-  const warnings: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'warning') warnings.push(m.text()); });
+test('a rejected load keeps the node collapsed, clears the loading state and logs an error', async ({ page }) => {
+  // core's runBeforeCallbackEager reports the rejection through the element's logger (error level)
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   await load(page, 'reject');
   await toggleOf(page, '1').click();
-  await expect.poll(() => warnings.some((w) => w.includes('beforeExpandCallback rejected'))).toBe(true);
+  await expect.poll(() => errors.some((e) => e.includes('[TREEVIEW:UI]') && e.includes('beforeExpandCallback threw'))).toBe(true);
   await expect(toggleOf(page, '1')).not.toHaveClass(/wtv__toggle-icon--loading/);
   await expect(toggleOf(page, '1')).not.toHaveClass(/expanded/);
   await expect(nodeByPath(page, '1')).not.toHaveAttribute('aria-busy', 'true');

@@ -20,6 +20,7 @@
  * `update()` sends the full config, and WebTreeView memoizes its callback
  * adapters, so re-sending an unchanged callback costs nothing.
  */
+import type { TreeLoggers } from './logger';
 import {
   BlissElement,
   toBool,
@@ -55,7 +56,6 @@ import type {
   TreeEventDetail,
   TreeViewActionEventDetail,
 } from './interaction';
-import { initLogger } from './logger';
 import styles from './css/main.css?inline';
 
 /** Any callback input. */
@@ -288,7 +288,7 @@ const INPUTS: readonly InputDef[] = [
    * and ignores repeat toggles meanwhile; resolving `false` or rejecting (warned) keeps it
    * collapsed. A synchronous hook stays synchronous.
    */
-  { configKey: 'beforeExpandCallback', converter: cb(), on: 'update', type: '(ctx: BeforeExpandContext) => boolean | void | Promise<boolean | void>', description: 'Runs before a node expands (toggle, keyboard, expandNodes — not expandAll / seeding / accordion): `false` keeps it collapsed; a Promise defers the expand with a loading state (lazy loading: insertBranch the children, then resolve). Rejection = stays collapsed + console.warn.' },
+  { configKey: 'beforeExpandCallback', converter: cb(), on: 'update', type: '(ctx: BeforeExpandContext) => boolean | void | Promise<boolean | void>', description: 'Runs before a node expands (toggle, keyboard, expandNodes — not expandAll / seeding / accordion): `false` keeps it collapsed; a Promise defers the expand with a loading state (lazy loading: insertBranch the children, then resolve). A throw / rejection keeps it collapsed and is logged (error) through the element\'s logger.' },
   { configKey: 'beforeKeydownCallback', converter: cb(), on: 'update', type: '(ctx: KeydownContext) => void | false', description: 'Runs before the built-in keyboard handling (synchronous): return `false` to suppress it for this key. Drive the tree via `ctx.controller`.' },
   { configKey: 'beforeActionCallback', converter: cb(), on: 'update', type: '(detail: TreeViewActionEventDetail) => void | false | Promise<void | false>', description: 'Runs before a context-menu item activates: `false` cancels its onClick, the `action` event and the built-in.' },
   { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data', description: 'OUTPUT (egress) transform — clean/redact `ctx.data` as a node leaves the source (copy/cut/copy-drop).' },
@@ -481,15 +481,26 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   #buildEngine(): void {
     this.#ensureContainer();
     const config = this.#assembleConfig();
-    initLogger.debug('[WebTreeViewElement] build engine', {
+    this.log.INIT.debug('build engine', {
       idMember: config.idMember,
       pathMember: config.pathMember,
       displayValueMember: config.displayValueMember,
       dataLength: (config.data as unknown[] | undefined)?.length ?? 0,
     });
 
-    this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer);
+    this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
     this.#applyCustomStyles();
+  }
+
+  /** The element's instance loggers for the engine / LTree / renderer, resolved
+   *  per access: `this.log` changes when the tag's logging bundle is registered
+   *  after the element was built (it is the CORE fallback before that). */
+  #treeLoggers(): TreeLoggers {
+    const out = {} as TreeLoggers;
+    for (const category of ['INIT', 'DATA', 'INDEX', 'UI', 'DRAG', 'RENDER'] as const) {
+      Object.defineProperty(out, category, { get: () => this.log[category] ?? this.log.INIT, enumerable: true });
+    }
+    return out;
   }
 
   #ensureContainer(): void {

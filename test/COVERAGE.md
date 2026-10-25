@@ -187,7 +187,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Lifecycle: re-parent / remove + re-append keeps expansion, selection, checks, focus, search (NOTES #15, D1) | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Lifecycle: virtual-scroll offset survives a move | ✓ | `lifecycle.spec.ts` | `virtual-scroll.html` |
 | Lifecycle: no duplicated document/window listeners after N moves; released while detached; open context menu closes on a move | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
-| Logging silent by default (NOTES #24) | ✗ (test.fail) | `logging.spec.ts` | `logging.html` |
+| Logging silent by default (warn level, no direct console.*) (NOTES #24) | ✓ | `logging.spec.ts` | `logging.html` |
 | `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
 | `should-display-debug-information`, `tree-id` | ✓ | `logging.spec.ts` | `logging.html` |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

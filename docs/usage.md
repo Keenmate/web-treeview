@@ -536,7 +536,12 @@ WebTreeViewElement (custom element, BlissElement)
 
 ## Logging
 
-Disabled by default. Enable at runtime for debugging:
+Quiet by default: every category starts at `warn` (web-components-core's default), so
+only real problems (invalid input, failed inserts, a throwing callback) reach the
+console. Lines carry the instance: `[TREEVIEW:DATA] #my-tree 2 of 40 items failed to insert`.
+`window.components.logging` switches every KeenMate component on the page at once;
+`window.components['web-treeview'].logging` just this one. A level persisted in
+`localStorage` (`km-log:TREEVIEW:*`) wins over the default. Enable at runtime for debugging:
 
 ```javascript
 import {

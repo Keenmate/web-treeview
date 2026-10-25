@@ -621,7 +621,11 @@ or a `{ show?, hide? }` object (property), validated in one place.
 **Test status:** `tooltip.spec.ts` "tooltipDelay = { show, hide }" is
 `test.fail`.
 
-## 24. Not silent by default: INIT debug on + raw `console.log` in drag paths
+## 24. ~~Not silent by default: INIT debug on + raw `console.log` in drag paths~~ — fixed
+
+**Fixed 2026-10-25:** (core 4828fa3 logging) `logger.ts` no longer forces `disableLogging()` + INIT at debug — core's default `warn` applies, a persisted `km-log:*` level wins, `window.components.logging` is the page-wide switch. All 23 direct `console.*` calls are gone: drag / render / config traces (incl. the `__WTV_DEBUG`-gated ones) → `debug` on DRAG / RENDER / INIT, insert failures → `DATA.warn`, `scrollToPath` misses → `UI.warn`. The engine, LTree (`opts.log`) and renderer log through `TreeLoggers` the element passes in (its instance loggers, resolved per access → `[TREEVIEW:CAT] #id …`); standalone use falls back to the category loggers. The `beforeExpandCallback` rejection special case in `treeview.ts` is gone — core's `runBeforeCallbackEager` reports it at error level through the element's logger (`[TREEVIEW:UI] #id beforeExpandCallback threw — treated as cancel`). The `test.fail` in `logging.spec.ts` passes. Note: a `km-log:TREEVIEW:INIT=debug` persisted by the old forced `setLevel('debug')` keeps INIT verbose in browsers that ran an older build until cleared.
+
+Original report:
 
 **Where:**
 - `src/logger.ts` ~79-81: `logging.disableLogging()` then

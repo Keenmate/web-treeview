@@ -161,6 +161,9 @@ export interface Ltree<T> {
 
 	getNodeSearchValue(node: LTreeNode<T>): string;
 
+	/** Where this tree logs (the hosting element's instance loggers; set via opts). */
+	log?: import('../logger').TreeLoggers;
+
 	_defaultSort(self: Ltree<T>, items: LTreeNode<T>[]): LTreeNode<T>[];
 
 	_sortSiblings(items: LTreeNode<T>[]): LTreeNode<T>[];

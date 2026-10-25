@@ -102,6 +102,8 @@ test.describe('A2 guard — cosmetic resends do not recreate the tree', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     await expect(node(page, '1')).toBeVisible();
+    // the recreation trace is TREEVIEW:INIT debug (quiet by default since NOTES #24)
+    await page.evaluate(() => (window as any).components['web-treeview'].logging.setCategoryLevel('INIT', 'debug'));
   });
 
   test('re-setting a member to its CURRENT value does not recreate', async ({ page }) => {

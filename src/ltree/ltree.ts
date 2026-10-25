@@ -14,6 +14,7 @@ import type { Ltree, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranch
 import { createSearchIndex } from './flex';
 import { Indexer } from './indexer';
 import { perfStart, perfEnd, perfSummary } from '../perf-logger';
+import { defaultTreeLoggers } from '../logger';
 
 /** Helper to safely access a property on a generic data item using a string member name */
 function getField(item: unknown, member: string): any {
@@ -61,6 +62,8 @@ export function createLTree<T>(
 
 	opts?: Partial<Ltree<T>>
 ): Ltree<T> {
+	/** The DATA logger (the element's instance logger when hosted). */
+	const dataLog = () => (opts?.log ?? defaultTreeLoggers).DATA;
 	let shouldCalculateParentPath: boolean = isEmptyString(_parentPathMember);
 	let shouldCalculateLevel: boolean = isEmptyString(_levelMember);
 	let shouldCalculateHasChildren: boolean = isEmptyString(_hasChildrenMember);
@@ -333,8 +336,8 @@ export function createLTree<T>(
 
 			// Warn early about data mapping issues (most common user error)
 			if (conversionFailures.length > 0) {
-				console.warn(
-					`[Tree ${_treeId}] ${conversionFailures.length} of ${data.length} items have invalid paths (pathMember="${_pathMember}"). These items will be skipped.\n` +
+				dataLog().warn(
+					`${conversionFailures.length} of ${data.length} items have invalid paths (pathMember="${_pathMember}"). These items will be skipped.\n` +
 					`First failure: ${conversionFailures[0].error}`
 				);
 			}
@@ -385,8 +388,8 @@ export function createLTree<T>(
 			// Log errors for backward compatibility and debugging
 			if (failedNodes.length > 0) {
 				const errorMessages = failedNodes.map((f) => f.error);
-				console.warn(
-					`[Tree ${_treeId}] ${failedNodes.length} nodes failed to insert:`,
+				dataLog().warn(
+					`${failedNodes.length} nodes failed to insert:`,
 					errorMessages
 				);
 			}
@@ -1432,7 +1435,7 @@ export function createLTree<T>(
 				const result = this.addNode(parentPath, transformedData);
 				if (!result.success || !result.node) {
 					if (this.shouldDisplayDebugInformation) {
-						console.warn(`[Tree ${_treeId}] copyNodeWithDescendants: Failed to add node`, result.error);
+						dataLog().warn(`copyNodeWithDescendants: Failed to add node`, result.error);
 					}
 					return null;
 				}
@@ -1677,8 +1680,8 @@ export function createLTree<T>(
 
 			// One summary warning (like insertArray) — the details are in `failed`.
 			if (failed.length > 0) {
-				console.warn(
-					`[Tree ${_treeId}] insertBranch("${parentPath}"): ${failed.length} of ${data.length} items failed to insert:`,
+				dataLog().warn(
+					`insertBranch("${parentPath}"): ${failed.length} of ${data.length} items failed to insert:`,
 					failed.map((f) => f.error)
 				);
 			}

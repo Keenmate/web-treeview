@@ -1,4 +1,5 @@
 import { TreeEngine } from './controller/tree-engine';
+import type { TreeLoggers } from './logger';
 import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext } from './controller/types';
 import type { TreeViewRenderer, RendererConfig } from './renderer/types';
 import { DomRenderer } from './renderer/dom-renderer';
@@ -95,12 +96,15 @@ export class WebTreeView<T = any> {
   constructor(
     element: HTMLElement,
     options: Partial<TreeViewConfig<T>> = {},
-    renderer?: TreeViewRenderer<T>
+    renderer?: TreeViewRenderer<T>,
+    /** Loggers for the engine / LTree / renderer — the element passes its instance
+     *  loggers so lines read `[TREEVIEW:CAT] #id …`. */
+    log?: TreeLoggers
   ) {
     this.element = element;
     this.options = { ...options };
 
-    this.engine = new TreeEngine<T>(this.mapToEngineConfig(options));
+    this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(options), log });
 
     // Use provided renderer or default DomRenderer
     this.renderer = renderer ?? new DomRenderer<T>();
@@ -673,19 +677,10 @@ export class WebTreeView<T = any> {
       onNodeExpand: this.event(o.onNodeExpand),
       onNodeCollapse: this.event(o.onNodeCollapse),
       // Expand gate: core runBeforeCallbackEager keeps a sync hook synchronous; an async
-      // one yields a Promise. A rejected Promise is warned here and read as `false`.
+      // one yields a Promise. A throw / rejection is reported by core through the
+      // element's logger (error) and cancels — the node stays collapsed.
       beforeExpandCallback: this.wrap(o.beforeExpandCallback, 'expand', (f) => (engineCtx: object) => {
-        const guarded = (ctx: unknown) => {
-          const r = (f as (c: unknown) => unknown)(ctx);
-          if (r && typeof (r as PromiseLike<unknown>).then === 'function') {
-            return Promise.resolve(r).catch((error) => {
-              console.warn('[web-treeview] beforeExpandCallback rejected — the node stays collapsed', error);
-              return false;
-            });
-          }
-          return r;
-        };
-        const result = runBeforeCallbackEager(guarded, this.ctx(engineCtx), 'beforeExpandCallback');
+        const result = runBeforeCallbackEager(f as (c: unknown) => unknown, this.ctx(engineCtx), 'beforeExpandCallback');
         return result instanceof Promise ? result.then(internalGate) : internalGate(result);
       }),
       beforeCopyCallback: this.syncGate(o.beforeCopyCallback, 'beforeCopyCallback'),

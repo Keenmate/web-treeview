@@ -39,7 +39,6 @@ async function exercise(page: Page) {
 }
 
 test('silent by default: building, clicking, expanding and dragging log nothing', async ({ page }) => {
-  test.fail(true, 'NOTES.md #24');
   const logs = collectConsole(page);
   await load(page);
   await exercise(page);

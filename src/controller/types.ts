@@ -380,6 +380,8 @@ export interface BeforePasteContext<T> {
 // ─── Controller props ─────────────────────────────────────────────────────
 
 export interface TreeEngineConfig<T> {
+  /** Loggers to log through (the element's instance loggers); defaults to the TREEVIEW category loggers. */
+  log?: import('../logger').TreeLoggers;
   // MAPPINGS
   idMember: string;
   pathMember: string;

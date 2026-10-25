@@ -12,6 +12,27 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 
 ---
 
+## Open questions for the user (2026-10-24 e2e run)
+
+- **TV-4** (PageUp/PageDown + Shift-extend): feature work — implement? The 10
+  `keyboard-nav.spec.ts` placeholders stay `test.skip` until then.
+- **D1 for the treeview** (#15): should a DOM move keep expansion / selection /
+  checks (activate/deactivate like core's model), as decided for dropzone /
+  editor / daterangepicker? Pinned as `test.fail` assuming yes.
+- **TV-5** (#5) no longer reproduces — close it?
+- **TV-1** (#1): the `insertBranch` mixed-validity test stays skipped — which
+  items should count as invalid for `addNode` (empty / duplicate path? missing
+  id?) needs a decision before the return shape (`failed`) can be specified.
+- **No expand/collapse event**: lazy loading has to hook `node-click` or
+  `tree-change` (a toggle click emits only `tree-change`). Add a
+  `node-expand` / `node-collapse` event (with a before-hook for async loads)?
+- **Context menu keyboard**: only item shortcut letters + Escape work; no
+  ArrowUp/Down/Enter navigation inside the menu (a11y). Wanted?
+- **#16 / is-sorted semantics**: fix the code (one sibling-sort meaning) or
+  document "is-sorted = input pre-sorted, parents first"?
+
+---
+
 ## 1. (TV-1) `insertBranch` never reports failures
 
 **Where:** `src/ltree/ltree.ts` `insertBranch()` (~1541-1556).

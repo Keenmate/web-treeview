@@ -176,7 +176,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `el.prop = x; el.method()` sees x (NOTES #13; via `el.controller` ✓) | △ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
-| Lifecycle: re-parent keeps expansion/selection/checks (NOTES #15) | ✗ (test.fail) | `lifecycle.spec.ts` | `lifecycle.html` |
+| Lifecycle: re-parent / remove + re-append keeps expansion, selection, checks, focus, search (NOTES #15, D1) | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
+| Lifecycle: virtual-scroll offset survives a move | ✓ | `lifecycle.spec.ts` | `virtual-scroll.html` |
+| Lifecycle: no duplicated document/window listeners after N moves; released while detached; open context menu closes on a move | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Logging silent by default (NOTES #24) | ✗ (test.fail) | `logging.spec.ts` | `logging.html` |
 | `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
 | `should-display-debug-information`, `tree-id` | ✓ | `logging.spec.ts` | `logging.html` |

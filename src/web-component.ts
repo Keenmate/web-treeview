@@ -14,8 +14,9 @@
  * facade, the event bridges, and the custom-styles injection.
  *
  * Reactivity model: the tree (`WebTreeView` → engine + renderer) applies every
- * config change in place via `update()`; it is built once per connect and
- * destroyed on disconnect (a DOM move rebuilds it). Every input is `on:'update'`:
+ * config change in place via `update()`; it is built once (first connect) and
+ * kept across a DOM move — disconnect()/connect() only deactivate/activate its
+ * live resources, so all runtime state survives (D1). Every input is `on:'update'`:
  * `update()` sends the full config, and WebTreeView memoizes its callback
  * adapters, so re-sending an unchanged callback costs nothing.
  */
@@ -404,15 +405,24 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#treeview.update(cfg as Partial<TreeViewConfig<T>>);
   }
 
-  /** Activate: ensure the engine exists (a DOM move destroyed it in disconnect()). */
+  /**
+   * Activate (every connect, after any reinit()/update()): re-attach the live
+   * resources. The tree is built once (reinit) and survives a DOM move with all
+   * its state; build only if it doesn't exist yet.
+   */
   protected override connect(): void {
     if (!this.#treeview) this.#buildEngine();
+    else this.#treeview.activate();
   }
 
-  /** Deactivate: tear the engine down (rebuilt on the next connect). */
+  /**
+   * Deactivate (every disconnect — a DOM move or a removal): stop ONLY the live
+   * resources (document listeners, observers, autoUpdate, open popups). The
+   * engine + renderer are kept, so expansion, selection, checks, focus, search
+   * and the scroll offset survive a move (D1).
+   */
   protected override disconnect(): void {
-    this.#treeview?.destroy();
-    this.#treeview = undefined;
+    this.#treeview?.deactivate();
   }
 
   // ── engine lifecycle ──────────────────────────────────────────────────────

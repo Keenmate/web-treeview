@@ -100,6 +100,14 @@ camelCase `on*` twin (core) that receives the **detail**.
 
 ### Fixed
 
+- **A DOM move keeps the tree's state (D1).** Re-parenting `<web-treeview>` (or
+  removing and re-appending it) used to destroy and rebuild the engine, losing
+  expansion, selection, checks, focus and the scroll offset. The tree is now built once and
+  kept: a disconnect only stops live resources (environment / size observers, document
+  listeners, context-menu autoUpdate, open context menu and tooltips, an in-flight touch
+  drag, the cross-tree clipboard registration) and a reconnect restarts them and restores
+  the scroll offset — core's build-once + activate/deactivate lifecycle. Custom renderers
+  can implement the new optional `TreeViewRenderer.activate()` / `deactivate()`.
 - **Emoji icons render.** An `iconMember` / `iconCallback` value that isn't a CSS class list
   (an emoji such as `🗂️`, a symbol) went onto the `<i>` as a class, so the icon slot stayed
   empty. Such a value is now rendered as the icon's text; class lists (`fa-solid fa-user`)

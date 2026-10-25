@@ -15,9 +15,8 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 ## Open questions for the user (2026-10-24 e2e run)
 
 - ~~**TV-4** (PageUp/PageDown + Shift-extend)~~ — implemented 2026-10-25 (see #4).
-- **D1 for the treeview** (#15): should a DOM move keep expansion / selection /
-  checks (activate/deactivate like core's model), as decided for dropzone /
-  editor / daterangepicker? Pinned as `test.fail` assuming yes.
+- ~~**D1 for the treeview** (#15)~~ — decided (a move keeps ALL state) and
+  implemented 2026-10-25 (see #15).
 - **TV-5** (#5) no longer reproduces — close it?
 - **TV-1** (#1): the `insertBranch` mixed-validity test stays skipped — which
   items should count as invalid for `addNode` (empty / duplicate path? missing
@@ -300,7 +299,24 @@ Worth auditing the other inputs without a `default` for the same pattern.
 
 **Test status:** `attr-reactivity.spec.ts` "expand-level removed" is `test.fail`.
 
-## 15. A DOM move rebuilds the tree — expansion, selection, checks, focus lost
+## 15. ~~A DOM move rebuilds the tree — expansion, selection, checks, focus lost~~ — resolved
+
+**Resolved 2026-10-25 (D1: a DOM move keeps ALL state).** The `WebTreeView`
+(engine + renderer) is built once in `reinit()` and kept; `disconnect()` →
+`WebTreeView.deactivate()` stops only live resources — renderer: environment /
+size observers, the document `dragend` listener, context-menu autoUpdate +
+keydown, shown tooltips; engine: open context menu (its document / window
+dismiss listeners), an in-flight touch drag, the cross-tree clipboard registry
+entry. `connect()` → `activate()` restarts them and restores the body scroll
+offset (tracked while connected — a detached element reads 0 and the browser
+resets it on re-insert). Body listeners live inside the shadow root and stay
+attached. Expansion, selection, checks, focus, search and scroll survive a move
+and a remove + re-append. Tests: the two `test.fail` in `lifecycle.spec.ts`
+are green; added remove + re-append, virtual-scroll offset, "no duplicated
+document/window listeners after N moves" (+ released while detached) and
+"open context menu closes on a move" tests.
+
+Original report:
 
 **Where:** `src/web-component.ts` `disconnect()` (~404-407) destroys the
 `WebTreeView` (engine + renderer); `connect()` (~399-401) builds a fresh one
@@ -322,7 +338,7 @@ selection / listeners). **Confirm with the user** that D1 applies here too.
 autoUpdate, document-level listeners, context menu), restart them in
 `connect()`; destroy on `reinit()` only.
 
-**Test status:** two `test.fail` in `lifecycle.spec.ts`.
+**Test status:** was two `test.fail` in `lifecycle.spec.ts` — now passing.
 
 ## 16. `sortCallback` means two different things depending on `is-sorted`
 
@@ -498,3 +514,18 @@ or a `{ show?, hide? }` object (property), validated in one place.
 through `dragLogger.debug` (or delete them).
 
 **Test status:** `logging.spec.ts` "silent by default" is `test.fail`.
+
+## 25. Double-click tracker ignores Ctrl/Shift-clicks and checkbox clicks in between
+
+**Where:** `src/controller/tree-engine.ts` `detectDoubleClick()` (~4137) — only
+plain clicks update `_lastClickPath` / `_lastClickTime`.
+
+**Symptom:** plain-click A1, Ctrl+click B, click A2's checkbox, then plain-click
+A1 again — all within 400 ms — reads as a double-click on A1: `node-double-click`
+fires, `node-click` / `selection-change` do not. Found while writing the D1
+lifecycle tests (fast Playwright clicks); unlikely by hand but possible.
+
+**Suggested fix:** reset the tracker on any intervening click on another node
+(modifier click or checkbox toggle).
+
+**Test status:** none (the lifecycle test clicks a different row to stay clear).

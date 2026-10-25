@@ -104,6 +104,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _containerBox: ElementSize = { width: 0, height: 0 };
   private _stopEnvObserve: (() => void) | null = null;
   private _stopSizeObserve: (() => void) | null = null;
+  // False between deactivate() and activate() (the host element is detached).
+  private _isActive = false;
+  // Last body scroll offset while connected (a detached element reads scrollTop 0,
+  // and the browser resets it when the host's layout box is rebuilt) — restored on activate().
+  private _lastScroll = { top: 0, left: 0 };
 
   mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void {
     this.container = container;
@@ -161,19 +166,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Responsive env for NodeRenderContext. Seed synchronously so the initial render has
     // the right device class; then observe — only a device-class FLIP forces a re-render.
     this._deviceClass = classifyDevice(getEnvironment());
-    this._stopEnvObserve = observeEnvironment((env) => {
-      const dc = classifyDevice(env);
-      if (dc !== this._deviceClass) {
-        this._deviceClass = dc;
-        if (this.controller) this._fullRender(this.controller.getSnapshot());
-      }
-    });
-    this._stopSizeObserve = observeElementSize(container, (size) => {
-      this._containerBox = size;
-    });
+    this._isActive = true;
+    this._startObservers();
 
     // Wire event delegation
     this._attachBodyListeners();
+    document.addEventListener('dragend', this._onDocumentDragEnd);
 
     // Subscribe to controller
     this.unsubState = controller.on('state-change', (snapshot) => this._onStateChange(snapshot));
@@ -229,6 +227,74 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.container = null;
     this.controller = null;
     this.lastSnapshot = null;
+    this._isActive = false;
+  }
+
+  // ── Activate / deactivate (host DOM move — core build-once lifecycle) ──
+
+  /**
+   * The host was detached (a DOM move or a removal). Stop the LIVE resources —
+   * environment / size observers, the document `dragend` listener, the context
+   * menu's floating-ui autoUpdate + keydown handler, shown tooltips — and keep
+   * the rendered rows and all state. The body listeners live on elements inside
+   * the shadow root, so they move with it and stay attached (no duplicates on
+   * reconnect). The body scroll offset is tracked while connected (a detached
+   * element reads 0 and the browser resets it on re-insert); activate() restores
+   * it. Idempotent.
+   */
+  deactivate(): void {
+    if (!this._isActive) return;
+    this._isActive = false;
+    this._closeAllSubmenus();
+    this._ctxCleanupAutoUpdate?.();
+    this._ctxCleanupAutoUpdate = null;
+    this._removeCtxKeydownHandler();
+    for (const h of this.tooltips.values()) h.hide();
+    this._stopEnvObserve?.();
+    this._stopSizeObserve?.();
+    this._stopEnvObserve = null;
+    this._stopSizeObserve = null;
+    document.removeEventListener('dragend', this._onDocumentDragEnd);
+  }
+
+  /** The host was re-attached: restart what {@link deactivate} stopped and restore the scroll offset. Idempotent. */
+  activate(): void {
+    if (this._isActive || !this.container) return;
+    this._isActive = true;
+    document.addEventListener('dragend', this._onDocumentDragEnd);
+    // The environment may have changed while detached — re-render only on a device-class flip.
+    const dc = classifyDevice(getEnvironment());
+    if (dc !== this._deviceClass) {
+      this._deviceClass = dc;
+      if (this.controller) this._fullRender(this.controller.getSnapshot());
+    }
+    this._startObservers();
+    const saved = { ...this._lastScroll };
+    if ((saved.top || saved.left) && this.bodyEl) {
+      // Force the re-inserted host's layout first: the browser builds the new
+      // scroll box (offset 0) on the next layout, which would otherwise discard
+      // a restore made against the old one.
+      void this.bodyEl.scrollHeight;
+      this.bodyEl.scrollTop = saved.top;
+      this.bodyEl.scrollLeft = saved.left;
+    }
+  }
+
+  /** Start the environment + container-size observers (mount / activate). */
+  private _startObservers(): void {
+    if (!this.container) return;
+    this._stopEnvObserve?.();
+    this._stopSizeObserve?.();
+    this._stopEnvObserve = observeEnvironment((env) => {
+      const dc = classifyDevice(env);
+      if (dc !== this._deviceClass) {
+        this._deviceClass = dc;
+        if (this.controller) this._fullRender(this.controller.getSnapshot());
+      }
+    });
+    this._stopSizeObserve = observeElementSize(this.container, (size) => {
+      this._containerBox = size;
+    });
   }
 
   // ── Theme ───────────────────────────────────────────────────────────
@@ -658,6 +724,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _onContainerDrop = (event: DragEvent) => this.controller?.handleTreeZoneDrop(event);
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
+  /** Remember the body scroll offset while connected (restored by activate()). */
+  private _onBodyScrollTrack = () => {
+    if (!this._isActive || !this.bodyEl || !this.bodyEl.isConnected) return;
+    this._lastScroll = { top: this.bodyEl.scrollTop, left: this.bodyEl.scrollLeft };
+  };
+
   private _onVirtualScroll = () => {
     if (this._vsRafPending || !this.bodyEl) return;
     this._vsRafPending = true;
@@ -727,10 +799,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.addEventListener('drop', this._onBodyDrop);
     this.bodyEl.addEventListener('dragenter', this._onBodyDragEnter);
     this.bodyEl.addEventListener('touchstart', this._onBodyTouchStart, { passive: true });
+    this.bodyEl.addEventListener('scroll', this._onBodyScrollTrack, { passive: true });
     // dragend fires on the SOURCE element after any drag ends (drop, cancel, cross-tree)
     this.bodyEl.addEventListener('dragend', this._onBodyDragEnd);
-    // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl
-    document.addEventListener('dragend', this._onDocumentDragEnd);
+    // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl —
+    // the document-level dragend listener is a LIVE resource, attached in mount() /
+    // activate() and removed in deactivate() / destroy().
     // Tree-level drop zone: fallback dragover/drop on the whole container (gated
     // inside the controller handlers by shouldEnableTreeDropZone).
     if (this.container) {
@@ -750,6 +824,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.removeEventListener('drop', this._onBodyDrop);
     this.bodyEl.removeEventListener('dragenter', this._onBodyDragEnter);
     this.bodyEl.removeEventListener('touchstart', this._onBodyTouchStart);
+    this.bodyEl.removeEventListener('scroll', this._onBodyScrollTrack);
     this.bodyEl.removeEventListener('dragend', this._onBodyDragEnd);
     this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
     document.removeEventListener('dragend', this._onDocumentDragEnd);

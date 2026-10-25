@@ -937,6 +937,16 @@
               "default": "undefined"
             },
             {
+              "kind": "field",
+              "name": "isActive",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "true",
+              "description": "False between deactivate() and activate() (the host is detached)."
+            },
+            {
               "kind": "method",
               "name": "getPublicController",
               "return": {
@@ -2578,6 +2588,26 @@
             },
             {
               "kind": "method",
+              "name": "deactivate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was detached (a DOM move or a removal): stop live resources only\n(document listeners, observers, autoUpdate, open popups). Tree state, the\nrendered rows and the scroll offset survive; activate resumes.\nIdempotent."
+            },
+            {
+              "kind": "method",
+              "name": "activate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was re-attached: restart what deactivate stopped. Idempotent."
+            },
+            {
+              "kind": "method",
               "name": "destroy",
               "return": {
                 "type": {
@@ -3549,7 +3579,7 @@
                   "text": "void"
                 }
               },
-              "description": "Activate: ensure the engine exists (a DOM move destroyed it in disconnect())."
+              "description": "Activate (every connect, after any reinit()/update()): re-attach the live\nresources. The tree is built once (reinit) and survives a DOM move with all\nits state; build only if it doesn't exist yet."
             },
             {
               "kind": "method",
@@ -3560,7 +3590,7 @@
                   "text": "void"
                 }
               },
-              "description": "Deactivate: tear the engine down (rebuilt on the next connect)."
+              "description": "Deactivate (every disconnect — a DOM move or a removal): stop ONLY the live\nresources (document listeners, observers, autoUpdate, open popups). The\nengine + renderer are kept, so expansion, selection, checks, focus, search\nand the scroll offset survive a move (D1)."
             },
             {
               "kind": "method",
@@ -11581,6 +11611,26 @@
             },
             {
               "kind": "method",
+              "name": "deactivate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was detached (a DOM move or a removal): stop the LIVE resources —\nclose the context menu (drops its document / window listeners), abort an\nin-flight touch drag (document touch listeners + ghost), and leave the\ncross-tree clipboard registry so a removed tree isn't pinned in memory. The\ntree, expansion, selection, checks, focus and search are untouched."
+            },
+            {
+              "kind": "method",
+              "name": "activate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was re-attached: rejoin the cross-tree clipboard registry."
+            },
+            {
+              "kind": "method",
               "name": "destroy",
               "description": "Clean up document-level listeners and ghost elements."
             },
@@ -13534,6 +13584,24 @@
               "default": "null"
             },
             {
+              "kind": "field",
+              "name": "_isActive",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_lastScroll",
+              "type": {
+                "text": "object"
+              },
+              "privacy": "private",
+              "default": "{ top: 0, left: 0 }"
+            },
+            {
               "kind": "method",
               "name": "mount",
               "return": {
@@ -13587,6 +13655,37 @@
                   "text": "void"
                 }
               }
+            },
+            {
+              "kind": "method",
+              "name": "deactivate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was detached (a DOM move or a removal). Stop the LIVE resources —\nenvironment / size observers, the document `dragend` listener, the context\nmenu's floating-ui autoUpdate + keydown handler, shown tooltips — and keep\nthe rendered rows and all state. The body listeners live on elements inside\nthe shadow root, so they move with it and stay attached (no duplicates on\nreconnect). The body scroll offset is tracked while connected (a detached\nelement reads 0 and the browser resets it on re-insert); activate() restores\nit. Idempotent."
+            },
+            {
+              "kind": "method",
+              "name": "activate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was re-attached: restart what deactivate stopped and restore the scroll offset. Idempotent."
+            },
+            {
+              "kind": "method",
+              "name": "_startObservers",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Start the environment + container-size observers (mount / activate)."
             },
             {
               "kind": "method",
@@ -13675,9 +13774,14 @@
             },
             {
               "kind": "field",
-              "name": "_onVirtualScroll",
+              "name": "_onBodyScrollTrack",
               "privacy": "private",
-              "description": "RAF-throttled virtual scroll handler — uses fast synchronous path"
+              "description": "Remember the body scroll offset while connected (restored by activate())."
+            },
+            {
+              "kind": "field",
+              "name": "_onVirtualScroll",
+              "privacy": "private"
             },
             {
               "kind": "method",

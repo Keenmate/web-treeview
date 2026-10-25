@@ -89,6 +89,8 @@ export class WebTreeView<T = any> {
   private wrapCache = new WeakMap<object, Map<string, unknown>>();
   private nodeCtxProto: object | null = null;
   private lastFocusedPath: string | null | undefined = undefined;
+  /** False between deactivate() and activate() (the host is detached). */
+  private isActive = true;
 
   constructor(
     element: HTMLElement,
@@ -556,9 +558,31 @@ export class WebTreeView<T = any> {
     this.renderer.destroy();
     this.renderer = renderer;
     this.renderer.mount(this.element, this.engine, { ...this.mapToRendererConfig(this.options), ...(config || {}) });
+    if (!this.isActive) this.renderer.deactivate?.();
   }
 
   // ── Lifecycle ───────────────────────────────────────────────────────
+
+  /**
+   * The host was detached (a DOM move or a removal): stop live resources only
+   * (document listeners, observers, autoUpdate, open popups). Tree state, the
+   * rendered rows and the scroll offset survive; {@link activate} resumes.
+   * Idempotent.
+   */
+  deactivate(): void {
+    if (!this.isActive) return;
+    this.isActive = false;
+    this.engine.deactivate();
+    this.renderer.deactivate?.();
+  }
+
+  /** The host was re-attached: restart what {@link deactivate} stopped. Idempotent. */
+  activate(): void {
+    if (this.isActive) return;
+    this.isActive = true;
+    this.engine.activate();
+    this.renderer.activate?.();
+  }
 
   destroy(): void {
     this.renderer.destroy();

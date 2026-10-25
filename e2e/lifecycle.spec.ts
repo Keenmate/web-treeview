@@ -30,7 +30,6 @@ async function setUpState(page: Page) {
 }
 
 test('re-parenting keeps expansion, selection, checks and focus', async ({ page }) => {
-  test.fail(true, 'NOTES.md #15');
   await load(page);
   await setUpState(page);
   const rowsBefore = await rows(page);
@@ -52,7 +51,6 @@ test('after a move, clicks and keys still work and fire exactly once', async ({ 
   await page.evaluate(() => (window as any).moveTo('slot-b'));
   await page.evaluate(() => { document.querySelector('[data-testid="lc-log"]')!.textContent = ''; });
 
-  // Root rows only — expansion survival is pinned separately (NOTES.md #15).
   await nodeContent(nodeByPath(page, '2')).click();
   await expect.poll(() => logLines(page, LOG)).toContain('node-click:2');
   await page.waitForTimeout(100);
@@ -64,7 +62,6 @@ test('after a move, clicks and keys still work and fire exactly once', async ({ 
 });
 
 test('detached for a while then re-attached: state survives, no rebuild flash', async ({ page }) => {
-  test.fail(true, 'NOTES.md #15');
   await load(page);
   await setUpState(page);
   const rowsBefore = await rows(page);
@@ -85,4 +82,124 @@ test('a config change made while detached is applied on reconnect', async ({ pag
     parent.appendChild(t);
   });
   await expect(page.locator('.wtv__checkbox')).toHaveCount(0);
+});
+
+test('remove + re-append (synchronous) keeps expansion, selection, checks, focus and search', async ({ page }) => {
+  await load(page);
+  await setUpState(page);
+  await page.evaluate(() => { (window as any).tree.searchText = 'A'; });
+  const rowsBefore = await rows(page);
+  const focusedBefore = await page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
+
+  await page.evaluate(() => {
+    const t = (window as any).tree;
+    const parent = t.parentElement;
+    t.remove();
+    parent.appendChild(t);
+  });
+
+  expect(await rows(page)).toEqual(rowsBefore);
+  expect(await selected(page)).toEqual(['1.1', '2']);
+  expect(await page.evaluate(() => [...(window as any).tree.getCheckedPaths()])).toEqual(['1.2']);
+  expect(await page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe(focusedBefore);
+  expect(await page.evaluate(() => (window as any).tree.searchText)).toBe('A');
+});
+
+test('a move keeps the virtual-scroll offset and the rendered window', async ({ page }) => {
+  await page.goto('/test/virtual-scroll.html?mode=virtual');
+  await expect(nodeByPath(page, '1.1')).toBeAttached();
+  const vsBody = page.locator('.wtv__virtual-scroll').first();
+  const rowH = await nodeByPath(page, '1').evaluate((el) => el.getBoundingClientRect().height);
+  await vsBody.evaluate((el, top) => { el.scrollTop = top; el.dispatchEvent(new Event('scroll')); }, rowH * 2500);
+  await expect(nodeByPath(page, '26')).toBeVisible();
+  const before = await vsBody.evaluate((el) => el.scrollTop);
+  expect(before).toBeGreaterThan(0);
+
+  // Re-parent into a new wrapper (remove + insert elsewhere).
+  await page.evaluate(() => {
+    const t = (window as any).tree as HTMLElement;
+    const wrap = document.createElement('div');
+    document.body.appendChild(wrap);
+    wrap.appendChild(t);
+  });
+
+  expect(await vsBody.evaluate((el) => el.scrollTop)).toBe(before);
+  await expect(nodeByPath(page, '26')).toBeVisible();
+  await expect(nodeByPath(page, '1.1')).toHaveCount(0);
+});
+
+/** Track the document / window listeners currently attached, per `target:type`. */
+async function trackGlobalListeners(page: Page) {
+  await page.addInitScript(() => {
+    const live = new Map<string, Set<unknown>>();
+    (window as any).__globalListeners = () => {
+      const out: Record<string, number> = {};
+      for (const [k, set] of live) if (set.size) out[k] = set.size;
+      return out;
+    };
+    for (const [name, target] of [['doc', document], ['win', window]] as const) {
+      const add = target.addEventListener;
+      const remove = target.removeEventListener;
+      target.addEventListener = function (this: EventTarget, type: string, listener: any, opts?: any) {
+        const k = `${name}:${type}`;
+        if (!live.has(k)) live.set(k, new Set());
+        if (!(typeof opts === 'object' && opts?.once)) live.get(k)!.add(listener);
+        return add.call(this, type, listener, opts);
+      } as typeof target.addEventListener;
+      target.removeEventListener = function (this: EventTarget, type: string, listener: any, opts?: any) {
+        live.get(`${name}:${type}`)?.delete(listener);
+        return remove.call(this, type, listener, opts);
+      } as typeof target.removeEventListener;
+    }
+  });
+}
+
+test('no duplicated listeners after N moves; detached = document listeners released', async ({ page }) => {
+  await trackGlobalListeners(page);
+  await load(page);
+  await setUpState(page);
+  const listeners = () => page.evaluate(() => (window as any).__globalListeners());
+  const baseline = await listeners();
+  expect(baseline['doc:dragend']).toBeGreaterThanOrEqual(1);
+
+  // Detached: the tree's document-level dragend listener is released.
+  const detached = await page.evaluate(() => {
+    const t = (window as any).tree;
+    const parent = t.parentElement;
+    t.remove();
+    const snap = (window as any).__globalListeners();
+    parent.appendChild(t);
+    return snap;
+  });
+  expect(detached['doc:dragend'] ?? 0).toBe(baseline['doc:dragend'] - 1);
+
+  for (let i = 0; i < 6; i++) {
+    await page.evaluate((slot) => (window as any).moveTo(slot), i % 2 ? 'slot-a' : 'slot-b');
+  }
+  expect(await listeners()).toEqual(baseline);
+
+  // Behaviour after the moves: one click → one event, one key → one step.
+  await page.evaluate(() => { document.querySelector('[data-testid="lc-log"]')!.textContent = ''; });
+  await nodeContent(nodeByPath(page, '1')).click();
+  await expect.poll(() => logLines(page, LOG)).toContain('node-click:1');
+  await page.waitForTimeout(100);
+  expect((await logLines(page, LOG)).filter((l) => l.startsWith('node-click:'))).toEqual(['node-click:1']);
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(() => page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe('2');
+});
+
+test('an open context menu closes on a move and leaves no document listeners behind', async ({ page }) => {
+  await trackGlobalListeners(page);
+  await load(page);
+  await page.evaluate(() => { (window as any).tree.getContextMenuItemsCallback = () => ['copy', 'delete']; });
+  const baseline = await page.evaluate(() => (window as any).__globalListeners());
+
+  await page.evaluate(() => (window as any).tree.openContextMenu('1', 50, 50));
+  await expect(page.locator('.wtv__context-menu')).toBeVisible();
+  // The menu's dismiss listeners attach on the next frame.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+
+  await page.evaluate(() => (window as any).moveTo('slot-b'));
+  await expect(page.locator('.wtv__context-menu')).toBeHidden();
+  expect(await page.evaluate(() => (window as any).__globalListeners())).toEqual(baseline);
 });

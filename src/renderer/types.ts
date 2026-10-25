@@ -17,6 +17,14 @@ export interface TreeViewRenderer<T = any> {
   updateConfig(config: Partial<RendererConfig<T>>): void;
   /** Tear down DOM and unsubscribe from controller events. */
   destroy(): void;
+  /**
+   * The host was detached (a DOM move or a removal): stop LIVE resources only —
+   * document / window listeners, observers, floating-ui autoUpdate, open
+   * popups — and keep the rendered DOM and all state. Optional; idempotent.
+   */
+  deactivate?(): void;
+  /** The host was re-attached: restart what {@link deactivate} stopped. Optional; idempotent. */
+  activate?(): void;
 }
 
 export interface RendererConfig<T> {

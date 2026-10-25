@@ -3740,6 +3740,27 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     };
   }
 
+  /**
+   * The host was detached (a DOM move or a removal): stop the LIVE resources —
+   * close the context menu (drops its document / window listeners), abort an
+   * in-flight touch drag (document touch listeners + ghost), and leave the
+   * cross-tree clipboard registry so a removed tree isn't pinned in memory. The
+   * tree, expansion, selection, checks, focus and search are untouched.
+   */
+  deactivate(): void {
+    if (this._contextMenuVisible) this.closeContextMenu();
+    if (typeof document !== 'undefined' && (this.touchDragState.node || this._boundDocTouchMove)) {
+      this.removeGhostElement();
+      this._resetTouchState();
+    }
+    unregisterClipboardTree(this._treeId, this);
+  }
+
+  /** The host was re-attached: rejoin the cross-tree clipboard registry. */
+  activate(): void {
+    registerClipboardTree(this._treeId, this);
+  }
+
   /** Clean up document-level listeners and ghost elements. */
   destroy() {
     if (typeof document !== 'undefined') {

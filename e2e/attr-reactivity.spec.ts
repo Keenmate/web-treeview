@@ -60,7 +60,6 @@ test('setAttributes applies a batch at once (settled on return)', async ({ page 
 
 test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
   test('data assignment then getNodeByPath', async ({ page }) => {
-    test.fail(true, 'NOTES.md #13');
     await load(page);
     const name = await page.evaluate(() => {
       const t = (window as any).tree;
@@ -71,7 +70,6 @@ test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
   });
 
   test('checkboxMode assignment then checkNode', async ({ page }) => {
-    test.fail(true, 'NOTES.md #13');
     await load(page);
     const checked = await page.evaluate(() => {
       const t = (window as any).tree;

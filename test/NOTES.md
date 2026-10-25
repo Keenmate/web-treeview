@@ -340,7 +340,11 @@ before any callback runs.
 **Test status:** `expand-members.spec.ts` "getIsExpandedCallback seeds
 expansion per node" is `test.fail`.
 
-## 13. Public element methods don't `flush()` pending property writes
+## 13. ~~Public element methods don't `flush()` pending property writes~~ — fixed
+
+**Fixed 2026-10-25:** every public element method goes through a private `#live` getter that calls `this.flush()` first (core rule), so `el.data = more; el.getNodeByPath('3.1')` and `el.checkboxMode = 'independent'; el.checkNode('1')` see the write. Both `test.fail`s in `attr-reactivity.spec.ts` pass.
+
+Original report:
 
 **Where:** `src/web-component.ts` — the proxied methods (`getNodeByPath`,
 `checkNode`, `expandAll`, …, ~536-820) call `this.#treeview?.x()` directly.

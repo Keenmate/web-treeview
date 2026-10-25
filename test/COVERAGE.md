@@ -182,7 +182,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets (NOTES #14) | ✗ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
-| `el.prop = x; el.method()` sees x (NOTES #13; via `el.controller` ✓) | △ (test.fail) | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| `el.prop = x; el.method()` sees x (NOTES #13; element methods flush first) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Lifecycle: re-parent / remove + re-append keeps expansion, selection, checks, focus, search (NOTES #15, D1) | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Lifecycle: virtual-scroll offset survives a move | ✓ | `lifecycle.spec.ts` | `virtual-scroll.html` |

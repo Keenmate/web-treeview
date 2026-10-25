@@ -571,72 +571,79 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Public methods (proxy to engine) ───────────────────────────────────────
 
+  /** The live tree after applying pending property writes (`flush()`), so
+   *  `el.prop = x; el.method()` sees `x` (core rule; NOTES #13). */
+  get #live(): WebTreeView<T> | undefined {
+    this.flush();
+    return this.#treeview;
+  }
+
   expandAll(nodePath?: string | string[] | null, options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.#treeview?.expandAll(nodePath, options);
+    this.#live?.expandAll(nodePath, options);
   }
 
   collapseAll(nodePath?: string | string[] | null, options?: { noEmit?: boolean }): void {
-    this.#treeview?.collapseAll(nodePath, options);
+    this.#live?.collapseAll(nodePath, options);
   }
 
   expandNodes(nodePath: string | string[], options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.#treeview?.expandNodes(nodePath, options);
+    this.#live?.expandNodes(nodePath, options);
   }
 
   collapseNodes(nodePath: string | string[], options?: { noEmit?: boolean }): void {
-    this.#treeview?.collapseNodes(nodePath, options);
+    this.#live?.collapseNodes(nodePath, options);
   }
 
   filterNodes(searchText: string): void {
-    this.#treeview?.filterNodes(searchText);
+    this.#live?.filterNodes(searchText);
   }
 
   searchNodes(searchText: string | null): LTreeNode<T>[] {
-    return this.#treeview?.searchNodes(searchText) ?? [];
+    return this.#live?.searchNodes(searchText) ?? [];
   }
 
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean> {
-    return this.#treeview?.scrollToPath(path, options) ?? Promise.resolve(false);
+    return this.#live?.scrollToPath(path, options) ?? Promise.resolve(false);
   }
 
   closeContextMenu(): void {
-    this.#treeview?.closeContextMenu();
+    this.#live?.closeContextMenu();
   }
 
   getExpandedPaths(): string[] {
-    return this.#treeview?.getExpandedPaths() ?? [];
+    return this.#live?.getExpandedPaths() ?? [];
   }
 
   setExpandedPaths(paths: string[]): void {
-    this.#treeview?.setExpandedPaths(paths);
+    this.#live?.setExpandedPaths(paths);
   }
 
   getVisibleFlatNodes(): LTreeNode<T>[] {
-    return this.#treeview?.getVisibleFlatNodes() ?? [];
+    return this.#live?.getVisibleFlatNodes() ?? [];
   }
 
   getNodeByPath(path: string): LTreeNode<T> | null {
-    return this.#treeview?.getNodeByPath(path) ?? null;
+    return this.#live?.getNodeByPath(path) ?? null;
   }
 
   getAllData(): T[] {
-    return this.#treeview?.getAllData() ?? [];
+    return this.#live?.getAllData() ?? [];
   }
 
   moveNode(sourcePath: string, targetPath: string, position: DropPosition): any {
-    return this.#treeview?.moveNode(sourcePath, targetPath, position);
+    return this.#live?.moveNode(sourcePath, targetPath, position);
   }
 
   removeNode(path: string, includeDescendants?: boolean): any {
-    return this.#treeview?.removeNode(path, includeDescendants);
+    return this.#live?.removeNode(path, includeDescendants);
   }
 
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any {
-    return this.#treeview?.addNode(parentPath, nodeData, pathSegment);
+    return this.#live?.addNode(parentPath, nodeData, pathSegment);
   }
 
   updateNode(path: string, dataUpdates: Partial<T>): any {
-    return this.#treeview?.updateNode(path, dataUpdates);
+    return this.#live?.updateNode(path, dataUpdates);
   }
 
   /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
@@ -647,11 +654,11 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     siblingPath?: string,
     position?: 'before' | 'after'
   ): any {
-    return this.#treeview?.copyNodeWithDescendants(sourceNode, targetParentPath, transform, siblingPath, position);
+    return this.#live?.copyNodeWithDescendants(sourceNode, targetParentPath, transform, siblingPath, position);
   }
 
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any {
-    return this.#treeview?.moveNodes(paths, targetPath, position);
+    return this.#live?.moveNodes(paths, targetPath, position);
   }
 
   duplicateNodes(
@@ -661,180 +668,180 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     transform?: NodeTransformCallback<T>,
     sourceTree?: Ltree<T>
   ): any {
-    return this.#treeview?.duplicateNodes(paths, targetPath, position, transform, sourceTree);
+    return this.#live?.duplicateNodes(paths, targetPath, position, transform, sourceTree);
   }
 
   /** Apply a batch of add / update / remove changes. */
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
-    return this.#treeview?.applyChanges(changes) ?? { successful: 0, failed: [] };
+    return this.#live?.applyChanges(changes) ?? { successful: 0, failed: [] };
   }
 
   /** Access the underlying LTree for advanced programmatic usage. */
   getTree(): Ltree<T> | undefined {
-    return this.#treeview?.getTree();
+    return this.#live?.getTree();
   }
 
   getChildren(parentPath: string): LTreeNode<T>[] {
-    return this.#treeview?.getChildren(parentPath) ?? [];
+    return this.#live?.getChildren(parentPath) ?? [];
   }
 
   getSiblings(path: string): LTreeNode<T>[] {
-    return this.#treeview?.getSiblings(path) ?? [];
+    return this.#live?.getSiblings(path) ?? [];
   }
 
   /** The node at `path` with its live parent and siblings. */
   getNodeRef(path: string): NodeRef<T> {
-    return this.#treeview?.getNodeRef(path) ?? { path, node: null, parent: null, siblings: [] };
+    return this.#live?.getNodeRef(path) ?? { path, node: null, parent: null, siblings: [] };
   }
 
   getFocusedNode(): LTreeNode<T> | null {
-    return this.#treeview?.getFocusedNode() ?? null;
+    return this.#live?.getFocusedNode() ?? null;
   }
 
   /** Open the context menu for the node at `path` at viewport coordinates. */
   openContextMenu(path: string, x: number, y: number): void {
-    this.#treeview?.openContextMenu(path, x, y);
+    this.#live?.openContextMenu(path, x, y);
   }
 
   // ── Bulk operations ─────────────────────────────────────────────────────────
 
   insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
-    return this.#treeview?.insertBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
+    return this.#live?.insertBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
   }
 
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
-    return this.#treeview?.replaceBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Not initialized' };
+    return this.#live?.replaceBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Not initialized' };
   }
 
   deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
-    return this.#treeview?.deleteBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
+    return this.#live?.deleteBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
   }
 
   // ── Selection (focus + multi-select) ────────────────────────────────────────
 
   selectNode(path: string, mode: SelectMode = 'replace', options?: TreeMutationOptions): void {
-    this.#treeview?.selectNode(path, mode, options);
+    this.#live?.selectNode(path, mode, options);
   }
 
   selectNodes(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.selectNodes(paths, options);
+    this.#live?.selectNodes(paths, options);
   }
 
   setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.setSelectedPaths(paths, options);
+    this.#live?.setSelectedPaths(paths, options);
   }
 
   selectAll(options?: TreeMutationOptions): void {
-    this.#treeview?.selectAll(options);
+    this.#live?.selectAll(options);
   }
 
   clearSelection(paths?: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.clearSelection(paths, options);
+    this.#live?.clearSelection(paths, options);
   }
 
   getSelectedNodes(): LTreeNode<T>[] {
-    return this.#treeview?.getSelectedNodes() ?? [];
+    return this.#live?.getSelectedNodes() ?? [];
   }
 
   getSelectedPaths(): Set<string> {
-    return this.#treeview?.getSelectedPaths() ?? new Set();
+    return this.#live?.getSelectedPaths() ?? new Set();
   }
 
   isNodeSelected(path: string): boolean {
-    return this.#treeview?.isNodeSelected(path) ?? false;
+    return this.#live?.isNodeSelected(path) ?? false;
   }
 
   // ── Checked (checkbox data state) ───────────────────────────────────────────
 
   checkNode(path: string, options?: TreeMutationOptions): void {
-    this.#treeview?.checkNode(path, options);
+    this.#live?.checkNode(path, options);
   }
 
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.checkNodes(paths, options);
+    this.#live?.checkNodes(paths, options);
   }
 
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.setCheckedPaths(paths, options);
+    this.#live?.setCheckedPaths(paths, options);
   }
 
   checkAll(options?: TreeMutationOptions): void {
-    this.#treeview?.checkAll(options);
+    this.#live?.checkAll(options);
   }
 
   uncheckNode(path: string, options?: TreeMutationOptions): void {
-    this.#treeview?.uncheckNode(path, options);
+    this.#live?.uncheckNode(path, options);
   }
 
   clearChecked(paths?: string[], options?: TreeMutationOptions): void {
-    this.#treeview?.clearChecked(paths, options);
+    this.#live?.clearChecked(paths, options);
   }
 
   getCheckedNodes(): LTreeNode<T>[] {
-    return this.#treeview?.getCheckedNodes() ?? [];
+    return this.#live?.getCheckedNodes() ?? [];
   }
 
   getCheckedPaths(): Set<string> {
-    return this.#treeview?.getCheckedPaths() ?? new Set();
+    return this.#live?.getCheckedPaths() ?? new Set();
   }
 
   isNodeChecked(path: string): boolean {
-    return this.#treeview?.isNodeChecked(path) ?? false;
+    return this.#live?.isNodeChecked(path) ?? false;
   }
 
   // ── Focus (single cursor) ───────────────────────────────────────────────────
 
   focusNode(path: string, options?: TreeMutationOptions): void {
-    this.#treeview?.focusNode(path, options);
+    this.#live?.focusNode(path, options);
   }
 
   clearFocus(options?: TreeMutationOptions): void {
-    this.#treeview?.clearFocus(options);
+    this.#live?.clearFocus(options);
   }
 
   // ── Expand toggle (honors isAccordionExpand) ────────────────────────────────
 
   toggleNodeExpanded(path: string): void {
-    this.#treeview?.toggleNodeExpanded(path);
+    this.#live?.toggleNodeExpanded(path);
   }
 
   // ── Insert diagnostics ──────────────────────────────────────────────────────
 
   /** Result of the most recent insertArray (successful / failed / failedDetails). */
   getInsertResult() {
-    return this.#treeview?.getInsertResult();
+    return this.#live?.getInsertResult();
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
-  navTo(path: string): void { this.#treeview?.navTo(path); }
-  navNext(): void { this.#treeview?.navNext(); }
-  navPrev(): void { this.#treeview?.navPrev(); }
-  navNextSibling(): void { this.#treeview?.navNextSibling(); }
-  navPrevSibling(): void { this.#treeview?.navPrevSibling(); }
-  navInto(): void { this.#treeview?.navInto(); }
-  navOut(): void { this.#treeview?.navOut(); }
-  navBackOut(): void { this.#treeview?.navBackOut(); }
-  navToggle(): void { this.#treeview?.navToggle(); }
-  navFirst(): void { this.#treeview?.navFirst(); }
-  navLast(): void { this.#treeview?.navLast(); }
-  navPageDown(): void { this.#treeview?.navPageDown(); }
-  navPageUp(): void { this.#treeview?.navPageUp(); }
-  navSelectNext(): void { this.#treeview?.navSelectNext(); }
-  navSelectPrev(): void { this.#treeview?.navSelectPrev(); }
-  navSelectFirst(): void { this.#treeview?.navSelectFirst(); }
-  navSelectLast(): void { this.#treeview?.navSelectLast(); }
-  navSelectPageDown(): void { this.#treeview?.navSelectPageDown(); }
-  navSelectPageUp(): void { this.#treeview?.navSelectPageUp(); }
+  navTo(path: string): void { this.#live?.navTo(path); }
+  navNext(): void { this.#live?.navNext(); }
+  navPrev(): void { this.#live?.navPrev(); }
+  navNextSibling(): void { this.#live?.navNextSibling(); }
+  navPrevSibling(): void { this.#live?.navPrevSibling(); }
+  navInto(): void { this.#live?.navInto(); }
+  navOut(): void { this.#live?.navOut(); }
+  navBackOut(): void { this.#live?.navBackOut(); }
+  navToggle(): void { this.#live?.navToggle(); }
+  navFirst(): void { this.#live?.navFirst(); }
+  navLast(): void { this.#live?.navLast(); }
+  navPageDown(): void { this.#live?.navPageDown(); }
+  navPageUp(): void { this.#live?.navPageUp(); }
+  navSelectNext(): void { this.#live?.navSelectNext(); }
+  navSelectPrev(): void { this.#live?.navSelectPrev(); }
+  navSelectFirst(): void { this.#live?.navSelectFirst(); }
+  navSelectLast(): void { this.#live?.navSelectLast(); }
+  navSelectPageDown(): void { this.#live?.navSelectPageDown(); }
+  navSelectPageUp(): void { this.#live?.navSelectPageUp(); }
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
 
   copyNodes(paths?: string[]): void {
-    this.#treeview?.copyNodes(paths);
+    this.#live?.copyNodes(paths);
   }
 
   cutNodes(paths?: string[]): void {
-    this.#treeview?.cutNodes(paths);
+    this.#live?.cutNodes(paths);
   }
 
   /** Paste under / beside `targetPath`; `transform(ctx{ data, … })` overrides nodeInputTransformationCallback. */
@@ -843,23 +850,23 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     transform?: NodeTransformCallback<T> | null,
     position?: DropPosition
   ): PasteResult<T> {
-    return this.#treeview?.pasteNodes(targetPath, transform, position) ?? { success: false, count: 0, skipped: 0, error: 'Not initialized' };
+    return this.#live?.pasteNodes(targetPath, transform, position) ?? { success: false, count: 0, skipped: 0, error: 'Not initialized' };
   }
 
   cancelCut(): void {
-    this.#treeview?.cancelCut();
+    this.#live?.cancelCut();
   }
 
   deleteNodes(paths?: string[]): { removed: number; blocked: number } {
-    return this.#treeview?.deleteNodes(paths) ?? { removed: 0, blocked: 0 };
+    return this.#live?.deleteNodes(paths) ?? { removed: 0, blocked: 0 };
   }
 
   hasClipboardContent(): boolean {
-    return this.#treeview?.hasClipboardContent() ?? false;
+    return this.#live?.hasClipboardContent() ?? false;
   }
 
   getClipboardOperation(): 'copy' | 'cut' | null {
-    return this.#treeview?.getClipboardOperation() ?? null;
+    return this.#live?.getClipboardOperation() ?? null;
   }
 
   /**

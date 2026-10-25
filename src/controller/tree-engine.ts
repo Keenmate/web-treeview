@@ -2436,8 +2436,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     };
 
     return {
+      // Every built-in keyboard move lands here: select + focus, then bring the
+      // row into view (block 'nearest' — no scroll when it's already visible).
       navTo: (path: string) => {
         this.selectNode(path);
+        this.revealNode(path);
       },
 
       navNext: () => {
@@ -2616,6 +2619,61 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this._applySelection(path, { ctrl: false, shift: true });
+    this.revealNode(path);
+  }
+
+  /** Bumped per revealNode() call — a newer keyboard move supersedes a pending one. */
+  private _revealToken = 0;
+
+  /**
+   * Keyboard navigation's scroll-into-view (svelte-treeview's navTo →
+   * scrollToPath, but `block: 'nearest'`: scrolls only when the row is off-screen,
+   * no highlight, no expand). Virtual scroll: the scroll offset is moved to the
+   * row FIRST (nearest edge), so the pending render slices a window that contains
+   * it. The DOM step runs after the scheduled render (microtask) and retries over
+   * a few frames while progressive rendering hasn't reached the row yet. Mouse
+   * clicks don't go through here.
+   */
+  revealNode(path: string): void {
+    const root = this.containerElement;
+    if (!root || typeof requestAnimationFrame === 'undefined') return;
+    const token = ++this._revealToken;
+    const scrollEl = root.querySelector('.wtv__tree') as HTMLElement | null;
+
+    if (this._isVirtualScrollEnabled && scrollEl) {
+      const idx = this.allVisibleFlatNodes.findIndex((n) => n.path === path);
+      if (idx >= 0) {
+        const rowHeight = this.resolvedRowHeight;
+        const top = idx * rowHeight;
+        const bottom = top + rowHeight;
+        const viewHeight = scrollEl.clientHeight || parseFloat(this.resolvedContainerHeight) || 400;
+        let scrollTop = scrollEl.scrollTop;
+        if (top < scrollTop) scrollTop = top;
+        else if (bottom > scrollTop + viewHeight) scrollTop = bottom - viewHeight;
+        if (scrollTop !== scrollEl.scrollTop) {
+          scrollEl.scrollTop = scrollTop;
+          this._vsScrollTop = scrollEl.scrollTop;
+          this._scheduleNotify();
+        }
+      }
+    }
+
+    const findRow = (): HTMLElement | null => {
+      const nodeEl = root.querySelector(`.wtv__node[data-tree-path="${CSS.escape(path)}"]`);
+      return (nodeEl?.querySelector(':scope > .wtv__node-row') ?? nodeEl) as HTMLElement | null;
+    };
+    let framesLeft = 30;
+    const attempt = () => {
+      if (token !== this._revealToken) return; // superseded by a newer move
+      const row = findRow();
+      if (row) {
+        row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        return;
+      }
+      if (framesLeft-- > 0) requestAnimationFrame(attempt);
+    };
+    // After the render the selection change scheduled (a microtask).
+    queueMicrotask(() => queueMicrotask(attempt));
   }
 
   // ── Clipboard API ─────────────────────────────────────────────────

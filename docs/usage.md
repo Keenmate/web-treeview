@@ -443,6 +443,14 @@ object, so inside a `function` override `this` is the active navigation (`this.n
 move. `el.controller.nav*()` routes through the overrides too. `beforeKeydownCallback` still runs
 first and can suppress a key entirely.
 
+Every keyboard move scrolls the newly focused node into view with `block: 'nearest'` — nothing
+moves while the row is already visible; otherwise the nearest scroll container (and the page, if
+needed) scrolls just enough to show it. This covers all `nav*` / `navSelect*` moves, PageUp/PageDown,
+Home/End and `navInto` after a lazy load. With virtual scroll the scroll offset moves to the row
+first, so it gets rendered. Mouse clicks don't scroll. The scroll lives in the default `navTo` (and
+in the Shift-extend moves) — an overridden `navTo` decides for itself (call
+`el.controller.scrollToPath(path, …)` if you want a scroll).
+
 ```js
 // ArrowDown / ArrowUp walk every visible row (into children) instead of jumping between siblings.
 tree.navigationOverrides = {

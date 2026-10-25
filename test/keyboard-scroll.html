@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Keyboard navigation scrolls the focused node into view</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        #box { height: 300px; overflow: auto; max-width: 480px; border: 1px solid #ccc; }
+        web-treeview { display: block; }
+    </style>
+</head>
+<body>
+    <!--
+      200 root rows (paths 1 … 200) in a 300px scroll box (#box).
+      ?override=1  navigationOverrides.navTo = select only (no scroll)
+    -->
+    <div id="box"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        const data = Array.from({ length: 200 }, (_, i) => ({ id: `n${i + 1}`, path: `${i + 1}`, name: `Row ${i + 1}` }));
+        setupTree(tree, data);
+        if (params.get('override')) {
+            tree.navigationOverrides = {
+                navTo(path) { tree.selectNode(path); },
+            };
+        }
+        document.getElementById('box').appendChild(tree);
+        window.tree = tree;
+        window.box = document.getElementById('box');
+    </script>
+</body>
+</html>

@@ -50,6 +50,11 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 
 ### Added
 
+- **Keyboard navigation scrolls the focused node into view** (svelte-treeview's navTo → scroll,
+  with `block: 'nearest'` — only when the row is off-screen). Every `nav*` / `navSelect*` move,
+  PageUp/PageDown, Home/End and `navInto` after a lazy load; virtual scroll moves its offset first so
+  the row renders. Mouse clicks don't scroll. Lives in the default `navTo` — a
+  `navigationOverrides.navTo` override controls it.
 - **Context-menu keyboard (WAI-ARIA menu).** Shift+F10 / the ContextMenu key open the
   focused node's menu with the first item focused; ↑↓ (wrap, skip disabled / dividers),
   Home/End, →/Enter open a submenu on its first item, ←/Esc close it back to the parent

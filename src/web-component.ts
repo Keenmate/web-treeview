@@ -79,6 +79,34 @@ const toDropZoneStart = () =>
     { validate: (v): v is number | string => typeof v === 'number' || typeof v === 'string' },
   );
 
+/**
+ * `tooltip-delay`: the attribute takes one integer (ms, sets show AND hide); the
+ * JS property also accepts `{ show?, hide? }` (NOTES #23 — `toInt()` rejected the
+ * object). Non-negative integers only; one place validates both paths.
+ */
+type TooltipDelayValue = number | { show?: number; hide?: number };
+const isDelayMs = (v: unknown): boolean => v === undefined || (Number.isInteger(v) && (v as number) >= 0);
+const toTooltipDelay = () =>
+  toCustom<TooltipDelayValue>(
+    (raw, reportInvalid) => {
+      if (raw === null) return undefined as unknown as TooltipDelayValue;
+      const n = Number(raw.trim());
+      if (raw.trim() === '' || !Number.isInteger(n) || n < 0) {
+        reportInvalid?.('not a non-negative integer (ms)');
+        return undefined as unknown as TooltipDelayValue;
+      }
+      return n;
+    },
+    {
+      validate: (v): v is TooltipDelayValue =>
+        v == null ||
+        (typeof v === 'number' && isDelayMs(v)) ||
+        (typeof v === 'object' && !Array.isArray(v) &&
+          Object.keys(v as object).every((k) => k === 'show' || k === 'hide') &&
+          isDelayMs((v as { show?: unknown }).show) && isDelayMs((v as { hide?: unknown }).hide)),
+    },
+  );
+
 // ============================================================================
 // INPUT TABLE — the whole <web-treeview> public surface, one row each.
 //
@@ -138,7 +166,7 @@ const INPUTS: readonly InputDef[] = [
   // ── Node tooltips (hover/focus) ─────────────────────────────────────────────
   { configKey: 'shouldShowNodeTooltips', attribute: 'show-node-tooltips', converter: toBool('default-false'), on: 'update', description: 'Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback).' },
   { configKey: 'tooltipPlacement', attribute: 'tooltip-placement', converter: toEnum(['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'] as const), on: 'update', description: 'Tooltip placement relative to the row. Default top-start.' },
-  { configKey: 'tooltipDelay', attribute: 'tooltip-delay', converter: toInt(), on: 'update', type: 'number | { show?: number; hide?: number }', description: 'Show/hide delay (ms). The attribute sets both; the JS property also accepts { show, hide }. Default { show: 400, hide: 100 }.' },
+  { configKey: 'tooltipDelay', attribute: 'tooltip-delay', converter: toTooltipDelay(), on: 'update', type: 'number | { show?: number; hide?: number }', description: 'Show/hide delay (ms). The attribute sets both; the JS property also accepts { show, hide }. Default { show: 400, hide: 100 }.' },
   { configKey: 'tooltipOffset', attribute: 'tooltip-offset', converter: toInt(), on: 'update', description: 'Gap from the row (or cursor), px. Default 8.' },
   { configKey: 'tooltipFollowCursor', attribute: 'tooltip-follow-cursor', converter: toBool('default-false'), on: 'update', description: 'Anchor the tooltip to the pointer instead of the row.' },
   { configKey: 'iconSet', attribute: 'icon-set', converter: toEnum(['chevron', 'triangle', 'plus-minus', 'arrow'] as const), on: 'update', shouldReflect: true, description: 'Disclosure glyph set: chevron (default) | triangle | plus-minus | arrow. Re-points the --wtv-icon-* variables via a :host([icon-set]) rule; reflected to the attribute so the CSS matches when set via the JS property.' },

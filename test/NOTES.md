@@ -601,7 +601,11 @@ zone or reject feedback is wanted.
 
 **Test status:** two `test.fail` in `drag-visuals.spec.ts`.
 
-## 23. `tooltipDelay = { show, hide }` is rejected by the input converter
+## 23. ~~`tooltipDelay = { show, hide }` is rejected by the input converter~~ — fixed
+
+**Fixed 2026-10-25:** `tooltipDelay` uses a `toCustom` converter (`toTooltipDelay`): the attribute parses one non-negative integer (sets show and hide; anything else is reported invalid), the property accepts that or `{ show?, hide? }` with non-negative integer members. The `test.fail` in `tooltip.spec.ts` passes.
+
+Original report:
 
 **Where:** `src/web-component.ts` ~140 — `tooltipDelay` uses `toInt()`, but
 its documented type is `number | { show?: number; hide?: number }` ("the JS

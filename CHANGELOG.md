@@ -66,6 +66,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - A `renderEmptyZoneCallback` assigned after the first render fills the empty drop zone (NOTES #20).
 - A Ctrl copy-drop (same tree or A → B) runs the source tree's `nodeOutputTransformationCallback` before the input transform, as the clipboard does (NOTES #21).
 - A desktop drop on a node with `isDropAllowed: false` fires `node-drop-reject` (+ 🚫), or lands on the tree with `enable-tree-drop-zone` (NOTES #22).
+- `el.tooltipDelay = { show, hide }` is accepted (the converter rejected the documented object form) (NOTES #23).
 
 ### Added
 

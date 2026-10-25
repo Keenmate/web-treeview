@@ -177,7 +177,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | Node tooltips (text, rich, follow-cursor, toggle off) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
 | `tooltip-placement` / `-offset`, `tooltip-delay` attribute | ✓ | `tooltip.spec.ts` | `tooltip.html` |
-| `tooltipDelay = { show, hide }` property (NOTES #23) | ✗ (test.fail) | `tooltip.spec.ts` | `tooltip.html` |
+| `tooltipDelay = { show, hide }` property (NOTES #23) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
 | Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets to roots only (NOTES #14) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |

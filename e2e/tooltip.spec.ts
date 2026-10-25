@@ -104,7 +104,6 @@ test('tooltip-delay attribute: no tooltip before the show delay, then it appears
 });
 
 test('tooltipDelay = { show, hide } (JS property): instant show, delayed hide', async ({ page }) => {
-	test.fail(true, 'NOTES.md #23');
 	await row(page, 'delayed', '1.1').hover();
 	const tip = page.locator('#delayed .wtv__tooltip.wtv__tooltip--visible');
 	await expect(tip).toBeVisible({ timeout: 150 });

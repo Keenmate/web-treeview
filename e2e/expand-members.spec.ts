@@ -60,7 +60,6 @@ test('is-expanded-member seeds expansion from data (overrides expand-level=0)', 
 });
 
 test('getIsExpandedCallback seeds expansion per node (callback reads node.data)', async ({ page }) => {
-  test.fail(true, 'NOTES.md #12');
   await load(page, 'callback');
   await expect.poll(() => rows(page)).toEqual(['1', '1.1', '2', '3', '3.1']);
 });

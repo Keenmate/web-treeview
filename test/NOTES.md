@@ -318,7 +318,11 @@ snapshot) so the facade skips that one `focus-change`.
 
 **Test status:** two `test.fail` in `selection-api.spec.ts`.
 
-## 12. Per-node `get*Callback`s see `node.data === undefined` during the initial load
+## 12. ~~Per-node `get*Callback`s see `node.data === undefined` during the initial load~~ — fixed
+
+**Fixed 2026-10-25:** `insertArray()` assigns `node.data = row` right after the path/level mapping, before any `get*Callback` runs (as `insertBranch` / `addNode` already did). The `test.fail` in `expand-members.spec.ts` passes.
+
+Original report:
 
 **Where:** `src/ltree/ltree.ts` `insertArray()` (~292-314): the per-node
 callbacks (`getIsExpandedCallback`, `getIsSelectableCallback`,

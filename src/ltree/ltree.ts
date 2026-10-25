@@ -289,6 +289,10 @@ export function createLTree<T>(
 				if (!shouldCalculateLevel) node.level = getField(row, _levelMember!);
 				else node.level = getLevel(node.path, this.treePathSeparator);
 
+				// Assign data BEFORE the get*Callback evaluations so consumer callbacks
+				// reading node.data see the real row (NOTES #12; same as insertBranch).
+				node.data = row;
+
 				// isExpanded: callback > member > expandLevel
 				if (_getIsExpandedCallback) node.isExpanded = _getIsExpandedCallback(node);
 				else if (!shouldCalculateIsExpanded) node.isExpanded = getField(row, _isExpandedMember!);

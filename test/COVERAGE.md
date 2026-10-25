@@ -59,7 +59,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
 | `get/setExpandedPaths` round-trip | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-expanded-member` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
-| `getIsExpandedCallback` reading `node.data` (NOTES #12) | ✗ (test.fail) | `expand-members.spec.ts` | `expand-members.html` |
+| `getIsExpandedCallback` reading `node.data` on the initial load (NOTES #12) | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-collapsible-member` ignores toggle | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `scroll-highlight-class` / `-timeout` | ✓ | `nav-api.spec.ts` | `nav-api.html` |
 

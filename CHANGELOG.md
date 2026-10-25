@@ -57,6 +57,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - Flat / progressive inputs (`flat-indent-size`, `use-flat-rendering`, `progressive-render`, `initial-batch-size`, `max-batch-size`) apply at runtime, not only at construction (NOTES #9).
 - Progressive rendering no longer stalls or drops rows when the tree changes while batches are pending; its bookkeeping is keyed by path, not id (NOTES #10).
 - `{ silent: true }` on `focusNode` / `clearFocus` / `selectNode` (and the other selection methods) no longer fires `focus-change` (NOTES #11).
+- Per-node `get*Callback`s see `node.data` during the initial load (NOTES #12).
 
 ### Added
 

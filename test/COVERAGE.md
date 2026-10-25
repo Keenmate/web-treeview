@@ -25,19 +25,21 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Custom `tree-path-separator` (`/`, `::`) | ✓ | `data.spec.ts` | `data.html` |
 | `insertResult` diagnostics (orphans, empty, duplicate) | ✓ | `data.spec.ts` | `data.html` |
 | `display-value-fallback` | ✓ | `data.spec.ts` | `data.html` |
-| `isSorted` / `orderMember` / `sortCallback` order | ✗ | | |
-| `getDisplayValueCallback` | ✗ | | |
-| `parentPathMember` / `levelMember` / `idMember` | ✗ | | |
-| `data` reassign re-renders | ✗ | | |
+| Default display-value order, `order-member`, `sortCallback` + `is-sorted` | ✓ | `data-members.spec.ts` | `data-members.html` |
+| Sibling `sortCallback` without `is-sorted` (NOTES #16) | ✗ (test.fail) | `data-members.spec.ts` | `data-members.html` |
+| `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `data` reassign re-renders, keeps collapsed state (NOTES #17) | △ (test.fail) | `data-members.spec.ts` | `data-members.html` |
 | Leaf ↔ folder toggle reconciliation | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Per-row class hooks (`getNodeClassCallback` / `getNodeContentClassCallback`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Per-node icons (`icon-member`, `icon-color-member`, emoji, `renderIconCallback`) | ✓ | `node-icons.spec.ts` | `node-icons.html` |
 | `icon-set` (chevron/triangle/plus-minus/arrow, custom classes) | ✓ | `icon-set.spec.ts` | `icon-set.html` |
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
-| Empty-state / loading / header / footer / empty-zone callbacks | ✗ | | |
-| `no-data-text`, `is-loading` | ✗ | | |
-| `getCustomStylesCallback` lands in the shadow root | ✗ | | |
-| `body-class`, `leaf-icon-class`, `align-node-icons` | ✗ | | |
+| Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `renderLoadingCallback` (NOTES #19), late `renderEmptyZoneCallback` (NOTES #20) | ✗ (test.fail) | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `no-data-text`, `is-loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `use-flat-rendering` + `flat-indent-size` (runtime change: NOTES #9) | △ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `progressive-render` batches complete (NOTES #10) | ✗ (test.fail) | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
@@ -141,8 +143,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | Filter / clear / Escape / `searchNodes` | ✓ | `search.spec.ts` | `search.html` |
 | Result navigation expands + scrolls collapsed hits | ✓ | `search-deep.spec.ts` | `search-deep.html` |
-| `search-text` attribute, `searchValueMember` / `getSearchValueCallback` | ✗ | | |
-| Internal index off; `filterNodes` | ✗ | | |
+| `search-text` attribute / `searchText` prop at runtime (NOTES #18) | ✗ (test.fail) | `search-config.spec.ts` | `search-config.html` |
+| `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
+| Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 
 ## 9. Context menu & actions
 

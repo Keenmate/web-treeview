@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Search configuration</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <!--
+      ?mode=member    (default) search-value-member="tags"
+      ?mode=callback  getSearchValueCallback → `${code} ${name}`
+      ?mode=off       should-use-internal-search-index="false"
+    -->
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const mode = new URLSearchParams(location.search).get('mode') ?? 'member';
+        const data = [
+            { id: 1, path: '1', name: 'Europe', tags: 'continent', code: 'EU' },
+            { id: 11, path: '1.1', name: 'London', tags: 'capital rain', code: 'LON' },
+            { id: 12, path: '1.2', name: 'Paris', tags: 'capital croissant', code: 'PAR' },
+            { id: 2, path: '2', name: 'Asia', tags: 'continent', code: 'AS' },
+            { id: 21, path: '2.1', name: 'Tokyo', tags: 'capital sushi', code: 'TYO' },
+            { id: 22, path: '2.2', name: 'Osaka', tags: 'city takoyaki', code: 'OSA' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const tree = document.createElement('web-treeview');
+        tree.id = 'tree';
+        tree.setAttribute('expand-level', '2');
+        tree.setAttribute('should-use-internal-search-index', mode === 'off' ? 'false' : 'true');
+        const extra = {};
+        if (mode === 'member' || mode === 'off') extra.searchValueMember = 'tags';
+        if (mode === 'callback') extra.getSearchValueCallback = ({ node }) => `${node.data.code} ${node.data.name}`;
+        setupTree(tree, data, extra);
+        document.getElementById('host').appendChild(tree);
+        window.tree = tree;
+        window.rowNames = () => [...tree.shadowRoot.querySelectorAll('.wtv__node .wtv__node-label')].map((l) => l.textContent);
+        window.found = (q) => tree.searchNodes(q).map((n) => n.data.name).sort();
+    </script>
+</body>
+</html>

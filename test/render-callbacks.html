@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Render callbacks / container options</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        section { border: 1px solid #ddd; padding: 0.25rem; }
+        web-treeview { display: block; }
+    </style>
+</head>
+<body>
+    <section><web-treeview id="empty-default"></web-treeview></section>
+    <section><web-treeview id="empty-text" no-data-text="Nothing here"></web-treeview></section>
+    <section><web-treeview id="empty-cb"></web-treeview></section>
+    <section><web-treeview id="empty-zone" show-drop-placeholder-when-empty="true"></web-treeview></section>
+    <section><web-treeview id="chrome" expand-level="2" body-class="my-body" leaf-icon-class="my-leaf"></web-treeview></section>
+    <section><web-treeview id="loading" is-loading="true"></web-treeview></section>
+    <section><web-treeview id="loading-cb" is-loading="true"></web-treeview></section>
+    <section><web-treeview id="icons" expand-level="2" icon-member="icon" align-node-icons="false"></web-treeview></section>
+    <section><web-treeview id="icons-aligned" expand-level="2" icon-member="icon"></web-treeview></section>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'Folder', icon: '📁' },
+            { id: 11, path: '1.1', name: 'File', icon: '📄' },
+            { id: 12, path: '1.2', name: 'Plain' },
+            { id: 2, path: '2', name: 'Other' }
+        ];
+        const $ = (id) => document.getElementById(id);
+
+        await customElements.whenDefined('web-treeview');
+        setupTree($('empty-default'), []);
+        setupTree($('empty-text'), []);
+        setupTree($('empty-cb'), [], {
+            renderEmptyStateCallback: ({ containerElement }) => {
+                containerElement.innerHTML = '<b class="custom-empty">Custom empty</b>';
+            }
+        });
+        // Render first, assign the zone callback afterwards (deterministic order).
+        setupTree($('empty-zone'), []);
+        await $('empty-zone').whenSettled();
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        $('empty-zone').renderEmptyZoneCallback = ({ containerElement }) => {
+            containerElement.innerHTML = '<i class="custom-zone">Paste or drop here</i>';
+        };
+        setupTree($('chrome'), data, {
+            renderHeaderCallback: ({ containerElement }) => { containerElement.innerHTML = '<h4 class="custom-header">Header</h4>'; },
+            renderFooterCallback: ({ containerElement }) => { containerElement.innerHTML = '<small class="custom-footer">Footer</small>'; },
+            getCustomStylesCallback: () => '.wtv__node-label { letter-spacing: 3px; }'
+        });
+        setupTree($('loading'), []);
+        setupTree($('loading-cb'), [], {
+            renderLoadingCallback: ({ containerElement }) => {
+                containerElement.innerHTML = '<span class="custom-loading">Loading…</span>';
+            }
+        });
+        setupTree($('icons'), data);
+        setupTree($('icons-aligned'), data);
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+import { test, expect, type Page, nodeByPath } from './fixtures';
+
+/**
+ * Container render callbacks + cosmetic container options
+ * (/test/render-callbacks.html — one tree per feature, by id).
+ */
+
+const PAGE = '/test/render-callbacks.html';
+const tree = (page: Page, id: string) => page.locator(`web-treeview#${id}`);
+
+test.beforeEach(async ({ page }) => {
+  await page.goto(PAGE);
+  await expect(nodeByPath(tree(page, 'chrome'), '1.1')).toBeVisible();
+});
+
+test.describe('empty tree', () => {
+  test('default empty state reads "No data"', async ({ page }) => {
+    await expect(tree(page, 'empty-default').locator('.wtv__empty-state')).toHaveText('No data');
+  });
+
+  test('no-data-text replaces the default text', async ({ page }) => {
+    await expect(tree(page, 'empty-text').locator('.wtv__empty-state')).toHaveText('Nothing here');
+  });
+
+  test('renderEmptyStateCallback renders into the empty-state container', async ({ page }) => {
+    await expect(tree(page, 'empty-cb').locator('.wtv__empty-state .custom-empty')).toHaveText('Custom empty');
+  });
+
+  test('show-drop-placeholder-when-empty keeps the drop zone up instead of the empty state', async ({ page }) => {
+    const t = tree(page, 'empty-zone');
+    await expect(t.locator('.wtv__empty-zone')).toBeVisible();
+    await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
+  });
+
+  test('renderEmptyZoneCallback (assigned after markup upgrade) fills the zone', async ({ page }) => {
+    test.fail(true, 'NOTES.md #20');
+    const t = tree(page, 'empty-zone');
+    await expect(t.locator('.wtv__empty-zone .custom-zone')).toHaveText('Paste or drop here', { timeout: 2000 });
+  });
+});
+
+test.describe('loading', () => {
+  test('is-loading shows the loading overlay (and no empty state)', async ({ page }) => {
+    const t = tree(page, 'loading');
+    await expect(t.locator('.wtv__loading-overlay')).toBeVisible();
+    await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
+  });
+
+  test('turning is-loading off hides the overlay and shows the empty state', async ({ page }) => {
+    const t = tree(page, 'loading');
+    await t.evaluate((el) => el.removeAttribute('is-loading'));
+    await expect(t.locator('.wtv__loading-overlay')).toBeHidden();
+    await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
+  });
+
+  test('renderLoadingCallback renders the loading content', async ({ page }) => {
+    test.fail(true, 'NOTES.md #19');
+    await expect(tree(page, 'loading-cb').locator('.custom-loading')).toHaveText('Loading…', { timeout: 2000 });
+  });
+});
+
+test.describe('header / footer / styles', () => {
+  test('renderHeaderCallback and renderFooterCallback fill the header and footer', async ({ page }) => {
+    const t = tree(page, 'chrome');
+    await expect(t.locator('.wtv__header .custom-header')).toHaveText('Header');
+    await expect(t.locator('.wtv__footer .custom-footer')).toHaveText('Footer');
+  });
+
+  test('getCustomStylesCallback CSS lands in the shadow root and applies', async ({ page }) => {
+    const t = tree(page, 'chrome');
+    expect(await t.evaluate((el) => !!el.shadowRoot?.querySelector('style.tv-custom-styles'))).toBe(true);
+    // not leaked to the document
+    expect(await page.evaluate(() => document.head.querySelector('style.tv-custom-styles'))).toBeNull();
+    const ls = await nodeByPath(t, '1.1').locator('.wtv__node-label').evaluate((el) => getComputedStyle(el).letterSpacing);
+    expect(ls).toBe('3px');
+  });
+
+  test('body-class lands on the tree body; leaf-icon-class on leaf toggles only', async ({ page }) => {
+    const t = tree(page, 'chrome');
+    await expect(t.locator('.wtv__tree')).toHaveClass(/\bmy-body\b/);
+    await expect(nodeByPath(t, '1.1').locator('.wtv__toggle-icon').first()).toHaveClass(/\bmy-leaf\b/);
+    await expect(nodeByPath(t, '1').locator('> .wtv__node-row .wtv__toggle-icon').first()).not.toHaveClass(/\bmy-leaf\b/);
+  });
+});
+
+test.describe('align-node-icons (default on)', () => {
+  test('align-node-icons="false": a node with no icon has no icon element', async ({ page }) => {
+    const t = tree(page, 'icons');
+    await expect(nodeByPath(t, '1.1').locator('.wtv__node-icon')).toHaveCount(1);
+    await expect(nodeByPath(t, '1.2').locator('.wtv__node-icon')).toHaveCount(0);
+  });
+
+  test('default: every row reserves the icon column (labels line up)', async ({ page }) => {
+    const t = tree(page, 'icons-aligned');
+    await expect(nodeByPath(t, '1.2').locator('.wtv__node-icon')).toHaveCount(1);
+    const x = async (p: string) => (await nodeByPath(t, p).locator('.wtv__node-label').boundingBox())!.x;
+    expect(Math.abs((await x('1.1')) - (await x('1.2')))).toBeLessThan(1);
+  });
+});

@@ -295,3 +295,101 @@ autoUpdate, document-level listeners, context menu), restart them in
 `connect()`; destroy on `reinit()` only.
 
 **Test status:** two `test.fail` in `lifecycle.spec.ts`.
+
+## 16. `sortCallback` means two different things depending on `is-sorted`
+
+**Where:** `src/ltree/ltree.ts` — with `isSorted` unset, `insertArray()`
+(~321-323) applies `sortCallback` to the WHOLE flat input list before
+inserting; with `isSorted` set, `visibleFlatNodes` (~210) applies it per
+sibling group at render time. The input docs say "Custom sibling sort" and
+"is-sorted: Keep siblings sorted".
+
+**Symptom:** a plain sibling comparator (descending by name) without
+`is-sorted` puts children before their parents in the insert order → the
+children are dropped as orphans (`insertResult.failed`), silently from the
+UI's point of view. `data-members.html?mode=callback-unsorted` renders
+Cucumber / Banana / Apple with no children.
+
+Related: with `is-sorted` the input must already list parents before
+children — a child listed before its parent is dropped as an orphan too
+(only visible in `getInsertResult().failed`).
+
+**Suggested fix:** always apply `sortCallback` per sibling group (insert in
+level/path order first), or document `is-sorted` as "input is pre-sorted
+(parents first); sortCallback orders siblings at render" and warn (console)
+when orphans appear.
+
+**Test status:** `data-members.spec.ts` "a sibling sortCallback without
+is-sorted keeps every node" is `test.fail`.
+
+## 17. Reassigning `data` re-expands branches the user collapsed (when none were open)
+
+**Where:** `src/controller/tree-engine.ts` `_reapplyExpanded()` (~3726):
+`if (... expanded.size === 0) return;` — an EMPTY preserved set is treated as
+"nothing to restore", so the fresh insert's `expand-level` seed stands.
+
+**Symptom:** expand-level=2, collapse the only branch (Apple), assign new
+`data` → Apple is open again. With at least one other branch still open the
+collapsed one stays collapsed, so the behaviour depends on unrelated state.
+
+**Suggested fix:** distinguish "no previous tree" from "previous tree had no
+expanded branches" (e.g. pass `null` vs an empty set).
+
+**Test status:** `data-members.spec.ts` "reassigning data … keeps the
+expansion" is `test.fail`.
+
+## 18. Every config update re-inserts `data` — `search-text` is wiped immediately
+
+**Where:** `src/web-component.ts` `update()` (~384-396) sends the FULL config
+(incl. `data`) on every batch; `tree-engine.ts` `updateProps()` applies
+`searchText` (~3348 → `tree.filterNodes`) and later, because `updates.data`
+is always present, `this.data = updates.data` (~3575) → `_onDataChanged()`
+(~3648) → `insertArray()`, which rebuilds the tree and drops the filter.
+
+**Symptom:** `el.setAttribute('search-text', 'sushi')` / `el.searchText = …`
+on a built tree never filters (`filterNodes()` called directly works). Side
+effects of the same root cause: ANY attribute change (e.g.
+`selected-node-class`) re-inserts and re-indexes the whole data set (cost
+grows with the tree), resets progressive rendering, and re-seeds expansion
+(see #17).
+
+**Suggested fix:** in `updateProps`, skip the re-insert when
+`updates.data === this._data` (identity), and apply `searchText` after any
+re-insert (or re-apply the active filter after `insertArray`).
+
+**Test status:** two `test.fail` in `search-config.spec.ts`.
+
+## 19. `renderLoadingCallback` is never called
+
+**Where:** declared in `web-component.ts` (~231), mapped in `treeview.ts`
+(~719) and typed in `renderer/types.ts` (~43), but `dom-renderer.ts` never
+reads it: the loading overlay is always the built-in
+`<div class="wtv__loading-spinner">` (~146-150, toggled at ~865).
+
+**Symptom:** `is-loading="true"` + `renderLoadingCallback` → only the default
+spinner; the callback never runs.
+
+**Suggested fix:** in `mount()` / `updateConfig()`, if the callback is set,
+clear `loadingEl` and call it (like header/footer).
+
+**Test status:** `render-callbacks.spec.ts` "renderLoadingCallback renders the
+loading content" is `test.fail`.
+
+## 20. `renderEmptyZoneCallback` assigned after the first render is ignored
+
+**Where:** `dom-renderer.ts` `_renderEmpty()` (~1015-1040): the
+`.wtv__empty-zone` is built (and the callback consulted) only when no zone
+exists yet; afterwards the existing zone is reused. `updateConfig()` doesn't
+reset it.
+
+**Symptom:** markup `<web-treeview show-drop-placeholder-when-empty>` + the
+callback assigned from a module script (the normal pattern — the element
+upgrades and renders first) → the zone keeps the default "Drop here" content.
+(`renderEmptyStateCallback` doesn't have this problem: it is re-run on every
+empty render.)
+
+**Suggested fix:** drop the cached zone when `renderEmptyZoneCallback` changes
+(or re-run the callback on every empty render, like the empty state).
+
+**Test status:** `render-callbacks.spec.ts` "renderEmptyZoneCallback (assigned
+after markup upgrade) fills the zone" is `test.fail`.

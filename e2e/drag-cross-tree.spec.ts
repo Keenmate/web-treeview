@@ -39,7 +39,6 @@ test.describe('same tree (baseline for the synthesized drag)', () => {
   });
 
   test('Ctrl-drop runs nodeOutputTransformationCallback on the copy', async ({ page }) => {
-    test.fail(true, 'NOTES.md #21');
     await load(page, '?redact');
     await drag(page, 'A', '2', 'A', '1', true);
     await expect.poll(() => names(page, 'A'), { timeout: 2000 }).toContain('  A-Leaf (copy)');
@@ -70,7 +69,6 @@ test.describe('A → B', () => {
   });
 
   test("the source tree's nodeOutputTransformationCallback cleans the copied data", async ({ page }) => {
-    test.fail(true, 'NOTES.md #21');
     await load(page, '?redact');
     await drag(page, 'A', '2', 'B', '1', true);
     await expect.poll(() => names(page, 'B'), { timeout: 2000 }).toContain('  A-Leaf (copy)');

@@ -554,7 +554,11 @@ empty render.)
 **Test status:** `render-callbacks.spec.ts` "renderEmptyZoneCallback (assigned
 after markup upgrade) fills the zone" is `test.fail`.
 
-## 21. `nodeOutputTransformationCallback` is not applied on copy-drop
+## 21. ~~`nodeOutputTransformationCallback` is not applied on copy-drop~~ — fixed
+
+**Fixed 2026-10-25:** `duplicateNodes()` takes an optional egress transform; both copy-drop branches pass the SOURCE tree's `nodeOutputTransformationCallback` (same tree: this engine; cross-tree: the source engine via the new optional `ClipboardSourceTree.transformOutgoing`). It runs per node on a JSON clone with the drop's `NodeTransformContext` (`phase: 'output'`) BEFORE the input transform; returning null skips the node like a hole. Both `test.fail`s in `drag-cross-tree.spec.ts` pass.
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` — the output transform runs only in
 `_collectClipboardEntry()` (~2841, clipboard copy/cut). The copy-drop branches

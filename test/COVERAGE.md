@@ -144,7 +144,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `beforeDropCallback` false / redirect / copy / `DropGroup[]` / async | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | Cross-tree move (consumer-owned, `dropped=null`), Ctrl-drag copy same/cross tree, `allow-copy` | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
-| `nodeOutputTransformationCallback` on copy-drop (NOTES #21) | ✗ (test.fail) | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
+| `nodeOutputTransformationCallback` on copy-drop, same tree + cross-tree (NOTES #21) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
 | Drag classes (`--dragged`, `dragged-node-class`, glow), floating `drop-zone-*` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Touch: `node-drag-reject` + 🚫, `indicate-undraggable=false`, `touch-drag-delay` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: drop on no-drop node refused | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |

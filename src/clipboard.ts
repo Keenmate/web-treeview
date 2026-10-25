@@ -77,6 +77,10 @@ export interface ClipboardSourceTree {
    *  siblings) — used to build a cross-tree drop's `dragged` refs from the SOURCE
    *  tree. Typed loosely (see `tree`). */
   nodeRef?(path: string): unknown;
+  /** Run the source tree's `nodeOutputTransformationCallback` over a node leaving it
+   *  (cross-tree copy-drop egress, NOTES #21). Returns the data unchanged when the
+   *  source has no output transform. Typed loosely (see `tree`). */
+  transformOutgoing?(data: unknown, ctx: unknown): unknown;
 }
 
 const _trees = new Map<string, ClipboardSourceTree>();

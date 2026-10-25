@@ -1492,7 +1492,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     targetPath: string,
     position: DropPosition,
     transform?: (data: T, ctx: NodeTransformContext<T>) => T | null,
-    sourceTree?: Ltree<T>
+    sourceTree?: Ltree<T>,
+    outgoing?: (data: T, ctx: NodeTransformContext<T>) => T | null
   ): { success: boolean; copiedNodes: LTreeNode<T>[]; skipped: number; error?: string } {
     const tree = this.tree;
     if (!tree)
@@ -1569,8 +1570,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       // NOT copied), then run the caller's input transform with a full context.
       const wrapped = (data: T, srcNode: LTreeNode<T>): T | null => {
         if (!manifest.has(srcNode.path)) return null; // hole → skip node + subtree
+        const ctx = ctxFor(srcNode, srcNode === root, index);
+        // Egress first (the SOURCE tree's output transform, phase 'output'), then the
+        // input transform — like the clipboard path (NOTES #21).
+        if (outgoing) {
+          const out = outgoing(JSON.parse(JSON.stringify(data)) as T, { ...ctx, phase: 'output' });
+          if (out == null) return null;
+          data = out;
+        }
         if (!transform) return data;
-        return transform(data, ctxFor(srcNode, srcNode === root, index));
+        return transform(data, ctx);
       };
 
       const result = tree.copyNodeWithDescendants(root, parentPath, wrapped, siblingPath, rootPosition);
@@ -3177,6 +3186,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * snapshot before it lands on the shared clipboard — it gets the SAME
    * NodeTransformContext the input transform sees (phase: 'output', target: null).
    */
+  /** This tree's `nodeOutputTransformationCallback` over a node leaving it (copy-drop
+   *  egress; also called by a TARGET tree for a cross-tree copy-drop through the
+   *  clipboard registry). Unchanged data when no output transform is set. */
+  transformOutgoing(data: T, ctx: NodeTransformContext<T>): T | null {
+    if (!this.outputTransformCb) return data;
+    return this.outputTransformCb(data, ctx);
+  }
+
   private _collectClipboardEntry(
     node: LTreeNode<T>,
     operation: ClipboardOperation,
@@ -4667,7 +4684,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
               this._getTopLevelSelectedPaths().filter((p) => p !== dropNode.path)
             )
           : this._completeManifest([draggedNodeRef.path]);
-      const result = this.duplicateNodes(manifest, dropNode.path, position, transform);
+      const result = this.duplicateNodes(
+        manifest, dropNode.path, position, transform, undefined,
+        this.outputTransformCb ? (d, ctx) => this.transformOutgoing(d, ctx) : undefined
+      );
       fireDrop(result.copiedNodes);
       return result.success;
     }
@@ -4704,7 +4724,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           dropNode ? dropNode.path : '',
           dropNode ? position : 'child',
           transform,
-          sourceTree
+          sourceTree,
+          sourceCtrl?.transformOutgoing
+            ? (d, ctx) => sourceCtrl.transformOutgoing!(d, ctx) as T | null
+            : undefined
         );
         fireDrop(result.copiedNodes);
         return result.success;

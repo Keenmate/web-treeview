@@ -113,7 +113,6 @@ test.describe('A → B with a top-level-absorbed selection (TV-5)', () => {
   });
 
   test('move: the cross-tree dragged refs carry the SOURCE nodes', async ({ page }) => {
-    test.fail(true, 'NOTES.md #26');
     await load(page, '?multi');
     await selectAbsorbed(page);
     await drag(page, 'A', '1', 'B', '1');

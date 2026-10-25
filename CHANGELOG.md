@@ -100,6 +100,11 @@ camelCase `on*` twin (core) that receives the **detail**.
 
 ### Fixed
 
+- **Cross-tree drops report the right `dragged` nodes.** On a drop from another tree,
+  `dragged` (on `node-drag-over` / `node-drop` / `beforeDropCallback`) looked the source
+  paths up in the TARGET tree, so `dragged[i].node` was whatever node the target had at
+  that path (or null). They now resolve through the source tree; path-only refs
+  (`node: null`) when the source tree isn't reachable.
 - **A DOM move keeps the tree's state (D1).** Re-parenting `<web-treeview>` (or
   removing and re-appending it) used to destroy and rebuild the engine, losing
   expansion, selection, checks, focus and the scroll offset. The tree is now built once and

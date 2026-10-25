@@ -1098,9 +1098,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * cross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.
    * Same-tree reads the live selected set (nodes resolve). Cross-tree can't see
    * the source's selection, so it reads the paths the source published on drag
-   * start (getDragSet) and builds path-only refs (node/parent null cross-tree);
-   * falls back to the lead node alone when no set was published (e.g. touch). Call
-   * BEFORE a move mutates the selected set.
+   * start (getDragSet) and resolves them through the SOURCE tree (registry) — never
+   * this one, where the same path may name a different node. Path-only refs
+   * (node/parent null) when the source isn't reachable; falls back to the lead node
+   * alone when no set was published (e.g. touch). Call BEFORE a move mutates the
+   * selected set.
    */
   private _draggedRefs(draggedNode: LTreeNode<T> | null): NodeRef<T>[] {
     if (!draggedNode) return [];
@@ -1119,7 +1121,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const set = getDragSet();
     const paths =
       set && set.sourceTreeId === draggedNode.treeId ? set.paths : [draggedNode.path];
-    return paths.map((p) => this.nodeRef(p));
+    const source = getClipboardTree(draggedNode.treeId ?? '');
+    return paths.map((p): NodeRef<T> =>
+      (source?.nodeRef?.(p) as NodeRef<T> | undefined) ?? { path: p, node: null, parent: null, siblings: [] });
   }
 
   /** Normalize a consumer drag manifest (from beforeDragStartCallback): dedupe and

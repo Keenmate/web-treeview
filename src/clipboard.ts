@@ -73,6 +73,10 @@ export interface ClipboardSourceTree {
    *  can duplicate the source's live nodes into the target. Typed loosely to avoid
    *  a circular dependency on the ltree types. */
   tree?: unknown;
+  /** Resolve one of the source tree's paths to its NodeRef (path / node / parent /
+   *  siblings) — used to build a cross-tree drop's `dragged` refs from the SOURCE
+   *  tree. Typed loosely (see `tree`). */
+  nodeRef?(path: string): unknown;
 }
 
 const _trees = new Map<string, ClipboardSourceTree>();

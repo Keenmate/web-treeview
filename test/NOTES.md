@@ -557,7 +557,14 @@ lifecycle tests (fast Playwright clicks); unlikely by hand but possible.
 
 **Test status:** none (the lifecycle test clicks a different row to stay clear).
 
-## 26. Cross-tree `dragged` refs resolve the source paths in the TARGET tree
+## 26. ~~Cross-tree `dragged` refs resolve the source paths in the TARGET tree~~ — fixed
+
+**Fixed 2026-10-25:** `_draggedRefs()` resolves the published paths through the
+SOURCE tree (`getClipboardTree(sourceTreeId).nodeRef`, new optional member of
+`ClipboardSourceTree`); path-only refs (`node: null`) when the source isn't
+registered (e.g. detached). The pin is a passing test now.
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` `_draggedRefs()` (~1117-1120) —
 the cross-tree branch maps the published source paths through
@@ -576,4 +583,4 @@ drag A onto B-Folder → `window.lastDrop.dragged` = `['B-Folder', undefined]`.
 (`node: null`) as documented — never look them up in the target tree.
 
 **Test status:** `drag-cross-tree.spec.ts` "the cross-tree dragged refs carry
-the SOURCE nodes" is `test.fail`.
+the SOURCE nodes" — passing (was `test.fail`).

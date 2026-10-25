@@ -9678,7 +9678,7 @@
                   }
                 }
               ],
-              "description": "The full top-level dragged set as NodeRefs, correct for BOTH same-tree and\ncross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.\nSame-tree reads the live selected set (nodes resolve). Cross-tree can't see\nthe source's selection, so it reads the paths the source published on drag\nstart (getDragSet) and builds path-only refs (node/parent null cross-tree);\nfalls back to the lead node alone when no set was published (e.g. touch). Call\nBEFORE a move mutates the selected set."
+              "description": "The full top-level dragged set as NodeRefs, correct for BOTH same-tree and\ncross-tree drags — the single source of `ctx.dragged` on drag start/over/drop.\nSame-tree reads the live selected set (nodes resolve). Cross-tree can't see\nthe source's selection, so it reads the paths the source published on drag\nstart (getDragSet) and resolves them through the SOURCE tree (registry) — never\nthis one, where the same path may name a different node. Path-only refs\n(node/parent null) when the source isn't reachable; falls back to the lead node\nalone when no set was published (e.g. touch). Call BEFORE a move mutates the\nselected set."
             },
             {
               "kind": "method",

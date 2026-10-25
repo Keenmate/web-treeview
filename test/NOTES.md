@@ -154,7 +154,11 @@ different setup (e.g. absorption with an `after` drop or cross-tree).
   A (with A-1, A-2 inside) and B under B-Folder, no duplicates; tree A keeps
   everything. One unrelated bug surfaced there — #26.
 
-## 6. Cut rows are never dimmed (and never un-dimmed)
+## 6. ~~Cut rows are never dimmed (and never un-dimmed)~~ — fixed
+
+**Fixed 2026-10-25:** the row carries `data-cut` (like `data-focused` / `data-selected`) and the keyed reconcile re-renders a row whose cut state changed, so Ctrl+X / `cutNodes()` dims it and Escape / `cancelCut()` / paste un-dims it. The `test.fail` in `keyboard-clipboard.spec.ts` is a passing test.
+
+Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` keyed reconcile (~945-963) +
 `src/controller/tree-engine.ts` `cutNodes()` / `cancelCut()`.

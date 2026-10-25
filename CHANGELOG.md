@@ -51,6 +51,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 ### Fixed — NOTES bug sweep
 
 - `replaceBranch` notifies the tree once and `removed` counts all descendants (NOTES #2 — verified, fixed by the insertBranch rework).
+- Cut rows are dimmed on Ctrl+X / `cutNodes()` and un-dimmed on Escape / `cancelCut()` (NOTES #6).
 
 ### Added
 

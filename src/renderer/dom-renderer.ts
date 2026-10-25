@@ -1041,12 +1041,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           // its stale focusedNodeClass / selectedNodeClass (see _createNodeElement).
           const existingFocused = el.getAttribute('data-focused');
           const existingSelected = el.getAttribute('data-selected');
+          // Cut (dimmed) state isn't captured by _rev either (NOTES #6).
+          const existingCut = el.getAttribute('data-cut');
           if (
             existingRev !== String(node._rev) ||
             existingExpanded !== String(!!node.isExpanded) ||
             existingHasChildren !== String(!!node.hasChildren) ||
             existingFocused !== String(snapshot.focusedNode?.path === node.path) ||
-            existingSelected !== String(snapshot.selectedPaths.has(node.path))
+            existingSelected !== String(snapshot.selectedPaths.has(node.path)) ||
+            existingCut !== String(snapshot.cutPaths.has(node.path))
           ) {
             this._updateNodeElement(el, node, snapshot);
           }
@@ -1326,6 +1329,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // focusedNodeClass / selectedNodeClass.
     el.setAttribute('data-focused', String(snapshot.focusedNode?.path === node.path));
     el.setAttribute('data-selected', String(snapshot.selectedPaths.has(node.path)));
+    el.setAttribute('data-cut', String(snapshot.cutPaths.has(node.path)));
 
     if (this.controller && node.id) {
       el.id = `${this.controller.treeId}-${node.id}`;
@@ -1520,6 +1524,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._applyExpandPending(el, node);
     el.setAttribute('data-has-children', String(!!node.hasChildren));
     el.setAttribute('data-tree-path', node.path);
+    el.setAttribute('data-cut', String(snapshot.cutPaths.has(node.path)));
 
     const nodeConfig = this.lastNodeConfig;
     const ctx = this._buildRenderContext(node, snapshot);

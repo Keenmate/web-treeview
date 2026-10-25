@@ -100,7 +100,6 @@ test.describe('copy / cut / paste', () => {
   });
 
   test('a cut row (and its descendants) is dimmed; Escape un-dims it', async ({ page }) => {
-    test.fail(true, 'NOTES.md #6');
     await load(page);
     await clickNode(page, '1.2');
     await page.keyboard.press('Control+x');

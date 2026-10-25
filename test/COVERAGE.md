@@ -104,7 +104,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Delete key + `beforeDeleteCallback` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `beforeKeydownCallback` returning false suppresses | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
-| Cut rows are dimmed (NOTES #6) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| Cut rows are dimmed, Escape un-dims (NOTES #6) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Copy + paste keeps both rows rendered (NOTES #8) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |

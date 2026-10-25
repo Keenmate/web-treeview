@@ -105,7 +105,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `beforeKeydownCallback` returning false suppresses | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Cut rows are dimmed, Escape un-dims (NOTES #6) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
-| Copy + paste keeps both rows rendered (NOTES #8) | ✗ (test.fail) | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| Copy + paste keeps both rows rendered (rows keyed by path, NOTES #8) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `navTo/Next/Prev/First/Last/Into/Out/Toggle/NextSibling/PrevSibling` API | ✓ | `nav-api.spec.ts` | `nav-api.html` |
@@ -126,7 +126,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `auto-handle-paste=false` (event with entries, no mutation) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-copy=false` (copy-drop only notifies) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
 | `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/copyNodeWithDescendants/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
-| `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✗ (test.fail) | `mutation-api.spec.ts` | `mutation-api.html` |
+| `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 
 ## 7. Drag & drop
 

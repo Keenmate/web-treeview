@@ -42,14 +42,15 @@ test.describe('copy / cut / paste', () => {
   });
 
   test('after copy + paste both the original and the copy are rendered', async ({ page }) => {
-    test.fail(true, 'NOTES.md #8');
     await load(page);
     await clickNode(page, '1.2');
     await page.keyboard.press('Control+c');
     await clickNode(page, '2.1');
     await page.keyboard.press('Control+v');
     await expect.poll(() => childNames(page, '2.1')).toEqual(['Notes']);
-    // Model has two "Notes" rows → the DOM must show two as well.
+    // the paste target (a leaf) stays collapsed — open it to show the copy
+    await page.evaluate(() => (window as any).tree.expandNodes('2.1'));
+    // Model has two "Notes" rows (same id) → the DOM must show two as well (rows keyed by path).
     await expect(page.locator('.wtv__node-label', { hasText: 'Notes' })).toHaveCount(2);
   });
 

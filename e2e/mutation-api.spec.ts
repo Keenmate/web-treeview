@@ -131,7 +131,6 @@ test('duplicateNodes (with an id-assigning transform) copies the manifest; sourc
 });
 
 test('duplicateNodes without a transform keeps every row rendered (duplicate ids)', async ({ page }) => {
-  test.fail(true, 'NOTES.md #8');
   await load(page);
   await run(page, `tree.duplicateNodes(['1', '1.1', '1.2'], '3', 'child')`);
   await expect.poll(() => outline(page)).toEqual([...INITIAL, '  Fruits', '    Apple', '    Banana']);

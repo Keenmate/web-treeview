@@ -3488,8 +3488,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const elementId = `${this._treeId}-${node.id}`;
     const rootEl = containerElement || this.containerElement;
     const findContent = (): HTMLElement | null => {
+      // Find the row by PATH (unique) — ids may repeat (a pasted copy keeps its
+      // source id, NOTES #8); the element id is only the fallback without a root.
       const el = rootEl
-        ? rootEl.querySelector(`#${CSS.escape(elementId)}`)
+        ? rootEl.querySelector(`.wtv__node[data-tree-path="${CSS.escape(path)}"]`)
         : document.getElementById(elementId);
       return (el?.querySelector('.wtv__node-content') as HTMLElement | null) ?? null;
     };

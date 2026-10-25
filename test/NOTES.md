@@ -198,7 +198,11 @@ B1 (2.1) → selection stays `['1.1']`.
 
 **Test status:** two `test.fail` tests in `range-selection.spec.ts`.
 
-## 8. Copies keep the source `id` → the keyed renderer drops rows
+## 8. ~~Copies keep the source `id` → the keyed renderer drops rows~~ — fixed
+
+**Fixed 2026-10-25:** user decision A — the renderer keys rows by `path` (unique by construction) instead of `node.id || node.path`; pasted / duplicated data stays as is (no id rewriting). A row is rebuilt when a different node object takes over its path. Audit: focus, selection, checks, cut, drag state and the D1 restore are all path-based already; tooltips are keyed by the row key; `scrollToPath` now finds the row by `data-tree-path` (the `#treeId-id` element id can repeat). Both `test.fail`s pass (the clipboard test expands the collapsed paste target first — paste doesn't auto-expand it).
+
+Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` reconcile keys rows by
 `String(node.id || node.path)` (~931); copy paths

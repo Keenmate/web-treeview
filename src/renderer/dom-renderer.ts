@@ -76,7 +76,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _vsLastEndIndex = -1;
 
   // Keyed node map
+  /** Row elements keyed by node PATH (unique by construction — ids may repeat,
+   *  e.g. a pasted copy keeps its source id; NOTES #8). */
   private nodeElements = new Map<string, HTMLElement>();
+  /** The node object each row was rendered for — a path can be taken over by a
+   *  different node (move away + move/insert into the same slot). */
+  private nodeOfElement = new WeakMap<HTMLElement, LTreeNode<T>>();
 
   // Subscriptions
   private unsubState: (() => void) | null = null;
@@ -1017,10 +1022,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Build/update nodes
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      const key = String(node.id || node.path);
+      const key = this._nodeKey(node);
       newKeys.add(key);
 
       let el = this.nodeElements.get(key);
+      if (el && this.nodeOfElement.get(el) !== node) {
+        // Another node now lives at this path — rebuild the row from scratch.
+        el.remove();
+        this.nodeElements.delete(key);
+        this._destroyTooltip(key);
+        el = undefined;
+      }
       if (el) {
         // Always keep data-tree-path in sync (moveNode changes paths)
         const currentPath = el.getAttribute('data-tree-path');
@@ -1062,6 +1074,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // Create new node
         el = this._createNodeElement(node, snapshot);
         this.nodeElements.set(key, el);
+        this.nodeOfElement.set(el, node);
       }
 
       // Ensure correct order — ensure the element is parented to the render target
@@ -1456,9 +1469,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  /** Row key — must match _reconcileNodes' keying (id || path). */
+  /** Row key: the node's path (unique by construction; ids may repeat — NOTES #8). */
   private _nodeKey(node: LTreeNode<T>): string {
-    return String(node.id || node.path);
+    return node.path;
   }
 
   /** Build the NodeRenderContext for the render callbacks: device + container + live state. */
@@ -1883,9 +1896,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // ── Helpers ─────────────────────────────────────────────────────────
 
   private _findKeyByPath(path: string): string {
-    for (const [key, el] of this.nodeElements) {
-      if (el.getAttribute('data-tree-path') === path) return key;
-    }
-    return '';
+    return path; // rows are keyed by path
   }
 }

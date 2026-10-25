@@ -105,7 +105,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `is-collapsible-member` | `string` | — | Property name for per-node collapsible flag |
 | `is-selectable-member` | `string` | — | Property name for per-node selectable flag |
 | `search-value-member` | `string` | — | Property name for search text (defaults to display value) |
-| `order-member` | `string` | — | Property name for sort order |
+| `order-member` | `string` | — | Property name for sibling order (ascending; ties by display value) |
 | `allowed-drop-positions-member` | `string` | — | Property name for per-node allowed drop positions array |
 | `icon-member` | `string` | — | Property name for per-node icon CSS class(es) |
 
@@ -118,7 +118,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
 | `accordion-expand` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `isAccordionExpand`) |
-| `is-sorted` | `boolean` | `false` | Apply `sortCallback` to children on insert |
+| `is-sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
 | `should-use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
@@ -129,6 +129,21 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
 | `no-data-text` | `string` | `'No data'` | Fallback text shown for an empty tree (config key: `noDataText`) |
 | `show-drop-placeholder-when-empty` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `shouldShowDropPlaceholderWhenEmpty`) |
+
+**Sibling order.** On insert (`data`, `insertBranch`) the tree puts parents before their
+children itself and orders each parent's children with `sortCallback` (one call per
+sibling group — `items` are siblings, never the whole list), or by `order-member` then
+display value when there is no callback. `addNode`, `refreshSiblings` and `moveNode`
+(as a child, or before/after with `order-member`) re-sort the affected parent the same
+way; a before/after move without `order-member` keeps the dropped position. Children are kept in that order — there is
+no render-time sorting.
+
+`is-sorted` is a **performance hint**, not a sort switch: "my data is already in insert
+order (parents first, siblings in display order)". The tree then skips all sorting on
+insert (no depth sort, no `sortCallback`; `insertBranch` appends new children after the
+existing ones) and renders the data as given. Ordering is the caller's responsibility:
+a child listed before its parent is dropped as an orphan and reported in
+`getInsertResult().failed`.
 
 ### Drag and drop
 
@@ -234,7 +249,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `sortCallback` | `({ items }) => LTreeNode[]` | Custom sibling sort: return `items` in the new order |
+| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called under `is-sorted` |
 | `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
 
 ### Render callbacks

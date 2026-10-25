@@ -67,7 +67,6 @@
             tree.displayValueMember = 'name';
             tree.searchValueMember = 'name';
             tree.sortCallback = ({ items }) => sortByName(items);
-            tree.isSorted = true;
             // Render each node with a .node-name span (the spec uses it).
             tree.renderNodeCallback = ({ node, contentElement: container }) => {
                 container.innerHTML = '';

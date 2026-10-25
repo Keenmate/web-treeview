@@ -201,7 +201,7 @@
             <div class="controls">
                 <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
                 <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
-                <label><input type="checkbox" id="cfg-sorted" checked> Sort by name</label>
+                <label title="is-sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (is-sorted)</label>
                 <label><input type="checkbox" id="cfg-search-index" checked> Search Index</label>
                 <span id="indexer-opts">
                     <label>Index Batch: <input type="number" id="cfg-indexer-batch" value="25" min="5" max="500" step="5"></label>
@@ -452,13 +452,6 @@
                 cfg.isProgressiveRender = $('opt-progressive').checked;
                 cfg.initialBatchSize = +$('opt-initial-batch').value;
                 cfg.maxBatchSize = +$('opt-max-batch').value;
-            }
-            if (cfg.isSorted) {
-                cfg.sortCallback = ({ items }) => [...items].sort((a, b) => {
-                    const aVal = a.data?.name ?? '';
-                    const bVal = b.data?.name ?? '';
-                    return aVal.localeCompare(bVal);
-                });
             }
             cfg.renderNodeCallback = ({ node, contentElement }) => {
                 const span = document.createElement('span');

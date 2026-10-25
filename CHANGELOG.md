@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — `is-sorted` meaning fixed, render-time sort removed (NOTES #16)
+
+- **`is-sorted` is a performance hint**: "the data is already in insert order (parents
+  before children, siblings in display order)". `data` / `insertBranch` then skip all
+  sorting (faster on big data sets) and render the data as given; a child listed before
+  its parent is dropped into `getInsertResult().failed` (caller's responsibility). It no
+  longer means "keep siblings sorted" — the render-time sibling sort it enabled is gone.
+- **`sortCallback` orders the children of ONE parent** (`ctx.items` are siblings). Insert
+  order (parents first) is now internal, so a plain sibling comparator without
+  `is-sorted` no longer orphans children. It runs per sibling group on insert and on the
+  per-parent re-sorts (`addNode`, `refreshSiblings`, `insertBranch`, `moveNode` as a child or
+  with `order-member`).
+- Migration: if you set `is-sorted` together with a `sortCallback` to keep siblings
+  sorted, drop `is-sorted` — sorting on insert now does that.
+- Fixed: `getInsertResult().failed[i].originalData` pointed at the wrong row when the
+  insert sort reordered the input.
+
 ### Changed — BREAKING (context menu classes: core `/menu`)
 
 The context menu is now web-components-core's shared `openMenu()` (`/menu`). Same

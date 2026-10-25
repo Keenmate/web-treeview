@@ -136,7 +136,7 @@ export interface NodeContext<T = any> extends TreeViewContext<T> {
 
 /** ctx of `sortCallback`. */
 export interface SortContext<T = any> extends TreeViewContext<T> {
-  /** The sibling nodes to sort; return them in the new order. */
+  /** The children of ONE parent (siblings) to sort; return them in the new order. */
   items: LTreeNode<T>[];
 }
 

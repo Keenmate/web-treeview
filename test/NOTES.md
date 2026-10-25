@@ -23,8 +23,9 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
   loading state) + `node-expand` / `node-collapse`; `lazy-load.html` uses the hook.
 - **Context menu keyboard**: only item shortcut letters + Escape work; no
   ArrowUp/Down/Enter navigation inside the menu (a11y). Wanted?
-- **#16 / is-sorted semantics**: fix the code (one sibling-sort meaning) or
-  document "is-sorted = input pre-sorted, parents first"?
+- ~~**#16 / is-sorted semantics**~~ — decided 2026-10-25: `is-sorted` = performance hint
+  (data already in insert order, skip all sorting); `sortCallback` = one parent's
+  children only. See #16.
 
 ---
 
@@ -366,7 +367,24 @@ autoUpdate, document-level listeners, context menu), restart them in
 
 **Test status:** was two `test.fail` in `lifecycle.spec.ts` — now passing.
 
-## 16. `sortCallback` means two different things depending on `is-sorted`
+## 16. ~~`sortCallback` means two different things depending on `is-sorted`~~ — resolved
+
+**Resolved 2026-10-25 (user decision, = svelte-treeview's original intent):**
+`is-sorted` is a performance hint — "the data is already in insert order (parents
+first, siblings ordered)": `insertArray` / `insertBranch` skip ALL sorting (no depth
+sort, no `sortCallback`, no per-parent re-sort after `insertBranch`; the stable
+depth sort added in abe16dd is gone). Without the hint, `_defaultSort` groups the
+batch by `parentPath`, orders the groups by level → parent path (parents first) and
+each group with `_sortSiblings` (`sortCallback` per sibling group, else
+`orderMember` → display value). `refreshSiblings` (addNode / moveNode /
+orderMember updates) and the `insertBranch` re-sort use the same `_sortSiblings`.
+The render-time sort in `visibleFlatNodes` is removed. Fixtures that set
+`isSorted = true` next to a `sortCallback` (meaning "keep sorted") dropped the flag.
+Tests: `data-members.spec.ts` — the former `test.fail` passes; added "sortCallback
+only ever sees the children of one parent", "is-sorted renders pre-sorted data
+exactly as given", "is-sorted skips all sorting on insert", "is-sorted with badly
+ordered data drops orphans into getInsertResult().failed".
+
 
 **Where:** `src/ltree/ltree.ts` — with `isSorted` unset, `insertArray()`
 (~321-323) applies `sortCallback` to the WHOLE flat input list before
@@ -389,8 +407,8 @@ level/path order first), or document `is-sorted` as "input is pre-sorted
 (parents first); sortCallback orders siblings at render" and warn (console)
 when orphans appear.
 
-**Test status:** `data-members.spec.ts` "a sibling sortCallback without
-is-sorted keeps every node" is `test.fail`.
+**Test status (before the fix):** `data-members.spec.ts` "a sibling sortCallback without
+is-sorted keeps every node" was `test.fail`.
 
 ## 17. Reassigning `data` re-expands branches the user collapsed (when none were open)
 

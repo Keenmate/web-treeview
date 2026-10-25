@@ -28,15 +28,37 @@ test('order-member orders siblings by that field (then by name)', async ({ page 
   expect(await labels(page)).toEqual(['Banana', 'Cucumber', 'Apple', '  Cherry', '  Date']);
 });
 
-test('sortCallback + is-sorted decides the sibling order', async ({ page }) => {
+test('a sibling sortCallback without is-sorted keeps every node (no orphaned children)', async ({ page }) => {
   await load(page, 'callback');
   expect(await labels(page)).toEqual(['Cucumber', 'Banana', 'Apple', '  Date', '  Cherry']);
+  expect(await page.evaluate(() => (window as any).tree.getInsertResult()?.failed?.length ?? 0)).toBe(0);
 });
 
-test('a sibling sortCallback without is-sorted keeps every node (no orphaned children)', async ({ page }) => {
-  test.fail(true, 'NOTES.md #16');
-  await load(page, 'callback-unsorted');
-  expect(await labels(page)).toEqual(['Cucumber', 'Banana', 'Apple', '  Date', '  Cherry']);
+test('sortCallback only ever sees the children of one parent', async ({ page }) => {
+  await load(page, 'callback');
+  const calls: string[][] = await page.evaluate(() => (window as any).sortCalls);
+  // one call per sibling group (root + under "1"), never the whole flat list
+  expect(calls.map((c) => [...c].sort())).toEqual([['1', '2', '3'], ['1.1', '1.2']]);
+});
+
+test('is-sorted renders pre-sorted data exactly as given (no reorder)', async ({ page }) => {
+  await load(page, 'presorted');
+  // display order given: 3, 1 (1.2, 1.1), 2 — not by name, not by the descending callback
+  expect(await labels(page)).toEqual(['Cucumber', 'Apple', '  Cherry', '  Date', 'Banana']);
+});
+
+test('is-sorted skips all sorting on insert (sortCallback is never called)', async ({ page }) => {
+  await load(page, 'presorted');
+  expect(await page.evaluate(() => (window as any).sortCalls.length)).toBe(0);
+});
+
+test('is-sorted with badly ordered data drops orphans into getInsertResult().failed', async ({ page }) => {
+  await load(page, 'presorted-bad');
+  // 1.1 is listed before its parent 1 → caller broke the hint's contract; it is reported, not rendered
+  const failed: string[] = await page.evaluate(() =>
+    (window as any).tree.getInsertResult().failed.map((f: any) => f.originalData?.path ?? f.node?.path));
+  expect(failed).toEqual(['1.1']);
+  expect(await labels(page)).toEqual(['Apple', '  Cherry', 'Banana', 'Cucumber']);
 });
 
 test('getDisplayValueCallback supplies the label when the member is absent', async ({ page }) => {

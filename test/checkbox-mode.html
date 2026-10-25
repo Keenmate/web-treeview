@@ -63,7 +63,6 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ items }) => sortByOrder(items);
-            tree.isSorted = true;
             tree.addEventListener('checked-change', (e) => {
                 setText('selection', [...e.detail.paths].sort().join(', '));
             });

@@ -12,8 +12,9 @@
     <!--
       ?mode=default   no sort config → siblings by display value
       ?mode=order     order-member="rank"
-      ?mode=callback  sortCallback (descending by name) + is-sorted
-      ?mode=callback-unsorted  the same sortCallback, is-sorted unset
+      ?mode=callback  sortCallback (descending by name), is-sorted unset
+      ?mode=presorted  is-sorted + the sortCallback spy; data given in display order
+      ?mode=presorted-bad  is-sorted with a child listed before its parent
       ?mode=display   display-value-member="missing" + getDisplayValueCallback
       ?mode=members   id-member="key", parent-path-member="parent", level-member="lvl"
     -->
@@ -40,11 +41,15 @@
         tree.displayValueMember = 'name';
         tree.idMember = 'key';
         if (mode === 'order') tree.orderMember = 'rank';
-        if (mode === 'callback') tree.isSorted = true;
-        if (mode === 'callback' || mode === 'callback-unsorted') {
-            tree.sortCallback = ({ items }) =>
-                [...items].sort((a, b) => String(b.data.name).localeCompare(String(a.data.name)));
+        // sortCallback orders the children of ONE parent; counts its calls.
+        window.sortCalls = [];
+        if (mode === 'callback' || mode.startsWith('presorted')) {
+            tree.sortCallback = ({ items }) => {
+                window.sortCalls.push(items.map((n) => n.path));
+                return [...items].sort((a, b) => String(b.data.name).localeCompare(String(a.data.name)));
+            };
         }
+        if (mode.startsWith('presorted')) tree.isSorted = true;
         if (mode === 'display') {
             tree.displayValueMember = 'missing';
             tree.getDisplayValueCallback = ({ node }) => `#${node.data.key}:${node.data.name.toUpperCase()}`;
@@ -53,11 +58,12 @@
             tree.setAttribute('parent-path-member', 'parent');
             tree.setAttribute('level-member', 'lvl');
         }
-        // is-sorted declares the input pre-sorted (parents before children), so
-        // hand it path-ordered data; without is-sorted the library sorts itself.
-        tree.data = tree.isSorted
-            ? [...data].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }))
-            : data;
+        // is-sorted is a hint: the data is already in insert order (parents first,
+        // siblings in display order) — the tree renders it exactly as given.
+        const byPath = (p) => data.find((d) => d.path === p);
+        if (mode === 'presorted') tree.data = ['3', '1', '1.2', '1.1', '2'].map(byPath);
+        else if (mode === 'presorted-bad') tree.data = ['1.1', '1', '1.2', '2', '3'].map(byPath);
+        else tree.data = data;
         document.getElementById('host').appendChild(tree);
         window.tree = tree;
         window.labels = () => [...tree.shadowRoot.querySelectorAll('.wtv__node')].map((el) => {

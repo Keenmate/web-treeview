@@ -83,7 +83,10 @@ export interface Ltree<T> {
 	// For sibling ordering in drag-drop (before/after positioning)
 	orderMember?: string | null | undefined;
 
+	/** Hint: data is already in insert order (parents first, siblings ordered) —
+	 *  insertArray / insertBranch skip all sorting. */
 	isSorted: boolean | null | undefined;
+	/** Orders the children of ONE parent (`items` are siblings). */
 	sortCallback?: (items: LTreeNode<T>[]) => LTreeNode<T>[];
 
 	// Filtering properties
@@ -158,6 +161,8 @@ export interface Ltree<T> {
 	getNodeSearchValue(node: LTreeNode<T>): string;
 
 	_defaultSort(self: Ltree<T>, items: LTreeNode<T>[]): LTreeNode<T>[];
+
+	_sortSiblings(items: LTreeNode<T>[]): LTreeNode<T>[];
 
 	_emitTreeChanged(): void;
 

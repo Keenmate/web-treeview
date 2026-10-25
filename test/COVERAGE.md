@@ -25,8 +25,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Custom `tree-path-separator` (`/`, `::`) | ✓ | `data.spec.ts` | `data.html` |
 | `insertResult` diagnostics (orphans, empty, duplicate) | ✓ | `data.spec.ts` | `data.html` |
 | `display-value-fallback` | ✓ | `data.spec.ts` | `data.html` |
-| Default display-value order, `order-member`, `sortCallback` + `is-sorted` | ✓ | `data-members.spec.ts` | `data-members.html` |
-| Sibling `sortCallback` without `is-sorted` (NOTES #16) | ✗ (test.fail) | `data-members.spec.ts` | `data-members.html` |
+| Default display-value order, `order-member`, sibling `sortCallback` (descending, children kept) | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `sortCallback` called once per sibling group, never on the flat list (NOTES #16) | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `is-sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `data` reassign re-renders, keeps collapsed state (NOTES #17) | △ (test.fail) | `data-members.spec.ts` | `data-members.html` |

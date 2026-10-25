@@ -51,8 +51,8 @@
         </div>
 
         <!-- Card 4: display-value fallback — data lacks the display member, so every
-             label must resolve to display-value-fallback. Regression: with isSorted
-             on, the display-value sort tiebreak used to call localeCompare on an
+             label must resolve to display-value-fallback. Regression: the insert
+             sort's display-value tiebreak used to call localeCompare on an
              undefined value and throw. -->
         <div class="card">
             <h2>Display Value Fallback</h2>
@@ -73,7 +73,6 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ items }) => sortByName(items);
-            tree.isSorted = true;
             // Custom renderer: print "<name> (<path>)" so the spec can assert
             // both label and path content on the visible node.
             tree.renderNodeCallback = ({ node, contentElement: container }) => {
@@ -119,19 +118,20 @@
                 { id: 1, path: '1', name: 'Valid Root' },
                 { id: 2, path: '1.1', name: 'Valid Child' },
                 { id: 3, path: '2.1', name: 'Orphan (parent 2 missing)' },
-                { id: 4, path: '1.1', name: 'Duplicate Path' },
+                // the first node in INSERT order keeps a clashing path; siblings are
+                // sorted by name before insert, so this one must sort after 'Valid Child'
+                { id: 4, path: '1.1', name: 'X Duplicate Path' },
                 { id: 5, path: '', name: 'Empty Path' },
                 { id: 6, path: '1.2', name: 'Another Valid Child' }
             ]);
 
             // ── Card 4 (display-value fallback) ──
             // No displayValueMember override (defaults to 'displayValue') and the data
-            // carries no such field, so every node resolves to the fallback. isSorted
-            // exercises the display-value sort tiebreak that used to crash.
+            // carries no such field, so every node resolves to the fallback. The
+            // default insert sort exercises the display-value tiebreak that used to crash.
             const fallbackTree = document.getElementById('tree-fallback');
             fallbackTree.idMember = 'id';
             fallbackTree.pathMember = 'path';
-            fallbackTree.isSorted = true;
             fallbackTree.data = [
                 { id: 1, path: '1' },
                 { id: 2, path: '1.1' },

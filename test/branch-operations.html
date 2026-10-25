@@ -159,7 +159,6 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ items }) => sortByOrder(items);
-            tree.isSorted = true;
             tree.data = initialData();
 
             // Initial total — wait one microtask for the batched update to land.

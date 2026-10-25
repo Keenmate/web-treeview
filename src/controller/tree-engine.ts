@@ -3295,9 +3295,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     // Per-node opt-out gate. Mirrors the touch path so isDropAllowed:false
-    // rejects drops on desktop too (svelte-treeview parity).
+    // rejects drops on desktop too (svelte-treeview parity). The dragover is still
+    // ACCEPTED (no hover / indicators) so the browser fires `drop` on the row — the
+    // drop then announces the reject (node-drop-reject + 🚫) or routes it to the
+    // tree drop zone (NOTES #22).
     if (!node.isDropAllowed) {
       this._hoveredNodeForDrop = null;
+      event.preventDefault();
       return;
     }
 
@@ -3368,8 +3372,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         : this.isDropAllowedByMode(this._draggedNode.treeId);
 
       // Per-node opt-out gate (svelte-treeview parity): isDropAllowed:false
-      // rejects the drop even when the mode allows it.
-      if (dropAllowed && node.isDropAllowed && (isCrossTreeDrag || this._draggedNode.path !== node.path)) {
+      // rejects the drop even when the mode allows it — routed to the tree drop
+      // zone when that is on, else announced (node-drop-reject + 🚫), like the
+      // touch / zone paths (NOTES #22).
+      if (dropAllowed && !node.isDropAllowed) {
+        if (this._shouldEnableTreeDropZone) return this.handleTreeZoneDrop(event);
+        this._indicateDropDenied(node);
+      } else if (dropAllowed && (isCrossTreeDrag || this._draggedNode.path !== node.path)) {
         const position = this._activeDropPosition || 'child';
         this._handleDrop(node, this._draggedNode, position, event);
       }

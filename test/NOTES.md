@@ -575,7 +575,11 @@ transform over each manifest node before the input transform (phase
 
 **Test status:** two `test.fail` in `drag-cross-tree.spec.ts`.
 
-## 22. Desktop drops on a refusing node: no `node-drop-reject`, tree drop zone bypassed
+## 22. ~~Desktop drops on a refusing node: no `node-drop-reject`, tree drop zone bypassed~~ — fixed
+
+**Fixed 2026-10-25:** `dragOver()` accepts the dragover on a refusing row (`preventDefault`, no hover / indicators) so the browser fires `drop`; `drop()` then applies the same gate as the zone / touch paths — `enable-tree-drop-zone` routes it to `handleTreeZoneDrop` (target=null), otherwise `_indicateDropDenied` fires `node-drop-reject` + the 🚫 flash. Both `test.fail`s in `drag-visuals.spec.ts` pass. Side effect: the cursor over a refusing row shows the drop cursor (needed for `drop` to fire at all — svelte-treeview does the same).
+
+Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a
 node drop to the engine's public `drop()` (`tree-engine.ts` ~2986), which

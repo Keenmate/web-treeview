@@ -148,7 +148,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Drag classes (`--dragged`, `dragged-node-class`, glow), floating `drop-zone-*` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Touch: `node-drag-reject` + 🚫, `indicate-undraggable=false`, `touch-drag-delay` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: drop on no-drop node refused | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
-| Desktop: `node-drop-reject` + `enable-tree-drop-zone` routing (NOTES #22) | ✗ (test.fail) | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Desktop: `node-drop-reject` + `enable-tree-drop-zone` routing (NOTES #22) | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 
 ## 8. Search
 

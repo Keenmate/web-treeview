@@ -82,7 +82,6 @@ test.describe('drop reject (desktop, real drag)', () => {
   });
 
   test('… and announces it: node-drop-reject + the 🚫 flash on the target', async ({ page }) => {
-    test.fail(true, 'NOTES.md #22');
     await load(page);
     await realDrag(page, '4', '2');
     await expect.poll(() => logLines(page, LOG), { timeout: 2000 }).toContain('node-drop-reject:2');
@@ -90,7 +89,6 @@ test.describe('drop reject (desktop, real drag)', () => {
   });
 
   test('enable-tree-drop-zone: a drop on a refusing node lands on the tree (target=null)', async ({ page }) => {
-    test.fail(true, 'NOTES.md #22');
     await load(page, '?enable-tree-drop-zone=true');
     await realDrag(page, '4', '2');
     await expect.poll(() => logLines(page, LOG), { timeout: 2000 }).toContainEqual(expect.stringMatching(/^node-drop:4:.*:null$/));

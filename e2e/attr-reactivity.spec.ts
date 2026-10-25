@@ -37,7 +37,6 @@ test.describe('removing an attribute resets the input to its default', () => {
   });
 
   test('expand-level removed → back to the default (roots only)', async ({ page }) => {
-    test.fail(true, 'NOTES.md #14');
     await load(page);
     await expect(nodeByPath(page, '1.1')).toBeVisible();
     await page.evaluate(() => (window as any).tree.removeAttribute('expand-level'));

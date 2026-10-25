@@ -361,7 +361,11 @@ sequence through `el.controller` works.
 
 **Test status:** two `test.fail` in `attr-reactivity.spec.ts`.
 
-## 14. Removing `expand-level` is a no-op
+## 14. ~~Removing `expand-level` is a no-op~~ — fixed
+
+**Fixed 2026-10-25:** `expandLevel` has `toInt({ default: 0 })`, so removing the attribute forwards 0 (roots only) and the engine re-seeds expansion. The `test.fail` in `attr-reactivity.spec.ts` passes. **Still open (audit):** ~30 other `toInt()` / `toFloat()` / `toBool('tristate')` inputs have no `default`, so removing their attribute forwards `undefined` and the engine's `!== undefined` guard keeps the old value (e.g. `virtual-overscan`, `context-menu-x-offset`, `is-loading`, `virtual-scroll`). Giving each its engine default is mechanical but touches many inputs — not done in this sweep.
+
+Original report:
 
 **Where:** `src/web-component.ts` ~116 — `expandLevel` has no `default`, so
 removing the attribute resets it to `undefined`; the engine's update guard

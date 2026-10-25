@@ -203,6 +203,7 @@
     { "name": "wtv-context-menu-font-size", "category": "context-menu", "usage": "Context menu font size" },
     { "name": "wtv-context-menu-item-padding", "category": "context-menu", "usage": "Context menu item padding" },
     { "name": "wtv-context-menu-item-gap", "category": "context-menu", "usage": "Gap between icon, label, shortcut" },
+    { "name": "wtv-context-menu-active-color", "category": "context-menu", "usage": "Active (isActive) item accent color (→ --wtv-accent-color)" },
     { "name": "wtv-context-menu-icon-width", "category": "context-menu", "usage": "Icon column width in context menu" },
     { "name": "wtv-context-menu-icon-font-size", "category": "context-menu", "usage": "Icon font size in context menu" },
     { "name": "wtv-context-menu-arrow-font-size", "category": "context-menu", "usage": "Submenu arrow font size" },

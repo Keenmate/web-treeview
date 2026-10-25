@@ -21,8 +21,10 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 - ~~**TV-1** (#1)~~ — implemented 2026-10-25 (svelte port + not-under-parent rule, see #1).
 - ~~**No expand/collapse event**~~ — added 2026-10-25: `beforeExpandCallback` (async OK,
   loading state) + `node-expand` / `node-collapse`; `lazy-load.html` uses the hook.
-- **Context menu keyboard**: only item shortcut letters + Escape work; no
-  ArrowUp/Down/Enter navigation inside the menu (a11y). Wanted?
+- ~~**Context menu keyboard**~~ — done 2026-10-25 (4ef28fb): the menu is core
+  `/menu` `openMenu()` — WAI-ARIA menu keyboard (↑↓ wrap / Home / End / →←
+  submenus / Enter / Space / Esc / Tab), Shift+F10 / ContextMenu key open the
+  focused node's menu. Tested in `context-menu-render.spec.ts` (11 tests).
 - ~~**#16 / is-sorted semantics**~~ — decided 2026-10-25: `is-sorted` = performance hint
   (data already in insert order, skip all sorting); `sortCallback` = one parent's
   children only. See #16.

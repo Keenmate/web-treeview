@@ -264,7 +264,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `renderHeaderCallback` | `({ containerElement }) => void` | Tree header rendering |
 | `renderFooterCallback` | `({ containerElement }) => void` | Tree footer rendering |
 | `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, controller }) => void` | Take over the whole context menu; close via `controller.closeContextMenu()` |
-| `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item button; leave it empty for the default |
+| `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item (`buttonElement` is the item `<div role="menuitem">`); leave it empty for the default |
 
 ### Context menu
 
@@ -279,7 +279,53 @@ A `TreeMenuEntry` is one of:
 - a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
 - a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state).
 
-Activation order: `beforeActionCallback` → item `onClick` → `action` event (+ `onAction`) → built-in. Menu buttons carry `data-action` (built-in name or `custom`) and `data-id`.
+Activation order: `beforeActionCallback` → item `onClick` → `action` event (+ `onAction`) → built-in. Menu items carry `data-action` (built-in name or `custom`) and `data-id`.
+
+An item's `icon` string is inserted as **HTML** (an `<i class="…">`, an inline `<svg>`, or plain text/emoji) — the same as action buttons.
+
+The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll outside the menu, window blur, Escape / Tab, or when another KeenMate overlay opens (outside interactions are ignored while debug mode pins the menu).
+
+#### Keyboard (WAI-ARIA menu)
+
+| Key | Effect |
+|-----|--------|
+| `Shift+F10` / `ContextMenu` | On a focused node: open its menu below the row, first item focused |
+| `ArrowDown` / `ArrowUp` | Next / previous item (wraps; skips disabled items and dividers) |
+| `Home` / `End` | First / last item |
+| `ArrowRight` / `Enter` / `Space` on a submenu item | Open the submenu on its first item |
+| `ArrowLeft` / `Escape` in a submenu | Close it, back to its parent item |
+| `Enter` / `Space` | Run the item (a leaf closes the menu first) |
+| an item's `shortcut` (letter, case-insensitive, or a key name like `F2`) | Run that item |
+| `Escape` / `Tab` | Close and return focus to the tree |
+
+While the menu is open it is keyboard-modal (handled keys don't reach the tree). A mouse-opened menu is keyboard-operable too (focus stays put until you press a key; hover focuses items).
+
+#### Styling
+
+Classes (core `/menu`): `.bliss-menu` (`role="menu"`), `.bliss-menu--submenu`,
+`.bliss-menu__item` (`<div role="menuitem">`) with `--disabled` / `--danger` / `--active` /
+`--has-submenu`, `.bliss-menu__icon` / `__label` / `__shortcut`, `.bliss-menu__divider`
+(`--named`), `.bliss-menu__loading`. They replace the old `.wtv__context-menu*` classes
+(see CHANGELOG for the mapping).
+
+Theme the menu with the `--wtv-context-menu-*` variables — the tree maps them onto core's
+`--bliss-menu-*` (you can also set a `--bliss-menu-*` variable directly on the element):
+
+| `--wtv-context-menu-*` | → `--bliss-menu-*` |
+|---|---|
+| `bg` / `bg-hover` / `text-color` | `bg` / `hover-bg` / `text-color` |
+| `border` / `border-radius` / `shadow` | `border` / `border-radius` / `shadow` |
+| `min-width` / `padding` / `font-size` | `min-width` / `padding` / `font-size` |
+| `item-padding` / `item-gap` | `item-padding` / `item-gap` |
+| `active-color` | `active-color` |
+| `icon-width` / `icon-font-size` | `icon-size` / `icon-font-size` (+ `divider-label-font-size`) |
+| `arrow-font-size` | `arrow-font-size` |
+| `shortcut-color` | `shortcut-color` (default `--wtv-text-color-2`) |
+| `danger-color` / `danger-bg-hover` | `danger-color` / `danger-hover-bg` |
+| `divider-color` / `divider-margin` | `divider-color` / `divider-margin` |
+| `disabled-opacity` | `disabled-opacity` |
+
+`--bliss-menu-z-index` follows `--wtv-z-index-dropdown`.
 
 ### Before-hooks (interceptors)
 

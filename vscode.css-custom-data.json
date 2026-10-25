@@ -663,6 +663,11 @@
       "values": []
     },
     {
+      "name": "--wtv-context-menu-active-color",
+      "description": "Active (isActive) item accent color (→ --wtv-accent-color)",
+      "values": []
+    },
+    {
       "name": "--wtv-context-menu-icon-width",
       "description": "Icon column width in context menu",
       "values": []

@@ -7472,6 +7472,10 @@
               "description": "Gap between icon, label, shortcut"
             },
             {
+              "name": "--wtv-context-menu-active-color",
+              "description": "Active (isActive) item accent color (→ --wtv-accent-color)"
+            },
+            {
               "name": "--wtv-context-menu-icon-width",
               "description": "Icon column width in context menu"
             },
@@ -7601,6 +7605,214 @@
           "declaration": {
             "name": "WebTreeViewElement",
             "module": "src/web-component.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/ltree-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "getParentPath",
+          "return": {
+            "type": {
+              "text": "string | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getRelativePath",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "parentPath",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getPathSegments",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "start",
+              "default": "0",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "count",
+              "default": "1",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getLevel",
+          "return": {
+            "type": {
+              "text": "number"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "getParentPath",
+          "declaration": {
+            "name": "getParentPath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getRelativePath",
+          "declaration": {
+            "name": "getRelativePath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getPathSegments",
+          "declaration": {
+            "name": "getPathSegments",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getLevel",
+          "declaration": {
+            "name": "getLevel",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/string-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "isEmptyString",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "isNotEmptyString",
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "isEmptyString",
+          "declaration": {
+            "name": "isEmptyString",
+            "module": "src/helpers/string-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isNotEmptyString",
+          "declaration": {
+            "name": "isNotEmptyString",
+            "module": "src/helpers/string-helpers.ts"
           }
         }
       ]
@@ -12635,214 +12847,6 @@
       "path": "src/controller/types.ts",
       "declarations": [],
       "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/ltree-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "getParentPath",
-          "return": {
-            "type": {
-              "text": "string | null"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getRelativePath",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "parentPath",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getPathSegments",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "start",
-              "default": "0",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "count",
-              "default": "1",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getLevel",
-          "return": {
-            "type": {
-              "text": "number"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "getParentPath",
-          "declaration": {
-            "name": "getParentPath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getRelativePath",
-          "declaration": {
-            "name": "getRelativePath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getPathSegments",
-          "declaration": {
-            "name": "getPathSegments",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getLevel",
-          "declaration": {
-            "name": "getLevel",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/string-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "isEmptyString",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "isNotEmptyString",
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "isEmptyString",
-          "declaration": {
-            "name": "isEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "isNotEmptyString",
-          "declaration": {
-            "name": "isNotEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        }
-      ]
     },
     {
       "kind": "javascript-module",

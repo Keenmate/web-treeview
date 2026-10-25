@@ -167,6 +167,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
 | `openContextMenu(path,x,y)` + offsets, `closeContextMenu`; shortcut keys + Escape in menu | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
+| Context menu keyboard (WAI-ARIA): Shift+F10 / ContextMenu key open, ↑↓ wrap + skip disabled, Home/End, →/Enter submenu, ←/Esc back, Enter/Space run, Esc/Tab close + focus return, mouse-opened menu operable, menu roles | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
 
 ## 10. Tooltips, theming, misc
 

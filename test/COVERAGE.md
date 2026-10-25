@@ -95,7 +95,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | Arrow Up/Down/Left/Right, Backspace, Space, Home/End | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
-| PageUp/PageDown + Shift-extend | ✗ (feature gap, NOTES #4) | `keyboard-nav.spec.ts` (skipped) | `keyboard-nav.html` |
+| PageUp/PageDown + Shift+Arrow/Home/End/PageUp/PageDown extend (multi; no-op in single) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
+| `navigationOverrides` (single-key override, `navTo` override, controller routing, runtime swap / `null`, `beforeKeydownCallback` first) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | Delete key + `beforeDeleteCallback` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `beforeKeydownCallback` returning false suppresses | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |

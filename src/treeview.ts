@@ -31,7 +31,8 @@ const CONTROLLER_METHODS = [
   'setSelectedPaths', 'selectAll', 'clearSelection', 'getSelectedNodes', 'getSelectedPaths', 'isNodeSelected',
   'checkNode', 'checkNodes', 'setCheckedPaths', 'checkAll', 'uncheckNode', 'clearChecked', 'getCheckedNodes',
   'getCheckedPaths', 'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
-  'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'copyNodes', 'cutNodes',
+  'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
+  'navSelectNext', 'navSelectPrev', 'navSelectFirst', 'navSelectLast', 'navSelectPageDown', 'navSelectPageUp', 'copyNodes', 'cutNodes',
   'pasteNodes', 'cancelCut', 'deleteNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
   'closeContextMenu',
 ] as const satisfies readonly (keyof TreeViewController)[];
@@ -508,6 +509,14 @@ export class WebTreeView<T = any> {
   navToggle(): void { this.engine.navToggle(); }
   navFirst(): void { this.engine.navFirst(); }
   navLast(): void { this.engine.navLast(); }
+  navPageDown(): void { this.engine.navPageDown(); }
+  navPageUp(): void { this.engine.navPageUp(); }
+  navSelectNext(): void { this.engine.navSelectNext(); }
+  navSelectPrev(): void { this.engine.navSelectPrev(); }
+  navSelectFirst(): void { this.engine.navSelectFirst(); }
+  navSelectLast(): void { this.engine.navSelectLast(); }
+  navSelectPageDown(): void { this.engine.navSelectPageDown(); }
+  navSelectPageUp(): void { this.engine.navSelectPageUp(); }
 
   // ── Clipboard (proxy to engine) ─────────────────────────────────────
 
@@ -689,6 +698,7 @@ export class WebTreeView<T = any> {
       nodeContentClass: this.nodeCallback(o.getNodeContentClassCallback),
 
       rangeSelectionMode: o.rangeSelectionMode,
+      navigationOverrides: o.navigationOverrides,
       selectionMode: o.selectionMode,
       shouldShowCheckboxes: o.shouldShowCheckboxes,
       checkboxMode: o.checkboxMode,

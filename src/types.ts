@@ -101,6 +101,7 @@ import type {
   DropGroup,
 } from './controller/types';
 import type { PasteResult } from './clipboard';
+import type { TreeNavigationOverrides } from './navigation';
 import type {
   TreeViewController,
   NodeContext,
@@ -312,6 +313,13 @@ export interface TreeViewConfig<T = any> {
   /** `'single'` (default) — Ctrl/Shift+click degrade to plain click.
    *  `'multi'` — Ctrl+click toggles, Shift+click range-extends. */
   selectionMode?: 'single' | 'multi';
+  /** Replace individual keyboard-navigation methods — merged over the defaults
+   *  (`{ ...defaults, ...navigationOverrides }`), so a method you leave out keeps its
+   *  built-in behavior. Keys: navTo, navNext, navPrev, navNextSibling, navPrevSibling,
+   *  navInto, navOut, navBackOut, navToggle, navFirst, navLast, navPageDown, navPageUp,
+   *  navSelectNext, navSelectPrev, navSelectFirst, navSelectLast, navSelectPageDown,
+   *  navSelectPageUp. Reassign to swap at runtime; `null` restores the defaults. */
+  navigationOverrides?: TreeNavigationOverrides<T> | null;
   /** Render a checkbox per selectable node. Default `false`. */
   shouldShowCheckboxes?: boolean;
   /** `'independent'` (default) — checkbox state is per-node; toggling a parent
@@ -535,6 +543,14 @@ export interface TreeViewMethods<T = any> {
   navToggle(): void;
   navFirst(): void;
   navLast(): void;
+  navPageDown(): void;
+  navPageUp(): void;
+  navSelectNext(): void;
+  navSelectPrev(): void;
+  navSelectFirst(): void;
+  navSelectLast(): void;
+  navSelectPageDown(): void;
+  navSelectPageUp(): void;
 
   // Clipboard
   copyNodes(paths?: string[]): void;

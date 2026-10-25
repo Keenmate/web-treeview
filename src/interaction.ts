@@ -104,6 +104,14 @@ export interface TreeViewController<T = any> {
   navToggle(): void;
   navFirst(): void;
   navLast(): void;
+  navPageDown(): void;
+  navPageUp(): void;
+  navSelectNext(): void;
+  navSelectPrev(): void;
+  navSelectFirst(): void;
+  navSelectLast(): void;
+  navSelectPageDown(): void;
+  navSelectPageUp(): void;
   // clipboard / delete
   copyNodes(paths?: string[]): void;
   cutNodes(paths?: string[]): void;

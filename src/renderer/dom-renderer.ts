@@ -362,6 +362,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _onBodyKeydown = (event: KeyboardEvent) => {
     if (!this.controller) return;
     const ctrl = event.ctrlKey || event.metaKey;
+    const shift = event.shiftKey;
 
     // Consumer onTreeKeydown (can suppress everything) THEN the built-in
     // Ctrl/Cmd+C/X/V + Delete + Esc-cancel-cut shortcuts. When this consumes the
@@ -372,13 +373,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
 
     switch (event.key) {
+      // Shift variants extend the selected range (a no-op in single selection mode).
       case 'ArrowDown':
         event.preventDefault();
-        this.controller.navNextSibling();
+        if (shift) this.controller.navSelectNext();
+        else this.controller.navNextSibling();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.controller.navPrevSibling();
+        if (shift) this.controller.navSelectPrev();
+        else this.controller.navPrevSibling();
         break;
       case 'ArrowRight':
         event.preventDefault();
@@ -399,11 +403,23 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         break;
       case 'Home':
         event.preventDefault();
-        this.controller.navFirst();
+        if (shift) this.controller.navSelectFirst();
+        else this.controller.navFirst();
         break;
       case 'End':
         event.preventDefault();
-        this.controller.navLast();
+        if (shift) this.controller.navSelectLast();
+        else this.controller.navLast();
+        break;
+      case 'PageDown':
+        event.preventDefault();
+        if (shift) this.controller.navSelectPageDown();
+        else this.controller.navPageDown();
+        break;
+      case 'PageUp':
+        event.preventDefault();
+        if (shift) this.controller.navSelectPageUp();
+        else this.controller.navPageUp();
         break;
       case 'a':
         if (ctrl) {

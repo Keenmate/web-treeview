@@ -67,9 +67,13 @@ import {
   type PasteResult
 } from '../clipboard';
 import { initLogger, uiLogger, dragLogger } from '../logger';
+import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perfStart, perfEnd } from '../perf-logger';
 
 // ─── TreeEngine ───────────────────────────────────────────────────────
+
+/** Rows a PageUp / PageDown (and their Shift variants) jumps in the visible flat list. */
+const NAV_PAGE_SIZE = 10;
 
 export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── LTree instance ──────────────────────────────────────────────────
@@ -161,6 +165,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _lastSelectedPath: string | null = null;
   private _rangeSelectionMode: import('./types').RangeSelectionMode = 'visual';
   private _selectionMode: 'single' | 'multi' = 'single';
+  // Keyboard navigation: the defaults merged with the consumer's navigationOverrides.
+  private _navigation!: TreeNavigation<T>;
+  private _navigationOverrides: TreeNavigationOverrides<T> | null = null;
   private _shouldShowCheckboxes: boolean = false;
   private _checkboxMode: import('./types').CheckboxMode = 'independent';
   // Which paths the selection EMITS in cascade mode (a projection of the canonical
@@ -731,6 +738,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._searchText = props.searchText;
     this._rangeSelectionMode = props.rangeSelectionMode ?? 'visual';
     this._selectionMode = props.selectionMode ?? 'single';
+    this._applyNavigationOverrides(props.navigationOverrides);
     this._shouldShowCheckboxes = props.shouldShowCheckboxes ?? false;
     this._checkboxMode = props.checkboxMode ?? 'independent';
     this._cascadeCheckPolicy = props.cascadeCheckPolicy ?? 'rolled-up';
@@ -2224,148 +2232,256 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return VisualState.indeterminate;
   }
 
-  // ── Navigation API ────────────────────────────────────────────────
+  // ── Navigation API (delegates to the active navigation strategy) ──
+  //
+  // Every nav* method calls through `this._navigation` — the defaults from
+  // `createDefaultNavigation()` merged with the consumer's `navigationOverrides`
+  // (svelte-treeview parity). The defaults move via `this._navigation.navTo`, so an
+  // overridden `navTo` applies to every built-in move.
 
   /** Navigate to a specific path (selects and focuses it). */
-  navTo(path: string): void {
-    this.selectNode(path);
-  }
-
+  navTo(path: string): void { this._navigation.navTo(path); }
   /** Navigate to the next visible node. */
-  navNext(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length === 0) return;
-    const currentPath = this._focusedNode?.path;
-    if (!currentPath) {
-      this.selectNode(visible[0].path);
-      return;
-    }
-    const idx = visible.findIndex(n => n.path === currentPath);
-    if (idx >= 0 && idx < visible.length - 1) {
-      this.selectNode(visible[idx + 1].path);
-    }
-  }
-
+  navNext(): void { this._navigation.navNext(); }
   /** Navigate to the previous visible node. */
-  navPrev(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length === 0) return;
-    const currentPath = this._focusedNode?.path;
-    if (!currentPath) {
-      this.selectNode(visible[visible.length - 1].path);
-      return;
-    }
-    const idx = visible.findIndex(n => n.path === currentPath);
-    if (idx > 0) {
-      this.selectNode(visible[idx - 1].path);
-    }
-  }
+  navPrev(): void { this._navigation.navPrev(); }
+  /** ArrowDown — next visible node at the same level. */
+  navNextSibling(): void { this._navigation.navNextSibling(); }
+  /** ArrowUp — previous visible node at the same level. */
+  navPrevSibling(): void { this._navigation.navPrevSibling(); }
+  /** ArrowRight — into the first child (expands if collapsed). */
+  navInto(): void { this._navigation.navInto(); }
+  /** ArrowLeft — to the parent (no collapse). */
+  navOut(): void { this._navigation.navOut(); }
+  /** Backspace — collapse the parent and move to it. */
+  navBackOut(): void { this._navigation.navBackOut(); }
+  /** Enter / Space — toggle expand/collapse on the current node. */
+  navToggle(): void { this._navigation.navToggle(); }
+  /** Home — first visible node. */
+  navFirst(): void { this._navigation.navFirst(); }
+  /** End — last visible node. */
+  navLast(): void { this._navigation.navLast(); }
+  /** PageDown — jump forward ~10 visible nodes. */
+  navPageDown(): void { this._navigation.navPageDown(); }
+  /** PageUp — jump back ~10 visible nodes. */
+  navPageUp(): void { this._navigation.navPageUp(); }
+  /** Shift+ArrowDown — extend the selection to the next same-level node (multi mode only). */
+  navSelectNext(): void { this._navigation.navSelectNext(); }
+  /** Shift+ArrowUp — extend the selection to the previous same-level node (multi mode only). */
+  navSelectPrev(): void { this._navigation.navSelectPrev(); }
+  /** Shift+Home — extend the selection to the first visible node (multi mode only). */
+  navSelectFirst(): void { this._navigation.navSelectFirst(); }
+  /** Shift+End — extend the selection to the last visible node (multi mode only). */
+  navSelectLast(): void { this._navigation.navSelectLast(); }
+  /** Shift+PageDown — extend the selection forward ~10 visible nodes (multi mode only). */
+  navSelectPageDown(): void { this._navigation.navSelectPageDown(); }
+  /** Shift+PageUp — extend the selection back ~10 visible nodes (multi mode only). */
+  navSelectPageUp(): void { this._navigation.navSelectPageUp(); }
 
-  /** Navigate into first child (expand if collapsed, then move to child). */
-  navInto(): void {
-    const node = this._focusedNode;
-    if (!node || !node.hasChildren) return;
-
-    if (!node.isExpanded) {
-      this.tree?.expandNodes(node.path);
-    }
-    // visibleFlatNodes updated synchronously — move to first child
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    const idx = visible.findIndex(n => n.path === node.path);
-    if (idx >= 0 && idx + 1 < visible.length) {
-      this.selectNode(visible[idx + 1].path);
-    }
-  }
-
-  /** Navigate to parent node (no collapse — matches svelte-treeview). */
-  navOut(): void {
-    const node = this._focusedNode;
-    if (!node) return;
-    const sep = this._treePathSeparator;
-    const lastSep = node.path.lastIndexOf(sep);
-    if (lastSep > 0) {
-      const parentPath = node.path.substring(0, lastSep);
-      this.selectNode(parentPath);
-    }
-  }
-
-  /** Navigate to parent and collapse it. */
-  navBackOut(): void {
-    const node = this._focusedNode;
-    if (!node) return;
-    const sep = this._treePathSeparator;
-    const lastSep = node.path.lastIndexOf(sep);
-    if (lastSep > 0) {
-      const parentPath = node.path.substring(0, lastSep);
-      this.tree?.collapseNodes(parentPath);
-      this.selectNode(parentPath);
-    }
-  }
-
-  /** Toggle expand/collapse on current node. */
-  navToggle(): void {
-    const node = this._focusedNode;
-    if (!node || !node.hasChildren) return;
-    if (node.isExpanded) {
-      this.tree?.collapseNodes(node.path);
-    } else {
-      this.tree?.expandNodes(node.path);
-    }
-    this._scheduleNotify();
-  }
-
-  /** Navigate to first visible node. */
-  navFirst(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length > 0) {
-      this.selectNode(visible[0].path);
-    }
-  }
-
-  /** Navigate to last visible node. */
-  navLast(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length > 0) {
-      this.selectNode(visible[visible.length - 1].path);
-    }
-  }
-
-  /** Navigate to next visible node at the same level. */
-  navNextSibling(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length === 0) return;
-    const currentPath = this._focusedNode?.path;
-    const currentIndex = currentPath ? visible.findIndex(n => n.path === currentPath) : -1;
-    if (currentIndex === -1) {
-      this.selectNode(visible[0].path);
-      return;
-    }
-    const currentLevel = visible[currentIndex].level;
-    for (let i = currentIndex + 1; i < visible.length; i++) {
-      if (visible[i].level === currentLevel) {
-        this.selectNode(visible[i].path);
-        return;
+  /** (Re)build the active navigation: the defaults with every function-valued
+   *  override (for a known method) on top. `null` / `undefined` → defaults only. */
+  private _applyNavigationOverrides(overrides: TreeNavigationOverrides<T> | null | undefined): void {
+    this._navigationOverrides = overrides ?? null;
+    const nav = this.createDefaultNavigation();
+    if (overrides) {
+      for (const [key, fn] of Object.entries(overrides)) {
+        if (typeof fn === 'function' && key in nav) (nav as unknown as Record<string, unknown>)[key] = fn;
       }
     }
+    this._navigation = nav;
   }
 
-  /** Navigate to previous visible node at the same level. */
-  navPrevSibling(): void {
-    const visible = this.tree?.visibleFlatNodes ?? [];
-    if (visible.length === 0) return;
-    const currentPath = this._focusedNode?.path;
-    const currentIndex = currentPath ? visible.findIndex(n => n.path === currentPath) : -1;
-    if (currentIndex === -1) {
-      this.selectNode(visible[visible.length - 1].path);
-      return;
-    }
-    const currentLevel = visible[currentIndex].level;
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      if (visible[i].level === currentLevel) {
-        this.selectNode(visible[i].path);
-        return;
+  /** The default flat-list navigation strategy (used by the DOM renderer). */
+  createDefaultNavigation(): TreeNavigation<T> {
+    const visible = () => this.tree?.visibleFlatNodes ?? [];
+    const indexOfFocused = (flat: LTreeNode<T>[]) => {
+      const currentPath = this._focusedNode?.path;
+      return currentPath ? flat.findIndex(n => n.path === currentPath) : -1;
+    };
+    const parentPathOf = (path: string): string | null => {
+      const lastSep = path.lastIndexOf(this._treePathSeparator);
+      return lastSep > 0 ? path.substring(0, lastSep) : null;
+    };
+    /** The next (dir 1) / previous (dir -1) visible node at the same level as flat[index]. */
+    const sameLevelFrom = (flat: LTreeNode<T>[], index: number, dir: 1 | -1): LTreeNode<T> | null => {
+      const level = flat[index].level;
+      for (let i = index + dir; i >= 0 && i < flat.length; i += dir) {
+        if (flat[i].level === level) return flat[i];
+      }
+      return null;
+    };
+
+    return {
+      navTo: (path: string) => {
+        this.selectNode(path);
+      },
+
+      navNext: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        if (!this._focusedNode) {
+          this._navigation.navTo(flat[0].path);
+          return;
+        }
+        const idx = indexOfFocused(flat);
+        if (idx >= 0 && idx < flat.length - 1) this._navigation.navTo(flat[idx + 1].path);
+      },
+
+      navPrev: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        if (!this._focusedNode) {
+          this._navigation.navTo(flat[flat.length - 1].path);
+          return;
+        }
+        const idx = indexOfFocused(flat);
+        if (idx > 0) this._navigation.navTo(flat[idx - 1].path);
+      },
+
+      navNextSibling: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        const idx = indexOfFocused(flat);
+        if (idx === -1) {
+          this._navigation.navTo(flat[0].path);
+          return;
+        }
+        const target = sameLevelFrom(flat, idx, 1);
+        if (target) this._navigation.navTo(target.path);
+      },
+
+      navPrevSibling: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        const idx = indexOfFocused(flat);
+        if (idx === -1) {
+          this._navigation.navTo(flat[flat.length - 1].path);
+          return;
+        }
+        const target = sameLevelFrom(flat, idx, -1);
+        if (target) this._navigation.navTo(target.path);
+      },
+
+      navInto: () => {
+        const node = this._focusedNode;
+        if (!node || !node.hasChildren) return;
+        if (!node.isExpanded) this.tree?.expandNodes(node.path);
+        // visibleFlatNodes updates synchronously — move to the first child.
+        const flat = visible();
+        const idx = flat.findIndex(n => n.path === node.path);
+        if (idx >= 0 && idx + 1 < flat.length) this._navigation.navTo(flat[idx + 1].path);
+      },
+
+      // To the parent, no collapse (matches svelte-treeview).
+      navOut: () => {
+        const node = this._focusedNode;
+        if (!node) return;
+        const parentPath = parentPathOf(node.path);
+        if (parentPath) this._navigation.navTo(parentPath);
+      },
+
+      navBackOut: () => {
+        const node = this._focusedNode;
+        if (!node) return;
+        const parentPath = parentPathOf(node.path);
+        if (!parentPath) return;
+        this.tree?.collapseNodes(parentPath);
+        this._navigation.navTo(parentPath);
+      },
+
+      navToggle: () => {
+        const node = this._focusedNode;
+        if (!node || !node.hasChildren) return;
+        if (node.isExpanded) this.tree?.collapseNodes(node.path);
+        else this.tree?.expandNodes(node.path);
+        this._scheduleNotify();
+      },
+
+      navFirst: () => {
+        const flat = visible();
+        if (flat.length > 0) this._navigation.navTo(flat[0].path);
+      },
+
+      navLast: () => {
+        const flat = visible();
+        if (flat.length > 0) this._navigation.navTo(flat[flat.length - 1].path);
+      },
+
+      navPageDown: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        const idx = indexOfFocused(flat);
+        const target = Math.min((idx === -1 ? 0 : idx) + NAV_PAGE_SIZE, flat.length - 1);
+        this._navigation.navTo(flat[target].path);
+      },
+
+      navPageUp: () => {
+        const flat = visible();
+        if (flat.length === 0) return;
+        const idx = indexOfFocused(flat);
+        const target = Math.max((idx === -1 ? flat.length : idx) - NAV_PAGE_SIZE, 0);
+        this._navigation.navTo(flat[target].path);
+      },
+
+      // ── Shift+navigation: extend the selected range ─────────────
+      navSelectNext: () => {
+        const flat = visible();
+        const idx = indexOfFocused(flat);
+        if (idx === -1) return;
+        const target = sameLevelFrom(flat, idx, 1);
+        if (target) this._navSelectTo(target.path);
+      },
+
+      navSelectPrev: () => {
+        const flat = visible();
+        const idx = indexOfFocused(flat);
+        if (idx === -1) return;
+        const target = sameLevelFrom(flat, idx, -1);
+        if (target) this._navSelectTo(target.path);
+      },
+
+      navSelectFirst: () => {
+        const flat = visible();
+        if (flat.length > 0) this._navSelectTo(flat[0].path);
+      },
+
+      navSelectLast: () => {
+        const flat = visible();
+        if (flat.length > 0) this._navSelectTo(flat[flat.length - 1].path);
+      },
+
+      navSelectPageDown: () => {
+        const flat = visible();
+        const idx = indexOfFocused(flat);
+        if (idx === -1) return;
+        this._navSelectTo(flat[Math.min(idx + NAV_PAGE_SIZE, flat.length - 1)].path);
+      },
+
+      navSelectPageUp: () => {
+        const flat = visible();
+        const idx = indexOfFocused(flat);
+        if (idx === -1) return;
+        this._navSelectTo(flat[Math.max(idx - NAV_PAGE_SIZE, 0)].path);
+      },
+    };
+  }
+
+  /** Extend the selected range to `path` (Shift+nav) and move focus there. The
+   *  range runs from the Shift anchor (`_lastSelectedPath` — seeded from the
+   *  focused node on the first Shift move; a plain move resets it to the new
+   *  node). No-op in single selection mode. */
+  private _navSelectTo(path: string): void {
+    if (this._selectionMode !== 'multi') return;
+    const focused = this._focusedNode;
+    if (!this._lastSelectedPath && focused) {
+      this._lastSelectedPath = focused.path;
+      if (focused.isSelectable && !this._selectedPaths.has(focused.path)) {
+        this._selectedPaths.add(focused.path);
+        focused.isSelected = true;
+        focused._rev++;
       }
     }
+    this._applySelection(path, { ctrl: false, shift: true });
   }
 
   // ── Clipboard API ─────────────────────────────────────────────────
@@ -3321,6 +3437,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._checkedPaths = new Set(updates.checkedPaths);
     if (updates.selectionMode !== undefined)
       this._selectionMode = updates.selectionMode ?? 'single';
+    if (updates.navigationOverrides !== undefined && (updates.navigationOverrides ?? null) !== this._navigationOverrides)
+      this._applyNavigationOverrides(updates.navigationOverrides);
     if (updates.shouldShowCheckboxes !== undefined) {
       this._shouldShowCheckboxes = updates.shouldShowCheckboxes ?? false;
       this._updateNodeConfig();

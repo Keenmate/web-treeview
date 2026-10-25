@@ -191,6 +191,15 @@ const INPUTS: readonly InputDef[] = [
   // ── Selection model ────────────────────────────────────────────────────────
   { configKey: 'rangeSelectionMode', attribute: 'range-selection-mode', converter: toEnum(['visual', 'logical'] as const), on: 'update', description: 'How Shift+click range selection walks the tree.' },
   { configKey: 'selectionMode', attribute: 'selection-mode', converter: toEnum(['single', 'multi'] as const), on: 'update', description: 'Single- or multi-node selection.' },
+  /**
+   * Replace individual keyboard-navigation methods. Merged over the built-in
+   * defaults (`{ ...defaults, ...navigationOverrides }`) — a method you leave out
+   * keeps its default. Called on the merged object, so inside a `function`
+   * override `this.navTo(path)` reaches the active primitive (the defaults move
+   * through `navTo`). Runs after `beforeKeydownCallback`. JS property only;
+   * reassign to swap at runtime, `null` restores the defaults.
+   */
+  { configKey: 'navigationOverrides', converter: toValue({ validate: (v): v is object | null => v === null || (typeof v === 'object' && !Array.isArray(v)) }), default: null, on: 'update', type: 'TreeNavigationOverrides | null', description: 'Replace individual keyboard-navigation methods (navNextSibling, navPageDown, navSelectNext, …), merged over the defaults. JS property only; `null` restores the defaults.' },
   { configKey: 'shouldShowCheckboxes', attribute: 'show-checkboxes', converter: toBool('default-false'), on: 'update', description: 'Show a checkbox on each node.' },
   { configKey: 'checkboxMode', attribute: 'checkbox-mode', converter: toEnum(['independent', 'cascade'] as const), on: 'update', description: 'Checkbox interaction: `independent` toggles one node; `cascade` toggles the subtree with a tristate box on branches.' },
   { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
@@ -782,6 +791,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   navToggle(): void { this.#treeview?.navToggle(); }
   navFirst(): void { this.#treeview?.navFirst(); }
   navLast(): void { this.#treeview?.navLast(); }
+  navPageDown(): void { this.#treeview?.navPageDown(); }
+  navPageUp(): void { this.#treeview?.navPageUp(); }
+  navSelectNext(): void { this.#treeview?.navSelectNext(); }
+  navSelectPrev(): void { this.#treeview?.navSelectPrev(); }
+  navSelectFirst(): void { this.#treeview?.navSelectFirst(); }
+  navSelectLast(): void { this.#treeview?.navSelectLast(); }
+  navSelectPageDown(): void { this.#treeview?.navSelectPageDown(); }
+  navSelectPageUp(): void { this.#treeview?.navSelectPageUp(); }
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
 

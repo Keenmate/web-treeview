@@ -89,7 +89,7 @@ See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./d
 
 - **Two rendering modes** — flat (default, up to ~10k nodes) and virtual scroll (~50 DOM nodes for trees of 100k+).
 - **LTree path model** — materialized path hierarchy (`'1'`, `'1.1'`, `'1.2.3'`) with configurable separator.
-- **Three node states** — single focus (arrow keys), selected set (Ctrl / Shift+click), checked set (checkboxes).
+- **Three node states** — single focus (arrow keys, Home/End, PageUp/PageDown), selected set (Ctrl / Shift+click, Shift+Arrow/Home/End/PageUp/PageDown), checked set (checkboxes). Navigation methods are replaceable via `navigationOverrides`.
 - **Full drag and drop** — internal reorder, cross-tree drag, glow / floating drop zones, touch support, copy operations.
 - **Multi-level context menus** — viewport-aware positioning via Floating UI, keyboard shortcuts, named dividers, custom item rendering; entries are core action items (built-ins `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`, lazy submenus, an `action` event).
 - **Bulk operations** — `insertBranch`, `replaceBranch`, `deleteBranch` for efficient batch mutations.

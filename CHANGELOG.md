@@ -76,6 +76,19 @@ camelCase `on*` twin (core) that receives the **detail**.
 
 ### Added
 
+- **Keyboard: PageUp / PageDown + Shift-extend (svelte-treeview parity, TV-4).** `PageDown` /
+  `PageUp` move focus ~10 visible rows (clamped). In `selection-mode="multi"`, `Shift+ArrowDown/Up`,
+  `Shift+Home/End` and `Shift+PageDown/PageUp` extend the selected range from an anchor (the clicked /
+  first-focused node; any plain move resets it); a no-op in single mode. New controller / element
+  methods `navPageDown`, `navPageUp`, `navSelectNext`, `navSelectPrev`, `navSelectFirst`,
+  `navSelectLast`, `navSelectPageDown`, `navSelectPageUp` (svelte-treeview's `navHighlight*`, named
+  for this package's "selected" vocabulary).
+- **`navigationOverrides`** (JS property) — replace individual navigation methods, merged over the
+  defaults (`{ ...defaults, ...navigationOverrides }`, as in svelte-treeview). Called on the merged
+  object (`this.navTo(path)` inside a `function` override); the defaults move through `navTo`;
+  `el.controller.nav*()` routes through it too; reassign to swap at runtime, `null` restores the
+  defaults. `beforeKeydownCallback` still runs first. `TreeNavigation` / `TreeNavigationOverrides`
+  types are exported.
 - `--wtv-context-menu-active-color`; `.wtv__context-menu-item--active`, `.wtv__context-menu-loading`.
 - Exported types for every ctx and event detail (`TreeViewController`, `TreeViewContext`,
   `NodeContext`, `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`,

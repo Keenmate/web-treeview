@@ -14,6 +14,7 @@ import type {
   ApplyChangesResult
 } from '../ltree/types';
 import type { RenderStats } from '../renderer/render-coordinator';
+import type { TreeNavigationOverrides } from '../navigation';
 import type { PasteResult, ClipboardEntry, ClipboardOperation } from '../clipboard';
 import type { Index, SearchOptions } from 'flexsearch';
 
@@ -482,6 +483,8 @@ export interface TreeEngineConfig<T> {
   // SELECTION MODEL (rc06+: focusedNode / selectedPaths / checkedPaths)
   rangeSelectionMode?: RangeSelectionMode;
   selectionMode?: 'single' | 'multi';
+  /** Replace individual keyboard-navigation methods (merged over the defaults). */
+  navigationOverrides?: TreeNavigationOverrides<T> | null;
   shouldShowCheckboxes?: boolean;
   checkboxMode?: CheckboxMode;
   /** Which paths the selection EMITS in cascade mode. Default 'rolled-up'. */

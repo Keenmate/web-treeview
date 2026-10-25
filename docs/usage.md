@@ -146,7 +146,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `selection-mode` | `string` | `'single'` | `'single'` (Ctrl/Shift+click degrade to plain click) \| `'multi'` (Ctrl+toggle, Shift+range) |
+| `selection-mode` | `string` | `'single'` | `'single'` (Ctrl/Shift+click degrade to plain click; Shift+keyboard extend is a no-op) \| `'multi'` (Ctrl+toggle, Shift+range, Shift+Arrow/Home/End/PageUp/PageDown extend) |
 | `range-selection-mode` | `string` | `'visual'` | `'visual'` (visible flat nodes) \| `'logical'` (tree walk) |
 | `show-checkboxes` | `boolean` | `false` | Render checkbox per selectable node (config key: `shouldShowCheckboxes`) |
 | `checkbox-mode` | `string` | `'independent'` | `'independent'` (per-node) \| `'cascade'` (parent → descendants) |
@@ -210,6 +210,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 |----------|------|-------------|
 | `data` | `T[]` | Array of data objects to display |
 | `renderer` | `TreeViewRenderer<T>` | Custom renderer (replaces default DomRenderer) |
+| `navigationOverrides` | `TreeNavigationOverrides<T> \| null` | Replace individual keyboard-navigation methods — see [Keyboard navigation overrides](#keyboard-navigation-overrides). Reassign to swap at runtime; `null` restores the defaults |
 | `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + `getNodeRef(path)`, `getFocusedNode()`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
 
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
@@ -357,6 +358,10 @@ All methods are available on the element **and** on `el.controller`.
 | `navBackOut` | `()` | Collapse parent and focus it |
 | `navToggle` | `()` | Toggle expand/collapse on current node |
 | `navFirst` / `navLast` | `()` | Focus first / last visible node |
+| `navPageDown` / `navPageUp` | `()` | Focus the node ~10 visible rows down / up (clamped) |
+| `navSelectNext` / `navSelectPrev` | `()` | Extend the selected range to the next / previous sibling (multi mode; no-op in single) |
+| `navSelectFirst` / `navSelectLast` | `()` | Extend the selected range to the first / last visible node (multi mode) |
+| `navSelectPageDown` / `navSelectPageUp` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
 | `insertBranch` | `(parentPath, data[]): result` | Insert multiple children at once |
 | `replaceBranch` | `(parentPath, data[]): result` | Replace all children of a node |
 | `deleteBranch` | `(path, keepParent?): result` | Delete node and descendants |
@@ -364,6 +369,33 @@ All methods are available on the element **and** on `el.controller`.
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
+
+### Keyboard navigation overrides
+
+Every navigation key goes through a navigation object — the built-in defaults merged with
+`navigationOverrides` (`{ ...defaults, ...navigationOverrides }`, same as svelte-treeview). Replace
+only the methods you need; the rest keep their default. The methods are called on the merged
+object, so inside a `function` override `this` is the active navigation (`this.navTo(path)`,
+`this.navNext()`). The defaults move through `navTo`, so overriding `navTo` affects every built-in
+move. `el.controller.nav*()` routes through the overrides too. `beforeKeydownCallback` still runs
+first and can suppress a key entirely.
+
+```js
+// ArrowDown / ArrowUp walk every visible row (into children) instead of jumping between siblings.
+tree.navigationOverrides = {
+  navNextSibling() { this.navNext(); },
+  navPrevSibling() { this.navPrev(); },
+};
+tree.navigationOverrides = null; // back to the defaults
+```
+
+| Key | Method | Shift variant (multi mode) |
+|-----|--------|----------------------------|
+| `ArrowDown` / `ArrowUp` | `navNextSibling` / `navPrevSibling` | `navSelectNext` / `navSelectPrev` |
+| `Home` / `End` | `navFirst` / `navLast` | `navSelectFirst` / `navSelectLast` |
+| `PageDown` / `PageUp` | `navPageDown` / `navPageUp` | `navSelectPageDown` / `navSelectPageUp` |
+| `ArrowRight` / `ArrowLeft` / `Backspace` | `navInto` / `navOut` / `navBackOut` | — |
+| `Enter` / `Space` | `navToggle` | — |
 
 ## Events
 

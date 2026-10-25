@@ -14,8 +14,7 @@ Entries 1–5 are the audit's known bugs TV-1…TV-5
 
 ## Open questions for the user (2026-10-24 e2e run)
 
-- **TV-4** (PageUp/PageDown + Shift-extend): feature work — implement? The 10
-  `keyboard-nav.spec.ts` placeholders stay `test.skip` until then.
+- ~~**TV-4** (PageUp/PageDown + Shift-extend)~~ — implemented 2026-10-25 (see #4).
 - **D1 for the treeview** (#15): should a DOM move keep expansion / selection /
   checks (activate/deactivate like core's model), as decided for dropzone /
   editor / daterangepicker? Pinned as `test.fail` assuming yes.
@@ -79,15 +78,21 @@ emitting `focus-change`.
 moves focus to the last visible row and a `focus-change` *is* emitted (pinned
 as a passing test in the same spec).
 
-## 4. (TV-4) PageUp / PageDown / Shift-extend keyboard selection unimplemented
+## 4. ~~(TV-4) PageUp / PageDown / Shift-extend keyboard selection unimplemented~~ — resolved
 
-**Where:** `src/renderer/dom-renderer.ts` keyboard handler (~374-422).
+**Where:** `src/renderer/dom-renderer.ts` keyboard handler +
+`src/controller/tree-engine.ts` `createDefaultNavigation()`.
 
-**Symptom:** feature gap vs the Svelte build — PageUp/PageDown don't move
-focus, Shift+Arrow/Home/End/PageUp/PageDown don't extend the selection.
+**Was:** feature gap vs the Svelte build — PageUp/PageDown didn't move focus,
+Shift+Arrow/Home/End/PageUp/PageDown didn't extend the selection.
 
-**Test status:** the 10 `keyboard-nav.spec.ts` placeholders stay `test.skip`.
-**Needs the user's go-ahead** (feature work, own WP) before implementing.
+**Resolved 2026-10-25:** ported 1:1 from svelte-treeview — PageDown/PageUp
+jump ±10 visible rows (clamped); the Shift variants extend the selected range
+from the anchor in multi mode (no-op in single); `navHighlight*` became
+`navSelect*` (this package's vocabulary). New `navigationOverrides` property
+merges over the defaults (svelte's `{ ...createDefaultNavigation(), ...overrides }`).
+The 10 `keyboard-nav.spec.ts` skips are now real tests, plus anchor / single-mode
+/ `navigationOverrides` tests (39 in the spec, all green).
 
 ## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — not reproducible
 

@@ -942,6 +942,11 @@
                 "type": "'single' | 'multi'"
               },
               {
+                "name": "navigationOverrides",
+                "description": "Replace individual keyboard-navigation methods (navNextSibling, navPageDown, navSelectNext, …), merged over the defaults. JS property only; `null` restores the defaults.",
+                "type": "TreeNavigationOverrides | null"
+              },
+              {
                 "name": "shouldShowCheckboxes",
                 "description": "Show a checkbox on each node.",
                 "type": "boolean"

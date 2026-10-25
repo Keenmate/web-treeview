@@ -6,20 +6,24 @@ When the tree body has focus (click any node first), keyboard navigation is acti
 
 | Key | Action |
 |-----|--------|
-| `ArrowDown` / `ArrowUp` | Focus next / previous visible node |
+| `ArrowDown` / `ArrowUp` | Focus next / previous visible node at the same level |
 | `ArrowRight` | Expand and focus first child |
 | `ArrowLeft` | Focus parent node |
 | `Backspace` | Collapse parent and focus it |
 | `Enter` / `Space` | Toggle expand / collapse on focused node |
 | `Home` / `End` | Focus first / last visible node |
-| `PageDown` / `PageUp` | _TODO — controller gap, tracked in e2e skips_ |
-| `Shift+ArrowDown / Up / Home / End` | _TODO — extend selection range, controller gap_ |
+| `PageDown` / `PageUp` | Focus the node ~10 visible rows down / up (clamped to the ends) |
+| `Shift+ArrowDown` / `Shift+ArrowUp` | Extend the selected range to the next / previous sibling (multi selection mode; no-op in single) |
+| `Shift+Home` / `Shift+End` | Extend the selected range to the first / last visible node (multi mode) |
+| `Shift+PageDown` / `Shift+PageUp` | Extend the selected range ~10 visible rows down / up (multi mode) |
 | `Ctrl+A` | Add every visible node to the selected set |
 | `Ctrl/Cmd+C` / `Ctrl/Cmd+X` / `Ctrl/Cmd+V` | Copy / cut / paste |
 | `Delete` / `Shift+Delete` | Delete selected node(s) |
 | `Escape` | Cancel pending cut, or clear the selection |
 
-The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `beforeKeydownCallback` interceptor (`ctx = { event, focusedNode, selectedNodes, controller, element }`, `controller` = the public `el.controller` facade) runs **first** on every keydown; returning `false` suppresses both the default navigation and the built-in shortcuts for that key. Built-in delete honors `beforeDeleteCallback` and fires the `node-delete` event (+ `onNodeDelete`).
+The clipboard and delete shortcuts (Ctrl/Cmd+C/X/V, Delete/Shift+Delete, Escape) are built-in and gated by `shouldHandleKeyboardShortcuts` (default `true`) — set it `false` to opt out entirely. The `beforeKeydownCallback` interceptor (`ctx = { event, focusedNode, selectedNodes, controller, element }`, `controller` = the public `el.controller` facade) runs **first** on every keydown; returning `false` suppresses both the default navigation and the built-in shortcuts for that key. Individual navigation methods can be replaced via the `navigationOverrides` property (see [usage.md](./usage.md#keyboard-navigation-overrides)). Built-in delete honors `beforeDeleteCallback` and fires the `node-delete` event (+ `onNodeDelete`).
+
+The Shift range runs from an anchor: the clicked node (or the focused node on the first Shift move) stays fixed while repeated Shift moves grow or shrink the range; any plain move (or click) resets it.
 
 Plain `Tab` moves focus *out of* the tree to the next focusable element on the page; the tree itself is a single tab stop with internal arrow-key navigation, per the WAI-ARIA tree pattern.
 
@@ -28,7 +32,7 @@ Plain `Tab` moves focus *out of* the tree to the next focusable element on the p
 The tree maintains three independent state sets — see [usage.md](./usage.md) for the full API:
 
 - `focusedNode` — single node. Driven by clicks (per `clickBehavior`) and arrow keys. Renders the `.wtv__node-content--focused` always-on marker class plus the optional `focusedNodeClass` (if configured).
-- `selectedPaths` — multi-select set. Driven by Ctrl / Shift + click and `Ctrl+A`. Renders `.wtv__node-content--selected` plus the optional `selectedNodeClass`.
+- `selectedPaths` — multi-select set. Driven by Ctrl / Shift + click, Shift + Arrow / Home / End / PageUp / PageDown, and `Ctrl+A`. Renders `.wtv__node-content--selected` plus the optional `selectedNodeClass`.
 - `checkedPaths` — checkbox / data-state set. Driven by checkbox clicks when `shouldShowCheckboxes` is on, or mirrored from `selectedPaths` when checkboxes are off.
 
 `silent: true` on `selectNode` / `clearSelection` / `clearChecked` suppresses BOTH the user callback AND the corresponding DOM event — useful when restoring state from a URL parameter so consumers don't see a phantom "user interaction" event on page load.
@@ -47,4 +51,4 @@ Long-press (300 ms) initiates a drag from a touch device. The touch ghost elemen
 
 ## Tested patterns
 
-The Playwright e2e suite covers the keyboard navigation paths above. Skipped tests are listed at the bottom of each spec file with a one-line reason; the `keyboard-nav.spec.ts` skips track the PageUp/PageDown and Shift+range controller gaps.
+The Playwright e2e suite covers the keyboard navigation paths above. Skipped tests are listed at the bottom of each spec file with a one-line reason. `keyboard-nav.spec.ts` covers every key above, including PageUp/PageDown, the Shift-extend variants and `navigationOverrides`.

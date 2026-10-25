@@ -40,7 +40,12 @@
             extra.getContextMenuItemsCallback = ({ node }) => [
                 { id: 'open', text: 'Open', shortcut: 'o', onClick: (d) => logTo('cm-log', `click:open:${d.node.path}`) },
                 { id: 'star', text: 'Star', shortcut: 's', onClick: (d) => logTo('cm-log', `click:star:${d.node.path}`) },
-                { id: 'off', text: 'Disabled', shortcut: 'd', isDisabled: true, onClick: () => logTo('cm-log', 'click:off') }
+                { id: 'off', text: 'Disabled', shortcut: 'd', isDisabled: true, onClick: () => logTo('cm-log', 'click:off') },
+                { id: 'more', text: 'More', children: [
+                    { id: 'm-off', text: 'Unavailable', isDisabled: true },
+                    { id: 'm1', text: 'First', onClick: (d) => logTo('cm-log', `click:m1:${d.node.path}`) },
+                    { id: 'm2', text: 'Second', onClick: (d) => logTo('cm-log', `click:m2:${d.node.path}`) }
+                ] }
             ];
             // Fill only the "star" item; others fall back to the default rendering.
             extra.renderContextMenuItemCallback = ({ menuItem, node, buttonElement }) => {

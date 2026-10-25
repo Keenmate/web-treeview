@@ -13,9 +13,8 @@ import type { TreeEngine } from '../controller/tree-engine';
 import type { TreeEngineSnapshot, NodeConfig } from '../controller/types';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition } from '../ltree/types';
-import { resolveMenuEntries, getMenuChildren } from '@keenmate/web-components-core/actions';
-import type { TreeMenuContext, TreeMenuEntry, TreeMenuItem } from '../interaction';
-import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
+import type { TreeMenuContext, TreeMenuItem } from '../interaction';
+import { openMenu, type MenuHandle } from '@keenmate/web-components-core/menu';
 import { createTooltip, type TooltipHandle } from '@keenmate/web-components-core/positioning';
 import {
   classifyDevice,
@@ -61,10 +60,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private bodyEl: HTMLElement | null = null;
   private footerEl: HTMLElement | null = null;
   private debugEl: HTMLElement | null = null;
-  private contextMenuEl: HTMLElement | null = null;
-  private _ctxSubmenus: HTMLElement[] = [];
-  private _ctxCleanupAutoUpdate: (() => void) | null = null;
-  private _ctxKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+  /** The open context menu (core `/menu`) and what it was opened for. */
+  private _menu: MenuHandle | null = null;
+  private _menuKey: string | null = null;
+  /** The next menu open came from the keyboard (Shift+F10 / ContextMenu) → focus its first item. */
+  private _isMenuOpeningFromKeyboard = false;
   private loadingEl: HTMLElement | null = null;
 
   // Virtual scroll DOM elements
@@ -154,12 +154,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.loadingEl.innerHTML = '<div class="wtv__loading-spinner"></div>';
     this.container.appendChild(this.loadingEl);
 
-    // Context menu
-    this.contextMenuEl = document.createElement('div');
-    this.contextMenuEl.className = 'wtv__context-menu';
-    this.contextMenuEl.style.display = 'none';
-    this.container.appendChild(this.contextMenuEl);
-
     // Set controller container for scrollToPath
     controller.containerElement = container;
 
@@ -206,10 +200,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.unsubState = null;
     this.unsubConfig = null;
     this._detachBodyListeners();
-    this._closeAllSubmenus();
-    this._ctxCleanupAutoUpdate?.();
-    this._ctxCleanupAutoUpdate = null;
-    this._removeCtxKeydownHandler();
+    this._closeMenu();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
     this._stopEnvObserve = null;
@@ -234,8 +225,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /**
    * The host was detached (a DOM move or a removal). Stop the LIVE resources —
-   * environment / size observers, the document `dragend` listener, the context
-   * menu's floating-ui autoUpdate + keydown handler, shown tooltips — and keep
+   * environment / size observers, the document `dragend` listener, the open
+   * context menu (its positioning + document listeners), shown tooltips — and keep
    * the rendered rows and all state. The body listeners live on elements inside
    * the shadow root, so they move with it and stay attached (no duplicates on
    * reconnect). The body scroll offset is tracked while connected (a detached
@@ -245,10 +236,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   deactivate(): void {
     if (!this._isActive) return;
     this._isActive = false;
-    this._closeAllSubmenus();
-    this._ctxCleanupAutoUpdate?.();
-    this._ctxCleanupAutoUpdate = null;
-    this._removeCtxKeydownHandler();
+    this._closeMenu();
     for (const h of this.tooltips.values()) h.hide();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
@@ -438,6 +426,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       return;
     }
 
+    // Shift+F10 / the ContextMenu key open the focused node's context menu.
+    if (event.key === 'ContextMenu' || (event.key === 'F10' && shift && !ctrl && !event.altKey)) {
+      if (this._openContextMenuFromKeyboard()) event.preventDefault();
+      return;
+    }
+
     switch (event.key) {
       // Shift variants extend the selected range (a no-op in single selection mode).
       case 'ArrowDown':
@@ -515,6 +509,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (node) {
         this.controller.nodeCallbacks.onNodeRightClicked(node, event);
       }
+    } else if (this.controller.contextMenuVisible) {
+      // The browser's keyboard-initiated `contextmenu` (Shift+F10 / ContextMenu key)
+      // targets the focused body — ours is already open, don't show the native one too.
+      event.preventDefault();
     }
   };
 
@@ -1753,275 +1751,87 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.appendChild(zones);
   }
 
-  // ── Context menu (Floating UI) ──────────────────────────────────────
+  // ── Context menu (core /menu) ───────────────────────────────────────
 
+  /**
+   * Reflect the engine's context-menu state. The menu itself — rendering, submenus,
+   * positioning, dismiss, keyboard — is core `openMenu()`; it opens once per
+   * (node, point) and reports its own close back to the engine.
+   */
   private _updateContextMenu(snapshot: TreeEngineSnapshot<T>): void {
-    if (!this.contextMenuEl || !this.controller) return;
-
-    if (!snapshot.contextMenuVisible || !snapshot.contextMenuNode) {
-      this._closeAllSubmenus();
-      this._ctxCleanupAutoUpdate?.();
-      this._ctxCleanupAutoUpdate = null;
-      this._removeCtxKeydownHandler();
-      this.contextMenuEl.style.display = 'none';
+    if (!this.controller || !this.container) return;
+    const node = snapshot.contextMenuNode;
+    if (!snapshot.contextMenuVisible || !node || !this._isActive) {
+      this._closeMenu();
       return;
     }
+    const key = `${node.path}|${snapshot.contextMenuX}|${snapshot.contextMenuY}`;
+    if (this._menu?.isOpen && this._menuKey === key) return;
+    this._closeMenu();
 
-    // Custom context menu render callback
-    if (this.config.renderContextMenuCallback) {
-      this.contextMenuEl.innerHTML = '';
-      this.contextMenuEl.style.display = 'block';
-      this.config.renderContextMenuCallback(
-        snapshot.contextMenuNode,
-        () => this.controller!.closeContextMenu(),
-        this.contextMenuEl
-      );
-      // Position with Floating UI using virtual element at cursor
-      this._positionAtCursor(this.contextMenuEl, snapshot.contextMenuX, snapshot.contextMenuY, snapshot.contextMenuXOffset, snapshot.contextMenuYOffset);
-      return;
-    }
-
-    // Default: render items from contextMenuCallback (the public getContextMenuItemsCallback).
+    const isFromKeyboard = this._isMenuOpeningFromKeyboard;
+    this._isMenuOpeningFromKeyboard = false;
+    const config = this.config;
     // One surface ctx per open: every item callback, onClick and submenu share it.
-    const callbackRef = this.controller.contextMenuCallbackCb;
-    if (callbackRef) {
-      const node = snapshot.contextMenuNode;
-      const ctx = this.config.contextMenuContext?.(node)
-        ?? (this.controller.nodeRef(node) as unknown as TreeMenuContext<T>);
-      const items = callbackRef(node);
-      this.contextMenuEl.innerHTML = '';
-      this.contextMenuEl.style.display = 'block';
-      this._renderContextMenuItems(items, this.contextMenuEl, ctx, node);
-      this._positionAtCursor(this.contextMenuEl, snapshot.contextMenuX, snapshot.contextMenuY, snapshot.contextMenuXOffset, snapshot.contextMenuYOffset);
-      this._installCtxKeydownHandler();
+    const ctx = config.contextMenuContext?.(node)
+      ?? (this.controller.nodeRef(node) as unknown as TreeMenuContext<T>);
+    const renderMenu = config.renderContextMenuCallback;
+    const items = renderMenu ? [] : this.controller.contextMenuCallbackCb?.(node) ?? [];
+    const menu = openMenu(items, ctx, {
+      at: { x: snapshot.contextMenuX + snapshot.contextMenuXOffset, y: snapshot.contextMenuY + snapshot.contextMenuYOffset },
+      host: this.container,
+      shouldFocusFirst: isFromKeyboard,
+      returnFocusTo: this.bodyEl,
+      shouldCloseOnOutsideInteraction: !snapshot.isContextMenuPinned,
+      defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
+      renderItem: config.renderContextMenuItemCallback
+        ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)
+        : undefined,
+      renderMenu: renderMenu
+        ? (el) => renderMenu(node, () => this.controller?.closeContextMenu(), el)
+        : undefined,
+      runAction: (item, { triggerElement, sourceEvent }) =>
+        config.activateContextMenuItem?.(item as TreeMenuItem<T>, ctx, triggerElement, sourceEvent),
+      onClose: () => {
+        if (this._menu !== menu) return; // replaced by a newer open
+        this._menu = null;
+        this._menuKey = null;
+        if (this.controller?.contextMenuVisible) this.controller.closeContextMenu();
+      },
+    });
+    if (!menu.isOpen) {
+      // Nothing visible to show — keep the engine in sync.
+      this.controller.closeContextMenu();
+      return;
     }
+    this._menu = menu;
+    this._menuKey = key;
   }
 
-  /** Position a menu element at cursor coordinates using Floating UI */
-  private _positionAtCursor(menuEl: HTMLElement, x: number, y: number, xOffset: number = 0, yOffset: number = 0): void {
-    this._ctxCleanupAutoUpdate?.();
-    // Virtual reference element at cursor position (offsets shift the anchor point)
-    const ax = x + xOffset;
-    const ay = y + yOffset;
-    const virtualRef = {
-      getBoundingClientRect: () => ({
-        x: ax, y: ay, width: 0, height: 0,
-        top: ay, left: ax, right: ax, bottom: ay,
-      }),
-    };
-    this._ctxCleanupAutoUpdate = autoUpdate(virtualRef, menuEl, () => {
-      computePosition(virtualRef, menuEl, {
-        strategy: 'fixed',
-        placement: 'bottom-start',
-        middleware: [offset(0), flip(), shift({ padding: 8 })],
-      }).then(({ x: fx, y: fy }) => {
-        menuEl.style.left = `${fx}px`;
-        menuEl.style.top = `${fy}px`;
-      });
-    });
-  }
-
-  /** Position a submenu next to its parent item using Floating UI */
-  private _positionSubmenu(parentItem: HTMLElement, submenuEl: HTMLElement): () => void {
-    return autoUpdate(parentItem, submenuEl, () => {
-      if (!parentItem.isConnected || !submenuEl.isConnected) return;
-      computePosition(parentItem, submenuEl, {
-        strategy: 'fixed',
-        placement: 'right-start',
-        middleware: [offset({ mainAxis: 0, crossAxis: -4 }), flip({ fallbackPlacements: ['left-start'] }), shift({ padding: 8 })],
-      }).then(({ x: fx, y: fy }) => {
-        if (submenuEl.isConnected) {
-          submenuEl.style.left = `${fx}px`;
-          submenuEl.style.top = `${fy}px`;
-        }
-      });
-    });
+  /** Close the open menu without echoing it back to the engine. */
+  private _closeMenu(): void {
+    const menu = this._menu;
+    this._menu = null;
+    this._menuKey = null;
+    menu?.close();
   }
 
   /**
-   * Render one menu level (core `resolveMenuEntries`: hidden items dropped, dividers
-   * trimmed; each field resolves `get*Callback(ctx)` → static → built-in default).
-   * Buttons carry `data-action` (built-in name or `custom`) and `data-id`. A leaf
-   * activates through `activateContextMenuItem` (runAction); an item with `children` /
-   * `getChildrenCallback` opens a submenu on hover (a lazy one shows a loading row).
+   * Shift+F10 / the ContextMenu key: open the menu for the focused node, below its
+   * row, with the first item focused. Returns `false` when there is no menu to open.
    */
-  private _renderContextMenuItems(entries: TreeMenuEntry<T>[], container: HTMLElement, ctx: TreeMenuContext<T>, contextNode: LTreeNode<T>, cancelParentHide?: () => void): void {
-    const resolvedEntries = resolveMenuEntries(entries, ctx, (item) => this.config.contextMenuItemDefaults?.(item, ctx));
-    // If any item at this level has an icon, reserve the icon column for all of them.
-    const hasAnyIcon = resolvedEntries.some(e => e.kind === 'item' && !!e.resolved.icon);
-
-    for (const entry of resolvedEntries) {
-      if (entry.kind === 'divider') {
-        const divider = document.createElement('div');
-        divider.className = 'wtv__context-menu-divider';
-        if (entry.text) {
-          divider.classList.add('wtv__context-menu-divider--named');
-          divider.textContent = entry.text;
-        }
-        container.appendChild(divider);
-        continue;
-      }
-
-      const { item, resolved, hasChildren } = entry;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'wtv__context-menu-item';
-      btn.dataset.action = resolved.action;
-      if (resolved.id) btn.dataset.id = resolved.id;
-      if (resolved.shortcut) btn.setAttribute('data-shortcut', resolved.shortcut);
-      if (resolved.isDisabled) {
-        btn.classList.add('wtv__context-menu-item--disabled');
-        btn.setAttribute('aria-disabled', 'true');
-      }
-      if (resolved.isDanger) btn.classList.add('wtv__context-menu-item--danger');
-      if (resolved.isActive) {
-        btn.classList.add('wtv__context-menu-item--active');
-        btn.setAttribute('aria-pressed', 'true');
-      }
-      if (hasChildren) btn.classList.add('wtv__context-menu-item--has-children');
-      if (resolved.cssClass) btn.classList.add(...resolved.cssClass.split(' '));
-      if (resolved.tooltip) btn.title = resolved.tooltip;
-
-      // Custom item rendering: callback gets first shot, default fills in if empty
-      if (this.config.renderContextMenuItemCallback) {
-        this.config.renderContextMenuItemCallback(item, contextNode, btn);
-      }
-      // Default rendering if callback didn't populate the button (text, never HTML)
-      if (!btn.hasChildNodes()) {
-        if (hasAnyIcon) {
-          const icon = document.createElement('span');
-          icon.className = 'wtv__context-menu-icon';
-          if (resolved.icon) icon.textContent = resolved.icon;
-          btn.appendChild(icon);
-        }
-
-        const labelSpan = document.createElement('span');
-        labelSpan.className = 'wtv__context-menu-label';
-        labelSpan.textContent = resolved.text;
-        btn.appendChild(labelSpan);
-
-        if (resolved.shortcut) {
-          const shortcutSpan = document.createElement('span');
-          shortcutSpan.className = 'wtv__context-menu-shortcut';
-          shortcutSpan.textContent = resolved.shortcut;
-          btn.appendChild(shortcutSpan);
-        }
-
-        if (hasChildren) {
-          const arrow = document.createElement('span');
-          arrow.className = 'wtv__context-menu-arrow';
-          arrow.textContent = '▸'; // ▸
-          btn.appendChild(arrow);
-        }
-      }
-
-      // Submenu hover logic
-      if (hasChildren) {
-        let submenuEl: HTMLElement | null = null;
-        let cleanupPos: (() => void) | null = null;
-        let hideTimeout: ReturnType<typeof setTimeout> | null = null;
-
-        const cancelHide = () => {
-          if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
-          cancelParentHide?.();
-        };
-
-        const showSubmenu = () => {
-          cancelHide();
-          if (submenuEl) return;
-          const el = document.createElement('div');
-          submenuEl = el;
-          el.className = 'wtv__context-menu wtv__context-submenu';
-          el.style.display = 'block';
-          el.style.position = 'fixed';
-          // Static children render now; a getChildrenCallback (maybe async) shows a loading row first.
-          const loading = document.createElement('div');
-          loading.className = 'wtv__context-menu-loading';
-          loading.textContent = '…';
-          el.appendChild(loading);
-          this.container!.appendChild(el);
-          this._ctxSubmenus.push(el);
-          cleanupPos = this._positionSubmenu(btn, el);
-          void getMenuChildren(item, ctx).then((children) => {
-            if (submenuEl !== el) return; // hidden meanwhile
-            el.innerHTML = '';
-            this._renderContextMenuItems(children as TreeMenuEntry<T>[], el, ctx, contextNode, cancelHide);
-          });
-
-          el.addEventListener('mouseenter', () => {
-            cancelHide();
-          });
-          el.addEventListener('mouseleave', () => {
-            hideTimeout = setTimeout(hideSubmenu, 150);
-          });
-        };
-
-        const hideSubmenu = () => {
-          if (cleanupPos) { cleanupPos(); cleanupPos = null; }
-          if (submenuEl) {
-            const idx = this._ctxSubmenus.indexOf(submenuEl);
-            if (idx >= 0) this._ctxSubmenus.splice(idx, 1);
-            submenuEl.remove();
-            submenuEl = null;
-          }
-        };
-
-        btn.addEventListener('mouseenter', showSubmenu);
-        btn.addEventListener('mouseleave', () => {
-          hideTimeout = setTimeout(hideSubmenu, 150);
-        });
-      } else if (!resolved.isDisabled) {
-        btn.addEventListener('click', async (event) => {
-          try {
-            if (this.config.activateContextMenuItem) {
-              await this.config.activateContextMenuItem(item as TreeMenuItem<T>, ctx, btn, event);
-            }
-          } finally {
-            // Auto-close after activating a leaf item — like every native menu. Opt out
-            // with shouldCloseOnClick:false to keep the menu open for incremental actions;
-            // the handler then dismisses it via controller.closeContextMenu().
-            if (item.shouldCloseOnClick !== false) this.controller?.closeContextMenu();
-          }
-        });
-      }
-
-      container.appendChild(btn);
-    }
-  }
-
-  private _closeAllSubmenus(): void {
-    for (const el of this._ctxSubmenus) {
-      el.remove();
-    }
-    this._ctxSubmenus = [];
-  }
-
-  /** Install keydown listener for shortcut matching while context menu is open */
-  private _installCtxKeydownHandler(): void {
-    this._removeCtxKeydownHandler();
-    this._ctxKeydownHandler = (e: KeyboardEvent) => {
-      if (!this.container) return;
-      const key = e.key.toLowerCase();
-      const menuItems = this.container.querySelectorAll('.wtv__context-menu-item[data-shortcut]') as NodeListOf<HTMLElement>;
-      for (const el of menuItems) {
-        const shortcut = el.dataset.shortcut!;
-        const disabled = el.classList.contains('wtv__context-menu-item--disabled');
-        if (disabled) continue;
-        if (shortcut.toLowerCase() === key || shortcut === e.key) {
-          e.preventDefault();
-          el.click();
-          return;
-        }
-      }
-    };
-    document.addEventListener('keydown', this._ctxKeydownHandler);
-  }
-
-  private _removeCtxKeydownHandler(): void {
-    if (this._ctxKeydownHandler) {
-      document.removeEventListener('keydown', this._ctxKeydownHandler);
-      this._ctxKeydownHandler = null;
-    }
+  private _openContextMenuFromKeyboard(): boolean {
+    const ctrl = this.controller;
+    if (!ctrl || !this.bodyEl) return false;
+    if (!ctrl.hasContextMenuRenderer && !ctrl.contextMenuCallbackCb) return false;
+    const node = ctrl.focusedNode;
+    if (!node) return false;
+    const nodeEl = this.bodyEl.querySelector(`.wtv__node[data-tree-path="${CSS.escape(node.path)}"]`);
+    const anchorEl = (nodeEl?.querySelector('.wtv__node-content') ?? nodeEl) as HTMLElement | null;
+    const rect = (anchorEl ?? this.bodyEl).getBoundingClientRect();
+    this._isMenuOpeningFromKeyboard = true;
+    ctrl.openContextMenu(node, rect.left, rect.bottom);
+    return true;
   }
 
   // ── Debug info ──────────────────────────────────────────────────────

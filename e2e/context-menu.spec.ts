@@ -40,13 +40,13 @@ function menuIn(card: Locator): Locator {
   // The menu is appended inside the web-component's shadow root — Playwright
   // pierces it but the menu element is NOT a descendant of the card. Use a
   // page-level locator instead.
-  return card.page().locator('.wtv__context-menu').first();
+  return card.page().locator('.bliss-menu').first();
 }
 
 function menuItem(card: Locator, label: string): Locator {
   return menuIn(card)
-    .locator('> .wtv__context-menu-item')
-    .filter({ has: card.page().locator('.wtv__context-menu-label', { hasText: new RegExp(`^${escapeRe(label)}$`) }) })
+    .locator('> .bliss-menu__item')
+    .filter({ has: card.page().locator('.bliss-menu__label', { hasText: new RegExp(`^${escapeRe(label)}$`) }) })
     .first();
 }
 
@@ -85,8 +85,8 @@ test.describe('Callback approach', () => {
     await expect(menuItem(card, 'Export As...')).toBeVisible();
     await expect(menuItem(card, 'Rename')).toBeVisible();
     await expect(menuItem(card, 'Delete')).toBeVisible();
-    await expect(menuIn(card).locator('.wtv__context-menu-divider--named')).toHaveText('Danger zone');
-    await expect(menuIn(card).locator('.wtv__context-menu-label', { hasText: 'Read-only file' })).toHaveCount(0);
+    await expect(menuIn(card).locator('.bliss-menu__divider--named')).toHaveText('Danger zone');
+    await expect(menuIn(card).locator('.bliss-menu__label', { hasText: 'Read-only file' })).toHaveCount(0);
   });
 
   test('right-click on a file hides folder-only entries and disables Paste', async ({ page }) => {
@@ -95,13 +95,13 @@ test.describe('Callback approach', () => {
 
     await rightClick(card, '1.2'); // Notes.txt (file, writable)
 
-    await expect(menuIn(card).locator('.wtv__context-menu-label', { hasText: 'New File' })).toHaveCount(0);
-    await expect(menuIn(card).locator('.wtv__context-menu-label', { hasText: 'New Folder' })).toHaveCount(0);
+    await expect(menuIn(card).locator('.bliss-menu__label', { hasText: 'New File' })).toHaveCount(0);
+    await expect(menuIn(card).locator('.bliss-menu__label', { hasText: 'New Folder' })).toHaveCount(0);
 
-    await expect(menuItem(card, 'Paste')).toHaveClass(/wtv__context-menu-item--disabled/);
-    await expect(menuItem(card, 'Cut')).not.toHaveClass(/wtv__context-menu-item--disabled/);
-    await expect(menuItem(card, 'Rename')).not.toHaveClass(/wtv__context-menu-item--disabled/);
-    await expect(menuItem(card, 'Delete')).not.toHaveClass(/wtv__context-menu-item--disabled/);
+    await expect(menuItem(card, 'Paste')).toHaveClass(/bliss-menu__item--disabled/);
+    await expect(menuItem(card, 'Cut')).not.toHaveClass(/bliss-menu__item--disabled/);
+    await expect(menuItem(card, 'Rename')).not.toHaveClass(/bliss-menu__item--disabled/);
+    await expect(menuItem(card, 'Delete')).not.toHaveClass(/bliss-menu__item--disabled/);
   });
 
   test('readonly file disables Cut/Rename/Delete and surfaces the "Read-only file" entry', async ({ page }) => {
@@ -110,11 +110,11 @@ test.describe('Callback approach', () => {
 
     await rightClick(card, '1.1.2'); // Q2 Report.pdf (readonly)
 
-    await expect(menuItem(card, 'Cut')).toHaveClass(/wtv__context-menu-item--disabled/);
-    await expect(menuItem(card, 'Rename')).toHaveClass(/wtv__context-menu-item--disabled/);
-    await expect(menuItem(card, 'Delete')).toHaveClass(/wtv__context-menu-item--disabled/);
+    await expect(menuItem(card, 'Cut')).toHaveClass(/bliss-menu__item--disabled/);
+    await expect(menuItem(card, 'Rename')).toHaveClass(/bliss-menu__item--disabled/);
+    await expect(menuItem(card, 'Delete')).toHaveClass(/bliss-menu__item--disabled/);
 
-    await expect(menuIn(card).locator('.wtv__context-menu-label', { hasText: 'Read-only file' })).toBeVisible();
+    await expect(menuIn(card).locator('.bliss-menu__label', { hasText: 'Read-only file' })).toBeVisible();
   });
 
   test('clicking an item fires the callback, closes the menu, and appends to the activity log', async ({ page }) => {
@@ -166,14 +166,14 @@ test.describe('Callback approach', () => {
     await rightClick(card, '1');
 
     const exportItem = menuItem(card, 'Export As...');
-    await expect(exportItem).toHaveClass(/wtv__context-menu-item--has-children/);
+    await expect(exportItem).toHaveClass(/bliss-menu__item--has-submenu/);
 
     await exportItem.hover();
-    const submenu = page.locator('.wtv__context-submenu').first();
+    const submenu = page.locator('.bliss-menu--submenu').first();
     await expect(submenu).toBeVisible();
-    await expect(submenu.locator('.wtv__context-menu-label', { hasText: 'JSON' })).toBeVisible();
-    await expect(submenu.locator('.wtv__context-menu-label', { hasText: 'XML' })).toBeVisible();
-    await expect(submenu.locator('.wtv__context-menu-label', { hasText: 'CSV' })).toBeVisible();
+    await expect(submenu.locator('.bliss-menu__label', { hasText: 'JSON' })).toBeVisible();
+    await expect(submenu.locator('.bliss-menu__label', { hasText: 'XML' })).toBeVisible();
+    await expect(submenu.locator('.bliss-menu__label', { hasText: 'CSV' })).toBeVisible();
   });
 
   test('clicking a submenu entry fires the nested callback', async ({ page }) => {
@@ -184,8 +184,8 @@ test.describe('Callback approach', () => {
 
     const exportItem = menuItem(card, 'Export As...');
     await exportItem.hover();
-    const submenu = page.locator('.wtv__context-submenu').first();
-    await submenu.locator('.wtv__context-menu-item', { hasText: 'JSON' }).first().click();
+    const submenu = page.locator('.bliss-menu--submenu').first();
+    await submenu.locator('.bliss-menu__item', { hasText: 'JSON' }).first().click();
 
     await expect(menuIn(card)).toBeHidden();
     await expect(activityLog(card)).toContainText('Export "Documents" as JSON');

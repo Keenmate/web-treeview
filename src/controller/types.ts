@@ -630,6 +630,8 @@ export interface TreeEngineSnapshot<T> {
   contextMenuXOffset: number;
   contextMenuYOffset: number;
   contextMenuNode: LTreeNode<T> | null;
+  /** The debug-mode menu (`shouldDisplayContextMenuInDebugMode`): stays open on outside interaction. */
+  isContextMenuPinned: boolean;
   isDropPlaceholderActive: boolean;
   isLoading: boolean;
   isRendering: boolean;

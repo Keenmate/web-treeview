@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (context menu classes: core `/menu`)
+
+The context menu is now web-components-core's shared `openMenu()` (`/menu`). Same
+items, built-ins, shortcuts, `renderContextMenuCallback` / `renderContextMenuItemCallback`
+and `action` event — but the markup classes changed. If you style the menu by class:
+
+| Old | New |
+|---|---|
+| `.wtv__context-menu` | `.bliss-menu` (`role="menu"`) |
+| `.wtv__context-submenu` | `.bliss-menu--submenu` |
+| `.wtv__context-menu-item` (`<button>`) | `.bliss-menu__item` (`<div role="menuitem">`) |
+| `.wtv__context-menu-item--disabled` / `--danger` / `--active` | `.bliss-menu__item--disabled` / `--danger` / `--active` |
+| `.wtv__context-menu-item--has-children` | `.bliss-menu__item--has-submenu` |
+| `.wtv__context-menu-icon` / `-label` / `-shortcut` | `.bliss-menu__icon` / `__label` / `__shortcut` |
+| `.wtv__context-menu-arrow` | the `::after` of `.bliss-menu__item--has-submenu` |
+| `.wtv__context-menu-divider` (`--named`) | `.bliss-menu__divider` (`--named`) |
+| `.wtv__context-menu-loading` | `.bliss-menu__loading` |
+
+The `--wtv-context-menu-*` variables keep working (mapped onto core's `--bliss-menu-*`).
+An item's `icon` string is now inserted as HTML (was text) — like action buttons.
+`ctx.buttonElement` in `renderContextMenuItemCallback` is the item `<div>`.
+
+### Added
+
+- **Context-menu keyboard (WAI-ARIA menu).** Shift+F10 / the ContextMenu key open the
+  focused node's menu with the first item focused; ↑↓ (wrap, skip disabled / dividers),
+  Home/End, →/Enter open a submenu on its first item, ←/Esc close it back to the parent
+  item, Enter/Space run, Esc/Tab close and return focus to the tree. A mouse-opened menu
+  is keyboard-operable too.
+
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 
 Callbacks, events and the context menu follow the shared KeenMate interaction model

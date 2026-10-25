@@ -344,9 +344,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // Container element (set by the host component for scrollToPath / debug menu)
   containerElement: HTMLElement | null = null;
 
-  // Context menu global listener cleanup
-  private _contextMenuCleanup: (() => void) | null = null;
-
   // ── Batched notification ────────────────────────────────────────────
   private _dirty = false;
   private _scheduleNotify() {
@@ -3136,15 +3133,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._contextMenuY = screenY;
     this._contextMenuVisible = true;
     this._isDebugMenuActive = false;
-    this._updateContextMenuListeners();
     this._scheduleNotify();
   }
 
   closeContextMenu() {
+    if (!this._contextMenuVisible && !this._contextMenuNode) return;
     this._contextMenuVisible = false;
     this._contextMenuNode = null;
     this._isDebugMenuActive = false;
-    this._updateContextMenuListeners();
     this._scheduleNotify();
   }
 
@@ -3854,6 +3850,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       contextMenuXOffset: this._contextMenuXOffset,
       contextMenuYOffset: this._contextMenuYOffset,
       contextMenuNode: this._contextMenuNode,
+      isContextMenuPinned: this._isDebugMenuActive,
       isDropPlaceholderActive: this._isDropPlaceholderActive,
       isLoading: this._isLoading,
       isRendering: this._isRendering,
@@ -3882,7 +3879,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /**
    * The host was detached (a DOM move or a removal): stop the LIVE resources —
-   * close the context menu (drops its document / window listeners), abort an
+   * close the context menu (the renderer drops its listeners), abort an
    * in-flight touch drag (document touch listeners + ghost), and leave the
    * cross-tree clipboard registry so a removed tree isn't pinned in memory. The
    * tree, expansion, selection, checks, focus and search are untouched.
@@ -3910,8 +3907,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (this._dropDeniedTimer) { clearTimeout(this._dropDeniedTimer); this._dropDeniedTimer = null; }
       this._domScope().querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
     }
-    this._contextMenuCleanup?.();
-    this._contextMenuCleanup = null;
     if (this.flatRenderAnimationFrame) {
       cancelAnimationFrame(this.flatRenderAnimationFrame);
       this.flatRenderAnimationFrame = null;
@@ -4156,63 +4151,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.emit('config-change', this._nodeConfig);
   }
 
-  // ── Internal: context menu listeners ────────────────────────────────
-
-  private _updateContextMenuListeners() {
-    // Clean up previous
-    this._contextMenuCleanup?.();
-    this._contextMenuCleanup = null;
-
-    if (!this._contextMenuVisible) return;
-
-    const handleGlobalClick = (event: MouseEvent) => {
-      if (this._isDebugMenuActive) return;
-      // When the click originates inside a Shadow DOM, `event.target` is
-      // retargeted to the shadow host by the time the document listener
-      // fires, so `.closest('.wtv__context-menu')` won't find the menu even
-      // if the actual click landed on it. Walk the composed path instead so
-      // the check sees the real chain through the shadow boundary.
-      const path = event.composedPath();
-      const insideMenu = path.some(
-        (n) => n instanceof Element && n.classList?.contains('wtv__context-menu')
-      );
-      if (!insideMenu) {
-        this.closeContextMenu();
-      }
-    };
-
-    const handleGlobalScroll = () => {
-      if (this._isDebugMenuActive) return;
-      this.closeContextMenu();
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        this.closeContextMenu();
-      }
-    };
-
-    // Defer to avoid catching the same event that opened the menu
-    requestAnimationFrame(() => {
-      document.addEventListener('click', handleGlobalClick);
-      document.addEventListener('contextmenu', handleGlobalClick);
-      document.addEventListener('keydown', handleKeyDown);
-      window.addEventListener('scroll', handleGlobalScroll, true);
-      document.addEventListener('scroll', handleGlobalScroll, true);
-      window.addEventListener('wheel', handleGlobalScroll, { passive: true });
-    });
-
-    this._contextMenuCleanup = () => {
-      document.removeEventListener('click', handleGlobalClick);
-      document.removeEventListener('contextmenu', handleGlobalClick);
-      document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleGlobalScroll, true);
-      document.removeEventListener('scroll', handleGlobalScroll, true);
-      window.removeEventListener('wheel', handleGlobalScroll);
-    };
-  }
-
   // ── Internal: debug context menu ────────────────────────────────────
 
   private _updateDebugContextMenu() {
@@ -4231,14 +4169,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         this._contextMenuY = treeRect.top + 100;
         this._contextMenuVisible = true;
         this._isDebugMenuActive = true;
-        this._updateContextMenuListeners();
         this._scheduleNotify();
       }
     } else if (!this._shouldDisplayContextMenuInDebugMode && this._isDebugMenuActive) {
       this._contextMenuVisible = false;
       this._contextMenuNode = null;
       this._isDebugMenuActive = false;
-      this._updateContextMenuListeners();
       this._scheduleNotify();
     }
   }

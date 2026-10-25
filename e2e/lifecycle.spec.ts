@@ -195,11 +195,11 @@ test('an open context menu closes on a move and leaves no document listeners beh
   const baseline = await page.evaluate(() => (window as any).__globalListeners());
 
   await page.evaluate(() => (window as any).tree.openContextMenu('1', 50, 50));
-  await expect(page.locator('.wtv__context-menu')).toBeVisible();
+  await expect(page.locator('.bliss-menu')).toBeVisible();
   // The menu's dismiss listeners attach on the next frame.
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 
   await page.evaluate(() => (window as any).moveTo('slot-b'));
-  await expect(page.locator('.wtv__context-menu')).toBeHidden();
+  await expect(page.locator('.bliss-menu')).toBeHidden();
   expect(await page.evaluate(() => (window as any).__globalListeners())).toEqual(baseline);
 });

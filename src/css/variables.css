@@ -392,6 +392,34 @@
   --wtv-context-menu-divider-margin: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.5);
 
+  /* The menu is core's `openMenu()` (bliss-menu*): map the public --wtv-context-menu-*
+     variables onto the --bliss-menu-* it reads (inherited into the shadow-local menu). */
+  --bliss-menu-z-index: var(--wtv-z-index-dropdown);
+  --bliss-menu-bg: var(--wtv-context-menu-bg);
+  --bliss-menu-hover-bg: var(--wtv-context-menu-bg-hover);
+  --bliss-menu-text-color: var(--wtv-context-menu-text-color);
+  --bliss-menu-border: var(--wtv-context-menu-border);
+  --bliss-menu-border-radius: var(--wtv-context-menu-border-radius);
+  --bliss-menu-shadow: var(--wtv-context-menu-shadow);
+  --bliss-menu-min-width: var(--wtv-context-menu-min-width);
+  --bliss-menu-padding: var(--wtv-context-menu-padding);
+  --bliss-menu-font-size: var(--wtv-context-menu-font-size);
+  --bliss-menu-item-padding: var(--wtv-context-menu-item-padding);
+  --bliss-menu-item-gap: var(--wtv-context-menu-item-gap);
+  --bliss-menu-active-color: var(--wtv-context-menu-active-color);
+  --bliss-menu-icon-size: var(--wtv-context-menu-icon-width);
+  --bliss-menu-icon-font-size: var(--wtv-context-menu-icon-font-size);
+  --bliss-menu-arrow-font-size: var(--wtv-context-menu-arrow-font-size);
+  --bliss-menu-shortcut-color: var(--wtv-context-menu-shortcut-color, var(--wtv-text-color-2));
+  --bliss-menu-danger-color: var(--wtv-context-menu-danger-color);
+  --bliss-menu-danger-hover-bg: var(--wtv-context-menu-danger-bg-hover);
+  --bliss-menu-divider-color: var(--wtv-context-menu-divider-color);
+  --bliss-menu-divider-margin: var(--wtv-context-menu-divider-margin);
+  --bliss-menu-divider-label-color: var(--wtv-text-color-2);
+  --bliss-menu-divider-label-font-size: var(--wtv-context-menu-icon-font-size);
+  --bliss-menu-divider-label-padding: 0 var(--wtv-spacing-xl);
+  --bliss-menu-disabled-opacity: var(--wtv-context-menu-disabled-opacity);
+
   /* ==========================================================================
      LOADING OVERLAY
      ========================================================================== */

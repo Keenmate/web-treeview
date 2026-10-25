@@ -466,7 +466,11 @@ when orphans appear.
 **Test status (before the fix):** `data-members.spec.ts` "a sibling sortCallback without
 is-sorted keeps every node" was `test.fail`.
 
-## 17. Reassigning `data` re-expands branches the user collapsed (when none were open)
+## 17. ~~Reassigning `data` re-expands branches the user collapsed (when none were open)~~ — fixed
+
+**Fixed 2026-10-25:** `_collectExpandedPaths()` returns `null` when there was no previous tree content (the first insert keeps the expand-level seed) and an EMPTY set when the user had everything collapsed, which is now restored as such. `_reapplyExpanded()` also calls `tree.refresh()` — it mutates `isExpanded` outside the LTree API, and the cached `visibleFlatNodes` kept listing the re-collapsed branch's rows. The `test.fail` in `data-members.spec.ts` passes.
+
+Original report:
 
 **Where:** `src/controller/tree-engine.ts` `_reapplyExpanded()` (~3726):
 `if (... expanded.size === 0) return;` — an EMPTY preserved set is treated as
@@ -482,7 +486,11 @@ expanded branches" (e.g. pass `null` vs an empty set).
 **Test status:** `data-members.spec.ts` "reassigning data … keeps the
 expansion" is `test.fail`.
 
-## 18. Every config update re-inserts `data` — `search-text` is wiped immediately
+## 18. ~~Every config update re-inserts `data` — `search-text` is wiped immediately~~ — fixed
+
+**Fixed 2026-10-25:** `updateProps()` re-inserts only when `data` is a NEW array (identity), applies `searchText` only when it changed, and every re-insert (data change or tree recreation) re-applies the active search filter (`_reapplySearchFilter()`). Both `test.fail`s in `search-config.spec.ts` pass; added "an unrelated attribute change does not re-insert the data" (`attr-reactivity.spec.ts`).
+
+Original report:
 
 **Where:** `src/web-component.ts` `update()` (~384-396) sends the FULL config
 (incl. `data`) on every batch; `tree-engine.ts` `updateProps()` applies

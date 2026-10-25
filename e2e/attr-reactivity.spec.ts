@@ -90,3 +90,15 @@ test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
     expect(name).toBe('C1');
   });
 });
+
+test('an unrelated attribute change does not re-insert the data (NOTES #18)', async ({ page }) => {
+  await load(page);
+  const same = await page.evaluate(async () => {
+    const t = (window as any).tree;
+    const before = t.getInsertResult();
+    t.setAttribute('selected-node-class', 'chosen');
+    await t.whenSettled();
+    return t.getInsertResult() === before;
+  });
+  expect(same).toBe(true);
+});

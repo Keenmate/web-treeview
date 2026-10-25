@@ -22,7 +22,6 @@ const found = (page: Page, q: string): Promise<string[]> => page.evaluate((q) =>
 
 test.describe('search-text attribute', () => {
   test('setting it filters the tree (ancestors kept); removing it restores', async ({ page }) => {
-    test.fail(true, 'NOTES.md #18');
     await load(page, 'member');
     await expect.poll(() => found(page, 'sushi')).toEqual(['Tokyo']);
     await page.evaluate(() => (window as any).tree.setAttribute('search-text', 'sushi'));
@@ -32,7 +31,6 @@ test.describe('search-text attribute', () => {
   });
 
   test('the searchText property works the same', async ({ page }) => {
-    test.fail(true, 'NOTES.md #18');
     await load(page, 'member');
     await expect.poll(() => found(page, 'croissant')).toEqual(['Paris']);
     await page.evaluate(() => { (window as any).tree.searchText = 'croissant'; });

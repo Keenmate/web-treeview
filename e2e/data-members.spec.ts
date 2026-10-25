@@ -100,7 +100,6 @@ test('parent-path-member + level-member are read from data', async ({ page }) =>
 });
 
 test('reassigning data re-renders and keeps the expansion of surviving paths', async ({ page }) => {
-  test.fail(true, 'NOTES.md #17');
   await load(page, 'default');
   // collapse Apple, then reassign data with one extra child under it
   await nodeByPath(page, '1').locator('> .wtv__node-row .wtv__toggle-icon').first().click();

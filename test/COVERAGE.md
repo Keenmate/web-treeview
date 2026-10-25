@@ -30,7 +30,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `is-sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `insertBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
-| `data` reassign re-renders, keeps collapsed state (NOTES #17) | △ (test.fail) | `data-members.spec.ts` | `data-members.html` |
+| `data` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | Leaf ↔ folder toggle reconciliation | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Per-row class hooks (`getNodeClassCallback` / `getNodeContentClassCallback`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Per-node icons (`icon-member`, `icon-color-member`, emoji, `renderIconCallback`) | ✓ | `node-icons.spec.ts` | `node-icons.html` |
@@ -156,7 +156,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | Filter / clear / Escape / `searchNodes` | ✓ | `search.spec.ts` | `search.html` |
 | Result navigation expands + scrolls collapsed hits | ✓ | `search-deep.spec.ts` | `search-deep.html` |
-| `search-text` attribute / `searchText` prop at runtime (NOTES #18) | ✗ (test.fail) | `search-config.spec.ts` | `search-config.html` |
+| `search-text` attribute / `searchText` prop at runtime; a config change doesn't re-insert `data` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
 | `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 

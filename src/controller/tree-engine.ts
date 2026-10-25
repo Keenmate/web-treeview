@@ -3694,7 +3694,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._shouldClickToggleCheckbox = updates.shouldClickToggleCheckbox ?? false;
     if (updates.beforeCheckboxToggleCallback !== undefined)
       this.beforeCheckboxToggleCb = updates.beforeCheckboxToggleCallback;
-    if (updates.searchText !== undefined) this.searchText = updates.searchText;
+    if (updates.searchText !== undefined && updates.searchText !== this._searchText) this.searchText = updates.searchText;
     if (updates.shouldDisplayDebugInformation !== undefined)
       this._shouldDisplayDebugInformation = updates.shouldDisplayDebugInformation ?? false;
     if (updates.shouldDisplayContextMenuInDebugMode !== undefined) {
@@ -3929,6 +3929,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         this._seedCheckedPathsFromTree();
         this._reapplyRuntimeChecked();
         if (!expandLevelChanged) this._reapplyExpanded(preservedExpanded);
+        this._reapplySearchFilter();
         const result = this._insertResult;
         initLogger.debug(`[${this._treeId}] insertArray result`, {
           successful: result.successful,
@@ -3944,7 +3945,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           flatNodesToRender: this.flatNodesToRender.length
         });
       }
-    } else if (updates.data !== undefined) {
+    } else if (updates.data !== undefined && updates.data !== this._data) {
+      // Same array identity = no new data: every config batch carries the full
+      // config (incl. data), so re-inserting on each would rebuild + re-index the
+      // tree and drop the active filter (NOTES #18).
       this.data = updates.data;
     }
 
@@ -4053,7 +4057,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._seedCheckedPathsFromTree();
       this._reapplyRuntimeChecked();
       this._reapplyExpanded(preservedExpanded);
+      this._reapplySearchFilter();
     }
+  }
+
+  /** A re-insert rebuilds the tree unfiltered — re-apply the active search (NOTES #18). */
+  private _reapplySearchFilter(): void {
+    if (this._searchText) this.tree?.filterNodes(this._searchText as string);
   }
 
   // ── Internal: tree changed (from LTree.onChange) ────────────────────
@@ -4100,9 +4110,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** Snapshot which nodes are currently expanded — call BEFORE a data re-insert
    *  (which resets isExpanded to the expandLevel default) so the user's manual
    *  expand/collapse survives. Paths are stable across a re-insert. */
-  private _collectExpandedPaths(): Set<string> {
+  /** The expanded paths of the current tree, or `null` when there is no previous
+   *  tree content (first insert — the expand-level seed must stand). An EMPTY set
+   *  means "the user had everything collapsed" and is restored as such (NOTES #17). */
+  private _collectExpandedPaths(): Set<string> | null {
     const out = new Set<string>();
-    if (!this.tree?.root) return out;
+    if (!this.tree?.root || Object.keys(this.tree.root.children).length === 0) return null;
     const visit = (node: LTreeNode<T>) => {
       if (node.isExpanded) out.add(node.path);
       for (const child of Object.values(node.children)) visit(child);
@@ -4116,13 +4129,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  source of truth is a controller-owned set the renderer reads), expansion is
    *  consumed by the LTree's own flattening, so it stays on the node — we just make
    *  the re-insert lossless by restoring it. */
-  private _reapplyExpanded(expanded: Set<string>): void {
-    if (!this.tree?.root || expanded.size === 0) return;
+  private _reapplyExpanded(expanded: Set<string> | null): void {
+    if (!this.tree?.root || expanded === null) return;
     const visit = (node: LTreeNode<T>) => {
       if (node.hasChildren) node.isExpanded = expanded.has(node.path);
       for (const child of Object.values(node.children)) visit(child);
     };
     for (const child of Object.values(this.tree.root.children)) visit(child);
+    // isExpanded changed outside the LTree's own API — invalidate its cached
+    // visibleFlatNodes (else the rows of a re-collapsed branch stay listed).
+    this.tree.refresh();
   }
 
   private _seedCheckedPathsFromTree(): void {

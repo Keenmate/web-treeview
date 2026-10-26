@@ -291,9 +291,9 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
                     <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td>Greys the item out and blocks clicks.</td></tr>
                     <tr><td><code>isVisible</code></td><td><code>boolean</code></td><td><code>false</code> skips rendering the item entirely.</td></tr>
                     <tr><td><code>isDanger</code></td><td><code>boolean</code></td><td>Destructive (red) styling — <code>.km-menu__item--danger</code>.</td></tr>
-                    <tr><td><code>isActive</code></td><td><code>boolean</code></td><td>Toggle state is on: <code>aria-pressed="true"</code> + <code>.km-menu__item--active</code>. Still clickable.</td></tr>
+                    <tr><td><code>isToggled</code></td><td><code>boolean</code></td><td>Toggle state is on. Defining it (or <code>getIsToggledCallback</code>) makes the item a <code>menuitemcheckbox</code> with <code>aria-checked</code>; <code>.km-menu__item--toggled</code> when on. Still clickable.</td></tr>
                     <tr><td><code>cssClass</code></td><td><code>string</code></td><td>Extra CSS class(es) on the item button.</td></tr>
-                    <tr><td><code>get*Callback(ctx)</code></td><td><code>(ctx: TreeMenuContext) =&gt; …</code></td><td>Dynamic variants that win over the static value: <code>getTextCallback</code>, <code>getIconCallback</code>, <code>getTooltipCallback</code>, <code>getClassCallback</code>, <code>getIsVisibleCallback</code>, <code>getIsDisabledCallback</code>, <code>getIsActiveCallback</code>.</td></tr>
+                    <tr><td><code>get*Callback(ctx)</code></td><td><code>(ctx: TreeMenuContext) =&gt; …</code></td><td>Dynamic variants that win over the static value: <code>getTextCallback</code>, <code>getIconCallback</code>, <code>getTooltipCallback</code>, <code>getClassCallback</code>, <code>getIsVisibleCallback</code>, <code>getIsDisabledCallback</code>, <code>getIsToggledCallback</code>.</td></tr>
                     <tr><td><code>shouldCloseOnClick</code></td><td><code>boolean</code></td><td>Defaults to <code>true</code> (activating a leaf dismisses the menu). Set <code>false</code> for incremental actions; close later via <code>detail.controller.closeContextMenu()</code>.</td></tr>
                     <tr><td><code>onClick</code></td><td><code>(detail) =&gt; void | Promise&lt;void&gt;</code></td><td>Click handler; receives the <code>action</code> event detail (the menu ctx + <code>action</code>, <code>id</code>, <code>item</code>, <code>source</code>). Optional — every enabled leaf activates and fires <code>action</code>.</td></tr>
                     <tr><td><code>children</code></td><td><code>TreeMenuEntry[]</code></td><td>Nested submenu entries (open on hover).</td></tr>
@@ -329,8 +329,8 @@ interface TreeMenuItem {
   isVisible?: boolean;       // false = skip rendering
   isDisabled?: boolean;
   isDanger?: boolean;
-  isActive?: boolean;        // aria-pressed
-  getTextCallback?(ctx: TreeMenuContext): string;   // + getIcon/Tooltip/Class/IsVisible/IsDisabled/IsActiveCallback
+  isToggled?: boolean;       // menuitemcheckbox + aria-checked
+  getTextCallback?(ctx: TreeMenuContext): string;   // + getIcon/Tooltip/Class/IsVisible/IsDisabled/IsToggledCallback
   shouldCloseOnClick?: boolean; // default true
   onClick?(detail: TreeViewActionEventDetail): void | Promise&lt;void&gt;;
   children?: TreeMenuEntry[];
@@ -498,7 +498,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     <tr><td><code>.km-menu__divider</code></td><td>Divider line (<code>role="separator"</code>)</td></tr>
                     <tr><td><code>.km-menu__divider--named</code></td><td>Named divider with a centered label</td></tr>
                     <tr><td><code>.km-menu__item--danger</code></td><td>Danger-styled item (red text, via <code>isDanger: true</code>)</td></tr>
-                    <tr><td><code>.km-menu__item--active</code></td><td>Toggled-on item (<code>isActive: true</code>, also <code>aria-pressed="true"</code>)</td></tr>
+                    <tr><td><code>.km-menu__item--toggled</code></td><td>Toggled-on item (<code>isToggled: true</code>, also <code>aria-checked="true"</code>)</td></tr>
                     <tr><td><code>.km-menu__loading</code></td><td>Loading row shown while an async <code>getChildrenCallback</code> resolves</td></tr>
                 </tbody>
             </table>

@@ -276,7 +276,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 A `TreeMenuEntry` is one of:
 
-- a **core action item** — `{ id, text, icon, shortcut, cssClass, isDanger, isDisabled, isVisible, isActive, tooltip, onClick(detail), children, getChildrenCallback(ctx), shouldCloseOnClick }`. The static fields have `get*Callback(ctx)` variants (text, icon, tooltip, class, visible, disabled, active). `onClick` receives the `action` detail. An enabled leaf closes the menu after it activates unless `shouldCloseOnClick: false`. `getChildrenCallback` loads a submenu lazily (sync or async — a loading row shows meanwhile).
+- a **core action item** — `{ id, text, icon, shortcut, cssClass, isDanger, isDisabled, isVisible, isToggled, tooltip, onClick(detail), children, getChildrenCallback(ctx), shouldCloseOnClick }`. The static fields have `get*Callback(ctx)` variants (text, icon, tooltip, class, visible, disabled, toggled). `onClick` receives the `action` detail. An enabled leaf closes the menu after it activates unless `shouldCloseOnClick: false`. `getChildrenCallback` loads a submenu lazily (sync or async — a loading row shows meanwhile).
 - a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
 - a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state).
 
@@ -304,7 +304,7 @@ While the menu is open it is keyboard-modal (handled keys don't reach the tree).
 #### Styling
 
 Classes (core `/menu`): `.km-menu` (`role="menu"`), `.km-menu--submenu`,
-`.km-menu__item` (`<div role="menuitem">`) with `--disabled` / `--danger` / `--active` /
+`.km-menu__item` (`<div role="menuitem">`; a toggle item is `menuitemcheckbox` + `aria-checked`) with `--disabled` / `--danger` / `--toggled` /
 `--has-submenu`, `.km-menu__icon` / `__label` / `__shortcut`, `.km-menu__divider`
 (`--named`), `.km-menu__loading`. They replace the old `.wtv__context-menu*` classes
 (see CHANGELOG for the mapping).
@@ -318,7 +318,7 @@ Theme the menu with the `--wtv-context-menu-*` variables — the tree maps them 
 | `border` / `border-radius` / `shadow` | `border` / `border-radius` / `shadow` |
 | `min-width` / `padding` / `font-size` | `min-width` / `padding` / `font-size` |
 | `item-padding` / `item-gap` | `item-padding` / `item-gap` |
-| `active-color` | `active-color` |
+| `toggled-color` | `toggled-color` |
 | `icon-width` / `icon-font-size` | `icon-size` / `icon-font-size` (+ `divider-label-font-size`) |
 | `arrow-font-size` | `arrow-font-size` |
 | `shortcut-color` | `shortcut-color` (default `--wtv-text-color-2`) |

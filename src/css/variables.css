@@ -382,7 +382,7 @@
   --wtv-context-menu-font-size: var(--wtv-font-size-sm);
   --wtv-context-menu-item-padding: var(--wtv-spacing-md) var(--wtv-spacing-xl);
   --wtv-context-menu-item-gap: var(--wtv-spacing-md);
-  --wtv-context-menu-active-color: var(--wtv-accent-color);
+  --wtv-context-menu-toggled-color: var(--wtv-accent-color);
   --wtv-context-menu-icon-width: var(--wtv-icon-size);
   --wtv-context-menu-icon-font-size: var(--wtv-font-size-xs);
   --wtv-context-menu-arrow-font-size: var(--wtv-font-size-xs);
@@ -406,7 +406,7 @@
   --km-menu-font-size: var(--wtv-context-menu-font-size);
   --km-menu-item-padding: var(--wtv-context-menu-item-padding);
   --km-menu-item-gap: var(--wtv-context-menu-item-gap);
-  --km-menu-active-color: var(--wtv-context-menu-active-color);
+  --km-menu-toggled-color: var(--wtv-context-menu-toggled-color);
   --km-menu-icon-size: var(--wtv-context-menu-icon-width);
   --km-menu-icon-font-size: var(--wtv-context-menu-icon-font-size);
   --km-menu-arrow-font-size: var(--wtv-context-menu-arrow-font-size);

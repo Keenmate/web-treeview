@@ -3,7 +3,7 @@ import { test, expect, type Page, type Locator } from './fixtures';
 /**
  * The core interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):
  *   - context-menu entries are core action items: built-ins by name (`'copy'`, `'expand'`, …),
- *     custom items by `id`, dividers, `getIsActiveCallback`, lazy `getChildrenCallback`
+ *     custom items by `id`, dividers, `getIsToggledCallback`, lazy `getChildrenCallback`
  *   - one `action` event (+ `onAction`) per activation, in the order
  *     beforeActionCallback → onClick → built-in → onAction → action event
  *   - single-ctx callbacks carry `controller` / `element` (non-enumerable)
@@ -43,7 +43,7 @@ test('per-node callbacks get one ctx with a non-enumerable controller + element'
   expect(seen.keys).toEqual(['node']);
 });
 
-test('menu items render from core action items: built-in defaults, data-action / data-id, icon, active, hidden, dividers', async ({ page }) => {
+test('menu items render from core action items: built-in defaults, data-action / data-id, icon, toggled, hidden, dividers', async ({ page }) => {
   await openMenu(page, '1');
   await expect(item(page, '[data-action="copy"]')).toHaveText('Copy');
   // 'expand' is disabled on an already-expanded node; 'paste' with an empty clipboard.
@@ -52,7 +52,10 @@ test('menu items render from core action items: built-in defaults, data-action /
   await expect(item(page, '[data-action="delete"]')).toHaveClass(/km-menu__item--danger/);
   const rename = item(page, '[data-action="custom"][data-id="rename"]');
   await expect(rename.locator('.km-menu__icon')).toHaveText('✎');
-  await expect(item(page, '[data-id="toggle"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(item(page, '[data-id="toggle"]')).toHaveAttribute('role', 'menuitemcheckbox');
+  await expect(item(page, '[data-id="toggle"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(item(page, '[data-id="toggle"]')).toHaveClass(/km-menu__item--toggled/);
+  await expect(item(page, '[data-action="copy"]')).toHaveAttribute('role', 'menuitem');
   await expect(item(page, '[data-id="hidden"]')).toHaveCount(0);
   await expect(menu(page).locator('.km-menu__divider')).toHaveCount(1);
 });

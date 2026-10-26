@@ -59,7 +59,7 @@
                 'paste',
                 { divider: true },
                 { id: 'rename', text: 'Rename', icon: '✎', onClick: (d) => window.__log.push('onClick:' + d.id + ':' + d.node.path) },
-                { id: 'toggle', text: 'Pinned', getIsActiveCallback: () => true },
+                { id: 'toggle', text: 'Pinned', getIsToggledCallback: () => true },
                 {
                     id: 'more',
                     text: 'More',

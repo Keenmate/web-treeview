@@ -35,6 +35,11 @@ is collapsed, after `delete` it is gone, after `paste` the pasted nodes are in).
 a built-in, return `false` from `beforeActionCallback`. A throwing built-in is logged and
 the event still fires.
 
+**Menu toggles: `isActive` → `isToggled`** (core rename, no alias): `isToggled` /
+`getIsToggledCallback`, `.km-menu__item--toggled`, `--wtv-context-menu-toggled-color`. An item
+that defines its toggle state renders `role="menuitemcheckbox"` + `aria-checked` (was
+`menuitem` + `aria-pressed`).
+
 ### Changed — BREAKING (context menu classes: core `/menu`)
 
 The context menu is now web-components-core's shared `openMenu()` (`/menu`). Same
@@ -46,7 +51,7 @@ and `action` event — but the markup classes changed. If you style the menu by 
 | `.wtv__context-menu` | `.km-menu` (`role="menu"`) |
 | `.wtv__context-submenu` | `.km-menu--submenu` |
 | `.wtv__context-menu-item` (`<button>`) | `.km-menu__item` (`<div role="menuitem">`) |
-| `.wtv__context-menu-item--disabled` / `--danger` / `--active` | `.km-menu__item--disabled` / `--danger` / `--active` |
+| `.wtv__context-menu-item--disabled` / `--danger` / `--active` | `.km-menu__item--disabled` / `--danger` / `--toggled` |
 | `.wtv__context-menu-item--has-children` | `.km-menu__item--has-submenu` |
 | `.wtv__context-menu-icon` / `-label` / `-shortcut` | `.km-menu__icon` / `__label` / `__shortcut` |
 | `.wtv__context-menu-arrow` | the `::after` of `.km-menu__item--has-submenu` |
@@ -132,7 +137,7 @@ non-enumerable, so `JSON.stringify` / logs see only the data.
 | `{ divider: true, label }` | `{ divider: true, text }` (or `menuDivider(text)`, exported) |
 | `data-item-id` on the button | `data-action` (built-in name or `custom`) + `data-id` |
 | — | built-ins by name: `'copy' \| 'cut' \| 'paste' \| 'delete' \| 'expand' \| 'collapse'` (act on the node, or on the whole selection when the node is in it; default text / disabled / danger state) |
-| — | `get*Callback(ctx)` on items (text, icon, tooltip, class, visible, disabled, active), `isActive` (`aria-pressed`), `tooltip`, lazy submenus via `getChildrenCallback(ctx)` (sync or async — a loading row shows meanwhile) |
+| — | `get*Callback(ctx)` on items (text, icon, tooltip, class, visible, disabled, toggled), `isToggled` (a toggle renders `role="menuitemcheckbox"` + `aria-checked`), `tooltip`, lazy submenus via `getChildrenCallback(ctx)` (sync or async — a loading row shows meanwhile) |
 | an item without `onclick` did nothing and kept the menu open | every enabled leaf activates (`onClick` → built-in → `action` event) and closes the menu unless `shouldCloseOnClick: false` |
 
 **Events** — present tense, no native collisions, typed details; every event has a
@@ -188,7 +193,7 @@ camelCase `on*` twin (core) that receives the **detail**.
   `el.controller.nav*()` routes through it too; reassign to swap at runtime, `null` restores the
   defaults. `beforeKeydownCallback` still runs first. `TreeNavigation` / `TreeNavigationOverrides`
   types are exported.
-- `--wtv-context-menu-active-color`; `.wtv__context-menu-item--active`, `.wtv__context-menu-loading`.
+- `--wtv-context-menu-toggled-color`; `.wtv__context-menu-item--active`, `.wtv__context-menu-loading`.
 - Exported types for every ctx and event detail (`TreeViewController`, `TreeViewContext`,
   `NodeContext`, `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`,
   `KeydownContext`, `BeforeCheckboxToggleContext`, `NodeTransformCallbackContext`, …), and

@@ -291,12 +291,12 @@ tree.beforeActionCallback = ({ action }) => action === 'delete' ? confirm('Delet
 | `isDanger` | `boolean` | Danger styling |
 | `isDisabled` | `boolean` | Grey out and prevent interaction |
 | `isVisible` | `boolean` | Set `false` to hide the item |
-| `isActive` | `boolean` | Toggled-on state (`aria-pressed`) |
+| `isToggled` | `boolean` | Toggle state is on — the menu item is a `menuitemcheckbox` with `aria-checked` |
 | `onClick` | `(detail) => void \| Promise<void>` | Handler; gets the `action` detail (the menu ctx + `action`, `id`, `item`, `source: 'context-menu'`) |
 | `children` | `TreeMenuEntry[]` | Nested submenu items |
 | `getChildrenCallback` | `(ctx) => TreeMenuEntry[] \| Promise<…>` | Lazy submenu (a loading row shows meanwhile) |
 | `shouldCloseOnClick` | `boolean` | `false` keeps the menu open after activation |
-| `getTextCallback`, `getIconCallback`, `getTooltipCallback`, `getClassCallback`, `getIsVisibleCallback`, `getIsDisabledCallback`, `getIsActiveCallback` | `(ctx) => …` | Dynamic variants of the static fields |
+| `getTextCallback`, `getIconCallback`, `getTooltipCallback`, `getClassCallback`, `getIsVisibleCallback`, `getIsDisabledCallback`, `getIsToggledCallback` | `(ctx) => …` | Dynamic variants of the static fields |
 
 ### Divider
 

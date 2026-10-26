@@ -149,6 +149,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Touch: `node-drag-reject` + 🚫, `indicate-undraggable=false`, `touch-drag-delay` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: drop on no-drop node refused | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: `node-drop-reject` + `enable-tree-drop-zone` routing (NOTES #22) | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Desktop: refusing row → `dropEffect: 'none'` (🚫 cursor), no hover indicators; reject from `dragend`; accepting row afterwards = normal drop; zone on → dragover accepted (NOTES #22) | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 
 ## 8. Search
 

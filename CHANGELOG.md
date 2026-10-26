@@ -83,7 +83,7 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 - `renderLoadingCallback` renders the loading overlay content (it was never called) (NOTES #19).
 - A `renderEmptyZoneCallback` assigned after the first render fills the empty drop zone (NOTES #20).
 - A Ctrl copy-drop (same tree or A → B) runs the source tree's `nodeOutputTransformationCallback` before the input transform, as the clipboard does (NOTES #21).
-- A desktop drop on a node with `isDropAllowed: false` fires `node-drop-reject` (+ 🚫), or lands on the tree with `enable-tree-drop-zone` (NOTES #22).
+- A desktop drop on a node with `isDropAllowed: false` fires `node-drop-reject` (+ 🚫), or lands on the tree with `enable-tree-drop-zone` (NOTES #22). Without the tree drop zone the row **refuses the dragover** (`dropEffect = 'none'` → the 🚫 "no drop" cursor, no hover indicators), so the browser fires no `drop` there; `node-drop-reject` + the 🚫 flash fire from `dragend` on the last refusing row the drag was over (only when no drop happened — moving on to an accepting row and dropping there is a normal drop). With `enable-tree-drop-zone` the row still accepts the dragover and the drop is routed to the tree. Touch drags unchanged.
 - `el.tooltipDelay = { show, hide }` is accepted (the converter rejected the documented object form) (NOTES #23).
 - A Ctrl/Shift-click, checkbox or toggle click between two plain clicks no longer reads as a double-click (NOTES #25).
 - Quiet by default (NOTES #24): no INIT debug at load and no raw `console.*` — every message goes through the `TREEVIEW:*` loggers (core default `warn`; lines carry `#id`). A rejected / throwing `beforeExpandCallback` is logged at error level by core (was a `console.warn` in the adapter).

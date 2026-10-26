@@ -613,6 +613,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           this.controller.dragOver(node, event, contentEl);
         }
       }
+    } else {
+      // Off any row: no longer over a refusing node (NOTES #22).
+      this.controller.clearRefusedDropHover();
     }
 
     // Empty tree or active drop placeholder dragover
@@ -719,6 +722,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    *  dragend fires on the source element; when that element lives in a
    *  different shadow root the event never reaches our bodyEl. */
   private _onDocumentDragEnd = (event: DragEvent) => {
+    // Cross-tree: the drag was last over one of OUR refusing rows → announce it (NOTES #22).
+    this.controller?.announceRefusedDrop();
     this.controller?.cancelDrag();
   };
 

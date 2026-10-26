@@ -579,6 +579,8 @@ transform over each manifest node before the input transform (phase
 
 **Fixed 2026-10-25:** `dragOver()` accepts the dragover on a refusing row (`preventDefault`, no hover / indicators) so the browser fires `drop`; `drop()` then applies the same gate as the zone / touch paths — `enable-tree-drop-zone` routes it to `handleTreeZoneDrop` (target=null), otherwise `_indicateDropDenied` fires `node-drop-reject` + the 🚫 flash. Both `test.fail`s in `drag-visuals.spec.ts` pass. Side effect: the cursor over a refusing row shows the drop cursor (needed for `drop` to fire at all — svelte-treeview does the same).
 
+**Revised 2026-10-26 (drop cursor):** the side effect is gone. Without `enable-tree-drop-zone` a refusing row now REFUSES the dragover — no `preventDefault`, `dataTransfer.dropEffect = 'none'` (🚫 cursor), no hover indicators (a previous row's hover clears). The engine remembers that row (`_refusedDropNode`; cleared by a dragover on anything else, leaving the body, or any drop); `dragend` (`_onNodeDragEnd` for the source tree, the document `dragend` → `announceRefusedDrop()` for a cross-tree target) then fires `node-drop-reject` + the 🚫 flash on it — only when no drop happened. With `enable-tree-drop-zone` the old behaviour stays (dragover accepted, `drop()` routes to `handleTreeZoneDrop`). Touch / zone paths unchanged. Caveat: an Esc-cancel while over a refusing row also announces the reject (dragend can't tell the two apart). The dead `.wtv__root-drop-zone` selector in the touch drop path (nothing renders it) is removed. Tests: `drag-visuals.spec.ts` › "drop cursor over a refusing node (NOTES #22)".
+
 Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a

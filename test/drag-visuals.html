@@ -59,16 +59,25 @@
         window.drag = {
             async start(p) {
                 dt = new DataTransfer();
+                // A constructed DataTransfer ignores dropEffect writes — record them instead.
+                let effect = 'none';
+                Object.defineProperty(dt, 'dropEffect', { get: () => effect, set: (v) => { effect = v; }, configurable: true });
                 src = p;
                 row(p).dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true }));
                 await frame();
             },
+            // Returns how the last dragover was answered: accepted (preventDefault) + dropEffect.
             async over(p, fx = 0.8) {
                 const el = row(p);
+                let last = null;
                 for (const type of ['dragenter', 'dragover', 'dragover']) {
-                    el.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) }));
+                    dt.dropEffect = 'move'; // what a browser would offer before the listeners run
+                    const ev = new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) });
+                    el.dispatchEvent(ev);
+                    if (type === 'dragover') last = { accepted: ev.defaultPrevented, dropEffect: dt.dropEffect };
                 }
                 await frame();
+                return last;
             },
             async drop(p, fx = 0.8) {
                 const el = row(p);

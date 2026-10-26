@@ -92,6 +92,48 @@ test.describe('drop reject (desktop, real drag)', () => {
     await load(page, '?enable-tree-drop-zone=true');
     await realDrag(page, '4', '2');
     await expect.poll(() => logLines(page, LOG), { timeout: 2000 }).toContainEqual(expect.stringMatching(/^node-drop:4:.*:null$/));
+    expect(await logLines(page, LOG)).not.toContainEqual(expect.stringMatching(/^node-drop-reject/));
+  });
+});
+
+test.describe('drop cursor over a refusing node (NOTES #22)', () => {
+  test('the dragover is refused: dropEffect "none" (🚫 cursor), no hover indicators', async ({ page }) => {
+    await load(page, '?drop-zone-mode=glow');
+    await step(page, 'start', '4');
+    expect(await step(page, 'over', '1', 0.8)).toEqual({ accepted: true, dropEffect: 'move' });
+    await expect(content(page, '1')).toHaveClass(/wtv__node-content--glow-child/);
+    expect(await step(page, 'over', '2', 0.8)).toEqual({ accepted: false, dropEffect: 'none' });
+    await expect(content(page, '2')).not.toHaveClass(/wtv__node-content--glow-/);
+    await expect(content(page, '1')).not.toHaveClass(/wtv__node-content--glow-/); // the previous hover cleared
+    expect(await logLines(page, LOG)).toEqual([]); // nothing announced mid-drag
+    await step(page, 'end');
+  });
+
+  test('node-drop-reject + 🚫 fire from dragend on the last refusing node', async ({ page }) => {
+    await load(page);
+    await step(page, 'start', '4');
+    await step(page, 'over', '2');
+    await step(page, 'end');
+    expect(await logLines(page, LOG)).toEqual(['node-drop-reject:2']);
+    await expect(content(page, '2').locator('.wtv__drag-denied-badge')).toHaveCount(1);
+  });
+
+  test('moving on to an accepting node and dropping there: a normal drop, no reject', async ({ page }) => {
+    await load(page);
+    await step(page, 'start', '4');
+    await step(page, 'over', '2');
+    await step(page, 'over', '1');
+    await step(page, 'drop', '1');
+    await step(page, 'end');
+    await expect.poll(() => logLines(page, LOG)).toEqual(['node-drop:1.4:child:1']);
+  });
+
+  test('enable-tree-drop-zone: the dragover on a refusing node is accepted (routed to the tree)', async ({ page }) => {
+    await load(page, '?enable-tree-drop-zone=true');
+    await step(page, 'start', '4');
+    expect((await step(page, 'over', '2')).accepted).toBe(true);
+    await step(page, 'end');
+    expect(await logLines(page, LOG)).toEqual([]);
   });
 });
 

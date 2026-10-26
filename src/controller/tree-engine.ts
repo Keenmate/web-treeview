@@ -283,6 +283,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _draggedPaths: string[] = [];
   private _isDragInProgress: boolean = false;
   private _hoveredNodeForDrop: LTreeNode<any> | null = null;
+  /** The refusing row (isDropAllowed:false) the desktop drag is over — its dragover was
+   *  NOT accepted (🚫 cursor), so no `drop` fires there; `dragend` announces the reject
+   *  (NOTES #22). Cleared when the drag moves to anything else or a drop happens. */
+  private _refusedDropNode: LTreeNode<any> | null = null;
   private _activeDropPosition: DropPosition | null = null;
   private _currentDropOperation: DropOperation = 'move';
   // Snapshot of `selectedPaths` taken in the dragstart rAF before the
@@ -3309,15 +3313,26 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     // Per-node opt-out gate. Mirrors the touch path so isDropAllowed:false
-    // rejects drops on desktop too (svelte-treeview parity). The dragover is still
-    // ACCEPTED (no hover / indicators) so the browser fires `drop` on the row — the
-    // drop then announces the reject (node-drop-reject + 🚫) or routes it to the
-    // tree drop zone (NOTES #22).
+    // rejects drops on desktop too (svelte-treeview parity); no hover / indicators.
+    // With a tree drop zone the dragover is ACCEPTED so the browser fires `drop` on
+    // the row, which routes it to the zone. Without one it is REFUSED
+    // (dropEffect 'none' → 🚫 cursor, no `drop` event) and `dragend` announces the
+    // reject (node-drop-reject + 🚫 flash) on the last refusing row (NOTES #22).
     if (!node.isDropAllowed) {
+      const hadHover = this._hoveredNodeForDrop !== null || this._activeDropPosition !== null;
       this._hoveredNodeForDrop = null;
-      event.preventDefault();
+      this._activeDropPosition = null;
+      if (this._shouldEnableTreeDropZone) {
+        this._refusedDropNode = null;
+        event.preventDefault();
+      } else {
+        this._refusedDropNode = node;
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+      }
+      if (hadHover) this._scheduleNotify();
       return;
     }
+    this._refusedDropNode = null;
 
     const isValidDrop = effectiveDraggedNode
       ? isCrossTreeDrag || effectiveDraggedNode.path !== node.path
@@ -3358,8 +3373,28 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
       this._hoveredNodeForDrop = null;
       this._activeDropPosition = null;
+      this._refusedDropNode = null;
       this._scheduleNotify();
     }
+  }
+
+  /** The desktop drag moved off any row (empty body area, a zone, the empty state):
+   *  it is no longer over a refusing node (NOTES #22). Called by the renderer. */
+  clearRefusedDropHover(): void {
+    this._refusedDropNode = null;
+  }
+
+  /**
+   * A desktop drag ended (`dragend`). When it was last over a refusing row and no
+   * drop happened (a successful drop resets the drag state first), announce the
+   * reject there: node-drop-reject + the 🚫 flash (NOTES #22). Called by the
+   * renderer (source tree: its own `dragend`; another tree: the document one).
+   */
+  announceRefusedDrop(): void {
+    const node = this._refusedDropNode;
+    this._refusedDropNode = null;
+    if (!node || this._shouldEnableTreeDropZone) return;
+    this._indicateDropDenied(node);
   }
 
   /** Call from ondrop. Uses calculated position or defaults to 'child'. */
@@ -4551,6 +4586,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   _onNodeDragEnd = (event: DragEvent) => {
+    this.announceRefusedDrop();
     const dropEffect = event.dataTransfer?.dropEffect;
     dragLogger.debug('Drag ended', {
       dropEffect,
@@ -4586,6 +4622,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._draggedPaths = [];
     this._hoveredNodeForDrop = null;
     this._activeDropPosition = null;
+    this._refusedDropNode = null;
     this._isDropPlaceholderActive = false;
     this._currentDropOperation = 'move';
     this._dragSetOverride = null;
@@ -5099,8 +5136,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       const dropNode = this.findNodeFromElement(dropElement);
 
       const emptyTarget = dropElement?.closest('.wtv__empty-state, .wtv__empty-zone');
-      const rootDropZone = dropElement?.closest('.wtv__root-drop-zone');
-      if ((emptyTarget || rootDropZone) && !dropNode) {
+      if (emptyTarget && !dropNode) {
         dragLogger.debug(`Touch drag ended: ${this._draggedNode.path} -> empty tree`);
         this._handleDrop(null, this._draggedNode, 'child', event);
       } else if (dropNode && dropNode !== this._draggedNode && dropNode.isDropAllowed) {
@@ -5190,6 +5226,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  it auto-clears after a short beat. */
   private _indicateDropDenied(node: LTreeNode<any>) {
     dragLogger.debug('[drop-denied] target refused drop', { path: node?.path });
+    this._refusedDropNode = null; // announced — a later dragend must not repeat it
 
     this.nodeDropDeniedCb?.(this.nodeRef(node));
 

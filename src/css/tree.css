@@ -614,8 +614,8 @@
 
 /* ==============================================================================
    CONTEXT MENU
-   Rendered by core `openMenu()` (`bliss-menu*` classes, styled by core's shared
-   stylesheet). The --wtv-context-menu-* variables are mapped onto --bliss-menu-*
+   Rendered by core `openMenu()` (`km-menu*` classes, styled by core's shared
+   stylesheet). The --wtv-context-menu-* variables are mapped onto --km-menu-*
    in variables.css.
    ============================================================================== */
 

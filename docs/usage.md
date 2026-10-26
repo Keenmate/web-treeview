@@ -303,16 +303,16 @@ While the menu is open it is keyboard-modal (handled keys don't reach the tree).
 
 #### Styling
 
-Classes (core `/menu`): `.bliss-menu` (`role="menu"`), `.bliss-menu--submenu`,
-`.bliss-menu__item` (`<div role="menuitem">`) with `--disabled` / `--danger` / `--active` /
-`--has-submenu`, `.bliss-menu__icon` / `__label` / `__shortcut`, `.bliss-menu__divider`
-(`--named`), `.bliss-menu__loading`. They replace the old `.wtv__context-menu*` classes
+Classes (core `/menu`): `.km-menu` (`role="menu"`), `.km-menu--submenu`,
+`.km-menu__item` (`<div role="menuitem">`) with `--disabled` / `--danger` / `--active` /
+`--has-submenu`, `.km-menu__icon` / `__label` / `__shortcut`, `.km-menu__divider`
+(`--named`), `.km-menu__loading`. They replace the old `.wtv__context-menu*` classes
 (see CHANGELOG for the mapping).
 
 Theme the menu with the `--wtv-context-menu-*` variables — the tree maps them onto core's
-`--bliss-menu-*` (you can also set a `--bliss-menu-*` variable directly on the element):
+`--km-menu-*` (you can also set a `--km-menu-*` variable directly on the element):
 
-| `--wtv-context-menu-*` | → `--bliss-menu-*` |
+| `--wtv-context-menu-*` | → `--km-menu-*` |
 |---|---|
 | `bg` / `bg-hover` / `text-color` | `bg` / `hover-bg` / `text-color` |
 | `border` / `border-radius` / `shadow` | `border` / `border-radius` / `shadow` |
@@ -326,7 +326,7 @@ Theme the menu with the `--wtv-context-menu-*` variables — the tree maps them 
 | `divider-color` / `divider-margin` | `divider-color` / `divider-margin` |
 | `disabled-opacity` | `disabled-opacity` |
 
-`--bliss-menu-z-index` follows `--wtv-z-index-dropdown`.
+`--km-menu-z-index` follows `--wtv-z-index-dropdown`.
 
 ### Before-hooks (interceptors)
 

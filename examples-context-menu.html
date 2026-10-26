@@ -163,8 +163,8 @@ tree.renderContextMenuItemCallback = ({ node, menuItem, buttonElement }) =&gt; {
     }
     if (menuItem.id === 'invoices') {
         buttonElement.innerHTML = `
-            &lt;span class="bliss-menu__icon"&gt;🧾&lt;/span&gt;
-            &lt;span class="bliss-menu__label"&gt;Invoices&lt;/span&gt;
+            &lt;span class="km-menu__icon"&gt;🧾&lt;/span&gt;
+            &lt;span class="km-menu__label"&gt;Invoices&lt;/span&gt;
             &lt;span class="count-chip"&gt;${d.invoiceCount}&lt;/span&gt;`;
         return;
     }
@@ -268,7 +268,7 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
 
             <div class="note">
                 <p class="note-title">Reusable inner classes</p>
-                <p>When you build custom markup, reuse <code>.bliss-menu__icon</code>, <code>.bliss-menu__label</code>, and <code>.bliss-menu__shortcut</code> so your items inherit the same alignment and theming as default items.</p>
+                <p>When you build custom markup, reuse <code>.km-menu__icon</code>, <code>.km-menu__label</code>, and <code>.km-menu__shortcut</code> so your items inherit the same alignment and theming as default items.</p>
             </div>
         </div>
 
@@ -290,8 +290,8 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
                     <tr><td><code>tooltip</code></td><td><code>string</code></td><td>Native tooltip (<code>title</code>) on the item.</td></tr>
                     <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td>Greys the item out and blocks clicks.</td></tr>
                     <tr><td><code>isVisible</code></td><td><code>boolean</code></td><td><code>false</code> skips rendering the item entirely.</td></tr>
-                    <tr><td><code>isDanger</code></td><td><code>boolean</code></td><td>Destructive (red) styling — <code>.bliss-menu__item--danger</code>.</td></tr>
-                    <tr><td><code>isActive</code></td><td><code>boolean</code></td><td>Toggle state is on: <code>aria-pressed="true"</code> + <code>.bliss-menu__item--active</code>. Still clickable.</td></tr>
+                    <tr><td><code>isDanger</code></td><td><code>boolean</code></td><td>Destructive (red) styling — <code>.km-menu__item--danger</code>.</td></tr>
+                    <tr><td><code>isActive</code></td><td><code>boolean</code></td><td>Toggle state is on: <code>aria-pressed="true"</code> + <code>.km-menu__item--active</code>. Still clickable.</td></tr>
                     <tr><td><code>cssClass</code></td><td><code>string</code></td><td>Extra CSS class(es) on the item button.</td></tr>
                     <tr><td><code>get*Callback(ctx)</code></td><td><code>(ctx: TreeMenuContext) =&gt; …</code></td><td>Dynamic variants that win over the static value: <code>getTextCallback</code>, <code>getIconCallback</code>, <code>getTooltipCallback</code>, <code>getClassCallback</code>, <code>getIsVisibleCallback</code>, <code>getIsDisabledCallback</code>, <code>getIsActiveCallback</code>.</td></tr>
                     <tr><td><code>shouldCloseOnClick</code></td><td><code>boolean</code></td><td>Defaults to <code>true</code> (activating a leaf dismisses the menu). Set <code>false</code> for incremental actions; close later via <code>detail.controller.closeContextMenu()</code>.</td></tr>
@@ -486,20 +486,20 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     <tr><th>Class</th><th>Description</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><code>.bliss-menu</code></td><td>The menu container (core <code>openMenu()</code>, <code>role="menu"</code>)</td></tr>
-                    <tr><td><code>.bliss-menu--submenu</code></td><td>A nested submenu container (also carries <code>.bliss-menu</code>)</td></tr>
-                    <tr><td><code>.bliss-menu--custom</code></td><td>The container filled by <code>renderContextMenuCallback</code></td></tr>
-                    <tr><td><code>.bliss-menu__item</code></td><td>Each menu item (<code>role="menuitem"</code>, roving <code>tabindex="-1"</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__item--disabled</code></td><td>Disabled menu items (also <code>aria-disabled="true"</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__item--has-submenu</code></td><td>Items that open a submenu (<code>aria-haspopup</code> / <code>aria-expanded</code>; the ▸ arrow is its <code>::after</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__icon</code></td><td>Icon span (the icon string is inserted as HTML)</td></tr>
-                    <tr><td><code>.bliss-menu__label</code></td><td>Label text span</td></tr>
-                    <tr><td><code>.bliss-menu__shortcut</code></td><td>Right-aligned shortcut hint</td></tr>
-                    <tr><td><code>.bliss-menu__divider</code></td><td>Divider line (<code>role="separator"</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__divider--named</code></td><td>Named divider with a centered label</td></tr>
-                    <tr><td><code>.bliss-menu__item--danger</code></td><td>Danger-styled item (red text, via <code>isDanger: true</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__item--active</code></td><td>Toggled-on item (<code>isActive: true</code>, also <code>aria-pressed="true"</code>)</td></tr>
-                    <tr><td><code>.bliss-menu__loading</code></td><td>Loading row shown while an async <code>getChildrenCallback</code> resolves</td></tr>
+                    <tr><td><code>.km-menu</code></td><td>The menu container (core <code>openMenu()</code>, <code>role="menu"</code>)</td></tr>
+                    <tr><td><code>.km-menu--submenu</code></td><td>A nested submenu container (also carries <code>.km-menu</code>)</td></tr>
+                    <tr><td><code>.km-menu--custom</code></td><td>The container filled by <code>renderContextMenuCallback</code></td></tr>
+                    <tr><td><code>.km-menu__item</code></td><td>Each menu item (<code>role="menuitem"</code>, roving <code>tabindex="-1"</code>)</td></tr>
+                    <tr><td><code>.km-menu__item--disabled</code></td><td>Disabled menu items (also <code>aria-disabled="true"</code>)</td></tr>
+                    <tr><td><code>.km-menu__item--has-submenu</code></td><td>Items that open a submenu (<code>aria-haspopup</code> / <code>aria-expanded</code>; the ▸ arrow is its <code>::after</code>)</td></tr>
+                    <tr><td><code>.km-menu__icon</code></td><td>Icon span (the icon string is inserted as HTML)</td></tr>
+                    <tr><td><code>.km-menu__label</code></td><td>Label text span</td></tr>
+                    <tr><td><code>.km-menu__shortcut</code></td><td>Right-aligned shortcut hint</td></tr>
+                    <tr><td><code>.km-menu__divider</code></td><td>Divider line (<code>role="separator"</code>)</td></tr>
+                    <tr><td><code>.km-menu__divider--named</code></td><td>Named divider with a centered label</td></tr>
+                    <tr><td><code>.km-menu__item--danger</code></td><td>Danger-styled item (red text, via <code>isDanger: true</code>)</td></tr>
+                    <tr><td><code>.km-menu__item--active</code></td><td>Toggled-on item (<code>isActive: true</code>, also <code>aria-pressed="true"</code>)</td></tr>
+                    <tr><td><code>.km-menu__loading</code></td><td>Loading row shown while an async <code>getChildrenCallback</code> resolves</td></tr>
                 </tbody>
             </table>
         </div>
@@ -663,8 +663,8 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     const count = d.invoiceCount;
                     const chipColor = count > 5 ? '#dc3545' : count > 0 ? '#f59e0b' : '#6b7280';
                     buttonElement.innerHTML = `
-                        <span class="bliss-menu__icon">🧾</span>
-                        <span class="bliss-menu__label">Invoices</span>
+                        <span class="km-menu__icon">🧾</span>
+                        <span class="km-menu__label">Invoices</span>
                         <span style="background: ${chipColor}; color: white; font-size: 0.7em; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;">${count}</span>`;
                     return;
                 }

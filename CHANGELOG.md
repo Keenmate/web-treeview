@@ -34,17 +34,17 @@ and `action` event — but the markup classes changed. If you style the menu by 
 
 | Old | New |
 |---|---|
-| `.wtv__context-menu` | `.bliss-menu` (`role="menu"`) |
-| `.wtv__context-submenu` | `.bliss-menu--submenu` |
-| `.wtv__context-menu-item` (`<button>`) | `.bliss-menu__item` (`<div role="menuitem">`) |
-| `.wtv__context-menu-item--disabled` / `--danger` / `--active` | `.bliss-menu__item--disabled` / `--danger` / `--active` |
-| `.wtv__context-menu-item--has-children` | `.bliss-menu__item--has-submenu` |
-| `.wtv__context-menu-icon` / `-label` / `-shortcut` | `.bliss-menu__icon` / `__label` / `__shortcut` |
-| `.wtv__context-menu-arrow` | the `::after` of `.bliss-menu__item--has-submenu` |
-| `.wtv__context-menu-divider` (`--named`) | `.bliss-menu__divider` (`--named`) |
-| `.wtv__context-menu-loading` | `.bliss-menu__loading` |
+| `.wtv__context-menu` | `.km-menu` (`role="menu"`) |
+| `.wtv__context-submenu` | `.km-menu--submenu` |
+| `.wtv__context-menu-item` (`<button>`) | `.km-menu__item` (`<div role="menuitem">`) |
+| `.wtv__context-menu-item--disabled` / `--danger` / `--active` | `.km-menu__item--disabled` / `--danger` / `--active` |
+| `.wtv__context-menu-item--has-children` | `.km-menu__item--has-submenu` |
+| `.wtv__context-menu-icon` / `-label` / `-shortcut` | `.km-menu__icon` / `__label` / `__shortcut` |
+| `.wtv__context-menu-arrow` | the `::after` of `.km-menu__item--has-submenu` |
+| `.wtv__context-menu-divider` (`--named`) | `.km-menu__divider` (`--named`) |
+| `.wtv__context-menu-loading` | `.km-menu__loading` |
 
-The `--wtv-context-menu-*` variables keep working (mapped onto core's `--bliss-menu-*`).
+The `--wtv-context-menu-*` variables keep working (mapped onto core's `--km-menu-*`).
 An item's `icon` string is now inserted as HTML (was text) — like action buttons.
 `ctx.buttonElement` in `renderContextMenuItemCallback` is the item `<div>`.
 

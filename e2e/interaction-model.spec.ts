@@ -18,10 +18,10 @@ function node(page: Page, path: string): Locator {
   return page.locator(`.wtv__node[data-tree-path="${path}"]`).first();
 }
 function menu(page: Page): Locator {
-  return page.locator('.bliss-menu:not(.bliss-menu--submenu)').first();
+  return page.locator('.km-menu:not(.km-menu--submenu)').first();
 }
 function item(page: Page, selector: string): Locator {
-  return menu(page).locator(`.bliss-menu__item${selector}`);
+  return menu(page).locator(`.km-menu__item${selector}`);
 }
 async function openMenu(page: Page, path: string): Promise<void> {
   await node(page, path).locator('> .wtv__node-row .wtv__node-content').first().click({ button: 'right' });
@@ -47,14 +47,14 @@ test('menu items render from core action items: built-in defaults, data-action /
   await openMenu(page, '1');
   await expect(item(page, '[data-action="copy"]')).toHaveText('Copy');
   // 'expand' is disabled on an already-expanded node; 'paste' with an empty clipboard.
-  await expect(item(page, '[data-action="expand"]')).toHaveClass(/bliss-menu__item--disabled/);
-  await expect(item(page, '[data-action="paste"]')).toHaveClass(/bliss-menu__item--disabled/);
-  await expect(item(page, '[data-action="delete"]')).toHaveClass(/bliss-menu__item--danger/);
+  await expect(item(page, '[data-action="expand"]')).toHaveClass(/km-menu__item--disabled/);
+  await expect(item(page, '[data-action="paste"]')).toHaveClass(/km-menu__item--disabled/);
+  await expect(item(page, '[data-action="delete"]')).toHaveClass(/km-menu__item--danger/);
   const rename = item(page, '[data-action="custom"][data-id="rename"]');
-  await expect(rename.locator('.bliss-menu__icon')).toHaveText('✎');
+  await expect(rename.locator('.km-menu__icon')).toHaveText('✎');
   await expect(item(page, '[data-id="toggle"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(item(page, '[data-id="hidden"]')).toHaveCount(0);
-  await expect(menu(page).locator('.bliss-menu__divider')).toHaveCount(1);
+  await expect(menu(page).locator('.km-menu__divider')).toHaveCount(1);
 });
 
 test('a custom item: before → onClick → onAction → event; the detail carries the node and the context', async ({ page }) => {
@@ -91,7 +91,7 @@ test('copy + paste built-ins act on the node', async ({ page }) => {
   await openMenu(page, '1.2');
   await item(page, '[data-action="copy"]').click();
   await openMenu(page, '2');
-  await expect(item(page, '[data-action="paste"]')).not.toHaveClass(/bliss-menu__item--disabled/);
+  await expect(item(page, '[data-action="paste"]')).not.toHaveClass(/km-menu__item--disabled/);
   await item(page, '[data-action="paste"]').click();
   await expect.poll(() => page.locator('web-treeview').evaluate((el: any) => el.getChildren('2').length)).toBe(1);
 });
@@ -99,8 +99,8 @@ test('copy + paste built-ins act on the node', async ({ page }) => {
 test('getChildrenCallback loads a submenu lazily with the menu ctx', async ({ page }) => {
   await openMenu(page, '1.1');
   await item(page, '[data-id="more"]').hover();
-  const sub = page.locator('.bliss-menu--submenu');
-  await expect(sub.locator('.bliss-menu__item[data-id="lazy"]')).toHaveText('Lazy 1.1');
+  const sub = page.locator('.km-menu--submenu');
+  await expect(sub.locator('.km-menu__item[data-id="lazy"]')).toHaveText('Lazy 1.1');
 });
 
 test('on* twins receive the detail; a checkbox toggle fires checked-change, not node-click', async ({ page }) => {

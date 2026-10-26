@@ -19,7 +19,7 @@ async function load(page: Page, query = '') {
   await expect(nodeByPath(page, '2')).toBeVisible();
 }
 
-const menu = (page: Page) => page.locator('.bliss-menu');
+const menu = (page: Page) => page.locator('.km-menu');
 const open = (page: Page, path: string, x: number, y: number) =>
   page.evaluate(([p, x, y]) => (window as any).tree.openContextMenu(p, x, y), [path, x, y] as const);
 
@@ -29,8 +29,8 @@ test.describe('renderContextMenuItemCallback', () => {
     await nodeContent(nodeByPath(page, '1.1')).click({ button: 'right' });
     await expect(menu(page)).toBeVisible();
     await expect(menu(page).locator('.custom-item')).toHaveText('★ Star Readme');
-    await expect(menu(page).locator('.bliss-menu__item[data-id="open"]')).toContainText('Open');
-    await expect(menu(page).locator('.bliss-menu__item[data-id="open"] .bliss-menu__shortcut')).toHaveText('o');
+    await expect(menu(page).locator('.km-menu__item[data-id="open"]')).toContainText('Open');
+    await expect(menu(page).locator('.km-menu__item[data-id="open"] .km-menu__shortcut')).toHaveText('o');
   });
 
   test('a custom-rendered item still activates its onClick', async ({ page }) => {
@@ -46,7 +46,7 @@ test('renderContextMenuCallback renders the whole menu and can close it via the 
   await load(page, '?mode=custom');
   await nodeContent(nodeByPath(page, '1')).click({ button: 'right' });
   await expect(menu(page).locator('.custom-menu')).toContainText('Menu for Docs');
-  await expect(menu(page).locator('.bliss-menu__item')).toHaveCount(0);
+  await expect(menu(page).locator('.km-menu__item')).toHaveCount(0);
   await menu(page).locator('.custom-close').click();
   await expect.poll(() => logLines(page, LOG)).toEqual(['custom-close:1']);
   await expect(menu(page)).toBeHidden();
@@ -60,7 +60,7 @@ test.describe('openContextMenu(path, x, y)', () => {
     const box = (await menu(page).boundingBox())!;
     expect(Math.abs(box.x - 208)).toBeLessThan(2);
     expect(Math.abs(box.y - 150)).toBeLessThan(2);
-    await menu(page).locator('.bliss-menu__item[data-id="open"]').click();
+    await menu(page).locator('.km-menu__item[data-id="open"]').click();
     await expect.poll(() => logLines(page, LOG)).toEqual(['click:open:2']);
   });
 
@@ -124,7 +124,7 @@ test.describe('keyboard navigation (WAI-ARIA menu)', () => {
     });
   const focusedPath = (page: Page) => page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
   const selectedPaths = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()]);
-  const submenu = (page: Page) => page.locator('.bliss-menu--submenu');
+  const submenu = (page: Page) => page.locator('.km-menu--submenu');
 
   /** Focus node 1.1 (keyboard focus on the tree body), then open the menu from the keyboard. */
   async function openFromKeyboard(page: Page, keys = 'Shift+F10') {
@@ -171,7 +171,7 @@ test.describe('keyboard navigation (WAI-ARIA menu)', () => {
   test('→ opens the submenu on its first enabled item; ← closes it and refocuses the parent item', async ({ page }) => {
     await openFromKeyboard(page);
     await page.keyboard.press('End');
-    const more = menu(page).first().locator('.bliss-menu__item[data-id="more"]');
+    const more = menu(page).first().locator('.km-menu__item[data-id="more"]');
     await expect(more).toHaveAttribute('aria-haspopup', 'menu');
     await page.keyboard.press('ArrowRight');
     await expect(submenu(page)).toBeVisible();
@@ -251,7 +251,7 @@ test.describe('keyboard navigation (WAI-ARIA menu)', () => {
     await openFromKeyboard(page);
     const root = menu(page).first();
     await expect(root.locator('[role="menuitem"]')).toHaveCount(4);
-    await expect(root.locator('.bliss-menu__item[data-id="off"]')).toHaveAttribute('aria-disabled', 'true');
-    await expect(root.locator('.bliss-menu__item[data-id="open"]')).toHaveAttribute('tabindex', '-1');
+    await expect(root.locator('.km-menu__item[data-id="off"]')).toHaveAttribute('aria-disabled', 'true');
+    await expect(root.locator('.km-menu__item[data-id="open"]')).toHaveAttribute('tabindex', '-1');
   });
 });

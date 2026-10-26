@@ -89,7 +89,7 @@ test.describe('removing an attribute resets the input to its default', () => {
     });
     const menuLeft = async () => {
       await page.evaluate(() => (window as any).tree.openContextMenu('2', 100, 100));
-      const left = await page.locator('.bliss-menu').first().evaluate((m) => m.getBoundingClientRect().left);
+      const left = await page.locator('.km-menu').first().evaluate((m) => m.getBoundingClientRect().left);
       await page.evaluate(() => (window as any).tree.closeContextMenu());
       return left;
     };

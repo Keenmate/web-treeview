@@ -2917,6 +2917,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     let skipped = 0;
     let lastError: string | undefined;
     const pastedSourcePaths: string[] = [];
+    let firstPasted: LTreeNode<T> | null = null;
 
     // Per-node context with LIVE, symmetric references, re-resolved per call so
     // target.node.children / target.siblings already include nodes added earlier
@@ -2979,6 +2980,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
       totalCount++;
       pastedSourcePaths.push(entry.sourcePath);
+      firstPasted ??= addResult.node;
 
       // Descendants (parent-first). A vetoed descendant takes its subtree with it.
       const skippedDescRel = new Set<string>();
@@ -3026,6 +3028,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this.tree.refresh();
     this._scheduleNotify();
+
+    // A paste INTO a node: open it and bring the first pasted node into view, so
+    // the result isn't hidden under a collapsed parent. 'before' / 'after' land
+    // beside a visible node — nothing to open.
+    if (position === 'child' && !isRootPaste && firstPasted) {
+      if (!targetNodeAfter!.isExpanded) this.expandNodes(targetPath);
+      this.revealNode(firstPasted.path);
+    }
 
     const result: PasteResult<T> = {
       success: totalCount > 0,

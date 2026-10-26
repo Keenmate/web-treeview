@@ -120,6 +120,10 @@
             window.tree = tree;
             window.childNames = (p) => tree.getChildren(p).map((n) => n.data.name).sort();
 
+            //   ?many=1   '2' (Images) gets 60 children, so a pasted node can land off-screen
+            if (params.get('many')) {
+                for (let i = 1; i <= 60; i++) data.push({ id: 100 + i, path: '2.' + i, name: 'Img ' + String(i).padStart(2, '0') });
+            }
             tree.data = data;
         });
     </script>

@@ -64,6 +64,10 @@ An item's `icon` string is now inserted as HTML (was text) — like action butto
 
 ### Fixed — NOTES bug sweep
 
+- A paste INTO a node (`position: 'child'` — Ctrl+V, the `paste` menu item, `pasteNodes(path)`)
+  expands a collapsed target and scrolls the first pasted node into view (`block: 'nearest'`);
+  the pasted nodes used to land hidden under the collapsed parent. `before` / `after` pastes
+  are unchanged.
 - `replaceBranch` notifies the tree once and `removed` counts all descendants (NOTES #2 — verified, fixed by the insertBranch rework).
 - Cut rows are dimmed on Ctrl+X / `cutNodes()` and un-dimmed on Escape / `cancelCut()` (NOTES #6).
 - A pasted / duplicated copy that keeps its source `id` no longer hides the original row: rows are keyed by `path` (NOTES #8). `scrollToPath` finds rows by path too.

@@ -155,3 +155,30 @@ test('auto-handle-paste="false": node-paste carries the entries, the tree is not
   await expect(page.getByTestId('paste-log')).toContainText('node-paste success=true count=1 entries=Notes.txt');
   expect(await childNames(page, '2')).toEqual([]);
 });
+
+test.describe('Paste into a collapsed node', () => {
+  const isExpanded = (page: Page, p: string) =>
+    page.evaluate((p) => !!(window as any).tree.controller.getNodeRef(p).node?.isExpanded, p);
+
+  test("position 'child' expands the target and reveals the first pasted node", async ({ page }) => {
+    await gotoWith(page, '?many=1');
+    await page.evaluate(() => (window as any).tree.collapseNodes('2'));
+    await expect(nodeAt(page, '2.1')).toHaveCount(0);
+    await page.evaluate(() => (window as any).tree.copyNodes(['1.2']));
+    await page.evaluate(() => (window as any).tree.pasteNodes('2', undefined, 'child'));
+    await expect.poll(() => isExpanded(page, '2')).toBe(true);
+    // 'Notes.txt' sorts after the 60 'Img NN' rows — far below the fold, scrolled into view.
+    const pasted = tree(page).locator('.wtv__node').filter({ hasText: /^Notes\.txt$/ }).last();
+    await expect(pasted).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  });
+
+  test("position 'after' leaves a collapsed node collapsed", async ({ page }) => {
+    await goto(page);
+    await page.evaluate(() => (window as any).tree.collapseNodes('1.1'));
+    await page.evaluate(() => (window as any).tree.copyNodes(['2']));
+    await page.evaluate(() => (window as any).tree.pasteNodes('1.1', undefined, 'after'));
+    await expect.poll(() => childNames(page, '1')).toEqual(['Images', 'Notes.txt', 'Reports']);
+    expect(await isExpanded(page, '1.1')).toBe(false);
+  });
+});

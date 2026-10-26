@@ -40,6 +40,11 @@ the event still fires.
 that defines its toggle state renders `role="menuitemcheckbox"` + `aria-checked` (was
 `menuitem` + `aria-pressed`).
 
+### Changed — `@floating-ui/dom` is no longer a direct dependency
+
+Nothing in the tree imports it since the context menu moved to core `/menu`; core
+`/positioning` brings it in transitively.
+
 ### Changed — BREAKING (context menu classes: core `/menu`)
 
 The context menu is now web-components-core's shared `openMenu()` (`/menu`). Same

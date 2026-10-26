@@ -118,7 +118,7 @@ All mounted `<web-treeview>` elements are tracked in a `Set` and exposed via `ge
 
 ## Dependencies
 
-- **Runtime**: `@floating-ui/dom` (context menu positioning); `@keenmate/web-components-core` (`/positioning` → `createTooltip` for node tooltips; shared with web-multiselect)
+- **Runtime**: `@keenmate/web-components-core` (`/menu` → the context menu, positioned by core `/positioning`; `/positioning` → `createTooltip` for node tooltips; shared with web-multiselect); `flexsearch`. No direct `@floating-ui/dom` dependency (core brings it).
 - **Dev**: Vite, TypeScript, vite-plugin-dts, rimraf
 
 ## Node tooltips (hover/focus)

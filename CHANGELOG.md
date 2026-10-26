@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed: `getInsertResult().failed[i].originalData` pointed at the wrong row when the
   insert sort reordered the input.
 
+### Changed — BREAKING (context menu `action` event fires after the built-in)
+
+Core `runAction` order is now `beforeActionCallback` → item `onClick` → **built-in** →
+`action` event (+ `onAction`) — was: … → event → built-in. The event is a notification
+after the fact: a listener sees the tree as the built-in left it (after `collapse` the node
+is collapsed, after `delete` it is gone, after `paste` the pasted nodes are in). To prevent
+a built-in, return `false` from `beforeActionCallback`. A throwing built-in is logged and
+the event still fires.
+
 ### Changed — BREAKING (context menu classes: core `/menu`)
 
 The context menu is now web-components-core's shared `openMenu()` (`/menu`). Same
@@ -124,7 +133,7 @@ non-enumerable, so `JSON.stringify` / logs see only the data.
 | `data-item-id` on the button | `data-action` (built-in name or `custom`) + `data-id` |
 | — | built-ins by name: `'copy' \| 'cut' \| 'paste' \| 'delete' \| 'expand' \| 'collapse'` (act on the node, or on the whole selection when the node is in it; default text / disabled / danger state) |
 | — | `get*Callback(ctx)` on items (text, icon, tooltip, class, visible, disabled, active), `isActive` (`aria-pressed`), `tooltip`, lazy submenus via `getChildrenCallback(ctx)` (sync or async — a loading row shows meanwhile) |
-| an item without `onclick` did nothing and kept the menu open | every enabled leaf activates (`onClick` → `action` event → built-in) and closes the menu unless `shouldCloseOnClick: false` |
+| an item without `onclick` did nothing and kept the menu open | every enabled leaf activates (`onClick` → built-in → `action` event) and closes the menu unless `shouldCloseOnClick: false` |
 
 **Events** — present tense, no native collisions, typed details; every event has a
 camelCase `on*` twin (core) that receives the **detail**.

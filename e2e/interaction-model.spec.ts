@@ -5,7 +5,7 @@ import { test, expect, type Page, type Locator } from './fixtures';
  *   - context-menu entries are core action items: built-ins by name (`'copy'`, `'expand'`, …),
  *     custom items by `id`, dividers, `getIsActiveCallback`, lazy `getChildrenCallback`
  *   - one `action` event (+ `onAction`) per activation, in the order
- *     beforeActionCallback → onClick → onAction → action event → built-in
+ *     beforeActionCallback → onClick → built-in → onAction → action event
  *   - single-ctx callbacks carry `controller` / `element` (non-enumerable)
  *   - `on*` twins receive the detail; a checkbox toggle is not a node click
  *
@@ -71,10 +71,12 @@ test('a custom item: before → onClick → onAction → event; the detail carri
   await expect(menu(page)).toBeHidden(); // a leaf closes the menu
 });
 
-test('a built-in runs after the event: collapse', async ({ page }) => {
+test('a built-in runs before the event: collapse — the listener sees the collapsed node', async ({ page }) => {
   await openMenu(page, '1');
   await item(page, '[data-action="collapse"]').click();
   await expect.poll(() => log(page)).toEqual(['before:collapse', 'onAction:collapse', 'event:collapse']);
+  const [d] = await details(page);
+  expect(d.nodeIsExpanded).toBe(false); // the event fired after the built-in collapsed it
   await expect(node(page, '1.1')).toBeHidden();
 });
 

@@ -81,6 +81,7 @@
                 window.__details.push({
                     json: JSON.parse(JSON.stringify(e.detail, (k, v) => (['item', 'sourceEvent', 'triggerElement', 'node', 'parent', 'siblings'].includes(k) ? undefined : v))),
                     nodePath: e.detail.node?.path,
+                    nodeIsExpanded: e.detail.node ? tree.controller.getNodeRef(e.detail.node.path).node?.isExpanded : undefined,
                     hasController: typeof e.detail.controller?.expandAll === 'function',
                     elementIsHost: e.detail.element === tree,
                     composed: e.composed,

@@ -208,7 +208,7 @@ export class WebTreeView<T = any> {
     }
   }
 
-  /** core runAction: beforeActionCallback → onClick → `action` event → built-in. */
+  /** core runAction: beforeActionCallback → onClick → built-in → `action` event (listeners see the result). */
   private activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger: HTMLElement, event: Event): Promise<boolean> {
     const detail = this.ctx({
       ...ctx,

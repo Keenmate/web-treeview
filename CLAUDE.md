@@ -176,7 +176,8 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
   isVisible, isActive, tooltip, onClick(detail), children, getChildrenCallback, shouldCloseOnClick }`),
   dividers (`{ divider: true, text }` / `menuDivider(text)`), or built-in names
   `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`. Activation:
-  `beforeActionCallback(detail)` (false cancels) → `onClick(detail)` → `action` event → built-in.
+  `beforeActionCallback(detail)` (false cancels) → `onClick(detail)` → built-in → `action` event
+  (a notification after the fact — listeners see the built-in's result).
   A leaf closes the menu unless `shouldCloseOnClick: false`. Buttons: `data-action` + `data-id`.
 - Interceptors: `beforeCopyCallback` / `beforeCutCallback` / `beforePasteCallback` /
   `beforeDeleteCallback` / `beforeDragStartCallback` (sync), `beforeDropCallback` (async;

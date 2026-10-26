@@ -280,7 +280,7 @@ A `TreeMenuEntry` is one of:
 - a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
 - a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state).
 
-Activation order: `beforeActionCallback` → item `onClick` → `action` event (+ `onAction`) → built-in. Menu items carry `data-action` (built-in name or `custom`) and `data-id`.
+Activation order: `beforeActionCallback` → item `onClick` → built-in → `action` event (+ `onAction`). The event is a notification after the fact — a listener sees the tree as the built-in left it (after `collapse` the node is collapsed, after `delete` it is gone); to prevent a built-in use `beforeActionCallback`. A throwing built-in is logged and the event still fires. Menu items carry `data-action` (built-in name or `custom`) and `data-id`.
 
 An item's `icon` string is inserted as **HTML** (an `<i class="…">`, an inline `<svg>`, or plain text/emoji) — the same as action buttons.
 

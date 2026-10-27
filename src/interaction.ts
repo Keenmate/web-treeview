@@ -139,7 +139,7 @@ export interface NodeContext<T = any> extends TreeViewContext<T> {
 /** ctx of `sortCallback`. */
 export interface SortContext<T = any> extends TreeViewContext<T> {
   /** The children of ONE parent (siblings) to sort; return them in the new order. */
-  items: LTreeNode<T>[];
+  nodes: LTreeNode<T>[];
 }
 
 /** ctx of `renderNodeCallback`: the node, the content element to fill, and its render state. */
@@ -244,6 +244,10 @@ export type SelectionChangeEventDetail<T = any> = SelectionChangeContext<T> & Tr
 /** `focus-change`. */
 export interface FocusChangeEventDetail<T = any> extends TreeViewContext<T> {
   focusedNode: LTreeNode<T> | null;
+}
+/** `expanded-change`: the whole new expanded set (same as `expandedPaths`). */
+export interface ExpandedChangeEventDetail<T = any> extends TreeViewContext<T> {
+  paths: string[];
 }
 /** `tree-change`: the context only. */
 export type TreeEventDetail<T = any> = TreeViewContext<T>;

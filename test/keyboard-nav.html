@@ -65,7 +65,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByPath(items);
+            tree.sortCallback = ({ nodes }) => sortByPath(nodes);
             tree.data = sampleData;
 
             const focusedEl = document.querySelector('[data-testid="focused-path"]');

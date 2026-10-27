@@ -200,7 +200,7 @@
             single.idMember = 'id';
             single.pathMember = 'path';
             single.displayValueMember = 'name';
-            single.sortCallback = ({ items }) => sortByOrder(items);
+            single.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(single, 'single', 'single');
             single.data = singleData;
 
@@ -209,7 +209,7 @@
             rMember.idMember = 'id';
             rMember.pathMember = 'path';
             rMember.displayValueMember = 'name';
-            rMember.sortCallback = ({ items }) => sortByOrder(items);
+            rMember.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(rMember, 'r-member', 'rMember');
             rMember.data = restrictedMemberData;
 
@@ -218,7 +218,7 @@
             rCallback.idMember = 'id';
             rCallback.pathMember = 'path';
             rCallback.displayValueMember = 'name';
-            rCallback.sortCallback = ({ items }) => sortByOrder(items);
+            rCallback.sortCallback = ({ nodes }) => sortByOrder(nodes);
             rCallback.getAllowedDropPositionsCallback = ({ node }) => {
                 const id = node.data?.id ?? 0;
                 if (id === 4) return null; // source can land anywhere
@@ -239,7 +239,7 @@
                 span.textContent = node.data?.name ?? '';
                 container.appendChild(span);
             };
-            multi.sortCallback = ({ items }) => sortByOrder(items);
+            multi.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(multi, 'multi', 'multi');
             multi.addEventListener('selection-change', (e) => {
                 setText('multi-selected-size', String(e.detail.paths.size));
@@ -259,7 +259,7 @@
                 span.textContent = node.data?.name ?? '';
                 container.appendChild(span);
             };
-            locked.sortCallback = ({ items }) => sortByOrder(items);
+            locked.sortCallback = ({ nodes }) => sortByOrder(nodes);
             locked.getIsDraggableCallback = ({ node }) => node.data?.draggable !== false;
             wireDrop(locked, 'locked', 'locked');
             locked.addEventListener('selection-change', (e) => {
@@ -273,7 +273,7 @@
             noDrop.idMember = 'id';
             noDrop.pathMember = 'path';
             noDrop.displayValueMember = 'name';
-            noDrop.sortCallback = ({ items }) => sortByOrder(items);
+            noDrop.sortCallback = ({ nodes }) => sortByOrder(nodes);
             noDrop.onNodeDrop = (ctx) => {
                 counters.noDrop++;
                 setText('no-drop-drop-count', String(counters.noDrop));

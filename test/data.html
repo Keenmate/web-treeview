@@ -72,7 +72,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByName(items);
+            tree.sortCallback = ({ nodes }) => sortByName(nodes);
             // Custom renderer: print "<name> (<path>)" so the spec can assert
             // both label and path content on the visible node.
             tree.renderNodeCallback = ({ node, contentElement: container }) => {

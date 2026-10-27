@@ -94,7 +94,7 @@
                 t.idMember = 'id';
                 t.pathMember = 'path';
                 t.displayValueMember = 'name';
-                t.sortCallback = ({ items }) => sortByName(items);
+                t.sortCallback = ({ nodes }) => sortByName(nodes);
                 t.data = sampleData;
             }
         });

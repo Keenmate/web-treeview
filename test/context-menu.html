@@ -55,7 +55,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByName(items);
+            tree.sortCallback = ({ nodes }) => sortByName(nodes);
 
             const logLines = [];
             let pinClicks = 0;

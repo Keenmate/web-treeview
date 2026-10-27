@@ -1338,7 +1338,7 @@ export function createLTree<T>(
 		 * @returns Object with count of successful operations and array of failures
 		 */
 		applyChanges(changes: import('./types').TreeChange<T>[]): import('./types').ApplyChangesResult {
-			const failures: Array<{ index: number; operation: string; path: string; error: string }> = [];
+			const failures: Array<{ changeIndex: number; operation: string; path: string; error: string }> = [];
 			let successCount = 0;
 
 			for (let i = 0; i < changes.length; i++) {
@@ -1352,7 +1352,7 @@ export function createLTree<T>(
 							successCount++;
 						} else {
 							failures.push({
-								index: i,
+								changeIndex: i,
 								operation: change.operation,
 								path: change.parentPath,
 								error: result.error || 'Unknown error'
@@ -1365,7 +1365,7 @@ export function createLTree<T>(
 							successCount++;
 						} else {
 							failures.push({
-								index: i,
+								changeIndex: i,
 								operation: change.operation,
 								path: change.path,
 								error: result.error || 'Unknown error'
@@ -1378,7 +1378,7 @@ export function createLTree<T>(
 							successCount++;
 						} else {
 							failures.push({
-								index: i,
+								changeIndex: i,
 								operation: change.operation,
 								path: change.path,
 								error: result.error || 'Unknown error'

@@ -181,7 +181,7 @@ tree.nodeOutputTransformationCallback = ({ data }) => {
 };
 
 tree.nodeInputTransformationCallback = ({ data, position, target }) => {
-  // phase 'input' — ctx = { data, operation, phase, isRoot, index, position, source, target }
+  // phase 'input' — ctx = { data, operation, phase, isRoot, rootIndex, position, source, target }
   if (data.kind === 'archived') return null; // skip this node (and its subtree if a root)
   const landing = position === 'child' && target?.node
     ? Object.values(target.node.children)

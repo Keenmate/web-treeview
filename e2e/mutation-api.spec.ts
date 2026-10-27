@@ -166,7 +166,7 @@ test('applyChanges applies create/update/delete, reports failures, one tree-chan
     { operation: 'delete', path: 'nope' }
   ])`);
   expect(r.successful).toBe(3);
-  expect(r.failed).toEqual([expect.objectContaining({ index: 3, operation: 'delete', path: 'nope' })]);
+  expect(r.failed).toEqual([expect.objectContaining({ changeIndex: 3, operation: 'delete', path: 'nope' })]);
   await expect.poll(() => domOutline(page)).toEqual([
     'FRUIT', '  Apple', 'Veg', '  Carrot', '    Baby carrot', 'Nuts', '  Almond'
   ]);

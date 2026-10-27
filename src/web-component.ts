@@ -54,6 +54,7 @@ import type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
+  ExpandedChangeEventDetail,
   TreeEventDetail,
   TreeViewActionEventDetail,
 } from './interaction';
@@ -255,7 +256,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'getNodeClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node row (`.wtv__node`).' },
   { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
   { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
-  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.items` are siblings — return them in the new order. Not called on the input under `sorted` (still used by insertBranch / addNode / move re-sorts).' },
+  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.nodes` are siblings — return them in the new order. Not called on the input under `sorted` (still used by insertBranch / addNode / move re-sorts).' },
   { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'). Every activation fires `action`." },
 
   // ── Callbacks: render hooks ──────────────────────────────────────────────
@@ -313,6 +314,7 @@ type TreeViewEvents = {
   'selection-change': SelectionChangeEventDetail;
   'checked-change': SelectionChangeEventDetail;
   'focus-change': FocusChangeEventDetail;
+  'expanded-change': ExpandedChangeEventDetail;
   'tree-change': TreeEventDetail;
   'action': TreeViewActionEventDetail;
 };
@@ -333,6 +335,7 @@ const EVENTS: readonly EventDef[] = [
   { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' },
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
+  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ noEmit: true }` operations. Twin: `onExpandedChange(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
 ];
@@ -362,6 +365,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onSelectionChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
   declare onCheckedChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
   declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
+  declare onExpandedChange: ((detail: ExpandedChangeEventDetail<T>) => void) | null;
   declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
   declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
 
@@ -386,6 +390,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onSelectionChange: (d) => this.emit('selection-change', d),
     onCheckedChange: (d) => this.emit('checked-change', d),
     onFocusChange: (d) => this.emit('focus-change', d),
+    onExpandedChange: (d) => this.emit('expanded-change', d),
     onTreeChange: (d) => this.emit('tree-change', d),
     onAction: (d) => this.emit('action', d),
   };

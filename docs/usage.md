@@ -257,7 +257,7 @@ applied right after it. For a silent replace use `clearSelection(undefined, { si
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `sorted` (the per-parent re-sorts still use it) |
+| `sortCallback` | `({ nodes }) => LTreeNode[]` | Orders the children of one parent: `nodes` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `sorted` (the per-parent re-sorts still use it) |
 | `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
 
 ### Render callbacks
@@ -362,10 +362,10 @@ A throwing before-hook cancels the operation (the error is logged).
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `nodeOutputTransformationCallback` | `({ data, operation, phase, isRoot, index, position, source, target }) => T` | OUTPUT (egress) transform — clean / redact `data` as a node leaves the source (copy / cut / copy-drop) |
+| `nodeOutputTransformationCallback` | `({ data, operation, phase, isRoot, rootIndex, position, source, target }) => T` | OUTPUT (egress) transform — clean / redact `data` as a node leaves the source (copy / cut / copy-drop) |
 | `nodeInputTransformationCallback` | `({ data, … }) => T \| null` | INPUT (ingress) transform — derive ids / values as a node lands (paste / copy-drop); return `null` to skip a node (skipping a root skips its subtree) |
 
-The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase: 'output' \| 'input', isRoot, index, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during the output phase. The `transform` arguments of `pasteNodes`, `duplicateNodes` and `copyNodeWithDescendants` take the same one-ctx shape.
+The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase: 'output' \| 'input', isRoot, rootIndex, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during the output phase. The `transform` arguments of `pasteNodes`, `duplicateNodes` and `copyNodeWithDescendants` take the same one-ctx shape.
 
 ### Event twins (`on*`)
 
@@ -506,10 +506,11 @@ tree.navigationOverrides = null; // back to the defaults
 | `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed |
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
+| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ noEmit: true }` |
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
-Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only the usual single `tree-change`. `expandNodes` / `collapseNodes` with `{ noEmit: true }` fire neither.
+Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ noEmit: true }` fire none of them.
 
 `silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 

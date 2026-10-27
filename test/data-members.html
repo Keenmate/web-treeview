@@ -44,9 +44,9 @@
         // sortCallback orders the children of ONE parent; counts its calls.
         window.sortCalls = [];
         if (mode === 'callback' || mode.startsWith('presorted')) {
-            tree.sortCallback = ({ items }) => {
-                window.sortCalls.push(items.map((n) => n.path));
-                return [...items].sort((a, b) => String(b.data.name).localeCompare(String(a.data.name)));
+            tree.sortCallback = ({ nodes }) => {
+                window.sortCalls.push(nodes.map((n) => n.path));
+                return [...nodes].sort((a, b) => String(b.data.name).localeCompare(String(a.data.name)));
             };
         }
         if (mode.startsWith('presorted')) tree.isSorted = true;

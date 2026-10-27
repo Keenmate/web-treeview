@@ -317,7 +317,7 @@ export interface NodeTransformContext<T> {
   /** True for a top-level node, false for a descendant riding along inside it. */
   isRoot: boolean;
   /** Index of the root entry within this batch (descendants share their root's index). */
-  index: number;
+  rootIndex: number;
   /** How the pasted roots land relative to `target.node` — null during the copy
    *  phase. Mirrors the DropPosition vocabulary of onNodeDrop. */
   position: DropPosition | null;

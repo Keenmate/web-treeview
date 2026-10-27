@@ -47,6 +47,7 @@ export type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
+  ExpandedChangeEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -135,6 +136,7 @@ import type {
   NodePasteEventDetail,
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
+  ExpandedChangeEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -303,7 +305,7 @@ export interface TreeViewConfig<T = any> {
   getIsDropAllowedCallback?: (ctx: NodeContext<T>) => boolean;
   getIsCollapsibleCallback?: (ctx: NodeContext<T>) => boolean;
   getAllowedDropPositionsCallback?: (ctx: NodeContext<T>) => DropPosition[] | null | undefined;
-  /** Orders the children of ONE parent: `ctx.items` are siblings; return them in
+  /** Orders the children of ONE parent: `ctx.nodes` are siblings; return them in
    *  the new order. Without it siblings go by `orderMember`, then display value.
    *  Insert order (parents first) is handled internally; not called on the input under
    *  `isSorted` (still used by the per-parent re-sorts). */
@@ -461,6 +463,8 @@ export interface TreeViewConfig<T = any> {
   onTreeChange?: (detail: TreeEventDetail<T>) => void;
   /** Twin of `focus-change`. */
   onFocusChange?: (detail: FocusChangeEventDetail<T>) => void;
+  /** Twin of `expanded-change` (the expanded set changed; `detail.paths` = the whole new set). */
+  onExpandedChange?: (detail: ExpandedChangeEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
   shouldHandleKeyboardShortcuts?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
@@ -610,6 +614,7 @@ export interface TreeEventMap<T = any> {
   'selection-change': CustomEvent<SelectionChangeEventDetail<T>>;
   'checked-change': CustomEvent<SelectionChangeEventDetail<T>>;
   'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
+  'expanded-change': CustomEvent<ExpandedChangeEventDetail<T>>;
   'tree-change': CustomEvent<TreeEventDetail<T>>;
   'action': CustomEvent<TreeViewActionEventDetail<T>>;
 }

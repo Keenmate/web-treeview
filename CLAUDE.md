@@ -166,7 +166,7 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
 - Per-node: `get*Callback({ node })` (`getDisplayValueCallback`, `getIconCallback`,
   `getIconColorCallback`, `getNodeClassCallback`, `getNodeContentClassCallback`,
   `getNodeTooltipCallback`, `getIs*Callback`, `getAllowedDropPositionsCallback`);
-  `sortCallback({ items })`; `getCustomStylesCallback(ctx)`.
+  `sortCallback({ nodes })`; `getCustomStylesCallback(ctx)`.
 - Render: `renderNodeCallback({ node, contentElement, …renderState })`,
   `renderIconCallback({ node, value, iconElement, … })`, `render{EmptyState,EmptyZone,Loading,Header,Footer}Callback({ containerElement })`,
   `renderContextMenuCallback({ node, path, parent, siblings, containerElement })` (close via

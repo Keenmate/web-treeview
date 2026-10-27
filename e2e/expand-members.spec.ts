@@ -81,3 +81,41 @@ test.describe('is-collapsible-member', () => {
     await expect(nodeByPath(page, '3.1')).toHaveCount(0);
   });
 });
+
+test.describe('expanded-change', () => {
+  async function listen(page: Page) {
+    await page.evaluate(() => {
+      const w = window as any;
+      w.__exp = [];
+      w.tree.addEventListener('expanded-change', (e: CustomEvent) => w.__exp.push([...e.detail.paths].sort().join(',')));
+    });
+  }
+  const events = (page: Page) => page.evaluate(() => (window as any).__exp as string[]);
+
+  test('a toggle fires one expanded-change with the whole new set', async ({ page }) => {
+    await load(page, 'api');
+    await listen(page);
+    await toggleOf(page, '2').click();
+    await expect.poll(() => events(page)).toEqual(['2']);
+    await toggleOf(page, '2').click();
+    await expect.poll(() => events(page)).toEqual(['2', '']);
+  });
+
+  test('expandAll / assigning expandedPaths fire it; { noEmit: true } does not; the twin gets the detail', async ({ page }) => {
+    await load(page, 'api');
+    await listen(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.__twin = [];
+      w.tree.onExpandedChange = (d: any) => w.__twin.push(d.paths.length);
+    });
+    await page.evaluate(() => (window as any).tree.expandAll());
+    await expect.poll(() => events(page)).toEqual(['1,1.1,1.1.1,2,2.1,3,3.1']);
+    await page.evaluate(() => (window as any).tree.collapseAll(null, { noEmit: true }));
+    await page.waitForTimeout(50);
+    expect(await events(page)).toEqual(['1,1.1,1.1.1,2,2.1,3,3.1']);
+    await page.evaluate(() => { (window as any).tree.expandedPaths = ['3']; });
+    await expect.poll(() => events(page)).toEqual(['1,1.1,1.1.1,2,2.1,3,3.1', '3']);
+    expect(await page.evaluate(() => (window as any).__twin)).toEqual([7, 1]);
+  });
+});

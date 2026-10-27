@@ -62,7 +62,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByOrder(items);
+            tree.sortCallback = ({ nodes }) => sortByOrder(nodes);
             tree.addEventListener('checked-change', (e) => {
                 setText('selection', [...e.detail.paths].sort().join(', '));
             });

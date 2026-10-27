@@ -171,7 +171,7 @@ test.describe('Paste into a collapsed node', () => {
     // 'Notes.txt' sorts after the 60 'Img NN' rows — far below the fold, scrolled into view.
     const pasted = tree(page).locator('.wtv__node').filter({ hasText: /^Notes\.txt$/ }).last();
     await expect(pasted).toBeInViewport();
-    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   });
 
   test("position 'after' leaves a collapsed node collapsed", async ({ page }) => {

@@ -986,6 +986,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       .map((p) => this.tree?.getNodeByPath(p))
       .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
     this.tree.collapseNodes(nodePath, options);
+    this._markExpanded(options?.noEmit);
     if (options?.noEmit) return;
     for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
   }
@@ -1010,6 +1011,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(paths, options);
+    this._markExpanded(options?.noEmit);
     if (options?.noEmit) return;
     for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
   }
@@ -1110,6 +1112,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     options?: { exclusive?: boolean; noEmit?: boolean }
   ) {
     this.tree?.expandAll(nodePath, options);
+    this._markExpanded(options?.noEmit);
   }
 
   collapseAll(
@@ -1117,6 +1120,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     options?: { noEmit?: boolean }
   ) {
     this.tree?.collapseAll(nodePath, options);
+    this._markExpanded(options?.noEmit);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -1526,7 +1530,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         operation: 'copy',
         phase: 'input',
         isRoot,
-        index: idx,
+        rootIndex: idx,
         position,
         source: {
           path: srcNode.path,
@@ -1664,6 +1668,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   setExpandedPaths(paths: string[]): void {
     this.tree?.setExpandedPaths(paths);
+    this._markExpanded();
   }
 
   getAllData(): T[] {
@@ -2926,7 +2931,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         operation,
         phase: 'input',
         isRoot,
-        index: idx,
+        rootIndex: idx,
         position: pos,
         source: {
           path: srcPath,
@@ -3230,7 +3235,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         operation,
         phase: 'output',
         isRoot,
-        index: rootIndex,
+        rootIndex,
         position: null,
         source: this.nodeRef(n),
         target: null
@@ -4139,7 +4144,38 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // ── Internal: tree changed (from LTree.onChange) ────────────────────
 
+  /** `expanded-change` bookkeeping: dirty after any tree change / expansion op;
+   *  `_lastExpandedKey` is the last announced (or silently re-baselined) set. */
+  private _expandedDirty = false;
+  private _lastExpandedKey: string | undefined = undefined;
+
+  /** After an expansion op: `silent` (noEmit) re-baselines without announcing. */
+  private _markExpanded(silent?: boolean): void {
+    if (silent) {
+      this._lastExpandedKey = this.getExpandedPaths().join('\u0000');
+      this._expandedDirty = false;
+    } else {
+      this._expandedDirty = true;
+    }
+  }
+
+  /**
+   * The new expanded set when it changed since the last call (else `null`). The
+   * first call only takes the baseline. Cheap when nothing touched the tree.
+   */
+  takeExpandedChange(): string[] | null {
+    if (!this._expandedDirty && this._lastExpandedKey !== undefined) return null;
+    this._expandedDirty = false;
+    const paths = this.getExpandedPaths();
+    const key = paths.join('\u0000');
+    const isFirst = this._lastExpandedKey === undefined;
+    if (key === this._lastExpandedKey) return null;
+    this._lastExpandedKey = key;
+    return isFirst ? null : paths;
+  }
+
   private _onTreeChanged() {
+    this._expandedDirty = true;
     this._updateProgressiveRendering();
     this._scheduleNotify();
   }

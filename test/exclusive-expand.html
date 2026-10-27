@@ -47,7 +47,7 @@
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByPath(items);
+            tree.sortCallback = ({ nodes }) => sortByPath(nodes);
             tree.data = data;
 
             document.querySelector('[data-testid="exclusive-expand-a2"]').addEventListener(

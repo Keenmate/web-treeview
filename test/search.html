@@ -59,7 +59,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.searchValueMember = 'name';
-            tree.sortCallback = ({ items }) => sortByName(items);
+            tree.sortCallback = ({ nodes }) => sortByName(nodes);
             tree.data = data;
 
             const input = document.querySelector('[data-testid="search-input"]');

@@ -20,7 +20,7 @@ export type TreeChange<T> =
 
 export interface ApplyChangesResult {
 	successful: number;
-	failed: Array<{ index: number; operation: string; path: string; error: string }>;
+	failed: Array<{ changeIndex: number; operation: string; path: string; error: string }>;
 }
 
 export interface InsertArrayResult<T> {

@@ -80,6 +80,14 @@ aliases — rename on upgrade.
   `{name}` placeholders; changes apply live. **`noDataText` / `no-data-text` is removed** →
   `labels.empty`. Exported: `TreeViewLabels`, `DEFAULT_LABELS`, `resolveLabel()` (the single
   resolving seam; the page-wide core `/locale` layer will plug in there).
+- **New `expanded-change` event** (+ `onExpandedChange`): the `<state>-change` event for the
+  expanded set, `detail.paths` = the whole new set (same as `expandedPaths`), one per change —
+  toggles, keyboard, `expandNodes` / `collapseNodes`, `expandAll` / `collapseAll`, accordion,
+  assigning `expandedPaths`, data changes; not for `{ noEmit: true }`. `node-expand` /
+  `node-collapse` stay as the per-node acts.
+- **ctx nouns:** `sortCallback({ items })` → **`sortCallback({ nodes })`** (`item` is reserved for
+  action items); the transform ctx `index` → **`rootIndex`**; `applyChanges()` `failed[].index`
+  → **`failed[].changeIndex`** (no bare `index`).
 - **Search text is a `term`:** `filterNodes(term)` / `searchNodes(term)` (parameter rename only).
 
 ### Removed — BREAKING (in-tree debug aids)

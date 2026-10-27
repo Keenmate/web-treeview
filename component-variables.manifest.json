@@ -217,6 +217,7 @@
     { "name": "wtv-context-menu-divider-color", "category": "context-menu", "usage": "Divider line color (unset → --km-menu-divider-color → --base-border-color)" },
     { "name": "wtv-context-menu-divider-margin", "category": "context-menu", "usage": "Divider margin (unset → --km-menu-divider-margin, 4px 0)" },
     { "name": "wtv-context-menu-disabled-opacity", "category": "context-menu", "usage": "Disabled item opacity (unset → --km-menu-disabled-opacity → --base-disabled-opacity, fallback 0.5)" },
+    { "name": "wtv-context-menu-z-index", "category": "context-menu", "usage": "Menu stacking order (unset → --km-menu-z-index, 10000)" },
 
     { "name": "wtv-spinner-size", "category": "loading", "usage": "Loading spinner size (32px)" },
     { "name": "wtv-spinner-track", "category": "loading", "usage": "Spinner track color" },

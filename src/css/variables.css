@@ -380,8 +380,8 @@
      ========================================================================== */
 
   /* --wtv-context-menu-* -> core's private --_km-menu-* (no fallback; inherited into
-     the shadow-local menu). Stacking follows the tree's z-index scale. */
-  --_km-menu-z-index: var(--wtv-z-index-dropdown);
+     the shadow-local menu). */
+  --_km-menu-z-index: var(--wtv-context-menu-z-index);
   --_km-menu-bg: var(--wtv-context-menu-bg);
   --_km-menu-hover-bg: var(--wtv-context-menu-bg-hover);
   --_km-menu-hover-color: var(--wtv-context-menu-hover-color);

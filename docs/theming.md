@@ -218,6 +218,7 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-context-menu-divider-color` | unset → `--km-menu-divider-color` | Divider line color |
 | `--wtv-context-menu-divider-margin` | unset → `--km-menu-divider-margin` | Divider margin |
 | `--wtv-context-menu-disabled-opacity` | unset → `--km-menu-disabled-opacity` | Disabled item opacity |
+| `--wtv-context-menu-z-index` | unset → `--km-menu-z-index` (10000) | Menu stacking order |
 
 ### Loading
 

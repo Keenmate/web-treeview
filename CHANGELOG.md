@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `--wtv-text-color` / `--wtv-accent-color` (they come from `--base-*`). The named-divider
   label no longer maps `--wtv-text-color-2` / `--wtv-spacing-xl`.
 - New `--wtv-context-menu-hover-color` (item text on hover; → `--km-menu-hover-color`).
+- The context menu no longer stacks on the tree's `--wtv-z-index-dropdown` (7500): it gets core's 10000, a page-level `--km-menu-z-index` reaches it, and the new `--wtv-context-menu-z-index` overrides it per tree.
 
 ### Changed — standalone colors follow the contract (no visible change with base-css-variables loaded)
 

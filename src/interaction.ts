@@ -59,7 +59,8 @@ export interface TreeViewController<T = any> {
   getVisibleFlatNodes(): LTreeNode<T>[];
   getAllData(): T[];
   getTree(): Ltree<T> | undefined;
-  getInsertResult(): InsertArrayResult<T> | undefined;
+  /** Result of the most recent data insert (successful / failed / failedDetails). */
+  readonly insertResult: InsertArrayResult<T> | undefined;
   // mutate
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any;
   updateNode(path: string, dataUpdates: Partial<T>): any;

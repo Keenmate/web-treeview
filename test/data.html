@@ -141,7 +141,7 @@
             // Surface insertResult as JSON after the microtask-batched update lands.
             queueMicrotask(() => {
                 queueMicrotask(() => {
-                    const result = insertTree.getInsertResult();
+                    const result = insertTree.insertResult;
                     if (!result) return;
                     const summary = {
                         total: result.total,

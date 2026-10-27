@@ -31,7 +31,7 @@ test('order-member orders siblings by that field (then by name)', async ({ page 
 test('a sibling sortCallback without sorted keeps every node (no orphaned children)', async ({ page }) => {
   await load(page, 'callback');
   expect(await labels(page)).toEqual(['Cucumber', 'Banana', 'Apple', '  Date', '  Cherry']);
-  expect(await page.evaluate(() => (window as any).tree.getInsertResult()?.failed?.length ?? 0)).toBe(0);
+  expect(await page.evaluate(() => (window as any).tree.insertResult?.failed?.length ?? 0)).toBe(0);
 });
 
 test('sortCallback only ever sees the children of one parent', async ({ page }) => {
@@ -52,11 +52,11 @@ test('sorted skips all sorting on insert (sortCallback is never called)', async 
   expect(await page.evaluate(() => (window as any).sortCalls.length)).toBe(0);
 });
 
-test('sorted with badly ordered data drops orphans into getInsertResult().failed', async ({ page }) => {
+test('sorted with badly ordered data drops orphans into insertResult.failed', async ({ page }) => {
   await load(page, 'presorted-bad');
   // 1.1 is listed before its parent 1 → caller broke the hint's contract; it is reported, not rendered
   const failed: string[] = await page.evaluate(() =>
-    (window as any).tree.getInsertResult().failed.map((f: any) => f.originalData?.path ?? f.node?.path));
+    (window as any).tree.insertResult.failed.map((f: any) => f.originalData?.path ?? f.node?.path));
   expect(failed).toEqual(['1.1']);
   expect(await labels(page)).toEqual(['Apple', '  Cherry', 'Banana', 'Cucumber']);
 });

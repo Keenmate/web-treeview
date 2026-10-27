@@ -879,9 +879,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Insert diagnostics ──────────────────────────────────────────────────────
 
-  /** Result of the most recent insertArray (successful / failed / failedDetails). */
-  getInsertResult() {
-    return this.#live?.getInsertResult();
+  /** Result of the most recent data insert (successful / failed / failedDetails) — read-only state. */
+  get insertResult() {
+    return this.#live?.insertResult;
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────

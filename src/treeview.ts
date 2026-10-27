@@ -28,7 +28,7 @@ const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getAllData', 'getTree',
-  'getInsertResult', 'addNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
+  'addNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
   'applyChanges', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected',
   'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
@@ -68,6 +68,7 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
   // Real state = read-only properties (the element's are writable).
   const STATE: Record<string, () => unknown> = {
     expandedPaths: () => [], selectedPaths: () => new Set(), checkedPaths: () => new Set(), focusedNode: () => null,
+    insertResult: () => undefined,
   };
   for (const [name, empty] of Object.entries(STATE)) {
     Object.defineProperty(facade, name, {
@@ -340,7 +341,8 @@ export class WebTreeView<T = any> {
     return this.engine;
   }
 
-  getInsertResult() {
+  /** Result of the most recent data insert. */
+  get insertResult() {
     return this.engine.insertResult;
   }
 

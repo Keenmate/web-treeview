@@ -182,7 +182,7 @@ export interface TreeViewConfig<T = any> {
    *  input (no depth sort, no `sortCallback`). insertBranch still re-sorts each
    *  affected parent's children, since the hint covers the batch, not the existing
    *  tree. A child listed before its parent is dropped as an orphan
-   *  (`getInsertResult().failed`) — caller's responsibility. */
+   *  (`insertResult.failed`) — caller's responsibility. */
   isSorted?: boolean | null;
 
   // Search

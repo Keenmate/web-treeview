@@ -150,10 +150,10 @@ test('an unrelated attribute change does not re-insert the data (NOTES #18)', as
   await load(page);
   const same = await page.evaluate(async () => {
     const t = (window as any).tree;
-    const before = t.getInsertResult();
+    const before = t.insertResult;
     t.setAttribute('selected-node-class', 'chosen');
     await t.whenSettled();
-    return t.getInsertResult() === before;
+    return t.insertResult === before;
   });
   expect(same).toBe(true);
 });

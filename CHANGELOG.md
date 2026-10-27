@@ -33,7 +33,7 @@ aliases — rename on upgrade.
   `el.controller`): `getExpandedPaths()` / `setExpandedPaths(paths)` → **`expandedPaths`**;
   `getSelectedPaths()` / `setSelectedPaths(paths)` → **`selectedPaths`**; `getCheckedPaths()` /
   `setCheckedPaths(paths)` → **`checkedPaths`**; `getFocusedNode()` → **`focusedNode`**
-  (read-only). Assigning replaces the set and fires its change event; values assigned before
+  (read-only); `getInsertResult()` → **`insertResult`** (read-only). Assigning replaces the set and fires its change event; values assigned before
   the first build are applied right after it. The `{ silent }` option of the removed setters:
   use `clearSelection(undefined, { silent: true })` + `selectNodes(paths, { silent: true })`.
 - **Inputs — config keys** (one prefix rule: `is*Shown` visibility, `is*Enabled` feature,

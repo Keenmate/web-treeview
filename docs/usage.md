@@ -118,7 +118,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
 | `accordion-expand` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `isAccordionExpand`) |
-| `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
+| `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `insertResult.failed`) |
 | `use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
@@ -144,7 +144,7 @@ input (no depth sort, no `sortCallback`) and renders `data` as given. The hint c
 the input batch only: `insertBranch` still re-sorts each affected parent's children
 (existing + new), so a new child lands in its sibling position. Ordering is the caller's responsibility:
 a child listed before its parent is dropped as an orphan and reported in
-`getInsertResult().failed`.
+`insertResult.failed`.
 
 ### Drag and drop
 

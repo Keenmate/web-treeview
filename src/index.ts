@@ -10,6 +10,8 @@ export { WebTreeViewElement };
 
 // Export the core engine wrapper
 export { WebTreeView } from './treeview';
+export { DEFAULT_LABELS, resolveLabel } from './labels';
+export type { TreeViewLabels } from './labels';
 
 // Core LTree (for direct usage without web component)
 export { createLTree } from './ltree/ltree';

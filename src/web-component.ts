@@ -29,6 +29,7 @@ import {
   toFloat,
   toText,
   toValue,
+  toObject,
   toCustom,
   toFunction,
   adoptStyles,
@@ -202,7 +203,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'noDataText', attribute: 'no-data-text', converter: toText({ isNullable: true }), on: 'update', description: 'Text shown when the tree is empty.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults: `empty` ("No data"), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },

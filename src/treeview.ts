@@ -1,3 +1,4 @@
+import { resolveLabel, type TreeViewLabels } from './labels';
 import { TreeEngine } from './controller/tree-engine';
 import type { TreeLoggers } from './logger';
 import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext } from './controller/types';
@@ -210,13 +211,14 @@ export class WebTreeView<T = any> {
   /** Built-in state of the default actions (text, disabled, danger). */
   private menuItemDefaults(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>): Partial<ResolvedActionItem<TreeViewAction>> | undefined {
     const node = ctx.node;
+    const label = (key: keyof TreeViewLabels) => resolveLabel(this.options.labels, key);
     switch (item.action) {
-      case 'copy': return { text: 'Copy' };
-      case 'cut': return { text: 'Cut' };
-      case 'paste': return { text: 'Paste', isDisabled: !this.engine.hasClipboardContent() };
-      case 'delete': return { text: 'Delete', isDanger: true };
-      case 'expand': return { text: 'Expand', isDisabled: !node.hasChildren || !!node.isExpanded };
-      case 'collapse': return { text: 'Collapse', isDisabled: !node.hasChildren || !node.isExpanded };
+      case 'copy': return { text: label('copy') };
+      case 'cut': return { text: label('cut') };
+      case 'paste': return { text: label('paste'), isDisabled: !this.engine.hasClipboardContent() };
+      case 'delete': return { text: label('delete'), isDanger: true };
+      case 'expand': return { text: label('expand'), isDisabled: !node.hasChildren || !!node.isExpanded };
+      case 'collapse': return { text: label('collapse'), isDisabled: !node.hasChildren || !node.isExpanded };
       default: return undefined;
     }
   }
@@ -782,7 +784,7 @@ export class WebTreeView<T = any> {
         (node: LTreeNode<T>, value: string | null, iconElement: HTMLElement, rc: NodeRenderContext) =>
           f(this.ctx({ ...rc, node, value, iconElement }))),
       renderEmptyStateCallback: region(o.renderEmptyStateCallback),
-      noDataText: o.noDataText,
+      labels: o.labels,
       renderEmptyZoneCallback: region(o.renderEmptyZoneCallback),
       isEmptyDropPlaceholderShown: o.isEmptyDropPlaceholderShown,
       renderLoadingCallback: region(o.renderLoadingCallback),

@@ -18,8 +18,23 @@ test.describe('empty tree', () => {
     await expect(tree(page, 'empty-default').locator('.wtv__empty-state')).toHaveText('No data');
   });
 
-  test('no-data-text replaces the default text', async ({ page }) => {
+  test('labels.empty (JSON attribute) replaces the default text', async ({ page }) => {
     await expect(tree(page, 'empty-text').locator('.wtv__empty-state')).toHaveText('Nothing here');
+  });
+
+  test('labels are live: assigning el.labels re-texts the empty state; an unset key falls back to English', async ({ page }) => {
+    const t = tree(page, 'empty-text');
+    await t.evaluate((el: any) => { el.labels = { empty: 'Prázdné' }; });
+    await expect(t.locator('.wtv__empty-state')).toHaveText('Prázdné');
+    await t.evaluate((el: any) => { el.labels = { copy: 'Kopírovat' }; });
+    await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
+  });
+
+  test('labels.dropHere texts the default empty drop zone (live)', async ({ page }) => {
+    const t = tree(page, 'empty-zone-labels');
+    await expect(t.locator('.wtv__empty-zone-content')).toHaveText('Drop it');
+    await t.evaluate((el: any) => el.removeAttribute('labels'));
+    await expect(t.locator('.wtv__empty-zone-content')).toHaveText('Drop here');
   });
 
   test('renderEmptyStateCallback renders into the empty-state container', async ({ page }) => {

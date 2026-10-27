@@ -197,7 +197,7 @@ tree.pasteNodes('1.2', ({ data }) => ({ ...data, id: crypto.randomUUID() }));
 
 ### Empty-tree paste
 
-Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `no-data-text`.
+Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `labels` (`labels='{"empty":"Nothing here"}'`).
 
 ## Per-node icons
 

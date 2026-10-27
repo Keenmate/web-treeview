@@ -73,6 +73,13 @@ aliases — rename on upgrade.
   `enable-tree-drop-zone`, `accordion-expand`, `allow-copy`, …
 - **`selectionMode: 'multi'` → `'multiple'`** (attribute `selection-mode="multiple"`); `'multi'`
   is now an invalid value (warns, keeps the previous one).
+- **UI strings → `labels`.** New `labels` input (property + JSON attribute
+  `labels='{"empty":"Nothing here"}'`): a partial object merged per key over the built-in
+  English strings — `empty` ("No data"), `dropHere` ("Drop here", the empty-tree drop zone),
+  `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` (built-in context-menu items);
+  `{name}` placeholders; changes apply live. **`noDataText` / `no-data-text` is removed** →
+  `labels.empty`. Exported: `TreeViewLabels`, `DEFAULT_LABELS`, `resolveLabel()` (the single
+  resolving seam; the page-wide core `/locale` layer will plug in there).
 - **Search text is a `term`:** `filterNodes(term)` / `searchNodes(term)` (parameter rename only).
 
 ### Removed — BREAKING (in-tree debug aids)

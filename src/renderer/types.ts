@@ -1,3 +1,4 @@
+import type { TreeViewLabels } from '../labels';
 /**
  * Pluggable renderer interface.
  * External packages (Svelte, React, Vue) can implement TreeViewRenderer
@@ -40,8 +41,8 @@ export interface RendererConfig<T> {
   renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
   /** Informational display when the tree has no data (e.g. "No items to display"). */
   renderEmptyStateCallback?: (container: HTMLElement) => void;
-  /** Fallback text for an empty tree when no renderEmptyStateCallback is given. Default "No data". */
-  noDataText?: string | null;
+  /** UI strings (partial; `empty` = empty-tree text, `dropHere` = empty drop-zone text) — see `resolveLabel`. */
+  labels?: Partial<TreeViewLabels> | null;
   /** Drop zone rendered in an empty tree during drag operations. */
   renderEmptyZoneCallback?: (container: HTMLElement) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a

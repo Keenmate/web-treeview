@@ -38,7 +38,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `renderLoadingCallback` (NOTES #19), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| `no-data-text`, `loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `labels` (`empty`, `dropHere`, menu built-ins; JSON attr + live), `loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |

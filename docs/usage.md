@@ -127,7 +127,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
-| `no-data-text` | `string` | `'No data'` | Fallback text shown for an empty tree (config key: `noDataText`) |
+| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `empty` (`'No data'`), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` (built-in context-menu items). `{name}` placeholders. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
 **Sibling order.** On insert (`data`, `insertBranch`) the tree puts parents before their

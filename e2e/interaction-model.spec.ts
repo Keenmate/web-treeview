@@ -60,6 +60,14 @@ test('menu items render from core action items: built-in defaults, data-action /
   await expect(menu(page).locator('.km-menu__divider')).toHaveCount(1);
 });
 
+test('built-in menu item texts come from labels', async ({ page }) => {
+  await page.evaluate(() => { (document.querySelector('web-treeview') as any).labels = { copy: 'Kopírovat', delete: 'Smazat' }; });
+  await openMenu(page, '1');
+  await expect(item(page, '[data-action="copy"]')).toHaveText('Kopírovat');
+  await expect(item(page, '[data-action="delete"]')).toHaveText('Smazat');
+  await expect(item(page, '[data-action="paste"]')).toHaveText('Paste');
+});
+
 test('a custom item: before → onClick → onAction → event; the detail carries the node and the context', async ({ page }) => {
   await openMenu(page, '1.1');
   await item(page, '[data-id="rename"]').click();

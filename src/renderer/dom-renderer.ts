@@ -8,6 +8,7 @@
  * - Virtual scroll: three-div structure (scroll container → spacer → translateY content)
  */
 
+import { resolveLabel } from '../labels';
 import type { TreeViewRenderer, RendererConfig } from './types';
 import type { TreeEngine } from '../controller/tree-engine';
 import type { TreeEngineSnapshot, NodeConfig } from '../controller/types';
@@ -192,8 +193,23 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** The callback the current `.wtv__empty-zone` was built with (NOTES #20). */
   private _emptyZoneCb: unknown = undefined;
 
+  /** Re-apply the built-in UI strings to the live empty state / empty drop zone (custom render callbacks own theirs). */
+  private _refreshLabels(): void {
+    const target = this._renderTarget;
+    if (!target) return;
+    if (!this.config.renderEmptyStateCallback) {
+      const emptyState = target.querySelector('.wtv__empty-state');
+      if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, 'empty');
+    }
+    if (!this.config.renderEmptyZoneCallback) {
+      const content = target.querySelector('.wtv__empty-zone-content');
+      if (content) content.textContent = resolveLabel(this.config.labels, 'dropHere');
+    }
+  }
+
   updateConfig(config: Partial<RendererConfig<T>>): void {
     Object.assign(this.config, config);
+    if ('labels' in config) this._refreshLabels();
     if (this.config.renderLoadingCallback !== this._loadingContentCb) this._renderLoadingContent();
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
       const zone = this._renderTarget?.querySelector('.wtv__empty-zone');
@@ -1155,7 +1171,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         } else {
           const content = document.createElement('div');
           content.className = 'wtv__empty-zone-content';
-          content.textContent = 'Drop here';
+          content.textContent = resolveLabel(this.config.labels, 'dropHere');
           zone.appendChild(content);
         }
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
@@ -1194,7 +1210,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (this.config.renderEmptyStateCallback) {
         this.config.renderEmptyStateCallback(emptyState as HTMLElement);
       } else {
-        emptyState.textContent = this.config.noDataText ?? 'No data';
+        emptyState.textContent = resolveLabel(this.config.labels, 'empty');
       }
     }
   }

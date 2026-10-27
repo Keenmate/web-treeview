@@ -1,3 +1,4 @@
+import type { TreeViewLabels } from './labels';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
@@ -474,8 +475,8 @@ export interface TreeViewConfig<T = any> {
   /** Fill `ctx.contentElement` for `ctx.node` (render state on the ctx: device, container, isExpanded, …). */
   renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => void;
   renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => void;
-  /** Fallback text for an empty tree when no renderEmptyStateCallback is given. Default "No data". */
-  noDataText?: string | null;
+  /** UI strings, a partial object merged per key over the English defaults (`empty`, `dropHere`, `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`). */
+  labels?: Partial<TreeViewLabels> | null;
   renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */

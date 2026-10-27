@@ -24,7 +24,7 @@ async function load(page: Page, mode: 'load' | 'manual' | 'reject' | 'cancel' = 
 
 const label = (page: Page, text: string) => page.locator('.wtv__node-label', { hasText: text });
 const log = (page: Page) => logLines(page, LOG);
-const focused = (page: Page) => page.evaluate(() => (window as any).tree.getFocusedNode()?.path ?? null);
+const focused = (page: Page) => page.evaluate(() => (window as any).tree.focusedNode?.path ?? null);
 
 const toggleOf = (page: Page, path: string) =>
   nodeByPath(page, path).locator('> .wtv__node-row .wtv__toggle-icon').first();

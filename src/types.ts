@@ -341,7 +341,7 @@ export interface TreeViewConfig<T = any> {
    *  the parent. */
   checkboxMode?: 'independent' | 'cascade';
   /** Which paths the selection EMITS in cascade mode (a projection of the canonical
-   *  checked set, exposed by `getCheckedPaths()` + the `checked-change` event).
+   *  checked set, exposed by `checkedPaths` + the `checked-change` event).
    *  ONLY applies in cascade mode. `'rolled-up'` (default) — minimal cover (a
    *  fully-checked subtree collapses to its root); `'leaves'` — only checked leaf
    *  nodes; `'all'` — every fully-checked node. */
@@ -530,23 +530,21 @@ export interface TreeViewMethods<T = any> {
   // Selected set (UI multi-select — Ctrl/Shift+click)
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;
-  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void;
   selectAll(options?: TreeMutationOptions): void;
   clearSelection(paths?: string[], options?: TreeMutationOptions): void;
   getSelectedNodes(): LTreeNode<T>[];
-  getSelectedPaths(): Set<string>;
+  selectedPaths: Set<string>;
   isNodeSelected(path: string): boolean;
 
   // Checked set (checkbox / data state)
   checkNode(path: string, options?: TreeMutationOptions): void;
   checkNodes(paths: string[], options?: TreeMutationOptions): void;
-  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void;
   checkAll(options?: TreeMutationOptions): void;
   uncheckNode(path: string, options?: TreeMutationOptions): void;
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
   uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
-  getCheckedPaths(): Set<string>;
+  checkedPaths: Set<string>;
   isNodeChecked(path: string): boolean;
 
   // Focus (single cursor)

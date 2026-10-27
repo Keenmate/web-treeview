@@ -35,8 +35,8 @@
         document.getElementById('host').appendChild(tree);
         window.tree = tree;
         window.state = () => ({
-            focused: tree.getFocusedNode()?.path ?? null,
-            selected: [...tree.getSelectedPaths()].sort(),
+            focused: tree.focusedNode?.path ?? null,
+            selected: [...tree.selectedPaths].sort(),
             rows: [...tree.shadowRoot.querySelectorAll('.wtv__node')].map((e) => e.getAttribute('data-tree-path'))
         });
     </script>

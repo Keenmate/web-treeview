@@ -210,7 +210,7 @@ tv.logging.setCategoryLevel('INDEX', 'debug');
 tv.logging.disableLogging();        // silence everything (production default)
 
 // Fan out across instances
-for (const el of tv.getInstances()) console.log(el.id, [...el.getExpandedPaths()]);
+for (const el of tv.getInstances()) console.log(el.id, [...el.expandedPaths]);
 
 // Perf logging is a SEPARATE module (not on tv.logging) — import it directly:
 import { enablePerfLogging, setPerfThreshold } from '@keenmate/web-treeview';
@@ -372,9 +372,9 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
         window.logAllExpanded = () => {
             const rows = reg().getInstances().map((el) => ({
                 id: el.id,
-                expanded: [...el.getExpandedPaths()].length,
-                selected: [...el.getSelectedPaths()].length,
-                checked: [...el.getCheckedPaths()].length,
+                expanded: [...el.expandedPaths].length,
+                selected: [...el.selectedPaths].length,
+                checked: [...el.checkedPaths].length,
             }));
             console.log('%c🌲 expanded/selected/checked across all live instances', 'color:#059669;font-weight:bold;');
             console.table(rows);

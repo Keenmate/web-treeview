@@ -122,8 +122,8 @@ test.describe('keyboard navigation (WAI-ARIA menu)', () => {
       while (a?.shadowRoot?.activeElement) a = a.shadowRoot.activeElement;
       return (a as HTMLElement | null)?.dataset?.id ?? a?.className ?? null;
     });
-  const focusedPath = (page: Page) => page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
-  const selectedPaths = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()]);
+  const focusedPath = (page: Page) => page.evaluate(() => (window as any).tree.focusedNode?.path);
+  const selectedPaths = (page: Page) => page.evaluate(() => [...(window as any).tree.selectedPaths]);
   const submenu = (page: Page) => page.locator('.km-menu--submenu');
 
   /** Focus node 1.1 (keyboard focus on the tree body), then open the menu from the keyboard. */

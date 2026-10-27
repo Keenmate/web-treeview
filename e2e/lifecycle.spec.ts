@@ -17,7 +17,7 @@ async function load(page: Page) {
 }
 
 const rows = (page: Page) => page.locator('.wtv__node[data-tree-path]').evaluateAll((els) => els.map((e) => e.getAttribute('data-tree-path')));
-const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()].sort());
+const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.selectedPaths].sort());
 const toggleOf = (page: Page, path: string) => nodeByPath(page, path).locator('> .wtv__node-row .wtv__toggle-icon').first();
 
 async function setUpState(page: Page) {
@@ -33,7 +33,7 @@ test('re-parenting keeps expansion, selection, checks and focus', async ({ page 
   await load(page);
   await setUpState(page);
   const rowsBefore = await rows(page);
-  const focusedBefore = await page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
+  const focusedBefore = await page.evaluate(() => (window as any).tree.focusedNode?.path);
 
   await page.evaluate(() => (window as any).moveTo('slot-b'));
   await expect(page.locator('#slot-b web-treeview')).toHaveCount(1);
@@ -42,7 +42,7 @@ test('re-parenting keeps expansion, selection, checks and focus', async ({ page 
   expect(await selected(page)).toEqual(['1.1', '2']);
   await expect(nodeContent(nodeByPath(page, '1.1'))).toHaveClass(/wtv__node-content--selected/);
   await expect(nodeByPath(page, '1.2').locator('.wtv__checkbox').first()).toBeChecked();
-  expect(await page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe(focusedBefore);
+  expect(await page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe(focusedBefore);
 });
 
 test('after a move, clicks and keys still work and fire exactly once', async ({ page }) => {
@@ -58,7 +58,7 @@ test('after a move, clicks and keys still work and fire exactly once', async ({ 
   expect(clicks).toEqual(['node-click:2']);
 
   await page.keyboard.press('ArrowUp');
-  await expect.poll(() => page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe('1');
+  await expect.poll(() => page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe('1');
 });
 
 test('detached for a while then re-attached: state survives, no rebuild flash', async ({ page }) => {
@@ -89,7 +89,7 @@ test('remove + re-append (synchronous) keeps expansion, selection, checks, focus
   await setUpState(page);
   await page.evaluate(() => { (window as any).tree.searchText = 'A'; });
   const rowsBefore = await rows(page);
-  const focusedBefore = await page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
+  const focusedBefore = await page.evaluate(() => (window as any).tree.focusedNode?.path);
 
   await page.evaluate(() => {
     const t = (window as any).tree;
@@ -100,8 +100,8 @@ test('remove + re-append (synchronous) keeps expansion, selection, checks, focus
 
   expect(await rows(page)).toEqual(rowsBefore);
   expect(await selected(page)).toEqual(['1.1', '2']);
-  expect(await page.evaluate(() => [...(window as any).tree.getCheckedPaths()])).toEqual(['1.2']);
-  expect(await page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe(focusedBefore);
+  expect(await page.evaluate(() => [...(window as any).tree.checkedPaths])).toEqual(['1.2']);
+  expect(await page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe(focusedBefore);
   expect(await page.evaluate(() => (window as any).tree.searchText)).toBe('A');
 });
 
@@ -185,7 +185,7 @@ test('no duplicated listeners after N moves; detached = document listeners relea
   await page.waitForTimeout(100);
   expect((await logLines(page, LOG)).filter((l) => l.startsWith('node-click:'))).toEqual(['node-click:1']);
   await page.keyboard.press('ArrowDown');
-  await expect.poll(() => page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe('2');
+  await expect.poll(() => page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe('2');
 });
 
 test('an open context menu closes on a move and leaves no document listeners behind', async ({ page }) => {
@@ -243,4 +243,35 @@ test('destroy() tears the tree engine down: methods become no-ops, isDestroyed',
     return { isDestroyed: el.isDestroyed, node: el.getNodeByPath('1') };
   });
   expect(out).toEqual({ isDestroyed: true, node: null });
+});
+
+test('state properties: assigned before the first build are applied after it; controller mirrors them read-only', async ({ page }) => {
+  await load(page);
+  const out = await page.evaluate(async () => {
+    const el = document.createElement('web-treeview') as any;
+    el.setAttribute('show-checkboxes', '');
+    el.setAttribute('selection-mode', 'multiple');
+    el.data = [{ id: 1, path: '1', name: 'A' }, { id: 11, path: '1.1', name: 'A1' }, { id: 2, path: '2', name: 'B' }];
+    el.expandedPaths = ['1'];
+    el.selectedPaths = new Set(['1.1', '2']);
+    el.checkedPaths = ['2'];
+    document.body.appendChild(el);
+    await el.whenReady();
+    const c = el.controller;
+    let threw = false;
+    try { c.selectedPaths = new Set(); } catch { threw = true; }
+    return {
+      expanded: el.expandedPaths, selected: [...el.selectedPaths].sort(), checked: [...el.checkedPaths],
+      cExpanded: c.expandedPaths, cSelected: [...c.selectedPaths].sort(), cChecked: [...c.checkedPaths],
+      focused: el.focusedNode?.path ?? null, cFocused: c.focusedNode?.path ?? null, threw, stillSelected: [...el.selectedPaths].length,
+    };
+  });
+  expect(out.expanded).toEqual(['1']);
+  expect(out.selected).toEqual(['1.1', '2']);
+  expect(out.checked).toEqual(['2']);
+  expect(out.cExpanded).toEqual(['1']);
+  expect(out.cSelected).toEqual(['1.1', '2']);
+  expect(out.cChecked).toEqual(['2']);
+  expect(out.cFocused).toBe(out.focused);
+  expect(out.stillSelected).toBe(2);
 });

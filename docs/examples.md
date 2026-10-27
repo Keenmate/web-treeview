@@ -90,7 +90,7 @@ tree.clearSelection();
 
 // Query
 const nodes = tree.getSelectedNodes();
-const paths = tree.getSelectedPaths(); // Set<string>
+const paths = tree.selectedPaths; // Set<string>
 
 // Listen for changes
 tree.addEventListener('selection-change', (e) => {

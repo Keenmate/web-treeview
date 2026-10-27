@@ -21,7 +21,7 @@ async function load(page: Page, query: string) {
 
 const click = (page: Page, path: string, modifiers: ('Control' | 'Shift')[] = []) =>
   nodeContent(nodeByPath(page, path)).click({ modifiers });
-const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()].sort());
+const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.selectedPaths].sort());
 
 test.describe('rangeSelectionMode', () => {
   test('visual (default): Shift+click selects only the visible rows in between', async ({ page }) => {
@@ -78,12 +78,12 @@ test.describe('selectAll focus', () => {
   test('selectAll() moves focus to the last visible row and announces it with focus-change', async ({ page }) => {
     await load(page, '?mode=multi');
     await click(page, '1');
-    const focusedBefore = await page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
+    const focusedBefore = await page.evaluate(() => (window as any).tree.focusedNode?.path);
     await page.evaluate(() => {
       document.querySelector('[data-testid="rs-log"]')!.textContent = '';
       (window as any).tree.selectAll();
     });
-    const focusedAfter = await page.evaluate(() => (window as any).tree.getFocusedNode()?.path);
+    const focusedAfter = await page.evaluate(() => (window as any).tree.focusedNode?.path);
     expect(focusedBefore).toBe('1');
     expect(focusedAfter).toBe('3');
     await expect.poll(() => logLines(page, LOG)).toContain('focus-change:3');

@@ -99,7 +99,7 @@ export interface NodeRenderContext {
 export type CheckboxMode = 'independent' | 'cascade';
 /**
  * Which paths the selection EMITS in cascade mode (the projection of the canonical
- * checked set that `getCheckedPaths()` + the `checked-change` event expose).
+ * checked set that `checkedPaths` + the `checked-change` event expose).
  * ONLY applies when `checkboxMode === 'cascade'`. 'rolled-up' = minimal cover (a
  * fully-checked subtree collapses to its root; a partial branch descends to emit
  * its checked bits); 'leaves' = only checked leaf nodes; 'all' = the canonical set
@@ -185,7 +185,7 @@ export type NodeEventContext<T> = NodeRef<T>;
  * DragEvent and `dragged` — the FULL top-level set in flight. A drag is
  * single-origin at the DOM level, so the event fires once; `dragged` is the whole
  * multi-selection (or just the one node for a single drag) so a handler doesn't
- * have to read `controller.getSelectedPaths()` itself.
+ * have to read `controller.selectedPaths` itself.
  */
 export interface NodeDragContext<T> extends NodeRef<T> {
   event: DragEvent;

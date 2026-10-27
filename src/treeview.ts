@@ -24,14 +24,14 @@ import { runAction, type ResolvedActionItem } from '@keenmate/web-components-cor
 
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
 const CONTROLLER_METHODS = [
-  'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded', 'getExpandedPaths',
-  'setExpandedPaths', 'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
-  'getSiblings', 'getNodeRef', 'getFocusedNode', 'getVisibleFlatNodes', 'getAllData', 'getTree',
+  'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded',
+  'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
+  'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getAllData', 'getTree',
   'getInsertResult', 'addNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
   'applyChanges', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
-  'setSelectedPaths', 'selectAll', 'clearSelection', 'getSelectedNodes', 'getSelectedPaths', 'isNodeSelected',
-  'checkNode', 'checkNodes', 'setCheckedPaths', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
-  'getCheckedPaths', 'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
+  'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected',
+  'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
+  'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
   'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
   'navSelectNext', 'navSelectPrev', 'navSelectFirst', 'navSelectLast', 'navSelectPageDown', 'navSelectPageUp', 'copyNodes', 'cutNodes',
   'pasteNodes', 'cancelCut', 'removeNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
@@ -40,11 +40,11 @@ const CONTROLLER_METHODS = [
 
 /** What a read returns while there is no tree yet (before the first build). */
 const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = {
-  getExpandedPaths: () => [], searchNodes: () => [], getNodeByPath: () => null, getChildren: () => [],
+  searchNodes: () => [], getNodeByPath: () => null, getChildren: () => [],
   getSiblings: () => [], getNodeRef: () => ({ path: '', node: null, parent: null, siblings: [] }),
-  getFocusedNode: () => null, getVisibleFlatNodes: () => [], getAllData: () => [], getSelectedNodes: () => [],
-  getSelectedPaths: () => new Set(), isNodeSelected: () => false, getCheckedNodes: () => [],
-  getCheckedPaths: () => new Set(), isNodeChecked: () => false, hasClipboardContent: () => false,
+  getVisibleFlatNodes: () => [], getAllData: () => [], getSelectedNodes: () => [],
+  isNodeSelected: () => false, getCheckedNodes: () => [],
+  isNodeChecked: () => false, hasClipboardContent: () => false,
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
   pasteNodes: () => ({ success: false, count: 0, skipped: 0, error: 'Not initialized' }),
   removeNodes: () => ({ removed: 0, failed: 0 }),
@@ -63,6 +63,19 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
       if (!target) return EMPTY_RESULTS[name]?.();
       return target[name](...args);
     };
+  }
+  // Real state = read-only properties (the element's are writable).
+  const STATE: Record<string, () => unknown> = {
+    expandedPaths: () => [], selectedPaths: () => new Set(), checkedPaths: () => new Set(), focusedNode: () => null,
+  };
+  for (const [name, empty] of Object.entries(STATE)) {
+    Object.defineProperty(facade, name, {
+      get: () => {
+        const target = getTarget() as unknown as Record<string, unknown> | undefined;
+        return target ? target[name] : empty();
+      },
+      enumerable: true,
+    });
   }
   return facade as unknown as TreeViewController<T>;
 }
@@ -340,7 +353,8 @@ export class WebTreeView<T = any> {
     return this.engine.nodeRef(path);
   }
 
-  getFocusedNode(): LTreeNode<T> | null {
+  /** The focused node (the single cursor) — move it with `focusNode(path)` / `clearFocus()`. */
+  get focusedNode(): LTreeNode<T> | null {
     return this.engine.focusedNode ?? null;
   }
 
@@ -407,12 +421,13 @@ export class WebTreeView<T = any> {
     return this.engine.removeBranch(path, keepParent);
   }
 
-  getExpandedPaths(): string[] {
+  /** The expanded set; assigning replaces it (branches not listed collapse). */
+  get expandedPaths(): string[] {
     return this.engine.getExpandedPaths();
   }
 
-  setExpandedPaths(paths: string[]): void {
-    this.engine.setExpandedPaths(paths);
+  set expandedPaths(paths: Iterable<string>) {
+    this.engine.setExpandedPaths([...paths]);
   }
 
   getAllData(): T[] {
@@ -433,10 +448,6 @@ export class WebTreeView<T = any> {
     this.engine.selectNodes(paths, options);
   }
 
-  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.engine.setSelectedPaths(paths, options);
-  }
-
   selectAll(options?: TreeMutationOptions): void {
     this.engine.selectAll(options);
   }
@@ -449,8 +460,13 @@ export class WebTreeView<T = any> {
     return this.engine.getSelectedNodes();
   }
 
-  getSelectedPaths(): Set<string> {
+  /** The selected set (snapshot); assigning replaces it and fires `selection-change`. */
+  get selectedPaths(): Set<string> {
     return this.engine.getSelectedPaths();
+  }
+
+  set selectedPaths(paths: Iterable<string>) {
+    this.engine.setSelectedPaths([...paths]);
   }
 
   isNodeSelected(path: string): boolean {
@@ -465,10 +481,6 @@ export class WebTreeView<T = any> {
 
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
     this.engine.checkNodes(paths, options);
-  }
-
-  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.engine.setCheckedPaths(paths, options);
   }
 
   checkAll(options?: TreeMutationOptions): void {
@@ -491,8 +503,13 @@ export class WebTreeView<T = any> {
     return this.engine.getCheckedNodes();
   }
 
-  getCheckedPaths(): Set<string> {
+  /** The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it and fires `checked-change`. */
+  get checkedPaths(): Set<string> {
     return this.engine.getCheckedPaths();
+  }
+
+  set checkedPaths(paths: Iterable<string>) {
+    this.engine.setCheckedPaths([...paths]);
   }
 
   isNodeChecked(path: string): boolean {

@@ -19,7 +19,7 @@ async function load(page: Page, query = '') {
 
 const call = (page: Page, fn: string, ...args: unknown[]) =>
   page.evaluate(([fn, args]) => (window as any).tree[fn as string](...(args as unknown[])), [fn, args] as const);
-const emitted = (page: Page) => page.evaluate(() => [...(window as any).tree.getCheckedPaths()].sort());
+const emitted = (page: Page) => page.evaluate(() => [...(window as any).tree.checkedPaths].sort());
 const box = (page: Page, path: string) => nodeByPath(page, path).locator('.wtv__checkbox').first();
 const lastChecked = async (page: Page) =>
   (await logLines(page, LOG)).filter((l) => l.startsWith('checked-change:')).pop();
@@ -54,10 +54,10 @@ test.describe('checked-set API (cascade)', () => {
     await expect(box(page, '1')).toHaveAttribute('aria-checked', 'mixed');
   });
 
-  test('setCheckedPaths replaces the whole set', async ({ page }) => {
+  test('assigning checkedPaths replaces the whole set', async ({ page }) => {
     await load(page);
     await call(page, 'checkNode', '1');
-    await call(page, 'setCheckedPaths', ['2.2']);
+    await page.evaluate(() => { (window as any).tree.checkedPaths = ['2.2']; });
     expect(await emitted(page)).toEqual(['2.2']);
     await expect(box(page, '1.1')).not.toBeChecked();
     await expect(box(page, '2.2')).toBeChecked();

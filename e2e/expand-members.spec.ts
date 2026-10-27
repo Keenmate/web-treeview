@@ -16,15 +16,15 @@ async function load(page: Page, mode: string) {
 }
 
 const rows = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).rowPaths());
-const expanded = (page: Page) => page.evaluate(() => [...(window as any).tree.getExpandedPaths()].sort());
+const expanded = (page: Page) => page.evaluate(() => [...(window as any).tree.expandedPaths].sort());
 const toggleOf = (page: Page, path: string) =>
   nodeByPath(page, path).locator('> .wtv__node-row .wtv__toggle-icon').first();
 
-test.describe('getExpandedPaths / setExpandedPaths', () => {
-  test('setExpandedPaths opens exactly those branches; getExpandedPaths reads them back', async ({ page }) => {
+test.describe('expandedPaths property', () => {
+  test('assigning expandedPaths opens exactly those branches; reading it returns them', async ({ page }) => {
     await load(page, 'api');
     expect(await rows(page)).toEqual(['1', '2', '3']);
-    await page.evaluate(() => (window as any).tree.setExpandedPaths(['1', '1.1']));
+    await page.evaluate(() => { (window as any).tree.expandedPaths = ['1', '1.1']; });
     await expect.poll(() => rows(page)).toEqual(['1', '1.1', '1.1.1', '2', '3']);
     expect(await expanded(page)).toEqual(['1', '1.1']);
   });
@@ -39,15 +39,15 @@ test.describe('getExpandedPaths / setExpandedPaths', () => {
 
     await page.evaluate(() => (window as any).tree.collapseAll());
     await expect.poll(() => rows(page)).toEqual(['1', '2', '3']);
-    await page.evaluate((s) => (window as any).tree.setExpandedPaths(s), saved);
+    await page.evaluate((s) => { (window as any).tree.expandedPaths = s; }, saved);
     await expect.poll(() => rows(page)).toEqual(['1', '2', '2.1', '3', '3.1']);
   });
 
-  test('setExpandedPaths replaces (closes branches not in the list)', async ({ page }) => {
+  test('assigning expandedPaths replaces (closes branches not in the list)', async ({ page }) => {
     await load(page, 'api');
-    await page.evaluate(() => (window as any).tree.setExpandedPaths(['2', '3']));
+    await page.evaluate(() => { (window as any).tree.expandedPaths = ['2', '3']; });
     await expect.poll(() => rows(page)).toEqual(['1', '2', '2.1', '3', '3.1']);
-    await page.evaluate(() => (window as any).tree.setExpandedPaths(['1']));
+    await page.evaluate(() => { (window as any).tree.expandedPaths = ['1']; });
     await expect.poll(() => rows(page)).toEqual(['1', '1.1', '2', '3']);
   });
 });

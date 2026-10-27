@@ -42,8 +42,8 @@ export interface TreeViewController<T = any> {
   expandNodes(nodePath: string | string[], options?: { exclusive?: boolean; noEmit?: boolean }): void;
   collapseNodes(nodePath: string | string[], options?: { noEmit?: boolean }): void;
   toggleNodeExpanded(path: string): void;
-  getExpandedPaths(): string[];
-  setExpandedPaths(paths: string[]): void;
+  /** The expanded set (assign `el.expandedPaths` to change it). */
+  readonly expandedPaths: string[];
   // search / scroll
   filterNodes(term: string): void;
   searchNodes(term: string | null): LTreeNode<T>[];
@@ -54,7 +54,8 @@ export interface TreeViewController<T = any> {
   getSiblings(path: string): LTreeNode<T>[];
   /** The node at `path` with its live parent and siblings. */
   getNodeRef(path: string): NodeRef<T>;
-  getFocusedNode(): LTreeNode<T> | null;
+  /** The focused node (`focusNode(path)` / `clearFocus()` move it). */
+  readonly focusedNode: LTreeNode<T> | null;
   getVisibleFlatNodes(): LTreeNode<T>[];
   getAllData(): T[];
   getTree(): Ltree<T> | undefined;
@@ -73,22 +74,22 @@ export interface TreeViewController<T = any> {
   // selection
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;
-  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void;
   selectAll(options?: TreeMutationOptions): void;
   clearSelection(paths?: string[], options?: TreeMutationOptions): void;
   getSelectedNodes(): LTreeNode<T>[];
-  getSelectedPaths(): Set<string>;
+  /** The selected set (snapshot; assign `el.selectedPaths` to replace it). */
+  readonly selectedPaths: Set<string>;
   isNodeSelected(path: string): boolean;
   // checked
   checkNode(path: string, options?: TreeMutationOptions): void;
   checkNodes(paths: string[], options?: TreeMutationOptions): void;
-  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void;
   checkAll(options?: TreeMutationOptions): void;
   uncheckNode(path: string, options?: TreeMutationOptions): void;
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
   uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
-  getCheckedPaths(): Set<string>;
+  /** The checked set as emitted (assign `el.checkedPaths` to replace it). */
+  readonly checkedPaths: Set<string>;
   isNodeChecked(path: string): boolean;
   // focus
   focusNode(path: string, options?: TreeMutationOptions): void;

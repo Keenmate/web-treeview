@@ -23,8 +23,8 @@ async function clickNode(page: Page, path: string, modifiers: ('Control' | 'Shif
 
 const childNames = (page: Page, p: string) => page.evaluate((p) => (window as any).childNames(p), p);
 const clipboardOp = (page: Page) => page.evaluate(() => (window as any).tree.getClipboardOperation());
-const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()].sort());
-const checked = (page: Page) => page.evaluate(() => [...(window as any).tree.getCheckedPaths()].sort());
+const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.selectedPaths].sort());
+const checked = (page: Page) => page.evaluate(() => [...(window as any).tree.checkedPaths].sort());
 
 test.describe('copy / cut / paste', () => {
   test('Ctrl+C then Ctrl+V on another node pastes a copy, source stays', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('handle-keyboard-shortcuts=false', () => {
     await load(page, '?shortcuts=off');
     await clickNode(page, '1');
     await page.keyboard.press('ArrowDown');
-    await expect.poll(() => page.evaluate(() => (window as any).tree.getFocusedNode()?.path)).toBe('2');
+    await expect.poll(() => page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe('2');
   });
 });
 

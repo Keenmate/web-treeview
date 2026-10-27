@@ -61,7 +61,7 @@
             const listEl = document.querySelector('[data-testid="checked-paths-list"]');
 
             function refresh() {
-                const paths = [...tree.getCheckedPaths()].sort();
+                const paths = [...tree.checkedPaths].sort();
                 countEl.textContent = String(paths.length);
                 listEl.textContent = paths.join(',');
             }

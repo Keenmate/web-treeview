@@ -119,11 +119,11 @@ test('on* twins receive the detail; a checkbox toggle fires checked-change, not 
 test('el.controller is the public facade (and the one on every detail)', async ({ page }) => {
   const r = await page.locator('web-treeview').evaluate((el: any) => {
     el.controller.collapseAll();
-    const afterCollapse = el.controller.getExpandedPaths().length;
+    const afterCollapse = el.controller.expandedPaths.length;
     el.controller.expandAll();
     return {
       afterCollapse,
-      afterExpand: el.controller.getExpandedPaths().length,
+      afterExpand: el.controller.expandedPaths.length,
       ref: el.controller.getNodeRef('1.1').parent?.path,
       noEngine: typeof el.getController,
     };

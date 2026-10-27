@@ -274,8 +274,8 @@
                     <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to the selected set).</td></tr>
                     <tr><td><code>pasteNodes(targetPath, transform?, position?)</code></td><td>Insert clipboard content; returns a <code>PasteResult</code> (<code>{ success, count, skipped }</code>).</td></tr>
                     <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
-                    <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>getFocusedNode()</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
-                    <tr><td><code>getSelectedPaths()</code> / <code>getCheckedPaths()</code> / <code>focusNode(path)</code></td><td>Selected, checked &amp; focus accessors.</td></tr>
+                    <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>focusedNode</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
+                    <tr><td><code>selectedPaths</code> / <code>checkedPaths</code> / <code>expandedPaths</code> / <code>focusNode(path)</code></td><td>Selected, checked, expanded state (properties — assign to replace) &amp; focus.</td></tr>
                     <tr><td><code>getAllData()</code> / <code>getNodeByPath(path)</code></td><td>Snapshot all node data; look up one node.</td></tr>
                     <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
                 </tbody>
@@ -292,7 +292,7 @@
 
             <div class="code-block">
 <pre><code>// Add a child under the focused node (or at root)
-const parent = tree.getFocusedNode();
+const parent = tree.focusedNode;
 tree.addNode(parent?.path ?? '', {
   id: Date.now(), path: '', name: 'New Node', icon: '📄', sortOrder: 100
 });
@@ -477,7 +477,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 warnTimer = setTimeout(() => { warnEl.style.display = 'none'; }, 4000);
             }
 
-            function focused() { return tree.getFocusedNode(); }
+            function focused() { return tree.focusedNode; }
 
             function refreshState() {
                 const all = tree.getAllData();
@@ -631,7 +631,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 const op = source.getClipboardOperation?.() ?? target.getClipboardOperation?.();
                 document.getElementById('cb-op').textContent = has ? op : 'empty';
                 document.getElementById('cb-info').textContent = has
-                    ? `(${source.getCheckedPaths().size || source.getSelectedPaths().size || '?'} entries)` : '';
+                    ? `(${source.checkedPaths.size || source.selectedPaths.size || '?'} entries)` : '';
             }
 
             source.addEventListener('selection-change', updateClipboardStatus);
@@ -646,7 +646,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                     addCbLog('Clipboard is empty — copy/cut in the source first');
                     return;
                 }
-                const tgt = target.getFocusedNode();
+                const tgt = target.focusedNode;
                 const targetPath = tgt?.path ?? '';
                 const result = target.pasteNodes(targetPath, ({ data }) => ({ ...data, id: cbNextId++ }), 'child');
                 if (result.success) {
@@ -676,18 +676,18 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
 
             window.scAdd = (id, baseName, icon) => {
                 const el = document.getElementById(id);
-                const parent = el.getFocusedNode();
+                const parent = el.focusedNode;
                 const data = { id: el._nextId++, path: '', name: `${baseName} ${el._nextId}`, icon, sortOrder: 100 };
                 el.addNode(parent?.path ?? '', data);
             };
             window.scRemove = (id) => {
                 const el = document.getElementById(id);
-                const node = el.getFocusedNode();
+                const node = el.focusedNode;
                 if (node) el.removeNode(node.path);
             };
             window.scRename = (id) => {
                 const el = document.getElementById(id);
-                const node = el.getFocusedNode();
+                const node = el.focusedNode;
                 if (!node) return;
                 const name = prompt('Rename:', node.data?.name ?? '');
                 if (name && name.trim()) el.updateNode(node.path, { name: name.trim() });

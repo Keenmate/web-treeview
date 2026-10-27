@@ -21,8 +21,8 @@ async function load(page: Page) {
 
 const call = (page: Page, fn: string, ...args: unknown[]) =>
   page.evaluate(([fn, args]) => (window as any).tree[fn as string](...(args as unknown[])), [fn, args] as const);
-const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.getSelectedPaths()].sort());
-const focused = (page: Page) => page.evaluate(() => (window as any).tree.getFocusedNode()?.path ?? null);
+const selected = (page: Page) => page.evaluate(() => [...(window as any).tree.selectedPaths].sort());
+const focused = (page: Page) => page.evaluate(() => (window as any).tree.focusedNode?.path ?? null);
 const settledLog = async (page: Page) => { await page.waitForTimeout(60); return logLines(page, LOG); };
 const isSelectedRow = (page: Page, p: string) => nodeContent(nodeByPath(page, p));
 
@@ -34,20 +34,22 @@ test('selectAll selects every visible selectable row and emits selection-change'
   expect(await settledLog(page)).toContain('selection-change:1,1.1,1.2,2');
 });
 
-test('setSelectedPaths replaces the set (hidden paths included) and emits once', async ({ page }) => {
+test('assigning selectedPaths replaces the set (hidden paths included) and emits once', async ({ page }) => {
   await load(page);
   await call(page, 'selectNode', '2');
   await page.evaluate(() => (window as any).clearLog());
-  await call(page, 'setSelectedPaths', ['1.2', '1.1.1']);
+  await page.evaluate(() => { (window as any).tree.selectedPaths = ['1.2', '1.1.1']; });
   expect(await selected(page)).toEqual(['1.1.1', '1.2']);
   await expect(isSelectedRow(page, '2')).not.toHaveClass(/wtv__node-content--selected/);
   const lines = (await settledLog(page)).filter((l) => l.startsWith('selection-change'));
   expect(lines).toEqual(['selection-change:1.1.1,1.2']);
 });
 
-test('setSelectedPaths silent: state + DOM update, no selection-change', async ({ page }) => {
+test('silent replace (clearSelection + selectNodes with { silent }): state + DOM update, no selection-change', async ({ page }) => {
   await load(page);
-  await call(page, 'setSelectedPaths', ['1.2'], { silent: true });
+  await call(page, 'selectNode', '2', 'replace', { silent: true });
+  await call(page, 'clearSelection', undefined, { silent: true });
+  await call(page, 'selectNodes', ['1.2'], { silent: true });
   expect(await selected(page)).toEqual(['1.2']);
   await expect(isSelectedRow(page, '1.2')).toHaveClass(/wtv__node-content--selected/);
   expect((await settledLog(page)).filter((l) => l.startsWith('selection-change'))).toEqual([]);

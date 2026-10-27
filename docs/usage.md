@@ -221,7 +221,20 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `data` | `T[]` | Array of data objects to display |
 | `renderer` | `TreeViewRenderer<T>` | Custom renderer (replaces default DomRenderer) |
 | `navigationOverrides` | `TreeNavigationOverrides<T> \| null` | Replace individual keyboard-navigation methods — see [Keyboard navigation overrides](#keyboard-navigation-overrides). Reassign to swap at runtime; `null` restores the defaults |
-| `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + `getNodeRef(path)`, `getFocusedNode()`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
+| `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + the state properties below (read-only there) + `getNodeRef(path)`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
+
+### State (element: read / assign; `el.controller`: read-only)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `expandedPaths` | `string[]` | The expanded set. Assigning replaces it (branches not listed collapse) — save / restore a view |
+| `selectedPaths` | `Set<string>` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it and fires `selection-change` |
+| `checkedPaths` | `Set<string>` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it and fires `checked-change` |
+| `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
+
+Assigned before the first build, `expandedPaths` / `selectedPaths` / `checkedPaths` are held and
+applied right after it. For a silent replace use `clearSelection(undefined, { silent: true })` +
+`selectNodes(paths, { silent: true })` (and `uncheckAll` / `checkNodes` likewise).
 
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
 
@@ -374,14 +387,12 @@ All methods are available on the element **and** on `el.controller`.
 | `expandNodes` | `(nodePath \| string[], options?)` | Expand ancestors up to node(s) |
 | `collapseNodes` | `(nodePath \| string[], options?)` | Collapse node(s) |
 | `toggleNodeExpanded` | `(path)` | Toggle (honors `isAccordionExpand`) |
-| `getExpandedPaths` / `setExpandedPaths` | `(): string[]` / `(paths[])` | Read / restore the expanded set |
 | `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
 | `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
 | `getNodeByPath` | `(path): LTreeNode \| null` | Look up a node |
 | `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
 | `getChildren` / `getSiblings` | `(path): LTreeNode[]` | Children of a node / siblings of a node (including itself) |
-| `getFocusedNode` | `(): LTreeNode \| null` | The focused node |
 | `getVisibleFlatNodes` | `(): LTreeNode[]` | The visible rows in order |
 | `getAllData` | `(): T[]` | Current data |
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
@@ -392,21 +403,17 @@ All methods are available on the element **and** on `el.controller`.
 | `applyChanges` | `(changes: TreeChange[]): ApplyChangesResult` | Apply a batch of changes |
 | `selectNode` | `(path, mode?, options?)` | Select one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
 | `selectNodes` | `(paths[], options?)` | Add nodes to the selected set (**additive**) |
-| `setSelectedPaths` | `(paths[], options?)` | Replace the entire selected set |
 | `selectAll` | `(options?)` | Select every visible node (Ctrl+A) |
 | `clearSelection` | `(paths?, options?)` | Clear the given paths, or all when omitted |
 | `getSelectedNodes` | `(): LTreeNode[]` | All selected nodes |
-| `getSelectedPaths` | `(): Set<string>` | All selected paths |
 | `isNodeSelected` | `(path): boolean` | Check selected-set membership |
 | `checkNode` | `(path, options?)` | Check one node (cascades in cascade mode) |
 | `checkNodes` | `(paths[], options?)` | Check nodes (**additive**) |
-| `setCheckedPaths` | `(paths[], options?)` | Replace the entire checkbox set |
 | `checkAll` | `(options?)` | Check every selectable node |
 | `uncheckNode` | `(path, options?)` | Uncheck one node (cascades in cascade mode) |
 | `uncheckNodes` | `(paths[], options?)` | Uncheck nodes (cascades in cascade mode) |
 | `uncheckAll` | `(options?)` | Uncheck every node |
 | `getCheckedNodes` | `(): LTreeNode[]` | All checked nodes |
-| `getCheckedPaths` | `(): Set<string>` | All checked paths |
 | `isNodeChecked` | `(path): boolean` | Check checked-set membership |
 | `focusNode` | `(path, options?)` | Move focus to a node |
 | `clearFocus` | `(options?)` | Clear the focused node |

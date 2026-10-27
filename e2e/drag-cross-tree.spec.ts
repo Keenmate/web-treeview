@@ -94,7 +94,7 @@ test.describe('A → B with a top-level-absorbed selection (TV-5)', () => {
     await rowA(page, '1.1').click();
     await rowA(page, '1').click({ modifiers: ['Control'] });
     await rowA(page, '2').click({ modifiers: ['Control'] });
-    expect(await page.evaluate(() => [...(window as any).trees.A.getSelectedPaths()].sort())).toEqual(['1', '1.1', '2']);
+    expect(await page.evaluate(() => [...(window as any).trees.A.selectedPaths].sort())).toEqual(['1', '1.1', '2']);
   }
 
   const lastDrop = (page: Page) => page.evaluate(() => (window as any).lastDrop);

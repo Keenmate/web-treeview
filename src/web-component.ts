@@ -399,6 +399,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   #customStyleLinks?: HTMLLinkElement[];
   #customDocLinks?: HTMLLinkElement[];
 
+  /** State assigned before the first build (`expandedPaths` / `selectedPaths` / `checkedPaths`), applied right after it. */
+  #pendingState: { expandedPaths?: string[]; selectedPaths?: string[]; checkedPaths?: string[] } = {};
+
   constructor() {
     super();
     this.#shadow = this.attachShadow({ mode: 'open' });
@@ -490,6 +493,11 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
     this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
     this.#applyCustomStyles();
+    const pending = this.#pendingState;
+    this.#pendingState = {};
+    if (pending.expandedPaths) this.#treeview.expandedPaths = pending.expandedPaths;
+    if (pending.selectedPaths) this.#treeview.selectedPaths = pending.selectedPaths;
+    if (pending.checkedPaths) this.#treeview.checkedPaths = pending.checkedPaths;
   }
 
   /** The element's instance loggers for the engine / LTree / renderer, resolved
@@ -617,6 +625,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#treeview;
   }
 
+  /** Assign a state set on the live tree, or hold it until the first build. */
+  #setState(key: 'expandedPaths' | 'selectedPaths' | 'checkedPaths', paths: Iterable<string>): void {
+    const list = [...(paths ?? [])];
+    const tree = this.#live;
+    if (tree) tree[key] = list;
+    else this.#pendingState[key] = list;
+  }
+
   expandAll(nodePath?: string | string[] | null, options?: { exclusive?: boolean; noEmit?: boolean }): void {
     this.#live?.expandAll(nodePath, options);
   }
@@ -649,12 +665,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.closeContextMenu();
   }
 
-  getExpandedPaths(): string[] {
-    return this.#live?.getExpandedPaths() ?? [];
+  /** The expanded set. Assigning replaces it (branches not listed collapse); before the
+   *  first build the value is held and applied once the tree exists. */
+  get expandedPaths(): string[] {
+    return this.#live?.expandedPaths ?? [...(this.#pendingState.expandedPaths ?? [])];
   }
 
-  setExpandedPaths(paths: string[]): void {
-    this.#live?.setExpandedPaths(paths);
+  set expandedPaths(paths: Iterable<string>) {
+    this.#setState('expandedPaths', paths);
   }
 
   getVisibleFlatNodes(): LTreeNode<T>[] {
@@ -733,8 +751,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getNodeRef(path) ?? { path, node: null, parent: null, siblings: [] };
   }
 
-  getFocusedNode(): LTreeNode<T> | null {
-    return this.#live?.getFocusedNode() ?? null;
+  /** The focused node (read-only — `focusNode(path)` / `clearFocus()` move it). */
+  get focusedNode(): LTreeNode<T> | null {
+    return this.#live?.focusedNode ?? null;
   }
 
   /** Open the context menu for the node at `path` at viewport coordinates. */
@@ -766,10 +785,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.selectNodes(paths, options);
   }
 
-  setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.#live?.setSelectedPaths(paths, options);
-  }
-
   selectAll(options?: TreeMutationOptions): void {
     this.#live?.selectAll(options);
   }
@@ -782,8 +797,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getSelectedNodes() ?? [];
   }
 
-  getSelectedPaths(): Set<string> {
-    return this.#live?.getSelectedPaths() ?? new Set();
+  /** The selected set (a snapshot). Assigning replaces it and fires `selection-change`
+   *  (use `clearSelection` / `selectNodes` with `{ silent: true }` for a silent restore). */
+  get selectedPaths(): Set<string> {
+    return this.#live?.selectedPaths ?? new Set(this.#pendingState.selectedPaths ?? []);
+  }
+
+  set selectedPaths(paths: Iterable<string>) {
+    this.#setState('selectedPaths', paths);
   }
 
   isNodeSelected(path: string): boolean {
@@ -798,10 +819,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
     this.#live?.checkNodes(paths, options);
-  }
-
-  setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this.#live?.setCheckedPaths(paths, options);
   }
 
   checkAll(options?: TreeMutationOptions): void {
@@ -824,8 +841,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getCheckedNodes() ?? [];
   }
 
-  getCheckedPaths(): Set<string> {
-    return this.#live?.getCheckedPaths() ?? new Set();
+  /** The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning
+   *  replaces it and fires `checked-change`. */
+  get checkedPaths(): Set<string> {
+    return this.#live?.checkedPaths ?? new Set(this.#pendingState.checkedPaths ?? []);
+  }
+
+  set checkedPaths(paths: Iterable<string>) {
+    this.#setState('checkedPaths', paths);
   }
 
   isNodeChecked(path: string): boolean {

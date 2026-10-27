@@ -196,7 +196,7 @@ tree.removeNode('1', true);             // remove a node and its descendants</co
         <!-- DS06 · Save & Restore Expanded State -->
         <div class="card">
             <h2>DS06 · Save &amp; Restore Expanded State</h2>
-            <p>Capture which branches are open with <code>getExpandedPaths()</code> and re-apply them later with <code>setExpandedPaths(paths)</code> &mdash; e.g. to preserve a user's view across a data refresh.</p>
+            <p>Capture which branches are open with the <code>expandedPaths</code> property and re-apply them later by assigning it (<code>el.expandedPaths = paths</code>) &mdash; e.g. to preserve a user's view across a data refresh.</p>
 
             <div class="controls">
                 <button onclick="saveState()">Save Expanded State</button>
@@ -516,14 +516,14 @@ tree.displayValueMember = 'label';</code></pre>
             const ds06out = document.getElementById('ds06-output');
 
             window.saveState = () => {
-                savedExpandedPaths = ds06.getExpandedPaths();
+                savedExpandedPaths = ds06.expandedPaths;
                 ds06out.textContent =
                     `Saved ${savedExpandedPaths.length} expanded path(s):\n` +
                     savedExpandedPaths.map(p => `  - "${p}"`).join('\n');
             };
             window.restoreState = () => {
                 if (savedExpandedPaths) {
-                    ds06.setExpandedPaths(savedExpandedPaths);
+                    ds06.expandedPaths = savedExpandedPaths;
                 } else {
                     ds06out.textContent = 'No state saved yet — click "Save" first';
                 }

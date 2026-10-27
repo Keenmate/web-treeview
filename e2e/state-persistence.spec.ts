@@ -68,7 +68,7 @@ test.describe('runtime state survives a config-change re-insert', () => {
   });
 
   test('selection survives a re-insert', async ({ page }) => {
-    await page.evaluate(() => (document.getElementById('tree') as any).setSelectedPaths(['1']));
+    await page.evaluate(() => { (document.getElementById('tree') as any).selectedPaths = ['1']; });
     await expect.poll(() => isSelected(page, '1')).toBe(true);
 
     await forceRebuild(page);

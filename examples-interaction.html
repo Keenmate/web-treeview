@@ -238,7 +238,7 @@
             <p>
                 Two orthogonal knobs. <code>checkbox-mode</code> controls how checking a branch
                 <em>behaves</em>; <code>cascade-check-policy</code> controls which paths the checked set
-                <em>emits</em> (what <code>getCheckedPaths()</code> / the <code>checked-change</code> event report).
+                <em>emits</em> (what <code>checkedPaths</code> / the <code>checked-change</code> event report).
                 Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
                 (The <code>click-toggles-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
                 the IN01 picker above.)
@@ -293,7 +293,7 @@
                 <div>
                     <div class="demo-label">Emitted checkedPaths</div>
                     <div class="output">
-                        <p class="output-label">getCheckedPaths() &mdash; <span id="in4-count">0</span> entries</p>
+                        <p class="output-label">checkedPaths &mdash; <span id="in4-count">0</span> entries</p>
                         <pre id="in4-checked">(none — check some branches)</pre>
                     </div>
                 </div>
@@ -520,7 +520,7 @@ function restoreFromUrl(nodePath) {
                     paths.length ? paths.join(', ') : '(none)';
             });
             in1.addEventListener('checked-change', () => {
-                const paths = [...in1.getCheckedPaths()].sort();
+                const paths = [...in1.checkedPaths].sort();
                 document.getElementById('in1-checked-count').textContent = paths.length;
                 document.getElementById('in1-checked').textContent =
                     paths.length ? paths.join(', ') : '(none)';
@@ -556,7 +556,7 @@ function restoreFromUrl(nodePath) {
                 in1.clearSelection();
             });
             document.getElementById('in1-select-specific').addEventListener('click', () => {
-                in1.setSelectedPaths(['1.1.1', '1.1.3', '1.2.1']);
+                in1.selectedPaths = ['1.1.1', '1.1.3', '1.2.1'];
             });
             document.getElementById('in1-clear').addEventListener('click', () => {
                 in1.clearSelection();
@@ -591,8 +591,8 @@ function restoreFromUrl(nodePath) {
             in4.data = fileTree;
 
             function refreshIn4Emitted() {
-                // getCheckedPaths() already projects through cascadeCheckPolicy.
-                const paths = [...in4.getCheckedPaths()].sort();
+                // checkedPaths already projects through cascadeCheckPolicy.
+                const paths = [...in4.checkedPaths].sort();
                 document.getElementById('in4-count').textContent = paths.length;
                 document.getElementById('in4-checked').textContent =
                     paths.length ? paths.join('\n') : '(none — check some branches)';
@@ -676,7 +676,7 @@ function restoreFromUrl(nodePath) {
                 const has = in6src.hasClipboardContent?.() ?? false;
                 document.getElementById('in6-op').textContent = has ? op : 'empty';
                 document.getElementById('in6-info').textContent = has
-                    ? `(${in6src.getSelectedPaths().size || '?'} entries)` : '';
+                    ? `(${in6src.selectedPaths.size || '?'} entries)` : '';
             }
             in6src.addEventListener('selection-change', updateClipboardStatus);
             in6src.addEventListener('tree-change', updateClipboardStatus);
@@ -692,7 +692,7 @@ function restoreFromUrl(nodePath) {
                 in6src.cancelCut(); updateClipboardStatus();
             });
             document.getElementById('in6-paste').addEventListener('click', () => {
-                const target = in6tgt.controller.getFocusedNode();
+                const target = in6tgt.controller.focusedNode;
                 if (!target) {
                     document.getElementById('in6-paste-out').textContent =
                         'Click a target node in the right tree first';

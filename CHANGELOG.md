@@ -29,6 +29,13 @@ aliases — rename on upgrade.
   `beforeDeleteCallback` and **without** `node-delete` and requires the paths (returns
   `{ removed, failed }`, was `{ removed, blocked }`). The Delete key and the context-menu
   `delete` built-in still run `beforeDeleteCallback` and fire `node-delete`.
+- **State is a property, not `get*()` / `set*()`** (on the element; read-only on
+  `el.controller`): `getExpandedPaths()` / `setExpandedPaths(paths)` → **`expandedPaths`**;
+  `getSelectedPaths()` / `setSelectedPaths(paths)` → **`selectedPaths`**; `getCheckedPaths()` /
+  `setCheckedPaths(paths)` → **`checkedPaths`**; `getFocusedNode()` → **`focusedNode`**
+  (read-only). Assigning replaces the set and fires its change event; values assigned before
+  the first build are applied right after it. The `{ silent }` option of the removed setters:
+  use `clearSelection(undefined, { silent: true })` + `selectNodes(paths, { silent: true })`.
 - **Search text is a `term`:** `filterNodes(term)` / `searchNodes(term)` (parameter rename only).
 
 ### Removed — BREAKING (in-tree debug aids)

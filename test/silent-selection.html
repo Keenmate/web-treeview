@@ -105,12 +105,12 @@
             // through the silent path (no event fires). The buttons below trigger
             // a refresh right after calling the silent API.
             function refreshSelectionReadout() {
-                const paths = [...tree.getSelectedPaths()].sort();
+                const paths = [...tree.selectedPaths].sort();
                 setText('selected-size', String(paths.length));
                 setText('selected-paths', paths.join(','));
             }
             function refreshCheckedReadout() {
-                setText('checked-size', String(tree.getCheckedPaths().size));
+                setText('checked-size', String(tree.checkedPaths.size));
             }
 
             const wire = (testid, fn) => {

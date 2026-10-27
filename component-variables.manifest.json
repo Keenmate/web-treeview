@@ -59,7 +59,9 @@
     { "name": "base-icon-indeterminate", "required": false, "usage": "Tri-state (partial) checkbox dash glyph; chained by --wtv-icon-indeterminate — mask-image" },
     { "name": "base-icon-check-size", "required": false, "usage": "mask-size of the check/dash glyph inside the checkbox box; chained by --wtv-icon-check-size (default 68%)" },
     { "name": "base-checkbox-scale", "required": false, "usage": "Shared checkbox scale knob; chained by --wtv-checkbox-scale (box/border/radius × this via calc, no transform)" },
-    { "name": "base-checkbox-border-color", "required": false, "usage": "Dedicated checkbox border color (stronger than --base-border-color); chained by --wtv-checkbox-border-color" }
+    { "name": "base-checkbox-border-color", "required": false, "usage": "Dedicated checkbox border color (stronger than --base-border-color); chained by --wtv-checkbox-border-color" },
+    { "name": "base-input-border-color", "required": false, "usage": "Control outline; chained by --wtv-input-border-color (the checkbox border's standalone default)" },
+    { "name": "base-shadow-color", "required": false, "usage": "Shadow tint; chained by --wtv-shadow-color (tooltip, context menu, touch ghost shadows standalone)" }
   ],
   "componentVariables": [
     { "name": "wtv-rem", "category": "sizing", "usage": "Base sizing unit for proportional scaling (default: 10px)" },
@@ -84,6 +86,8 @@
     { "name": "wtv-text-color-on-accent", "category": "color", "usage": "Text on accent backgrounds" },
     { "name": "wtv-bg-color", "category": "surface", "usage": "Main background color" },
     { "name": "wtv-border-color", "category": "border", "usage": "Default border color" },
+    { "name": "wtv-input-border-color", "category": "border", "usage": "Control outline (checkbox), stronger than --wtv-border-color; chains to --base-input-border-color" },
+    { "name": "wtv-shadow-color", "category": "color", "usage": "Shadow tint for the tooltip, context menu and touch ghost; chains to --base-shadow-color" },
     { "name": "wtv-border-width", "category": "border", "usage": "Hairline stroke width of the context menu, checkbox and debug panel (→ --base-border-width, 1px)" },
     { "name": "wtv-success-color", "category": "color", "usage": "Success/valid drop color" },
     { "name": "wtv-danger-color", "category": "color", "usage": "Danger/invalid drop color" },

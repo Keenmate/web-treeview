@@ -59,17 +59,19 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-accent-color` | `--base-primary-color` \| `#0ea5e9` | Primary accent color |
+| `--wtv-accent-color` | `--base-primary-color` \| `#3b82f6` | Primary accent color |
 | `--wtv-accent-color-hover` | `--base-primary-color-hover` \| accent 15% toward black (white in dark) | Accent hover state |
-| `--wtv-text-color` | `--base-text-color-1` \| `light-dark(#1e293b, #f1f5f9)` | Primary text color |
-| `--wtv-text-color-2` | `--base-text-color-3` \| `light-dark(#64748b, #94a3b8)` | Secondary / muted text |
-| `--wtv-text-color-on-accent` | `--base-on-primary-text-color` \| `#ffffff` | Text on accent backgrounds |
-| `--wtv-bg-color` | `--base-main-bg` \| `light-dark(#fff, #1a1a1a)` | Main background |
-| `--wtv-border-color` | `--base-border-color` \| `light-dark(#e2e8f0, #3d3d3d)` | Default border color |
+| `--wtv-text-color` | `--base-text-color-1` \| `light-dark(#334155, #f1f5f9)` | Primary text color |
+| `--wtv-text-color-2` | `--base-text-color-3` \| text color mixed 55% into the bg | Secondary / muted text |
+| `--wtv-text-color-on-accent` | `--base-on-primary-text-color` \| black or white by APCA contrast on the accent | Text on accent backgrounds |
+| `--wtv-bg-color` | `--base-main-bg` \| `light-dark(#fff, #1e293b)` | Main background |
+| `--wtv-border-color` | `--base-border-color` \| the bg shifted in lightness (OKLCH) | Default border color (divider) |
+| `--wtv-input-border-color` | `--base-input-border-color` \| text color mixed 45% / 35% into the bg | Control outline (checkbox border), stronger than the divider |
+| `--wtv-shadow-color` | `--base-shadow-color` \| `light-dark(rgba(0,0,0,.15), rgba(0,0,0,.4))` | Shadow tint (tooltip, context menu, touch ghost) |
 | `--wtv-success-color` | `--base-success-color` \| `#10b981` | Success / valid color |
 | `--wtv-danger-color` | `--base-danger-color` \| `#dc2626` | Danger / invalid color (fills, borders, tints) |
 | `--wtv-danger-text-color` | `--base-danger-text-color` \| `light-dark(#721c24, #f87171)` | Danger as text (context menu danger item) |
-| `--wtv-light-bg` | `--base-elevated-bg` \| `light-dark(#f8f9fa, #2b2b2b)` | Elevated surface background |
+| `--wtv-light-bg` | `--base-elevated-bg` \| the bg shifted in lightness (OKLCH) | Elevated surface background |
 
 ### Node states
 
@@ -201,7 +203,7 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-context-menu-text-color` | unset → `--km-menu-text-color` | Menu text color |
 | `--wtv-context-menu-border` | unset → `--km-menu-border` | Menu border |
 | `--wtv-context-menu-border-radius` | unset → `--km-menu-border-radius` | Menu border radius |
-| `--wtv-context-menu-shadow` | `--base-dropdown-box-shadow` \| `0 2px 10px rgba(0,0,0,0.15)` | Menu shadow |
+| `--wtv-context-menu-shadow` | `--base-dropdown-box-shadow` \| `0 8px 16px var(--wtv-shadow-color)` | Menu shadow |
 | `--wtv-context-menu-min-width` | unset → `--km-menu-min-width` | Menu min width |
 | `--wtv-context-menu-padding` | unset → `--km-menu-padding` | Menu padding |
 | `--wtv-context-menu-font-size` | unset → `--km-menu-font-size` | Menu font size |
@@ -231,9 +233,9 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-tooltip-bg` | `--base-tooltip-bg` \| `light-dark(#333, #f5f5f5)` | Tooltip background |
-| `--wtv-tooltip-color` | `--base-tooltip-text-color` \| `light-dark(#fff, #1a1a1a)` | Tooltip text color |
-| `--wtv-tooltip-shadow` | `--base-shadow-md` \| `0 2px 8px rgba(0,0,0,0.15)` | Tooltip shadow |
+| `--wtv-tooltip-bg` | `--base-tooltip-bg` \| text 85% into the bg (light) / the bg lifted (dark) | Tooltip background |
+| `--wtv-tooltip-color` | `--base-tooltip-text-color` \| `light-dark(<bg>, <text color>)` | Tooltip text color |
+| `--wtv-tooltip-shadow` | `--base-shadow-md` \| `0 2px 8px var(--wtv-shadow-color)` | Tooltip shadow |
 
 ### Z-index
 
@@ -241,9 +243,9 @@ On the shared `--base-z-*` scale when the contract is loaded; the numbers are th
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-z-index-dropdown` | `--base-z-dropdown` \| `1000` | Context menu |
-| `--wtv-tooltip-z-index` | `--base-z-tooltip` \| `10000` | Node tooltip |
-| `--wtv-z-index-drop-zones` | `--base-z-tooltip + 1` \| `10000` | Floating drop-zone overlay |
+| `--wtv-z-index-dropdown` | `--base-z-dropdown` \| `7500` | Context menu |
+| `--wtv-tooltip-z-index` | `--base-z-tooltip` \| `9000` | Node tooltip |
+| `--wtv-z-index-drop-zones` | `--base-z-tooltip + 1` \| `9001` | Floating drop-zone overlay |
 | `--wtv-z-index-ghost` | `= --wtv-z-index-drop-zones + 1` | Touch drag ghost |
 | `--wtv-z-index-overlay` | `10` | Loading overlay (local to the tree) |
 

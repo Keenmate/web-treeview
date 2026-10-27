@@ -8,7 +8,7 @@ import { test, expect, Page, Locator } from './fixtures';
  *
  *   A. Library defaults (no brand theme)
  *      Light: --wtv-bg-color falls back to var(--base-main-bg, #ffffff)  → rgb(255, 255, 255)
- *      Dark:  --wtv-bg-color falls back to var(--base-main-bg, #1a1a1a)  → rgb(26, 26, 26)
+ *      Dark:  --wtv-bg-color falls back to var(--base-main-bg, #1e293b)  → rgb(30, 41, 59) (the contract default)
  *      Triggered by per-instance theme="dark"/"light" prop (mirrored to
  *      data-theme on the container by _applyTheme).
  *
@@ -32,7 +32,7 @@ import { test, expect, Page, Locator } from './fixtures';
 const PAGE = '/test/theming.html';
 
 const LIGHT_BG = 'rgb(255, 255, 255)';
-const DARK_BG = 'rgb(26, 26, 26)';
+const DARK_BG = 'rgb(30, 41, 59)'; // #1e293b, the contract's dark --base-main-bg
 const BRAND_LIGHT_BG = 'rgb(220, 38, 38)'; // #dc2626 red
 const BRAND_DARK_BG = 'rgb(22, 163, 74)';  // #16a34a green
 

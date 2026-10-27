@@ -21,6 +21,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   label no longer maps `--wtv-text-color-2` / `--wtv-spacing-xl`.
 - New `--wtv-context-menu-hover-color` (item text on hover; → `--km-menu-hover-color`).
 
+### Changed — standalone colors follow the contract (no visible change with base-css-variables loaded)
+
+Without `@keenmate/base-css-variables` on the page, inputs now fall back to the contract's
+defaults and derived colors to the contract's **formula on the `--wtv-*` token**, so a
+standalone `--wtv-accent-color` / `--wtv-bg-color` override brings its dependents along.
+
+- **Inputs:** `--wtv-accent-color` is blue `#3b82f6` (the contract's default since
+  base-css-variables 2.0.0-rc05; was sky `#0ea5e9`); `--wtv-text-color` `#334155` (was `#1e293b`); dark `--wtv-bg-color` `#1e293b`
+  (was `#1a1a1a`). New `--wtv-shadow-color` (15% light / 40% dark) for the tooltip, context
+  menu and touch-ghost shadows; the context menu shadow is the contract's `0 8px 16px`.
+- **Derived:** `--wtv-text-color-2`, `--wtv-border-color`, `--wtv-light-bg`, the tooltip
+  colors and `--wtv-text-color-on-accent` (black or white by APCA, was always white) are the
+  contract formulas. New `--wtv-input-border-color` (control outline); the checkbox border
+  follows it (was a fixed `#8f8f8f` / `#5a5a5a`). The menu's danger hover tint is 20% in dark
+  mode, as the contract's.
+- **Scales:** z-index dropdown 7500 / tooltip 9000 standalone (were 1000 / 10000; drag
+  overlays sit above the tooltip as before); disabled opacity 0.65 (was 0.5 / 0.6); the
+  contract's sans / mono font stacks.
+- **`npm run check:contract`** (in `build`): `@keenmate/base-css-variables` ^2.0.0-rc05 as a
+  devDependency; `base-contract-check src` fails the build on unknown `--base-*` reads and
+  fallbacks that drift from the contract. The 10px rem base is allowlisted in
+  `contract-check.json`.
+
 ### Changed — `is-sorted` meaning fixed, render-time sort removed (NOTES #16)
 
 - **`is-sorted` is a performance hint**: "the data is already in insert order (parents

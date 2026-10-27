@@ -67,11 +67,11 @@
 
   /* ==========================================================================
      FONT FAMILY (set at :host so all shadow DOM content inherits)
-     Default is a system sans-serif stack (matches svelte-treeview) rather than
-     `inherit`, so the tree doesn't pick up the host page's default (often a
-     serif). Still overridable via --wtv-font-family or --base-font-family.
+     Default is the contract's system sans-serif stack rather than `inherit`, so
+     the tree doesn't pick up the host page's default (often a serif). Still
+     overridable via --wtv-font-family or --base-font-family.
      ========================================================================== */
-  font-family: var(--wtv-font-family, var(--base-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif));
+  font-family: var(--wtv-font-family, var(--base-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif));
 
   /* ==========================================================================
      COLORS & THEME (Strategy B: light-dark() + color-scheme flipping)
@@ -82,31 +82,38 @@
      `dark-mode.css` overrides it with `color-scheme: dark` / `light` only when
      a page or per-instance signal asks for it.
      Hover/active/selected use color-mix chains so the highlight stays visible
-     against any base luminance (avoids the bare-literal fallback footgun). */
+     against any base luminance (avoids the bare-literal fallback footgun).
+     Standalone (no contract loaded): the inputs (accent, text, bg, shadow color)
+     fall back to the contract's defaults and everything derived from them to the
+     contract's FORMULA on the --wtv-* input, so a standalone --wtv-accent-color /
+     --wtv-bg-color override brings its dependents along
+     (checked by `npm run check:contract`). */
 
   /* Core Colors */
-  --wtv-accent-color: var(--base-primary-color, #0ea5e9);
+  --wtv-accent-color: var(--base-primary-color, #3b82f6);
   --wtv-accent-color-hover: var(--base-primary-color-hover, light-dark(color-mix(in srgb, black 15%, var(--wtv-accent-color)), color-mix(in srgb, white 15%, var(--wtv-accent-color))));
-  --wtv-text-color: var(--base-text-color-1, light-dark(#1e293b, #f1f5f9));
-  --wtv-text-color-2: var(--base-text-color-3, light-dark(#64748b, #94a3b8));
-  --wtv-text-color-on-accent: var(--base-on-primary-text-color, #ffffff);
-  --wtv-bg-color: var(--base-main-bg, light-dark(#ffffff, #1a1a1a));
-  --wtv-border-color: var(--base-border-color, light-dark(#e2e8f0, #3d3d3d));
+  --wtv-text-color: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
+  --wtv-bg-color: var(--base-main-bg, light-dark(#ffffff, #1e293b));
+  --wtv-text-color-2: var(--base-text-color-3, color-mix(in srgb, var(--wtv-text-color) 55%, var(--wtv-bg-color)));
+  /* Text ON the accent fill: black or white by APCA contrast (contract formula). */
+  --wtv-text-color-on-accent: var(--base-on-primary-text-color, color(from color(from var(--wtv-accent-color) srgb calc(0.21 * r * r * (0.4 + r * (0.82 - 0.22 * r)) + 0.72 * g * g * (0.4 + g * (0.82 - 0.22 * g)) + 0.07 * b * b * (0.4 + b * (0.82 - 0.22 * b))) 0 0) srgb clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1)));
+  --wtv-border-color: var(--base-border-color, light-dark(oklch(from var(--wtv-bg-color) calc(l - 0.096) c h), oklch(from var(--wtv-bg-color) calc(l + 0.192) c h)));
+  /* Control outline (checkbox): stronger than the --wtv-border-color divider. */
+  --wtv-input-border-color: var(--base-input-border-color, light-dark(color-mix(in srgb, var(--wtv-text-color) 45%, var(--wtv-bg-color)), color-mix(in srgb, var(--wtv-text-color) 35%, var(--wtv-bg-color))));
+  --wtv-shadow-color: var(--base-shadow-color, light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.4)));
   --wtv-success-color: var(--base-success-color, #10b981);
   --wtv-danger-color: var(--base-danger-color, #dc2626);
   /* Danger as TEXT (menu danger item): the fill colour is too dark to read on a dark
      surface (#dc2626 on #1a1a1a = 3.6:1), so text reads the role's text colour. */
   --wtv-danger-text-color: var(--base-danger-text-color, light-dark(#721c24, #f87171));
-  --wtv-light-bg: var(--base-elevated-bg, light-dark(#f8f9fa, #2b2b2b));
+  --wtv-light-bg: var(--base-elevated-bg, light-dark(oklch(from var(--wtv-bg-color) calc(l - 0.03) c h), oklch(from var(--wtv-bg-color) calc(l + 0.06) c h)));
   /* Stroke width of the hairlines (menu, checkbox, debug panel). */
   --wtv-border-width: var(--base-border-width, 1px);
 
-  /* Hover / Active / Selected — color-mix chains keep highlights visible
-     against any --wtv-bg-color / --wtv-text-color combination. */
-  --wtv-hover-bg: var(--base-hover-bg,
-    color-mix(in srgb, var(--wtv-text-color) 8%, var(--wtv-bg-color)));
-  --wtv-active-bg: var(--base-active-bg,
-    color-mix(in srgb, var(--wtv-text-color) 14%, var(--wtv-bg-color)));
+  /* Hover / Active — the contract's translucent overlays of the bg's own hue, so the
+     highlight shows on any --wtv-bg-color in both modes. */
+  --wtv-hover-bg: var(--base-hover-bg, light-dark(color-mix(in oklch, oklch(from var(--wtv-bg-color) calc(l - 0.45) c h) 14%, transparent), color-mix(in oklch, oklch(from var(--wtv-bg-color) calc(l + 0.45) c h) 28%, transparent)));
+  --wtv-active-bg: var(--base-active-bg, light-dark(color-mix(in oklch, oklch(from var(--wtv-bg-color) calc(l - 0.45) c h) 24%, transparent), color-mix(in oklch, oklch(from var(--wtv-bg-color) calc(l + 0.45) c h) 48%, transparent)));
 
   /* Node state aliases (DRP semantic naming) */
   --wtv-node-bg-hover: var(--wtv-hover-bg);
@@ -282,16 +289,16 @@
      transform, so the masked tick/dash stays crisp + centered at any scale. */
   --wtv-checkbox-scale: var(--base-checkbox-scale, 1);
   --wtv-checkbox-border-width: var(--wtv-border-width);  /* hairline */
-  /* Dedicated --base-checkbox-border-color (ms parity): a stronger mid-gray than
-     the faint generic --base-border-color so the box reads as a real control. */
-  --wtv-checkbox-border-color: var(--base-checkbox-border-color, light-dark(#8f8f8f, #5a5a5a));
+  /* The control outline (ms parity): stronger than the faint --wtv-border-color divider,
+     so the box reads as a real control. */
+  --wtv-checkbox-border-color: var(--base-checkbox-border-color, var(--wtv-input-border-color));
   --wtv-checkbox-border-radius: calc(0.3 * var(--wtv-rem));
-  --wtv-checkbox-bg: var(--base-input-bg, light-dark(#ffffff, #1f1f1f));
+  --wtv-checkbox-bg: var(--base-input-bg, var(--wtv-bg-color));
   --wtv-checkbox-checked-bg: var(--wtv-accent-color);
   --wtv-checkbox-checked-border-color: var(--wtv-accent-color);
   /* Checked-box hover deepens to the accent's hover step (ms parity). */
   --wtv-checkbox-checked-bg-hover: var(--wtv-accent-color-hover);
-  --wtv-checkbox-checkmark-color: var(--base-on-primary-text-color, #fff);
+  --wtv-checkbox-checkmark-color: var(--wtv-text-color-on-accent);
   --wtv-checkbox-focus-ring-width: 2px;
   --wtv-checkbox-focus-ring-color: color-mix(in srgb, var(--wtv-accent-color) 25%, transparent);
   --wtv-checkbox-focus-ring: 0 0 0 var(--wtv-checkbox-focus-ring-width) var(--wtv-checkbox-focus-ring-color);
@@ -321,23 +328,23 @@
   --wtv-glow-child-text: rgba(72, 62, 98, 0.7);
 
   /* Drag-over states */
-  --wtv-drag-over-bg: var(--base-primary-bg-subtle, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
+  --wtv-drag-over-bg: var(--base-primary-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-accent-color) 10%, transparent), color-mix(in srgb, var(--wtv-accent-color) 20%, transparent)));
   --wtv-drag-over-border: 2px dashed var(--wtv-accent-color);
   --wtv-drag-over-glow-shadow: 0 0 8px color-mix(in srgb, var(--wtv-accent-color) 40%, transparent);
 
   /* Drop validation */
-  --wtv-drop-valid-bg: var(--base-success-bg-subtle, color-mix(in srgb, var(--wtv-success-color) 10%, transparent));
+  --wtv-drop-valid-bg: var(--base-success-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-success-color) 10%, transparent), color-mix(in srgb, var(--wtv-success-color) 20%, transparent)));
   --wtv-drop-valid-border-color: var(--wtv-success-color);
-  --wtv-drop-invalid-bg: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
+  --wtv-drop-invalid-bg: var(--base-danger-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-danger-color) 10%, transparent), color-mix(in srgb, var(--wtv-danger-color) 20%, transparent)));
   --wtv-drop-invalid-border-color: var(--wtv-danger-color);
 
   /* Dragover highlight */
-  --wtv-dragover-highlight-bg: var(--base-success-bg-subtle-hover, color-mix(in srgb, var(--wtv-success-color) 15%, transparent));
+  --wtv-dragover-highlight-bg: var(--base-success-bg-subtle-hover, light-dark(color-mix(in srgb, var(--wtv-success-color) 15%, transparent), color-mix(in srgb, var(--wtv-success-color) 30%, transparent)));
   --wtv-dragover-highlight-border: 2px dashed var(--wtv-success-color);
 
   /* Touch ghost */
   --wtv-touch-ghost-bg: color-mix(in srgb, var(--wtv-accent-color) 90%, transparent);
-  --wtv-touch-ghost-shadow: var(--base-shadow-lg, 0 4px 12px rgba(0, 0, 0, 0.3));
+  --wtv-touch-ghost-shadow: var(--base-shadow-lg, 0 4px 12px var(--wtv-shadow-color));
 
   /* Scroll highlight */
   --wtv-scroll-highlight-bg: color-mix(in srgb, var(--wtv-accent-color) 30%, transparent);
@@ -349,8 +356,8 @@
      and svelte-treeview's .stv__tooltip, so one shared theme renders all three
      identically.
      ========================================================================== */
-  --wtv-tooltip-bg: var(--base-tooltip-bg, light-dark(#333333, #f5f5f5));
-  --wtv-tooltip-color: var(--base-tooltip-text-color, light-dark(#ffffff, #1a1a1a));
+  --wtv-tooltip-bg: var(--base-tooltip-bg, light-dark(color-mix(in srgb, var(--wtv-text-color) 85%, var(--wtv-bg-color)), oklch(from var(--wtv-bg-color) calc(l + 0.15) c h)));
+  --wtv-tooltip-color: var(--base-tooltip-text-color, light-dark(var(--wtv-bg-color), var(--wtv-text-color)));
   --wtv-tooltip-padding: calc(0.8 * var(--wtv-rem)) calc(1.2 * var(--wtv-rem));
   --wtv-tooltip-border-radius: var(--wtv-border-radius-lg);
   --wtv-tooltip-font-size: calc(var(--base-font-size-sm, 1.4) * var(--wtv-rem));
@@ -360,8 +367,8 @@
   --wtv-tooltip-width: auto;
   --wtv-tooltip-min-width: 0;
   --wtv-tooltip-max-width: calc(32 * var(--wtv-rem));
-  --wtv-tooltip-shadow: var(--base-shadow-md, 0 2px 8px rgba(0, 0, 0, 0.15));
-  --wtv-tooltip-z-index: var(--base-z-tooltip, 10000);
+  --wtv-tooltip-shadow: var(--base-shadow-md, 0 2px 8px var(--wtv-shadow-color));
+  --wtv-tooltip-z-index: var(--base-z-tooltip, 9000);
 
   /* ==========================================================================
      CONTEXT MENU
@@ -371,9 +378,9 @@
      (every menu on the page, set on :root) -> --base-* -> core's default. Never set
      --km-menu-* here: a host-level value would shadow the page-wide one.
      ========================================================================== */
-  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.15));
-  --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
-  --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.5);
+  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 8px 16px var(--wtv-shadow-color));
+  --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-danger-color) 10%, transparent), color-mix(in srgb, var(--wtv-danger-color) 20%, transparent)));
+  --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.65);
 
   /* --wtv-context-menu-* -> core's private --_km-menu-* (no fallback; inherited into
      the shadow-local menu). Stacking follows the tree's z-index scale. */
@@ -419,7 +426,7 @@
      ========================================================================== */
   --wtv-tree-min-height: calc(6 * var(--wtv-rem));                   /* 60px — min height for empty/loading states */
   --wtv-empty-zone-border: 2px dashed var(--wtv-accent-color);
-  --wtv-empty-zone-bg: var(--base-primary-bg-subtle, color-mix(in srgb, var(--wtv-accent-color) 10%, transparent));
+  --wtv-empty-zone-bg: var(--wtv-drag-over-bg);
   --wtv-empty-zone-radius: var(--wtv-border-radius-lg);               /* 8px — matches svelte-treeview's 0.8rem */
   /* Engaged state (:hover + --active), token-for-token with svelte-treeview's
      --stv-drop-placeholder-hover-* family so one theme drives both packages.
@@ -435,8 +442,8 @@
      Z-INDEX LAYERS — on the shared --base-z-* scale; the numbers are the
      standalone fallbacks. The drag overlays sit above tooltips, the ghost on top.
      ========================================================================== */
-  --wtv-z-index-dropdown: var(--base-z-dropdown, 1000);
-  --wtv-z-index-drop-zones: calc(var(--base-z-tooltip, 9999) + 1);
+  --wtv-z-index-dropdown: var(--base-z-dropdown, 7500);
+  --wtv-z-index-drop-zones: calc(var(--base-z-tooltip, 9000) + 1);
   --wtv-z-index-ghost: calc(var(--wtv-z-index-drop-zones) + 1);
   --wtv-z-index-overlay: 10;  /* loading overlay, local to the tree */
 

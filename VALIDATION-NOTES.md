@@ -33,17 +33,16 @@ surfaces (no controls, no floating, no animations, no cross-feature
 state modifiers worth their own file). PASS with note; the C-CSS-1
 auto-script expects the canonical set.
 
-## C-TC-15 — FOUC prevention via `data-ready` attribute
+## C-TC-15 — FOUC prevention via the core `ready` attribute
 
 Instead of the canonical `<tag>:not(:defined)` rule in `base.css`, the
-component uses a `data-ready` attribute set in the Element constructor's
-`requestAnimationFrame` callback (`src/web-component.ts:205-207`) and
-hidden via `:host(:not([data-ready])) { visibility: hidden }`
-(`src/css/base.css`). Functionally equivalent to the
-`:not(:defined)` pattern but works with shadow-DOM inline-style
-injection (which the component does in the constructor — `base.css`
-can't reach the light DOM tag selector from inside the shadow root).
-PASS with note.
+component hides the host until core `BlissElement` marks the first build
+live — the `ready` host attribute (also `:state(ready)` + the `ready`
+event, SPEC §6.3) — via `:host(:not([ready])) { visibility: hidden }`
+(`src/css/base.css`). Functionally equivalent to the `:not(:defined)`
+pattern but works with shadow-DOM style injection (`base.css` can't
+reach the light DOM tag selector from inside the shadow root), and it
+also covers a `defer`-held element. PASS with note.
 
 ## C-NC-6 — D-NC-7 = C (member-only data extractors)
 

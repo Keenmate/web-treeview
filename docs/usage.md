@@ -431,8 +431,15 @@ All methods are available on the element **and** on `el.controller`.
 | `deleteBranch` | `(path, keepParent?): result` | Delete node and descendants |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
+| `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |
+| `destroy` | `()` | Core final teardown (element only): releases the tree engine, renderer and clipboard registration; `isDestroyed` turns `true` |
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
+
+**Ready / defer (core).** Add the `defer` attribute to hold the first build (set data and
+callbacks first), then call `el.release()` (or remove `defer`). After the first build the host
+gets the `ready` attribute and `:state(ready)` and fires `ready` (`onReady`); `el.whenReady()`
+resolves then. Until `ready` the host is `visibility: hidden` (FOUC guard).
 
 ### Keyboard navigation overrides
 

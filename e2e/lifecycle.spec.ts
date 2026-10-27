@@ -203,3 +203,44 @@ test('an open context menu closes on a move and leaves no document listeners beh
   await expect(page.locator('.km-menu')).toBeHidden();
   expect(await page.evaluate(() => (window as any).__globalListeners())).toEqual(baseline);
 });
+
+test('core ready: `ready` attribute + :state(ready) after the first build, host visible', async ({ page }) => {
+  await load(page);
+  const tree = page.locator('#tree');
+  await expect(tree).toHaveAttribute('ready', '');
+  expect(await page.evaluate(() => (window as any).tree.matches(':state(ready)'))).toBe(true);
+  expect(await page.evaluate(() => (window as any).tree.isReady)).toBe(true);
+  expect(await tree.evaluate((el) => getComputedStyle(el).visibility)).toBe('visible');
+});
+
+test('a deferred tree stays hidden (no ready) until release()', async ({ page }) => {
+  await load(page);
+  const state = await page.evaluate(async () => {
+    const el = document.createElement('web-treeview') as any;
+    el.setAttribute('defer', '');
+    el.data = [{ id: 1, path: '1', name: 'X' }];
+    document.body.appendChild(el);
+    await new Promise((r) => setTimeout(r, 50));
+    const before = { ready: el.hasAttribute('ready'), visibility: getComputedStyle(el).visibility, rows: el.shadowRoot.querySelectorAll('.wtv__node').length };
+    el.release();
+    await el.whenReady();
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const after = { ready: el.hasAttribute('ready'), visibility: getComputedStyle(el).visibility, rows: el.shadowRoot.querySelectorAll('.wtv__node').length };
+    return { before, after };
+  });
+  expect(state.before).toEqual({ ready: false, visibility: 'hidden', rows: 0 });
+  expect(state.after.ready).toBe(true);
+  expect(state.after.visibility).toBe('visible');
+  expect(state.after.rows).toBe(1);
+});
+
+test('destroy() tears the tree engine down: methods become no-ops, isDestroyed', async ({ page }) => {
+  await load(page);
+  const out = await page.evaluate(() => {
+    const el = (window as any).tree;
+    el.destroy();
+    el.expandAll();
+    return { isDestroyed: el.isDestroyed, node: el.getNodeByPath('1') };
+  });
+  expect(out).toEqual({ isDestroyed: true, node: null });
+});

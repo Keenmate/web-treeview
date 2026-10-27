@@ -8,8 +8,8 @@
   display: none !important;
 }
 
-/* FOUC prevention — hide until ready */
-:host(:not([data-ready])) {
+/* FOUC prevention — hide until core marks the first build ready (`ready` attr) */
+:host(:not([ready])) {
   visibility: hidden;
 }
 

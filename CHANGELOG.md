@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (v2 naming unification, 2026-10-27)
+
+One vocabulary across the KeenMate components (BlissFramework naming rules D-NC-13..27). No
+aliases — rename on upgrade.
+
+- **Ready marker is core's.** The host attribute `data-ready` (set one frame after
+  construction) is gone; core `BlissElement` sets the **`ready`** attribute + `:state(ready)`
+  and fires the **`ready`** event (`onReady`) after the first build; `el.whenReady()` awaits it.
+  The FOUC guard is now `:host(:not([ready]))`. Core's `defer` attribute / `el.release()`
+  hold and release the first build.
+- **`el.destroy()`** (core) now releases the tree engine, renderer and clipboard registration
+  (`destroyCallback()`); a DOM move still keeps everything.
+
 ### Removed — BREAKING (in-tree debug aids)
 
 - **`should-display-debug-information` / `shouldDisplayDebugInformation`** is gone, together

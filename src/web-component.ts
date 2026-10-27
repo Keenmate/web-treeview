@@ -405,13 +405,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
     // §12.8: shell CSS via one shared, cached CSSStyleSheet (per string).
     adoptStyles(this.#shadow, styles);
-
-    // Mark ready on the next frame (placeholder-visibility CSS keys off it).
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => this.setAttribute('data-ready', ''));
-    } else {
-      this.setAttribute('data-ready', '');
-    }
+    // FOUC guard: base.css hides the host until core sets the `ready` attribute
+    // (+ `:state(ready)`, `ready` event) after the first build.
   }
 
   // ── core lifecycle hooks ──────────────────────────────────────────────────
@@ -464,6 +459,15 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   protected override disconnect(): void {
     this.#treeview?.deactivate();
+  }
+
+  /**
+   * Final teardown (core `destroy()`): release what `disconnect()` keeps — the
+   * engine, renderer, search index and clipboard registration.
+   */
+  protected override destroyCallback(): void {
+    this.#treeview?.destroy();
+    this.#treeview = undefined;
   }
 
   // ── engine lifecycle ──────────────────────────────────────────────────────

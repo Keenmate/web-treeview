@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — page-wide `--km-menu-*` theming reaches the context menu
+
+- The tree set `:host { --km-menu-bg: var(--wtv-context-menu-bg); }` with every
+  `--wtv-context-menu-*` defaulted on `:host`, so a page-level `:root { --km-menu-* }` never
+  reached the tree's menu. Now the `--wtv-context-menu-*` variables are **unset by default**
+  and map onto core's private `--_km-menu-*` with no fallback: the chain is
+  `--wtv-context-menu-*` (this tree) → `--km-menu-*` (every menu on the page) → `--base-*` →
+  core's default. Unthemed, the menu takes core's defaults: padding / item padding / font
+  size / min width / radius / icon sizes no longer derive from `--wtv-spacing-*` /
+  `--wtv-font-size-*` / `--wtv-rem`, colours no longer from `--wtv-bg-color` /
+  `--wtv-text-color` / `--wtv-accent-color` (they come from `--base-*`). The named-divider
+  label no longer maps `--wtv-text-color-2` / `--wtv-spacing-xl`.
+- New `--wtv-context-menu-hover-color` (item text on hover; → `--km-menu-hover-color`).
+
 ### Changed — `is-sorted` meaning fixed, render-time sort removed (NOTES #16)
 
 - **`is-sorted` is a performance hint**: "the data is already in insert order (parents

@@ -615,8 +615,8 @@
 /* ==============================================================================
    CONTEXT MENU
    Rendered by core `openMenu()` (`km-menu*` classes, styled by core's shared
-   stylesheet). The --wtv-context-menu-* variables are mapped onto --km-menu-*
-   in variables.css.
+   stylesheet). The --wtv-context-menu-* variables are mapped onto core's private
+   --_km-menu-* in variables.css (unset -> the page-wide --km-menu-* -> --base-*).
    ============================================================================== */
 
 /* ==============================================================================

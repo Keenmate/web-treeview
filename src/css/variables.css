@@ -365,60 +365,41 @@
 
   /* ==========================================================================
      CONTEXT MENU
-     Each variable defaults to a higher-order component variable so the menu
-     can be themed independently without affecting the tree itself.
+     Rendered by core's openMenu(). The public --wtv-context-menu-* variables are
+     inputs, UNSET by default: each maps onto core's PRIVATE --_km-menu-* with NO
+     fallback, so a value resolves --wtv-context-menu-* (this tree) -> --km-menu-*
+     (every menu on the page, set on :root) -> --base-* -> core's default. Never set
+     --km-menu-* here: a host-level value would shadow the page-wide one.
      ========================================================================== */
-  --wtv-context-menu-bg: var(--base-dropdown-bg, var(--wtv-bg-color));
-  --wtv-context-menu-bg-hover: var(--wtv-hover-bg);
-  --wtv-context-menu-text-color: var(--wtv-text-color);
-  --wtv-context-menu-border: var(--base-dropdown-border, var(--wtv-border-width) solid var(--wtv-border-color));
-  /* Match svelte-treeview's menu chrome: small radius + the shared dropdown
-     shadow token (both chain to --base-*, so under a Keenmate theme the two
-     components render an identical menu surface). */
-  --wtv-context-menu-border-radius: var(--wtv-border-radius-sm);
   --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.15));
-  --wtv-context-menu-min-width: calc(var(--wtv-rem) * 15);  /* ~150px */
-  --wtv-context-menu-padding: var(--wtv-spacing-sm) 0;
-  --wtv-context-menu-font-size: var(--wtv-font-size-sm);
-  --wtv-context-menu-item-padding: var(--wtv-spacing-md) var(--wtv-spacing-xl);
-  --wtv-context-menu-item-gap: var(--wtv-spacing-md);
-  --wtv-context-menu-toggled-color: var(--wtv-accent-color);
-  --wtv-context-menu-icon-width: var(--wtv-icon-size);
-  --wtv-context-menu-icon-font-size: var(--wtv-font-size-xs);
-  --wtv-context-menu-arrow-font-size: var(--wtv-font-size-xs);
-  --wtv-context-menu-danger-color: var(--wtv-danger-text-color);
   --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, color-mix(in srgb, var(--wtv-danger-color) 10%, transparent));
-  --wtv-context-menu-divider-color: var(--wtv-border-color);
-  --wtv-context-menu-divider-margin: var(--wtv-spacing-sm) 0;
   --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.5);
 
-  /* The menu is core's `openMenu()` (km-menu*): map the public --wtv-context-menu-*
-     variables onto the --km-menu-* it reads (inherited into the shadow-local menu). */
-  --km-menu-z-index: var(--wtv-z-index-dropdown);
-  --km-menu-bg: var(--wtv-context-menu-bg);
-  --km-menu-hover-bg: var(--wtv-context-menu-bg-hover);
-  --km-menu-text-color: var(--wtv-context-menu-text-color);
-  --km-menu-border: var(--wtv-context-menu-border);
-  --km-menu-border-radius: var(--wtv-context-menu-border-radius);
-  --km-menu-shadow: var(--wtv-context-menu-shadow);
-  --km-menu-min-width: var(--wtv-context-menu-min-width);
-  --km-menu-padding: var(--wtv-context-menu-padding);
-  --km-menu-font-size: var(--wtv-context-menu-font-size);
-  --km-menu-item-padding: var(--wtv-context-menu-item-padding);
-  --km-menu-item-gap: var(--wtv-context-menu-item-gap);
-  --km-menu-toggled-color: var(--wtv-context-menu-toggled-color);
-  --km-menu-icon-size: var(--wtv-context-menu-icon-width);
-  --km-menu-icon-font-size: var(--wtv-context-menu-icon-font-size);
-  --km-menu-arrow-font-size: var(--wtv-context-menu-arrow-font-size);
-  --km-menu-shortcut-color: var(--wtv-context-menu-shortcut-color, var(--wtv-text-color-2));
-  --km-menu-danger-color: var(--wtv-context-menu-danger-color);
-  --km-menu-danger-hover-bg: var(--wtv-context-menu-danger-bg-hover);
-  --km-menu-divider-color: var(--wtv-context-menu-divider-color);
-  --km-menu-divider-margin: var(--wtv-context-menu-divider-margin);
-  --km-menu-divider-label-color: var(--wtv-text-color-2);
-  --km-menu-divider-label-font-size: var(--wtv-context-menu-icon-font-size);
-  --km-menu-divider-label-padding: 0 var(--wtv-spacing-xl);
-  --km-menu-disabled-opacity: var(--wtv-context-menu-disabled-opacity);
+  /* --wtv-context-menu-* -> core's private --_km-menu-* (no fallback; inherited into
+     the shadow-local menu). Stacking follows the tree's z-index scale. */
+  --_km-menu-z-index: var(--wtv-z-index-dropdown);
+  --_km-menu-bg: var(--wtv-context-menu-bg);
+  --_km-menu-hover-bg: var(--wtv-context-menu-bg-hover);
+  --_km-menu-hover-color: var(--wtv-context-menu-hover-color);
+  --_km-menu-text-color: var(--wtv-context-menu-text-color);
+  --_km-menu-border: var(--wtv-context-menu-border);
+  --_km-menu-border-radius: var(--wtv-context-menu-border-radius);
+  --_km-menu-shadow: var(--wtv-context-menu-shadow);
+  --_km-menu-min-width: var(--wtv-context-menu-min-width);
+  --_km-menu-padding: var(--wtv-context-menu-padding);
+  --_km-menu-font-size: var(--wtv-context-menu-font-size);
+  --_km-menu-item-padding: var(--wtv-context-menu-item-padding);
+  --_km-menu-item-gap: var(--wtv-context-menu-item-gap);
+  --_km-menu-toggled-color: var(--wtv-context-menu-toggled-color);
+  --_km-menu-icon-size: var(--wtv-context-menu-icon-width);
+  --_km-menu-icon-font-size: var(--wtv-context-menu-icon-font-size);
+  --_km-menu-arrow-font-size: var(--wtv-context-menu-arrow-font-size);
+  --_km-menu-shortcut-color: var(--wtv-context-menu-shortcut-color);
+  --_km-menu-danger-color: var(--wtv-context-menu-danger-color);
+  --_km-menu-danger-hover-bg: var(--wtv-context-menu-danger-bg-hover);
+  --_km-menu-divider-color: var(--wtv-context-menu-divider-color);
+  --_km-menu-divider-margin: var(--wtv-context-menu-divider-margin);
+  --_km-menu-disabled-opacity: var(--wtv-context-menu-disabled-opacity);
 
   /* ==========================================================================
      LOADING OVERLAY

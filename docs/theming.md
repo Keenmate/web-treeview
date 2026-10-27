@@ -179,29 +179,42 @@ so retinting a glow colour retints its arrow too.
 
 ### Context menu
 
-Each variable defaults to the corresponding higher-order `--wtv-*` variable, so the menu inherits the tree's theme by default but can be styled independently.
+The menu is core's shared menu. Every value resolves, highest precedence first:
+**`--wtv-context-menu-*`** (this tree) → **`--km-menu-*`** (every KeenMate menu on the page) →
+**`--base-*`** (theme) → core's default. The `--wtv-context-menu-*` variables are unset by
+default (the tree maps each onto core's private `--_km-menu-*` with no fallback), so a
+page-wide `--km-menu-*` reaches the tree's menu:
+
+```css
+:root { --km-menu-bg: #fffbe6; }                    /* every menu on the page */
+web-treeview.files { --wtv-context-menu-bg: #eef; } /* just this tree's menu */
+```
+
+The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships in
+`@keenmate/web-components-core/component-variables.manifest.json`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-context-menu-bg` | `--base-dropdown-bg` \| `= --wtv-bg-color` | Menu background |
-| `--wtv-context-menu-bg-hover` | `= --wtv-hover-bg` | Item hover background |
-| `--wtv-context-menu-text-color` | `= --wtv-text-color` | Menu text color |
-| `--wtv-context-menu-border` | `--base-dropdown-border` \| `--wtv-border-width solid --wtv-border-color` | Menu border |
-| `--wtv-context-menu-border-radius` | `= --wtv-border-radius-sm` | Menu border radius |
+| `--wtv-context-menu-bg` | unset → `--km-menu-bg` | Menu background |
+| `--wtv-context-menu-bg-hover` | unset → `--km-menu-hover-bg` | Item hover background |
+| `--wtv-context-menu-hover-color` | unset → `--km-menu-hover-color` | Item text color on hover (default unchanged) |
+| `--wtv-context-menu-text-color` | unset → `--km-menu-text-color` | Menu text color |
+| `--wtv-context-menu-border` | unset → `--km-menu-border` | Menu border |
+| `--wtv-context-menu-border-radius` | unset → `--km-menu-border-radius` | Menu border radius |
 | `--wtv-context-menu-shadow` | `--base-dropdown-box-shadow` \| `0 2px 10px rgba(0,0,0,0.15)` | Menu shadow |
-| `--wtv-context-menu-min-width` | `calc(--wtv-rem * 15)` | Menu min width (~150px) |
-| `--wtv-context-menu-padding` | `--wtv-spacing-sm 0` | Menu padding |
-| `--wtv-context-menu-font-size` | `= --wtv-font-size-sm` | Menu font size |
-| `--wtv-context-menu-item-padding` | `--wtv-spacing-md --wtv-spacing-xl` | Item padding |
-| `--wtv-context-menu-item-gap` | `= --wtv-spacing-md` | Gap between icon, label, shortcut |
-| `--wtv-context-menu-icon-width` | `= --wtv-icon-size` | Item icon column width |
-| `--wtv-context-menu-icon-font-size` | `= --wtv-font-size-xs` | Item icon font size |
-| `--wtv-context-menu-arrow-font-size` | `= --wtv-font-size-xs` | Submenu arrow font size |
-| `--wtv-context-menu-danger-color` | `= --wtv-danger-text-color` | Danger item text color |
+| `--wtv-context-menu-min-width` | unset → `--km-menu-min-width` | Menu min width |
+| `--wtv-context-menu-padding` | unset → `--km-menu-padding` | Menu padding |
+| `--wtv-context-menu-font-size` | unset → `--km-menu-font-size` | Menu font size |
+| `--wtv-context-menu-item-padding` | unset → `--km-menu-item-padding` | Item padding |
+| `--wtv-context-menu-item-gap` | unset → `--km-menu-item-gap` | Gap between icon, label, shortcut |
+| `--wtv-context-menu-icon-width` | unset → `--km-menu-icon-size` | Item icon column width |
+| `--wtv-context-menu-icon-font-size` | unset → `--km-menu-icon-font-size` | Item icon font size |
+| `--wtv-context-menu-arrow-font-size` | unset → `--km-menu-arrow-font-size` | Submenu arrow font size |
+| `--wtv-context-menu-danger-color` | unset → `--km-menu-danger-color` | Danger item text color |
 | `--wtv-context-menu-danger-bg-hover` | `--base-danger-bg-subtle` \| `danger 10%` | Danger item hover background |
-| `--wtv-context-menu-shortcut-color` | `= --wtv-text-color-2` | Optional: shortcut hint color |
-| `--wtv-context-menu-divider-color` | `= --wtv-border-color` | Divider line color |
-| `--wtv-context-menu-divider-margin` | `--wtv-spacing-sm 0` | Divider margin |
+| `--wtv-context-menu-shortcut-color` | unset → `--km-menu-shortcut-color` | Optional: shortcut hint color |
+| `--wtv-context-menu-divider-color` | unset → `--km-menu-divider-color` | Divider line color |
+| `--wtv-context-menu-divider-margin` | unset → `--km-menu-divider-margin` | Divider margin |
 | `--wtv-context-menu-disabled-opacity` | `--base-disabled-opacity` \| `0.5` | Disabled item opacity |
 
 ### Loading

@@ -309,19 +309,26 @@ Classes (core `/menu`): `.km-menu` (`role="menu"`), `.km-menu--submenu`,
 (`--named`), `.km-menu__loading`. They replace the old `.wtv__context-menu*` classes
 (see CHANGELOG for the mapping).
 
-Theme the menu with the `--wtv-context-menu-*` variables — the tree maps them onto core's
-`--km-menu-*` (you can also set a `--km-menu-*` variable directly on the element):
+Theme the menu with the `--wtv-context-menu-*` variables (this tree only) or with core's
+`--km-menu-*` on `:root` (every KeenMate menu on the page). Precedence: `--wtv-context-menu-*`
+→ `--km-menu-*` → `--base-*` → core default. The tree maps each `--wtv-context-menu-*` onto
+core's private `--_km-menu-*` with no fallback, so an unset one falls through:
+
+```css
+:root { --km-menu-bg: #fffbe6; }                    /* every menu on the page */
+web-treeview.files { --wtv-context-menu-bg: #eef; } /* just this tree's menu */
+```
 
 | `--wtv-context-menu-*` | → `--km-menu-*` |
 |---|---|
-| `bg` / `bg-hover` / `text-color` | `bg` / `hover-bg` / `text-color` |
+| `bg` / `bg-hover` / `hover-color` / `text-color` | `bg` / `hover-bg` / `hover-color` / `text-color` |
 | `border` / `border-radius` / `shadow` | `border` / `border-radius` / `shadow` |
 | `min-width` / `padding` / `font-size` | `min-width` / `padding` / `font-size` |
 | `item-padding` / `item-gap` | `item-padding` / `item-gap` |
 | `toggled-color` | `toggled-color` |
-| `icon-width` / `icon-font-size` | `icon-size` / `icon-font-size` (+ `divider-label-font-size`) |
+| `icon-width` / `icon-font-size` | `icon-size` / `icon-font-size` |
 | `arrow-font-size` | `arrow-font-size` |
-| `shortcut-color` | `shortcut-color` (default `--wtv-text-color-2`) |
+| `shortcut-color` | `shortcut-color` |
 | `danger-color` / `danger-bg-hover` | `danger-color` / `danger-hover-bg` |
 | `divider-color` / `divider-margin` | `divider-color` / `divider-margin` |
 | `disabled-opacity` | `disabled-opacity` |

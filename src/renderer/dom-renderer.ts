@@ -1833,7 +1833,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         : undefined,
       runAction: (item, { triggerElement, sourceEvent }) =>
         config.activateContextMenuItem?.(item as TreeMenuItem<T>, ctx, triggerElement, sourceEvent),
-      onClose: () => {
+      closeCallback: () => {
         if (this._menu !== menu) return; // replaced by a newer open
         this._menu = null;
         this._menuKey = null;

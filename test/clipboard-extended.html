@@ -20,7 +20,7 @@
 
         <div class="card">
             <div class="controls">
-                <button id="btn-delete-api">deleteNodes(1.2)</button>
+                <button id="btn-delete-api">removeNodes(1.2)</button>
                 <button id="btn-copy-reports">Copy 1.1</button>
                 <button id="btn-paste-images">Paste into 2</button>
                 <label><input type="checkbox" id="block-delete"> beforeDelete → block</label>
@@ -88,8 +88,8 @@
             };
 
             document.getElementById('btn-delete-api').addEventListener('click', () => {
-                const r = tree.deleteNodes(['1.2']);
-                plog(`delete removed=${r.removed} blocked=${r.blocked}`);
+                const r = tree.removeNodes(['1.2']);
+                plog(`remove removed=${r.removed} failed=${r.failed}`);
             });
             document.getElementById('btn-copy-reports').addEventListener('click', () => tree.copyNodes(['1.1']));
             document.getElementById('btn-paste-images').addEventListener('click', () => {

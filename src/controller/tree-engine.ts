@@ -1119,15 +1119,15 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.tree?.collapseAll(nodePath, options);
   }
 
-  filterNodes(searchTextVal: string, searchOptions?: SearchOptions): void {
-    this.tree?.filterNodes(searchTextVal, searchOptions);
+  filterNodes(term: string, searchOptions?: SearchOptions): void {
+    this.tree?.filterNodes(term, searchOptions);
   }
 
   searchNodes(
-    searchTextVal: string | null | undefined,
+    term: string | null | undefined,
     searchOptions?: SearchOptions
   ): LTreeNode<T>[] {
-    return this.tree?.searchNodes(searchTextVal, searchOptions) || [];
+    return this.tree?.searchNodes(term, searchOptions) || [];
   }
 
   getChildren(parentPath: string): LTreeNode<T>[] {
@@ -1651,9 +1651,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return result;
   }
 
-  deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
     this._skipInsertArray = true;
-    const result = this.tree?.deleteBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
+    const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
     return result;
   }
@@ -2114,7 +2114,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Replace the entire checkbox set with the given paths.
-   *  Equivalent to clearChecked() + checkNodes(paths).
+   *  Equivalent to uncheckAll() + checkNodes(paths).
    *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
@@ -2154,16 +2154,19 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._scheduleNotify();
   }
 
-  /** Clear the checked set. Pass `paths` to uncheck only those nodes, or omit
-   *  to clear all. Pass `{ silent: true }` to skip `checkedChangeCallback`. */
-  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
-    if (paths && paths.length > 0) {
-      const changed = this._applyCheckboxState(paths, false);
-      if (changed && !options?.silent) this._emitCheckedChange();
-      this.tree.refresh();
-      this._scheduleNotify();
-      return;
-    }
+  /** Uncheck the given nodes (cascades in cascade mode). Pass `{ silent: true }`
+   *  to skip `checkedChangeCallback`. */
+  uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
+    if (!paths || paths.length === 0) return;
+    const changed = this._applyCheckboxState(paths, false);
+    if (changed && !options?.silent) this._emitCheckedChange();
+    this.tree.refresh();
+    this._scheduleNotify();
+  }
+
+  /** Uncheck every node (empty the checked set). Pass `{ silent: true }` to skip
+   *  `checkedChangeCallback`. */
+  uncheckAll(options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
     if (!options?.silent) this._emitCheckedChange();
@@ -3075,12 +3078,33 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /**
-   * Remove nodes (and their descendants) from the tree. Defaults to the current
-   * selection (selected set, else focused node). Runs `beforeDeleteCallback` first
-   * (narrow or block), removes only top-level subtrees, clears selection + focus of
-   * anything removed, and fires `onDelete` with PRE-REMOVAL node snapshots.
+   * Programmatic removal of nodes (and their descendants): top-level subtrees only,
+   * selection + focus are cleared when anything was removed. No `beforeDeleteCallback`,
+   * no `node-delete` (that is the user Delete command, {@link runDeleteCommand}).
    */
-  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
+  removeNodes(paths: string[]): { removed: number; failed: number } {
+    const targets = this._topLevelOf(paths ?? []);
+    let removed = 0;
+    let failed = 0;
+    for (const p of targets) {
+      if (this.removeNode(p, true).success) removed++;
+      else failed++;
+    }
+    if (removed > 0) {
+      this.clearSelection();
+      this.clearFocus();
+    }
+    return { removed, failed };
+  }
+
+  /**
+   * The user **Delete command** (Delete key, context-menu `delete`): defaults to the
+   * current selection (selected set, else focused node). Runs `beforeDeleteCallback`
+   * first (narrow or block), removes only top-level subtrees, clears selection +
+   * focus of anything removed, and fires `onDelete` (`node-delete`) with PRE-REMOVAL
+   * node snapshots. Programmatic removal is {@link removeNodes} (no veto, no event).
+   */
+  runDeleteCommand(paths?: string[]): { removed: number; blocked: number } {
     let targets = this._topLevelOf(paths ?? this._shortcutSelectionPaths());
     if (targets.length === 0) return { removed: 0, blocked: 0 };
 
@@ -3151,7 +3175,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // Delete selection — plain Delete only (Shift+Delete was cut, handled above).
     if (event.key === 'Delete' && !event.shiftKey) {
       if (!this._shortcutSelectionPaths().length) return false;
-      this.deleteNodes();
+      this.runDeleteCommand();
       return true;
     }
     if (event.key === 'Escape' && getClipboardOp() === 'cut') {

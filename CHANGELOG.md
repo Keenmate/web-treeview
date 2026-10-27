@@ -19,6 +19,17 @@ aliases — rename on upgrade.
   hold and release the first build.
 - **`el.destroy()`** (core) now releases the tree engine, renderer and clipboard registration
   (`destroyCallback()`); a DOM move still keeps everything.
+- **Checkbox family is complete and symmetric:** `checkNode` / `uncheckNode` / `checkNodes` /
+  **`uncheckNodes(paths, options?)`** / `checkAll` / **`uncheckAll(options?)`**.
+  `clearChecked(paths?, options?)` is removed — `clearChecked()` → `uncheckAll()`,
+  `clearChecked(paths)` → `uncheckNodes(paths)`.
+- **remove vs delete.** *remove* = programmatic, *delete* = the user's destructive command.
+  `deleteBranch(path, keepParent?)` → **`removeBranch`** (also on the `Ltree`);
+  `deleteNodes(paths?)` → **`removeNodes(paths)`**, which now removes **without**
+  `beforeDeleteCallback` and **without** `node-delete` and requires the paths (returns
+  `{ removed, failed }`, was `{ removed, blocked }`). The Delete key and the context-menu
+  `delete` built-in still run `beforeDeleteCallback` and fire `node-delete`.
+- **Search text is a `term`:** `filterNodes(term)` / `searchNodes(term)` (parameter rename only).
 
 ### Removed — BREAKING (in-tree debug aids)
 

@@ -526,7 +526,7 @@ export interface TreeEngineConfig<T> {
   onCopy?: (ctx: ClipboardEventContext<T>) => void;
   onCut?: (ctx: ClipboardEventContext<T>) => void;
   onPaste?: (result: PasteResult<T>) => void;
-  /** Fires after the built-in Delete (or deleteNodes()); nodes are pre-removal snapshots. */
+  /** Fires after the user Delete command (Delete key / context-menu delete); nodes are pre-removal snapshots. */
   onDelete?: (ctx: ClipboardEventContext<T>) => void;
   /** OUTPUT (egress) transform — per-node clean/redact at snapshot time (copy/cut
    *  and the capture side of a copy-drop), before data hits the shared clipboard. */

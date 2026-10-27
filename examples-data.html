@@ -129,7 +129,7 @@ tree.data = [
         <!-- DS04 · Branch Operations -->
         <div class="card">
             <h2>DS04 · Branch Operations</h2>
-            <p><code>insertBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>deleteBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
+            <p><code>insertBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>removeBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
 
             <div class="controls">
                 <button onclick="insertTeam()">Insert branch under "Engineering"</button>
@@ -153,14 +153,14 @@ tree.data = [
 //   every item is placed by its own path (whole subtrees OK); an item with a
 //   missing/empty path, a duplicate path, or a path not under parentPath is in `failed`
 // replaceBranch(parentPath, data) → the same + { removed, added }
-// deleteBranch(path, keepParent?) → { success, count }
+// removeBranch(path, keepParent?) → { success, count }
 
 const res = tree.insertBranch('1.1', [
   { id: 101, path: '1.1.9',   name: 'New Team' },
   { id: 102, path: '1.1.9.1', name: 'Member A' }
 ]);
-// deleteBranch('3')          → remove "Sales" and all descendants
-// deleteBranch('1.2', true)  → clear children, keep the "Design" node</code></pre>
+// removeBranch('3')          → remove "Sales" and all descendants
+// removeBranch('1.2', true)  → clear children, keep the "Design" node</code></pre>
             </div>
         </div>
 
@@ -447,13 +447,13 @@ tree.displayValueMember = 'label';</code></pre>
             };
 
             window.clearDesign = () => {
-                const res = ds04.deleteBranch('1.2', true);
-                logBranch(`deleteBranch('1.2', keepParent=true) → ${JSON.stringify(res)}`);
+                const res = ds04.removeBranch('1.2', true);
+                logBranch(`removeBranch('1.2', keepParent=true) → ${JSON.stringify(res)}`);
             };
 
             window.deleteSales = () => {
-                const res = ds04.deleteBranch('3');
-                logBranch(`deleteBranch('3') → ${JSON.stringify(res)}`);
+                const res = ds04.removeBranch('3');
+                logBranch(`removeBranch('3') → ${JSON.stringify(res)}`);
             };
 
             window.resetBranch = () => {

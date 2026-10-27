@@ -1743,7 +1743,7 @@ export function createLTree<T>(
 		 * @param keepParent - If true, only remove children, keep the parent node
 		 * @returns Object with success status and count of removed nodes
 		 */
-		deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+		removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
 			const node = this.getNodeByPath(path);
 			if (!node) {
 				return { success: false, count: 0, error: 'Node not found: ' + path };

@@ -124,9 +124,9 @@ export interface Ltree<T> {
 
 	insertTreeNode(parentPath: string, newNode: LTreeNode<T>, noEmitChanges?: boolean): string | null;
 
-	filterNodes(_searchText: string, _searchOptions?: SearchOptions): void;
+	filterNodes(_term: string, _searchOptions?: SearchOptions): void;
 
-	searchNodes(_searchText: string | null | undefined, _searchOptions?: SearchOptions): LTreeNode<T>[];
+	searchNodes(_term: string | null | undefined, _searchOptions?: SearchOptions): LTreeNode<T>[];
 
 	createFilteredTree(targetPaths: string[]): void;
 
@@ -195,7 +195,7 @@ export interface Ltree<T> {
 	// Bulk operations
 	insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
 	replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-	deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+	removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 
 	// State persistence methods
 	getExpandedPaths(): string[];

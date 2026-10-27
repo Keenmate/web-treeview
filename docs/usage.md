@@ -375,8 +375,8 @@ All methods are available on the element **and** on `el.controller`.
 | `collapseNodes` | `(nodePath \| string[], options?)` | Collapse node(s) |
 | `toggleNodeExpanded` | `(path)` | Toggle (honors `isAccordionExpand`) |
 | `getExpandedPaths` / `setExpandedPaths` | `(): string[]` / `(paths[])` | Read / restore the expanded set |
-| `filterNodes` | `(searchText)` | Filter tree by search text |
-| `searchNodes` | `(searchText): LTreeNode[]` | Search without filtering |
+| `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
+| `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
 | `getNodeByPath` | `(path): LTreeNode \| null` | Look up a node |
 | `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
@@ -403,7 +403,8 @@ All methods are available on the element **and** on `el.controller`.
 | `setCheckedPaths` | `(paths[], options?)` | Replace the entire checkbox set |
 | `checkAll` | `(options?)` | Check every selectable node |
 | `uncheckNode` | `(path, options?)` | Uncheck one node (cascades in cascade mode) |
-| `clearChecked` | `(paths?, options?)` | Uncheck the given paths, or all when omitted |
+| `uncheckNodes` | `(paths[], options?)` | Uncheck nodes (cascades in cascade mode) |
+| `uncheckAll` | `(options?)` | Uncheck every node |
 | `getCheckedNodes` | `(): LTreeNode[]` | All checked nodes |
 | `getCheckedPaths` | `(): Set<string>` | All checked paths |
 | `isNodeChecked` | `(path): boolean` | Check checked-set membership |
@@ -412,7 +413,7 @@ All methods are available on the element **and** on `el.controller`.
 | `copyNodes` | `(paths?)` | Copy selected/specified nodes to clipboard |
 | `cutNodes` | `(paths?)` | Cut selected/specified nodes to clipboard |
 | `pasteNodes` | `(targetPath, transform?, position?): PasteResult` | Paste clipboard at target; `transform({ data, … })`. `PasteResult.count` + `PasteResult.skipped` |
-| `deleteNodes` | `(paths?)` | Delete selected/specified nodes (honors `beforeDeleteCallback`, fires `node-delete`) |
+| `removeNodes` | `(paths[]): { removed, failed }` | Remove nodes (+ descendants) programmatically — no `beforeDeleteCallback`, no `node-delete` (those belong to the user Delete command: Delete key / context-menu `delete`) |
 | `cancelCut` | `()` | Cancel pending cut |
 | `hasClipboardContent` / `getClipboardOperation` | `(): boolean` / `(): 'copy' \| 'cut' \| null` | Clipboard state |
 | `navTo` | `(path)` | Focus a specific node |
@@ -428,7 +429,7 @@ All methods are available on the element **and** on `el.controller`.
 | `navSelectPageDown` / `navSelectPageUp` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
 | `insertBranch` | `(parentPath, data[]): InsertBranchResult` | Insert a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
 | `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `insertBranch`); adds `removed` / `added` |
-| `deleteBranch` | `(path, keepParent?): result` | Delete node and descendants |
+| `removeBranch` | `(path, keepParent?): result` | Remove a node and its descendants (or only the descendants with `keepParent`) |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
 | `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |

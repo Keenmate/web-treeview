@@ -633,12 +633,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.collapseNodes(nodePath, options);
   }
 
-  filterNodes(searchText: string): void {
-    this.#live?.filterNodes(searchText);
+  filterNodes(term: string): void {
+    this.#live?.filterNodes(term);
   }
 
-  searchNodes(searchText: string | null): LTreeNode<T>[] {
-    return this.#live?.searchNodes(searchText) ?? [];
+  searchNodes(term: string | null): LTreeNode<T>[] {
+    return this.#live?.searchNodes(term) ?? [];
   }
 
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean> {
@@ -752,8 +752,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.replaceBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Not initialized' };
   }
 
-  deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
-    return this.#live?.deleteBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
+  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+    return this.#live?.removeBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
   }
 
   // ── Selection (focus + multi-select) ────────────────────────────────────────
@@ -812,8 +812,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.uncheckNode(path, options);
   }
 
-  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
-    this.#live?.clearChecked(paths, options);
+  uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
+    this.#live?.uncheckNodes(paths, options);
+  }
+
+  uncheckAll(options?: TreeMutationOptions): void {
+    this.#live?.uncheckAll(options);
   }
 
   getCheckedNodes(): LTreeNode<T>[] {
@@ -896,8 +900,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.cancelCut();
   }
 
-  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
-    return this.#live?.deleteNodes(paths) ?? { removed: 0, blocked: 0 };
+  /** Programmatic removal (no `beforeDeleteCallback`, no `node-delete` — those belong to the user Delete command). */
+  removeNodes(paths: string[]): { removed: number; failed: number } {
+    return this.#live?.removeNodes(paths) ?? { removed: 0, failed: 0 };
   }
 
   hasClipboardContent(): boolean {

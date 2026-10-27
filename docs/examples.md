@@ -134,7 +134,7 @@ tree.copyNodes();             // Copy selected nodes
 tree.cutNodes();              // Cut (dimmed via --wtv-cut-opacity)
 const result = tree.pasteNodes('1.2'); // Paste at target
 // result = { success, count, skipped, error?, entries?, operation? }
-tree.deleteNodes();           // Delete selected (or specified) nodes
+tree.removeNodes([...tree.selectedPaths]); // Remove nodes (no veto / node-delete — that is the Delete key)
 tree.cancelCut();             // Cancel a pending cut
 
 // Built-in keyboard shortcuts when the tree has focus:

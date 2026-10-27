@@ -71,7 +71,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Ctrl+click / Shift+click multi-selection | ✓ | `interaction.spec.ts` | `interaction.html` |
 | Double-click (`node-double-click`); an intervening Ctrl/toggle click breaks it (NOTES #25) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Selected / focused markers, `selected-node-class`, `focused-node-class` | ✓ | `selection-focus.spec.ts`, `focused-style-bug.spec.ts` | `selection-focus.html` |
-| `selectNode` / `selectNodes` / `clearSelection` / `clearChecked` loud + silent | ✓ | `silent-selection.spec.ts` | `silent-selection.html` |
+| `selectNode` / `selectNodes` / `clearSelection` / `uncheckAll` loud + silent | ✓ | `silent-selection.spec.ts` | `silent-selection.html` |
 | `rangeSelectionMode` visual | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `rangeSelectionMode` logical includes collapsed descendants, forwards + backwards (NOTES #7) | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
@@ -114,13 +114,13 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| `insertBranch` / `replaceBranch` / `deleteBranch` | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
+| `insertBranch` / `replaceBranch` / `removeBranch` | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | `insertBranch` failed[] (mixed validity, empty / duplicate / not-under-parent / orphan), subtree insert, warn once; `replaceBranch` shape (NOTES #1) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | `replaceBranch` notifies the tree once (NOTES #2) | ✓ | `branch-operations.spec.ts` | (LTree direct) |
 | Cut / paste branch, paste-into-self error | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Copy/paste/cut events, `beforeCopyCallback`, `beforePasteCallback` | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | `nodeInputTransformationCallback` null skips | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
-| `deleteNodes()` API | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
+| `removeNodes()` API (no veto / no `node-delete`) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `beforeCutCallback` veto / override, `nodeOutputTransformationCallback` on copy-paste | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `cancelCut` / `hasClipboardContent` / `getClipboardOperation` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-paste=false` (event with entries, no mutation) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |

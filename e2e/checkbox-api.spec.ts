@@ -72,6 +72,20 @@ test.describe('checked-set API (cascade)', () => {
     expect(await page.evaluate(() => (window as any).tree.isNodeChecked('3'))).toBe(false);
   });
 
+  test('uncheckNodes unchecks several subtrees; uncheckAll empties the set (symmetric to checkNodes / checkAll)', async ({ page }) => {
+    await load(page);
+    await call(page, 'checkAll');
+    await call(page, 'uncheckNodes', ['1', '2.2']);
+    expect(await emitted(page)).toEqual(['2.1']);
+    await expect(box(page, '1.2')).not.toBeChecked();
+    expect(await lastChecked(page)).toBe('checked-change:2.1');
+    await call(page, 'uncheckNodes', []);
+    expect(await emitted(page)).toEqual(['2.1']);
+    await call(page, 'uncheckAll');
+    expect(await emitted(page)).toEqual([]);
+    await expect(box(page, '2.1')).not.toBeChecked();
+  });
+
   test('silent variants skip checked-change but update state', async ({ page }) => {
     await load(page);
     await call(page, 'checkNode', '2', { silent: true });

@@ -23,9 +23,9 @@
             <button data-testid="btn-insert-under-3">insertBranch under 3</button>
             <button data-testid="btn-replace-1">replaceBranch 1</button>
             <button data-testid="btn-replace-2.1">replaceBranch 2.1</button>
-            <button data-testid="btn-delete-2.1">deleteBranch 2.1</button>
-            <button data-testid="btn-delete-2.1-keepParent">deleteBranch 2.1 (keepParent)</button>
-            <button data-testid="btn-delete-3">deleteBranch 3</button>
+            <button data-testid="btn-delete-2.1">removeBranch 2.1</button>
+            <button data-testid="btn-delete-2.1-keepParent">removeBranch 2.1 (keepParent)</button>
+            <button data-testid="btn-delete-3">removeBranch 3</button>
             <button data-testid="btn-cut-2.1">cut 2.1</button>
             <button data-testid="btn-cut-1.1">cut 1.1</button>
             <button data-testid="btn-paste-3">paste under 3</button>
@@ -199,9 +199,9 @@
             wire('btn-replace-2.1', () => replaceUnder('2.1'));
 
             // ── Delete ──
-            wire('btn-delete-2.1', () => recordDelete(tree, 'deleteBranch', tree.deleteBranch('2.1')));
-            wire('btn-delete-2.1-keepParent', () => recordDelete(tree, 'deleteBranch(keepParent)', tree.deleteBranch('2.1', true)));
-            wire('btn-delete-3', () => recordDelete(tree, 'deleteBranch', tree.deleteBranch('3')));
+            wire('btn-delete-2.1', () => recordDelete(tree, 'removeBranch', tree.removeBranch('2.1')));
+            wire('btn-delete-2.1-keepParent', () => recordDelete(tree, 'removeBranch(keepParent)', tree.removeBranch('2.1', true)));
+            wire('btn-delete-3', () => recordDelete(tree, 'removeBranch', tree.removeBranch('3')));
 
             // ── Cut / Paste ──
             const doCut = (sourcePath) => {
@@ -236,7 +236,7 @@
                     else newPath = newRootPath + n.path.substring(oldRootPath.length);
                     return { ...n, id: nextId++, path: newPath };
                 });
-                const delResult = tree.deleteBranch(sourcePath);
+                const delResult = tree.removeBranch(sourcePath);
                 recordDelete(tree, 'paste:delete', delResult);
                 const insResult = tree.insertBranch(targetParentPath, rewritten);
                 recordInsert(tree, 'paste:insert', rewritten.length, insResult);
@@ -271,7 +271,7 @@
             });
 
             wire('btn-fail-delete-path', () => {
-                recordDelete(tree, 'deleteBranch(invalid-path)', tree.deleteBranch('999.999'));
+                recordDelete(tree, 'removeBranch(invalid-path)', tree.removeBranch('999.999'));
             });
 
             // ── Reset ──

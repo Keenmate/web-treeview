@@ -45,8 +45,8 @@ export interface TreeViewController<T = any> {
   getExpandedPaths(): string[];
   setExpandedPaths(paths: string[]): void;
   // search / scroll
-  filterNodes(searchText: string): void;
-  searchNodes(searchText: string | null): LTreeNode<T>[];
+  filterNodes(term: string): void;
+  searchNodes(term: string | null): LTreeNode<T>[];
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean>;
   // read
   getNodeByPath(path: string): LTreeNode<T> | null;
@@ -69,7 +69,7 @@ export interface TreeViewController<T = any> {
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
   insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
   // selection
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;
@@ -85,7 +85,8 @@ export interface TreeViewController<T = any> {
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void;
   checkAll(options?: TreeMutationOptions): void;
   uncheckNode(path: string, options?: TreeMutationOptions): void;
-  clearChecked(paths?: string[], options?: TreeMutationOptions): void;
+  uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
+  uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
   getCheckedPaths(): Set<string>;
   isNodeChecked(path: string): boolean;
@@ -117,7 +118,7 @@ export interface TreeViewController<T = any> {
   cutNodes(paths?: string[]): void;
   pasteNodes(targetPath: string, transform?: NodeTransformCallback<T> | null, position?: DropPosition): PasteResult<T>;
   cancelCut(): void;
-  deleteNodes(paths?: string[]): { removed: number; blocked: number };
+  removeNodes(paths: string[]): { removed: number; failed: number };
   hasClipboardContent(): boolean;
   getClipboardOperation(): 'copy' | 'cut' | null;
   // context menu

@@ -2,7 +2,7 @@ import { test, expect, Page } from './fixtures';
 
 /**
  * E2E coverage for the `silent: true` option on selectNode / selectNodes /
- * clearSelection / clearChecked.
+ * clearSelection / uncheckAll.
  *
  * The fixture counts node-clicked / selection-change / checked-change events
  * (the web-component's DOM-level events, equivalent to the Svelte build's
@@ -136,9 +136,9 @@ test.describe('clearSelection', () => {
   });
 });
 
-// ── clearChecked ───────────────────────────────────────────────────────────
+// ── uncheckAll ───────────────────────────────────────────────────────────
 
-test.describe('clearChecked', () => {
+test.describe('uncheckAll', () => {
   test('loud after checkbox check: fires checked-change; clears state', async ({ page }) => {
     await goto(page);
 

@@ -92,7 +92,7 @@ See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./d
 - **Three node states** — single focus (arrow keys, Home/End, PageUp/PageDown), selected set (Ctrl / Shift+click, Shift+Arrow/Home/End/PageUp/PageDown), checked set (checkboxes). Navigation methods are replaceable via `navigationOverrides`.
 - **Full drag and drop** — internal reorder, cross-tree drag, glow / floating drop zones, touch support, copy operations.
 - **Multi-level context menus** — viewport-aware positioning via Floating UI, keyboard shortcuts, named dividers, custom item rendering; entries are core action items (built-ins `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`, lazy submenus, an `action` event).
-- **Bulk operations** — `insertBranch`, `replaceBranch`, `deleteBranch` for efficient batch mutations.
+- **Bulk operations** — `insertBranch`, `replaceBranch`, `removeBranch` for efficient batch mutations.
 - **Clipboard** — `copyNodes` / `cutNodes` / `pasteNodes`, cross-tree paste, cut nodes dimmed via `--wtv-cut-opacity`.
 - **Full-text search** — FlexSearch-powered indexing with filter and highlight modes.
 - **Theming** — ~110 CSS variables, Strategy B dark mode (auto-flip via `color-scheme` + `light-dark()`), `--base-*` design-system tokens, `@layer` cascade contract.

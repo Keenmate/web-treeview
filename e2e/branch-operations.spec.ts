@@ -3,12 +3,12 @@ import { test, expect, Page, Locator, nodeByPath } from './fixtures';
 /**
  * E2E coverage for the branch-operations test fixture at /test/branch-operations.html.
  *
- * Exercises insertBranch / replaceBranch / deleteBranch plus a minimal
+ * Exercises insertBranch / replaceBranch / removeBranch plus a minimal
  * cut/paste flow and failure-path buttons.
  *
  * Return shapes: insertBranch → {success, count, failed[], parentNode, error?}
  * (svelte-treeview's InsertBranchResult); replaceBranch adds {removed, added};
- * deleteBranch → {success, count, error?}.
+ * removeBranch → {success, count, error?}.
  */
 
 const PAGE = '/test/branch-operations.html';
@@ -105,13 +105,13 @@ test.describe('replaceBranch', () => {
   });
 });
 
-// ── deleteBranch ───────────────────────────────────────────────────────────
+// ── removeBranch ───────────────────────────────────────────────────────────
 
-test.describe('deleteBranch', () => {
+test.describe('removeBranch', () => {
   test('deletes "2.1" subtree — removedCount=3 (self + 2 grandchildren)', async ({ page }) => {
     await page.getByTestId('btn-delete-2.1').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('deleteBranch');
+    await expect(page.getByTestId('last-op-name')).toHaveText('removeBranch');
     await expect(page.getByTestId('last-op-success')).toHaveText('true');
     await expect(page.getByTestId('last-op-removed')).toHaveText('3');
 
@@ -126,7 +126,7 @@ test.describe('deleteBranch', () => {
   test('keepParent=true removes only descendants', async ({ page }) => {
     await page.getByTestId('btn-delete-2.1-keepParent').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('deleteBranch(keepParent)');
+    await expect(page.getByTestId('last-op-name')).toHaveText('removeBranch(keepParent)');
     await expect(page.getByTestId('last-op-success')).toHaveText('true');
     await expect(page.getByTestId('last-op-removed')).toHaveText('2');
 
@@ -135,7 +135,7 @@ test.describe('deleteBranch', () => {
     await expect(nodeByPath(page, '2.1.2')).toHaveCount(0);
   });
 
-  test('deleteBranch on a leaf removes only that leaf', async ({ page }) => {
+  test('removeBranch on a leaf removes only that leaf', async ({ page }) => {
     await page.getByTestId('btn-delete-3').click();
     await expect(page.getByTestId('last-op-removed')).toHaveText('1');
     await expect(nodeByPath(page, '3')).toHaveCount(0);
@@ -224,12 +224,12 @@ test.describe('failure cases', () => {
     await expect(page.getByTestId('total-node-count')).toHaveText(String(totalBefore));
   });
 
-  test('deleteBranch on a missing path returns success=false with an error message', async ({ page }) => {
+  test('removeBranch on a missing path returns success=false with an error message', async ({ page }) => {
     const totalBefore = await readCount(page, 'total-node-count');
 
     await page.getByTestId('btn-fail-delete-path').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('deleteBranch(invalid-path)');
+    await expect(page.getByTestId('last-op-name')).toHaveText('removeBranch(invalid-path)');
     await expect(page.getByTestId('last-op-success')).toHaveText('false');
     await expect(page.getByTestId('last-op-removed')).toHaveText('0');
     await expect(page.getByTestId('last-op-error')).not.toHaveText('');

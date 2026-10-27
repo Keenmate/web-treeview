@@ -30,8 +30,8 @@
             <button data-testid="select-many-silent">selectNodes(['1.1','1.2']) silent</button>
             <button data-testid="clear-loud">clearSelection() loud</button>
             <button data-testid="clear-silent">clearSelection() silent</button>
-            <button data-testid="clear-checked-loud">clearChecked() loud</button>
-            <button data-testid="clear-checked-silent">clearChecked() silent</button>
+            <button data-testid="clear-checked-loud">uncheckAll() loud</button>
+            <button data-testid="clear-checked-silent">uncheckAll() silent</button>
         </div>
 
         <div class="tree-container">
@@ -137,8 +137,8 @@
             wire('select-many-silent',  () => tree.selectNodes(['1.1', '1.2'], { silent: true }));
             wire('clear-loud',             () => tree.clearSelection());
             wire('clear-silent',           () => tree.clearSelection(undefined, { silent: true }));
-            wire('clear-checked-loud',   () => tree.clearChecked());
-            wire('clear-checked-silent', () => tree.clearChecked(undefined, { silent: true }));
+            wire('clear-checked-loud',   () => tree.uncheckAll());
+            wire('clear-checked-silent', () => tree.uncheckAll({ silent: true }));
         });
     </script>
     <style>

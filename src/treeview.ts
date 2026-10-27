@@ -28,13 +28,13 @@ const CONTROLLER_METHODS = [
   'setExpandedPaths', 'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getFocusedNode', 'getVisibleFlatNodes', 'getAllData', 'getTree',
   'getInsertResult', 'addNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
-  'applyChanges', 'insertBranch', 'replaceBranch', 'deleteBranch', 'selectNode', 'selectNodes',
+  'applyChanges', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'setSelectedPaths', 'selectAll', 'clearSelection', 'getSelectedNodes', 'getSelectedPaths', 'isNodeSelected',
-  'checkNode', 'checkNodes', 'setCheckedPaths', 'checkAll', 'uncheckNode', 'clearChecked', 'getCheckedNodes',
+  'checkNode', 'checkNodes', 'setCheckedPaths', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
   'getCheckedPaths', 'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
   'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
   'navSelectNext', 'navSelectPrev', 'navSelectFirst', 'navSelectLast', 'navSelectPageDown', 'navSelectPageUp', 'copyNodes', 'cutNodes',
-  'pasteNodes', 'cancelCut', 'deleteNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
+  'pasteNodes', 'cancelCut', 'removeNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
   'closeContextMenu',
 ] as const satisfies readonly (keyof TreeViewController)[];
 
@@ -47,7 +47,7 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
   getCheckedPaths: () => new Set(), isNodeChecked: () => false, hasClipboardContent: () => false,
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
   pasteNodes: () => ({ success: false, count: 0, skipped: 0, error: 'Not initialized' }),
-  deleteNodes: () => ({ removed: 0, blocked: 0 }),
+  removeNodes: () => ({ removed: 0, failed: 0 }),
 };
 
 /**
@@ -236,7 +236,7 @@ export class WebTreeView<T = any> {
       case 'copy': this.engine.copyNodes(paths); break;
       case 'cut': this.engine.cutNodes(paths); break;
       case 'paste': this.engine.pasteNodes(node.path); break;
-      case 'delete': this.engine.deleteNodes(paths); break;
+      case 'delete': this.engine.runDeleteCommand(paths); break;
       case 'expand': this.engine.expandNodes(node.path); break;
       case 'collapse': this.engine.collapseNodes(node.path); break;
     }
@@ -283,13 +283,13 @@ export class WebTreeView<T = any> {
     this.engine.collapseAll(nodePath, options);
   }
 
-  filterNodes(searchText: string, searchOptions?: SearchOptions): void {
-    this.engine.filterNodes(searchText, searchOptions);
+  filterNodes(term: string, searchOptions?: SearchOptions): void {
+    this.engine.filterNodes(term, searchOptions);
   }
 
-  searchNodes(searchText: string | null, searchOptions?: SearchOptions): LTreeNode<T>[] {
-    if (!searchText) return [];
-    return this.engine.searchNodes(searchText, searchOptions);
+  searchNodes(term: string | null, searchOptions?: SearchOptions): LTreeNode<T>[] {
+    if (!term) return [];
+    return this.engine.searchNodes(term, searchOptions);
   }
 
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean> {
@@ -403,8 +403,8 @@ export class WebTreeView<T = any> {
     return this.engine.replaceBranch(parentPath, data);
   }
 
-  deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
-    return this.engine.deleteBranch(path, keepParent);
+  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+    return this.engine.removeBranch(path, keepParent);
   }
 
   getExpandedPaths(): string[] {
@@ -479,8 +479,12 @@ export class WebTreeView<T = any> {
     this.engine.uncheckNode(path, options);
   }
 
-  clearChecked(paths?: string[], options?: TreeMutationOptions): void {
-    this.engine.clearChecked(paths, options);
+  uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
+    this.engine.uncheckNodes(paths, options);
+  }
+
+  uncheckAll(options?: TreeMutationOptions): void {
+    this.engine.uncheckAll(options);
   }
 
   getCheckedNodes(): LTreeNode<T>[] {
@@ -554,8 +558,8 @@ export class WebTreeView<T = any> {
     return this.engine.getClipboardOperation();
   }
 
-  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
-    return this.engine.deleteNodes(paths);
+  removeNodes(paths: string[]): { removed: number; failed: number } {
+    return this.engine.removeNodes(paths);
   }
 
   // ── Renderer swap ───────────────────────────────────────────────────

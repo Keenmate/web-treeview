@@ -406,7 +406,7 @@ export interface TreeViewConfig<T = any> {
   beforePasteCallback?: (
     ctx: BeforePasteCallbackContext<T>
   ) => { targetPath?: string; position?: DropPosition } | false | void;
-  /** Runs before the built-in Delete / `deleteNodes()` (synchronous): narrow (return path[]) or block (false). */
+  /** Runs before the user Delete command (Delete key / context-menu `delete`; synchronous): narrow (return path[]) or block (false). */
   beforeDeleteCallback?: (ctx: BeforeDeleteCallbackContext<T>) => string[] | false | void;
   /** OUTPUT (egress) transform — per-node clean/redact at snapshot time (copy/cut +
    *  the capture side of a copy-drop) before data hits the shared clipboard. `ctx.data`
@@ -515,8 +515,8 @@ export interface TreeViewMethods<T = any> {
     nodePath?: string | string[] | null,
     options?: { noEmit?: boolean }
   ): void;
-  filterNodes(searchText: string): void;
-  searchNodes(searchText: string | null): LTreeNode<T>[];
+  filterNodes(term: string): void;
+  searchNodes(term: string | null): LTreeNode<T>[];
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean>;
   closeContextMenu(): void;
   update(props: Partial<TreeViewConfig<T>>): void;
@@ -525,7 +525,7 @@ export interface TreeViewMethods<T = any> {
   // Bulk operations
   insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  deleteBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 
   // Selected set (UI multi-select — Ctrl/Shift+click)
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
@@ -543,7 +543,8 @@ export interface TreeViewMethods<T = any> {
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void;
   checkAll(options?: TreeMutationOptions): void;
   uncheckNode(path: string, options?: TreeMutationOptions): void;
-  clearChecked(paths?: string[], options?: TreeMutationOptions): void;
+  uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
+  uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
   getCheckedPaths(): Set<string>;
   isNodeChecked(path: string): boolean;
@@ -586,7 +587,7 @@ export interface TreeViewMethods<T = any> {
   getClipboardOperation(): 'copy' | 'cut' | null;
 
   // Delete (default = current selection). Fires beforeDeleteCallback + onDelete.
-  deleteNodes(paths?: string[]): { removed: number; blocked: number };
+  removeNodes(paths: string[]): { removed: number; failed: number };
 
   destroy(): void;
 }

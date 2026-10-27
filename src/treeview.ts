@@ -69,7 +69,7 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
 
 /** A before-hook result → the engine's internal contract: false | value | undefined. */
 function internalGate(result: BeforeCallbackResult): unknown {
-  if (result.isCancelled) return false;
+  if (result.isRejected) return false;
   return 'value' in result ? result.value : undefined;
 }
 
@@ -702,7 +702,7 @@ export class WebTreeView<T = any> {
       onNodeDropDenied: this.event(o.onNodeDropReject),
       // Keydown: the public hook vetoes with `false`; the engine's internal one suppresses with `true`.
       onTreeKeydown: this.wrap(o.beforeKeydownCallback, 'keydown', (f) => (engineCtx: object) =>
-        runBeforeCallbackSync(f, this.ctx(engineCtx), 'beforeKeydownCallback').isCancelled ? true : undefined),
+        runBeforeCallbackSync(f, this.ctx(engineCtx), 'beforeKeydownCallback').isRejected ? true : undefined),
       contextMenuCallback: this.wrap(o.getContextMenuItemsCallback, 'menu', (f) => (node: LTreeNode<T>) => f(this.menuCtx(node)) ?? []),
       hasContextMenuRenderer: !!(o.getContextMenuItemsCallback || o.renderContextMenuCallback),
 

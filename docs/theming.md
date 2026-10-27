@@ -203,7 +203,7 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-context-menu-text-color` | unset → `--km-menu-text-color` | Menu text color |
 | `--wtv-context-menu-border` | unset → `--km-menu-border` | Menu border |
 | `--wtv-context-menu-border-radius` | unset → `--km-menu-border-radius` | Menu border radius |
-| `--wtv-context-menu-shadow` | `--base-dropdown-box-shadow` \| `0 8px 16px var(--wtv-shadow-color)` | Menu shadow |
+| `--wtv-context-menu-shadow` | unset → `--km-menu-shadow` | Menu shadow |
 | `--wtv-context-menu-min-width` | unset → `--km-menu-min-width` | Menu min width |
 | `--wtv-context-menu-padding` | unset → `--km-menu-padding` | Menu padding |
 | `--wtv-context-menu-font-size` | unset → `--km-menu-font-size` | Menu font size |
@@ -213,11 +213,11 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-context-menu-icon-font-size` | unset → `--km-menu-icon-font-size` | Item icon font size |
 | `--wtv-context-menu-arrow-font-size` | unset → `--km-menu-arrow-font-size` | Submenu arrow font size |
 | `--wtv-context-menu-danger-color` | unset → `--km-menu-danger-color` | Danger item text color |
-| `--wtv-context-menu-danger-bg-hover` | `--base-danger-bg-subtle` \| `danger 10%` | Danger item hover background |
+| `--wtv-context-menu-danger-bg-hover` | unset → `--km-menu-danger-hover-bg` | Danger item hover background |
 | `--wtv-context-menu-shortcut-color` | unset → `--km-menu-shortcut-color` | Optional: shortcut hint color |
 | `--wtv-context-menu-divider-color` | unset → `--km-menu-divider-color` | Divider line color |
 | `--wtv-context-menu-divider-margin` | unset → `--km-menu-divider-margin` | Divider margin |
-| `--wtv-context-menu-disabled-opacity` | `--base-disabled-opacity` \| `0.5` | Disabled item opacity |
+| `--wtv-context-menu-disabled-opacity` | unset → `--km-menu-disabled-opacity` | Disabled item opacity |
 
 ### Loading
 

@@ -378,9 +378,6 @@
      (every menu on the page, set on :root) -> --base-* -> core's default. Never set
      --km-menu-* here: a host-level value would shadow the page-wide one.
      ========================================================================== */
-  --wtv-context-menu-shadow: var(--base-dropdown-box-shadow, 0 8px 16px var(--wtv-shadow-color));
-  --wtv-context-menu-danger-bg-hover: var(--base-danger-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-danger-color) 10%, transparent), color-mix(in srgb, var(--wtv-danger-color) 20%, transparent)));
-  --wtv-context-menu-disabled-opacity: var(--base-disabled-opacity, 0.65);
 
   /* --wtv-context-menu-* -> core's private --_km-menu-* (no fallback; inherited into
      the shadow-local menu). Stacking follows the tree's z-index scale. */

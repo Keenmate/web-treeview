@@ -202,7 +202,7 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
   `openContextMenu(path, x, y)`, `applyChanges`.
 
 New surface: `deleteNodes(paths?)` + Delete/Shift+Delete keys; `shouldHandleKeyboardShortcuts`
-(default `true`, opt-out); `noDataText`; `shouldShowDropPlaceholderWhenEmpty` (empty-tree
+(default `true`, opt-out); `noDataText`; `isEmptyDropPlaceholderShown` (empty-tree
 Ctrl/Cmd+V paste — focusable empty zone); `shouldAutoHandlePaste`; `PasteResult` is now
 `{ success, count, skipped, error?, entries?, operation? }` (`count` was `pastedCount`);
 cross-tree cut removes the source via the clipboard registry

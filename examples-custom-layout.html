@@ -827,7 +827,7 @@ node.data; node.path; node.hasChildren;</code></pre>
     let history = [];
     let sortBy = 'name';
     let sortAsc = true;
-    let searchText = '';
+    let searchTerm = '';
     let sortMenuOpen = false;
     let detailNode = null;
 
@@ -882,7 +882,7 @@ node.data; node.path; node.hasChildren;</code></pre>
       return sorted;
     }
     function getMeta(node) {
-      if (searchText) {
+      if (searchTerm) {
         const relPath = node.path.slice(currentPath.length + 1);
         const parentPath = relPath.includes('/') ? relPath.slice(0, relPath.lastIndexOf('/')) : '';
         const sizePart = node.data?.size ? formatSize(node.data.size) : '';
@@ -908,14 +908,14 @@ node.data; node.path; node.hasChildren;</code></pre>
         history.push(currentPath);
       }
       currentPath = path;
-      searchText = '';
+      searchTerm = '';
       render();
     }
     function goBack() {
-      if (history.length > 0) { currentPath = history.pop(); searchText = ''; render(); }
+      if (history.length > 0) { currentPath = history.pop(); searchTerm = ''; render(); }
     }
-    function onSearch(e) { searchText = e.target.value; render(); }
-    function clearSearch() { searchText = ''; render(); }
+    function onSearch(e) { searchTerm = e.target.value; render(); }
+    function clearSearch() { searchTerm = ''; render(); }
     function toggleSort() { sortMenuOpen = !sortMenuOpen; render(); }
     function closeSort() { sortMenuOpen = false; render(); }
     function setSort(field) {
@@ -937,8 +937,8 @@ node.data; node.path; node.hasChildren;</code></pre>
     // Compute the currently-visible, sorted children (shared by both renderers)
     function currentChildren() {
       let children;
-      if (searchText) {
-        const q = searchText.toLowerCase();
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
         const prefix = currentPath + '/';
         children = ctrl.flatNodesToRender
           .filter(n => n.path.startsWith(prefix) && (n.data?.name || '').toLowerCase().includes(q));
@@ -991,16 +991,16 @@ node.data; node.path; node.hasChildren;</code></pre>
       input.type = 'text';
       input.className = 'ios-search-input';
       input.placeholder = 'Search';
-      input.value = searchText;
+      input.value = searchTerm;
       input.oninput = onSearch;
       const clearBtn = document.createElement('button');
-      clearBtn.className = 'ios-search-clear' + (searchText ? ' visible' : '');
+      clearBtn.className = 'ios-search-clear' + (searchTerm ? ' visible' : '');
       clearBtn.innerHTML = '&times;';
       clearBtn.onclick = clearSearch;
       field.append(sicon, input, clearBtn);
       sb.appendChild(field);
       searchBarEl.appendChild(sb);
-      if (searchText) { input.focus(); input.setSelectionRange(searchText.length, searchText.length); }
+      if (searchTerm) { input.focus(); input.setSelectionRange(searchTerm.length, searchTerm.length); }
 
       // Breadcrumbs
       breadcrumbsEl.innerHTML = '';
@@ -1047,7 +1047,7 @@ node.data; node.path; node.hasChildren;</code></pre>
       if (children.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'ios-empty';
-        empty.innerHTML = '<div class="ios-empty-icon">\u{1F4C2}</div>' + (searchText ? 'No results' : 'This folder is empty');
+        empty.innerHTML = '<div class="ios-empty-icon">\u{1F4C2}</div>' + (searchTerm ? 'No results' : 'This folder is empty');
         fileListEl.appendChild(empty);
       } else {
         for (const node of children) {
@@ -1128,8 +1128,8 @@ node.data; node.path; node.hasChildren;</code></pre>
       <div class="ios-search-bar">
         <div class="ios-search-field">
           <span class="ios-search-icon">&#128269;</span>
-          <input type="text" class="ios-search-input" placeholder="Search" .value=${searchText} @input=${onSearch}>
-          <button class="ios-search-clear ${searchText ? 'visible' : ''}" @click=${clearSearch}>&times;</button>
+          <input type="text" class="ios-search-input" placeholder="Search" .value=${searchTerm} @input=${onSearch}>
+          <button class="ios-search-clear ${searchTerm ? 'visible' : ''}" @click=${clearSearch}>&times;</button>
         </div>
       </div>`;
     const breadcrumbsTemplate = () => {
@@ -1167,7 +1167,7 @@ node.data; node.path; node.hasChildren;</code></pre>
         ${node.data?.isDirectory ? html`<span class="ios-file-chevron">&rsaquo;</span>` : ''}
       </button>`;
     const fileListTemplate = (children) => children.length === 0
-      ? html`<div class="ios-empty"><div class="ios-empty-icon">\u{1F4C2}</div>${searchText ? 'No results' : 'This folder is empty'}</div>`
+      ? html`<div class="ios-empty"><div class="ios-empty-icon">\u{1F4C2}</div>${searchTerm ? 'No results' : 'This folder is empty'}</div>`
       : html`${children.map(fileRowTemplate)}`;
     const footerTemplate = (count) => html`<div class="ios-footer">${count} item${count !== 1 ? 's' : ''}</div>`;
     const detailSheetTemplate = () => {

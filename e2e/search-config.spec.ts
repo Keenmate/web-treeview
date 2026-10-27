@@ -20,20 +20,20 @@ async function load(page: Page, mode: string) {
 const rowNames = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).rowNames());
 const found = (page: Page, q: string): Promise<string[]> => page.evaluate((q) => (window as any).found(q), q);
 
-test.describe('search-text attribute', () => {
+test.describe('search-term attribute', () => {
   test('setting it filters the tree (ancestors kept); removing it restores', async ({ page }) => {
     await load(page, 'member');
     await expect.poll(() => found(page, 'sushi')).toEqual(['Tokyo']);
-    await page.evaluate(() => (window as any).tree.setAttribute('search-text', 'sushi'));
+    await page.evaluate(() => (window as any).tree.setAttribute('search-term', 'sushi'));
     await expect.poll(() => rowNames(page)).toEqual(['Asia', 'Tokyo']);
-    await page.evaluate(() => (window as any).tree.removeAttribute('search-text'));
+    await page.evaluate(() => (window as any).tree.removeAttribute('search-term'));
     await expect.poll(() => rowNames(page)).toEqual(ALL);
   });
 
-  test('the searchText property works the same', async ({ page }) => {
+  test('the searchTerm property works the same', async ({ page }) => {
     await load(page, 'member');
     await expect.poll(() => found(page, 'croissant')).toEqual(['Paris']);
-    await page.evaluate(() => { (window as any).tree.searchText = 'croissant'; });
+    await page.evaluate(() => { (window as any).tree.searchTerm = 'croissant'; });
     await expect.poll(() => rowNames(page)).toEqual(['Europe', 'Paris']);
   });
 });
@@ -61,7 +61,7 @@ test.describe('filterNodes()', () => {
   });
 });
 
-test.describe('should-use-internal-search-index="false"', () => {
+test.describe('use-internal-search-index="false"', () => {
   test('searchNodes returns nothing and filterNodes leaves the tree alone', async ({ page }) => {
     await load(page, 'off');
     await page.waitForTimeout(200);

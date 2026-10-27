@@ -36,6 +36,43 @@ aliases — rename on upgrade.
   (read-only). Assigning replaces the set and fires its change event; values assigned before
   the first build are applied right after it. The `{ silent }` option of the removed setters:
   use `clearSelection(undefined, { silent: true })` + `selectNodes(paths, { silent: true })`.
+- **Inputs — config keys** (one prefix rule: `is*Shown` visibility, `is*Enabled` feature,
+  `should*` policy; one `virtualScroll*` family):
+
+  | Before | After |
+  |---|---|
+  | `searchText` | `searchTerm` |
+  | `shouldShowCheckboxes` | `isCheckboxesShown` |
+  | `shouldShowNodeTooltips` | `isNodeTooltipsShown` |
+  | `shouldShowDropPlaceholderWhenEmpty` | `isEmptyDropPlaceholderShown` |
+  | `shouldEnableTreeDropZone` | `isTreeDropZoneEnabled` |
+  | `tooltipFollowCursor` | `shouldTooltipFollowCursor` |
+  | `virtualRowHeight` | `virtualScrollItemHeight` |
+  | `virtualOverscan` | `virtualScrollOverscan` |
+  | `virtualContainerHeight` | `virtualScrollContainerHeight` |
+
+- **Attributes — the short HTML form, derived mechanically from the key**
+  (`isXShown` → `show-x`, `isXEnabled` → `enable-x`, `shouldX` → `x`, other `is*` → the key
+  without the prefix):
+
+  | Before | After |
+  |---|---|
+  | `search-text` | `search-term` |
+  | `virtual-scroll` | `enable-virtual-scroll` |
+  | `virtual-row-height` | `virtual-scroll-item-height` |
+  | `virtual-overscan` | `virtual-scroll-overscan` |
+  | `virtual-container-height` | `virtual-scroll-container-height` |
+  | `use-flat-rendering` | `enable-flat-rendering` |
+  | `show-drop-placeholder-when-empty` | `show-empty-drop-placeholder` |
+  | `should-use-internal-search-index` | `use-internal-search-index` |
+  | `click-toggles-checkbox` | `click-toggle-checkbox` |
+  | `is-sorted` | `sorted` |
+  | `is-loading` | `loading` |
+
+  Unchanged: `show-checkboxes`, `show-node-tooltips`, `tooltip-follow-cursor`,
+  `enable-tree-drop-zone`, `accordion-expand`, `allow-copy`, …
+- **`selectionMode: 'multi'` → `'multiple'`** (attribute `selection-mode="multiple"`); `'multi'`
+  is now an invalid value (warns, keeps the previous one).
 - **Search text is a `term`:** `filterNodes(term)` / `searchNodes(term)` (parameter rename only).
 
 ### Removed — BREAKING (in-tree debug aids)

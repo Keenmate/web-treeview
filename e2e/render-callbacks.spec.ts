@@ -26,7 +26,7 @@ test.describe('empty tree', () => {
     await expect(tree(page, 'empty-cb').locator('.wtv__empty-state .custom-empty')).toHaveText('Custom empty');
   });
 
-  test('show-drop-placeholder-when-empty keeps the drop zone up instead of the empty state', async ({ page }) => {
+  test('show-empty-drop-placeholder keeps the drop zone up instead of the empty state', async ({ page }) => {
     const t = tree(page, 'empty-zone');
     await expect(t.locator('.wtv__empty-zone')).toBeVisible();
     await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
@@ -39,15 +39,15 @@ test.describe('empty tree', () => {
 });
 
 test.describe('loading', () => {
-  test('is-loading shows the loading overlay (and no empty state)', async ({ page }) => {
+  test('loading shows the loading overlay (and no empty state)', async ({ page }) => {
     const t = tree(page, 'loading');
     await expect(t.locator('.wtv__loading-overlay')).toBeVisible();
     await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
   });
 
-  test('turning is-loading off hides the overlay and shows the empty state', async ({ page }) => {
+  test('turning loading off hides the overlay and shows the empty state', async ({ page }) => {
     const t = tree(page, 'loading');
-    await t.evaluate((el) => el.removeAttribute('is-loading'));
+    await t.evaluate((el) => el.removeAttribute('loading'));
     await expect(t.locator('.wtv__loading-overlay')).toBeHidden();
     await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
   });

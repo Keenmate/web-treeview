@@ -134,16 +134,16 @@ export interface NodeConfig {
   // .wtv__node-icon element). shouldAlignNodeIcons reserves the icon column so labels align.
   iconColorMember: string | null | undefined;
   shouldAlignNodeIcons: boolean;
-  shouldShowCheckboxes: boolean;
+  isCheckboxesShown: boolean;
   // Hover/focus tooltip per node (the direct analog of web-multiselect's option
   // tooltips). The callback returns plain text OR a built HTMLElement (the wtv analog
   // of svelte-treeview's `tooltip` snippet). No content ⇒ no tooltip.
-  shouldShowNodeTooltips: boolean;
+  isNodeTooltipsShown: boolean;
   getNodeTooltipCallback: ((node: LTreeNode<any>) => string | HTMLElement | null | undefined) | undefined;
   tooltipPlacement: TooltipPlacement;
   tooltipDelay: TooltipDelay;
   tooltipOffset: number;
-  tooltipFollowCursor: boolean;
+  shouldTooltipFollowCursor: boolean;
   /** Data-driven per-row class hook. Applied to `.wtv__node`. */
   nodeClass?: ((node: LTreeNode<any>) => string | null | undefined) | undefined;
   /** Data-driven per-row class hook. Applied to `.wtv__node-content`. */
@@ -441,9 +441,9 @@ export interface TreeEngineConfig<T> {
   shouldIndicateUndraggable?: boolean | null | undefined;
   /** Make the whole populated tree ONE drop target (drop lands target=null
    *  regardless of per-node getIsDropAllowed). Default false. */
-  shouldEnableTreeDropZone?: boolean | null | undefined;
+  isTreeDropZoneEnabled?: boolean | null | undefined;
   initializeIndexCallback?: () => Index;
-  searchText?: string | null | undefined;
+  searchTerm?: string | null | undefined;
   shouldUseInternalSearchIndex?: boolean | null | undefined;
   indexerBatchSize?: number | null | undefined;
   indexerTimeout?: number | null | undefined;
@@ -463,9 +463,9 @@ export interface TreeEngineConfig<T> {
 
   // Virtual scroll
   isVirtualScrollEnabled?: boolean;
-  virtualRowHeight?: number;
-  virtualOverscan?: number;
-  virtualContainerHeight?: string;
+  virtualScrollItemHeight?: number;
+  virtualScrollOverscan?: number;
+  virtualScrollContainerHeight?: string;
 
   // DRAG AND DROP
   dragDropMode?: DragDropMode;
@@ -482,10 +482,10 @@ export interface TreeEngineConfig<T> {
 
   // SELECTION MODEL (rc06+: focusedNode / selectedPaths / checkedPaths)
   rangeSelectionMode?: RangeSelectionMode;
-  selectionMode?: 'single' | 'multi';
+  selectionMode?: 'single' | 'multiple';
   /** Replace individual keyboard-navigation methods (merged over the defaults). */
   navigationOverrides?: TreeNavigationOverrides<T> | null;
-  shouldShowCheckboxes?: boolean;
+  isCheckboxesShown?: boolean;
   checkboxMode?: CheckboxMode;
   /** Which paths the selection EMITS in cascade mode. Default 'rolled-up'. */
   cascadeCheckPolicy?: CascadeCheckPolicy | null | undefined;
@@ -578,13 +578,13 @@ export interface TreeEngineConfig<T> {
   dragOverNodeClass?: string | null | undefined;
   draggedNodeClass?: string | null | undefined;
   /** Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback). */
-  shouldShowNodeTooltips?: boolean;
+  isNodeTooltipsShown?: boolean;
   /** Tooltip content for a node — plain text or a built HTMLElement (rich). No content ⇒ no tooltip. */
   getNodeTooltipCallback?: (node: LTreeNode<T>) => string | HTMLElement | null | undefined;
   tooltipPlacement?: TooltipPlacement;
   tooltipDelay?: TooltipDelay;
   tooltipOffset?: number;
-  tooltipFollowCursor?: boolean;
+  shouldTooltipFollowCursor?: boolean;
   iconSet?: IconSet | null | undefined;
   /** @deprecated Use `iconSet`. */
   expandIconClass?: string | null | undefined;
@@ -643,8 +643,8 @@ export interface TreeEngineSnapshot<T> {
 
   // Virtual scroll
   isVirtualScrollEnabled: boolean;
-  virtualRowHeight: number;
-  virtualContainerHeight: string;
+  virtualScrollItemHeight: number;
+  virtualScrollContainerHeight: string;
   virtualTotalHeight: number;
   virtualStartIndex: number;
   virtualOffsetY: number;

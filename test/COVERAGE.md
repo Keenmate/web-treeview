@@ -27,7 +27,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `display-value-fallback` | ✓ | `data.spec.ts` | `data.html` |
 | Default display-value order, `order-member`, sibling `sortCallback` (descending, children kept) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sortCallback` called once per sibling group, never on the flat list (NOTES #16) | ✓ | `data-members.spec.ts` | `data-members.html` |
-| `is-sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `insertBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `insertBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `data` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
@@ -38,11 +38,11 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `renderLoadingCallback` (NOTES #19), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| `no-data-text`, `is-loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `no-data-text`, `loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| `use-flat-rendering` + `flat-indent-size`, runtime changes incl. `progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `enable-flat-rendering` + `flat-indent-size`, runtime changes incl. `progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | Lazy load via `beforeExpandCallback` (async load → `insertBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
@@ -87,7 +87,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | `show-checkboxes`, cascade vs independent | ✓ | `interaction.spec.ts` | `interaction.html` |
 | `checkbox-mode` switch re-derives indeterminate | ✓ | `checkbox-mode.spec.ts` | `checkbox-mode.html` |
-| `click-toggles-checkbox` | ✓ | `interaction.spec.ts` | `interaction.html` |
+| `click-toggle-checkbox` | ✓ | `interaction.spec.ts` | `interaction.html` |
 | `isSelectableMember` / `isCheckedMember` / `checkedPaths` | ✓ | `member-props.spec.ts` | `member-props.html` |
 | `checkNode/checkNodes/setCheckedPaths/checkAll/uncheckNode` (+ silent) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 | `cascade-check-policy` rolled-up / leaves / all | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
@@ -157,7 +157,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | Filter / clear / Escape / `searchNodes` | ✓ | `search.spec.ts` | `search.html` |
 | Result navigation expands + scrolls collapsed hits | ✓ | `search-deep.spec.ts` | `search-deep.html` |
-| `search-text` attribute / `searchText` prop at runtime; a config change doesn't re-insert `data` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
+| `search-term` attribute / `searchTerm` prop at runtime; a config change doesn't re-insert `data` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
 | `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 
@@ -182,7 +182,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets to roots only (NOTES #14) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
-| Removing number / boolean attributes resets to the engine default (is-loading, virtual-scroll, virtual-overscan, context-menu-x-offset; NOTES #14 follow-up) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Removing number / boolean attributes resets to the engine default (loading, virtual-scroll, virtual-scroll-overscan, context-menu-x-offset; NOTES #14 follow-up) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `el.prop = x; el.method()` sees x (NOTES #13; element methods flush first) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |

@@ -87,7 +87,7 @@ test('a config change made while detached is applied on reconnect', async ({ pag
 test('remove + re-append (synchronous) keeps expansion, selection, checks, focus and search', async ({ page }) => {
   await load(page);
   await setUpState(page);
-  await page.evaluate(() => { (window as any).tree.searchText = 'A'; });
+  await page.evaluate(() => { (window as any).tree.searchTerm = 'A'; });
   const rowsBefore = await rows(page);
   const focusedBefore = await page.evaluate(() => (window as any).tree.focusedNode?.path);
 
@@ -102,7 +102,7 @@ test('remove + re-append (synchronous) keeps expansion, selection, checks, focus
   expect(await selected(page)).toEqual(['1.1', '2']);
   expect(await page.evaluate(() => [...(window as any).tree.checkedPaths])).toEqual(['1.2']);
   expect(await page.evaluate(() => (window as any).tree.focusedNode?.path)).toBe(focusedBefore);
-  expect(await page.evaluate(() => (window as any).tree.searchText)).toBe('A');
+  expect(await page.evaluate(() => (window as any).tree.searchTerm)).toBe('A');
 });
 
 test('a move keeps the virtual-scroll offset and the rendered window', async ({ page }) => {

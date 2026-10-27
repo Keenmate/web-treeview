@@ -58,7 +58,7 @@ test('End scrolls to the bottom, Home back to the top', async ({ page }) => {
 
 test('Shift+End (navSelectLast) scrolls too', async ({ page }) => {
   await load(page);
-  await page.evaluate(() => (window as any).tree.setAttribute('selection-mode', 'multi'));
+  await page.evaluate(() => (window as any).tree.setAttribute('selection-mode', 'multiple'));
   await page.keyboard.press('Shift+End');
   await expect(focused(page)).toHaveAttribute('data-tree-path', '200');
   await expect(focused(page)).toBeInViewport();

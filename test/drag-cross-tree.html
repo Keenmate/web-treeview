@@ -14,7 +14,7 @@
       ?autocopy=off   auto-handle-copy="false" on both trees
       ?nocopy         allow-copy unset (copy not allowed)
       ?redact         source tree has nodeOutputTransformationCallback (" (copy)" suffix)
-      ?multi          selection-mode="multi"; tree A = Multi-A (A-1, A-2), Multi-B, Multi-C (TV-5)
+      ?multi          selection-mode="multiple"; tree A = Multi-A (A-1, A-2), Multi-B, Multi-C (TV-5)
     -->
     <web-treeview id="tree-a" tree-id="A" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
     <web-treeview id="tree-b" tree-id="B" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
@@ -47,7 +47,7 @@
         for (const t of [a, b]) {
             if (params.has('nocopy')) t.removeAttribute('allow-copy');
             if (params.get('autocopy') === 'off') t.setAttribute('auto-handle-copy', 'false');
-            if (params.has('multi')) t.setAttribute('selection-mode', 'multi');
+            if (params.has('multi')) t.setAttribute('selection-mode', 'multiple');
         }
         let nextId = 1;
         const extraA = {};

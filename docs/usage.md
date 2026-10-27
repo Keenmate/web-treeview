@@ -118,17 +118,17 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
 | `accordion-expand` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `isAccordionExpand`) |
-| `is-sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
-| `should-use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
+| `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `getInsertResult().failed`) |
+| `use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
-| `search-text` | `string` | — | Current search/filter text |
+| `search-term` | `string` | — | Current search/filter text |
 | `theme` | `'dark' \| 'light'` | — | Per-instance theme override |
-| `is-loading` | `boolean` | `false` | Show loading overlay |
+| `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
 | `no-data-text` | `string` | `'No data'` | Fallback text shown for an empty tree (config key: `noDataText`) |
-| `show-drop-placeholder-when-empty` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `shouldShowDropPlaceholderWhenEmpty`) |
+| `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
 **Sibling order.** On insert (`data`, `insertBranch`) the tree puts parents before their
 children itself and orders each parent's children with `sortCallback` (one call per
@@ -138,7 +138,7 @@ display value when there is no callback. `addNode`, `refreshSiblings` and `moveN
 way; a before/after move without `order-member` keeps the dropped position. Children are kept in that order — there is
 no render-time sorting.
 
-`is-sorted` is a **performance hint**, not a sort switch: "my data is already in insert
+`sorted` is a **performance hint**, not a sort switch: "my data is already in insert
 order (parents first, siblings in display order)". The tree then skips sorting the
 input (no depth sort, no `sortCallback`) and renders `data` as given. The hint covers
 the input batch only: `insertBranch` still re-sorts each affected parent's children
@@ -162,11 +162,11 @@ a child listed before its parent is dropped as an orphan and reported in
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `selection-mode` | `string` | `'single'` | `'single'` (Ctrl/Shift+click degrade to plain click; Shift+keyboard extend is a no-op) \| `'multi'` (Ctrl+toggle, Shift+range, Shift+Arrow/Home/End/PageUp/PageDown extend) |
+| `selection-mode` | `string` | `'single'` | `'single'` (Ctrl/Shift+click degrade to plain click; Shift+keyboard extend is a no-op) \| `'multiple'` (Ctrl+toggle, Shift+range, Shift+Arrow/Home/End/PageUp/PageDown extend) |
 | `range-selection-mode` | `string` | `'visual'` | `'visual'` (visible flat nodes) \| `'logical'` (tree walk) |
-| `show-checkboxes` | `boolean` | `false` | Render checkbox per selectable node (config key: `shouldShowCheckboxes`) |
+| `show-checkboxes` | `boolean` | `false` | Render checkbox per selectable node (config key: `isCheckboxesShown`) |
 | `checkbox-mode` | `string` | `'independent'` | `'independent'` (per-node) \| `'cascade'` (parent → descendants) |
-| `click-toggles-checkbox` | `boolean` | `false` | Plain click toggles checkbox instead of focusing (config key: `shouldClickToggleCheckbox`) |
+| `click-toggle-checkbox` | `boolean` | `false` | Plain click toggles checkbox instead of focusing (config key: `shouldClickToggleCheckbox`) |
 
 ### Visual / CSS hooks
 
@@ -195,15 +195,15 @@ a child listed before its parent is dropped as an orphan and reported in
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `use-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
+| `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
 | `flat-indent-size` | `string` | `'1.5rem'` | Per-level indent step in flat mode |
 | `progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRender`) |
 | `initial-batch-size` | `number` | — | First batch size |
 | `max-batch-size` | `number` | — | Subsequent batch ceiling |
-| `virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
-| `virtual-row-height` | `number` | auto | Row height in px (auto-measured if omitted) |
-| `virtual-overscan` | `number` | `5` | Extra rows above/below viewport |
-| `virtual-container-height` | `string` | `'400px'` | Viewport height |
+| `enable-virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
+| `virtual-scroll-item-height` | `number` | auto | Row height in px (auto-measured if omitted) |
+| `virtual-scroll-overscan` | `number` | `5` | Extra rows above/below viewport |
+| `virtual-scroll-container-height` | `string` | `'400px'` | Viewport height |
 
 ## Properties (JS only)
 
@@ -257,7 +257,7 @@ applied right after it. For a silent replace use `clearSelection(undefined, { si
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `is-sorted` (the per-parent re-sorts still use it) |
+| `sortCallback` | `({ items }) => LTreeNode[]` | Orders the children of one parent: `items` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `sorted` (the per-parent re-sorts still use it) |
 | `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
 
 ### Render callbacks

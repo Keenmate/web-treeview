@@ -54,7 +54,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ items }) => sortByName(items);
-            tree.selectionMode = 'multi';
+            tree.selectionMode = 'multiple';
 
             // Data-driven per-row class hooks
             tree.getNodeClassCallback = ({ node }) => node.data?.type === 'folder' ? 'is-folder' : 'is-file';

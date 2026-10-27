@@ -152,7 +152,7 @@ test.describe('restricted drop positions — getAllowedDropPositionsCallback', (
 
 // ── Section 6: multi-drag ─────────────────────────────────────────────────
 
-test.describe('multi-drag (selectionMode=multi)', () => {
+test.describe('multi-drag (selectionMode=multiple)', () => {
   async function rootNodeNamesInOrder(section: Locator): Promise<string[]> {
     const roots = section.locator('.wtv__node[data-tree-path]:not([data-tree-path*="."])');
     return await roots.locator('.wtv__node-row .wtv__node-content > span').allInnerTexts();

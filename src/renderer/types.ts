@@ -46,7 +46,7 @@ export interface RendererConfig<T> {
   renderEmptyZoneCallback?: (container: HTMLElement) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and make it focusable + focus-on-hover so a Ctrl/Cmd+V pastes into it. */
-  shouldShowDropPlaceholderWhenEmpty?: boolean | null;
+  isEmptyDropPlaceholderShown?: boolean | null;
   /** Rendered when isLoading is true. */
   renderLoadingCallback?: (container: HTMLElement) => void;
   /** Rendered above the tree body. */

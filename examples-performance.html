@@ -201,7 +201,7 @@
             <div class="controls">
                 <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
                 <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
-                <label title="is-sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (is-sorted)</label>
+                <label title="sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (sorted)</label>
                 <label><input type="checkbox" id="cfg-search-index" checked> Search Index</label>
                 <span id="indexer-opts">
                     <label>Index Batch: <input type="number" id="cfg-indexer-batch" value="25" min="5" max="500" step="5"></label>
@@ -331,8 +331,8 @@
                 isProgressiveRender: $('opt-progressive').checked,
                 initialBatchSize: +$('opt-initial-batch').value,
                 maxBatchSize: +$('opt-max-batch').value,
-                virtualContainerHeight: $('opt-container-height').value,
-                virtualOverscan: +$('opt-overscan').value,
+                virtualScrollContainerHeight: $('opt-container-height').value,
+                virtualScrollOverscan: +$('opt-overscan').value,
             }));
         }
         function applyConfig() {
@@ -346,8 +346,8 @@
             if (c.isProgressiveRender !== undefined) $('opt-progressive').checked = c.isProgressiveRender;
             if (c.initialBatchSize !== undefined) $('opt-initial-batch').value = c.initialBatchSize;
             if (c.maxBatchSize !== undefined) $('opt-max-batch').value = c.maxBatchSize;
-            if (c.virtualContainerHeight) $('opt-container-height').value = c.virtualContainerHeight;
-            if (c.virtualOverscan !== undefined) $('opt-overscan').value = c.virtualOverscan;
+            if (c.virtualScrollContainerHeight) $('opt-container-height').value = c.virtualScrollContainerHeight;
+            if (c.virtualScrollOverscan !== undefined) $('opt-overscan').value = c.virtualScrollOverscan;
             updateModeUI();
             updateGenerateLabel();
             updateProgressiveUI();
@@ -445,8 +445,8 @@
                 isFlatRenderingEnabled: true,
             };
             if (isVirtual) {
-                cfg.virtualContainerHeight = $('opt-container-height').value;
-                cfg.virtualOverscan = +$('opt-overscan').value;
+                cfg.virtualScrollContainerHeight = $('opt-container-height').value;
+                cfg.virtualScrollOverscan = +$('opt-overscan').value;
                 cfg.isProgressiveRender = false;
             } else {
                 cfg.isProgressiveRender = $('opt-progressive').checked;

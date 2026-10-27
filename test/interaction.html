@@ -44,7 +44,7 @@
                     </select>
                 </label>
                 <label id="lbl-click-toggles" hidden>
-                    <input type="checkbox" id="click-toggles-checkbox">
+                    <input type="checkbox" id="click-toggle-checkbox">
                     Click row toggles checkbox
                 </label>
                 <button id="clear-1">Clear All</button>
@@ -53,7 +53,7 @@
             <div class="tree-container">
                 <web-treeview id="tree-1"
                     expand-level="2"
-                    selection-mode="multi"
+                    selection-mode="multiple"
                     click-behavior="expand-and-focus"></web-treeview>
             </div>
 
@@ -70,7 +70,7 @@
             </div>
 
             <div class="tree-container">
-                <web-treeview id="tree-2" expand-level="3" selection-mode="multi"></web-treeview>
+                <web-treeview id="tree-2" expand-level="3" selection-mode="multiple"></web-treeview>
             </div>
 
             <div class="output"><p class="output-label">Focused Node</p><pre id="out-2-focused">(none)</pre></div>
@@ -135,7 +135,7 @@
             const checkboxModeLabel = document.getElementById('lbl-checkbox-mode');
             const checkboxModeSelect = document.getElementById('checkbox-mode');
             const clickTogglesLabel = document.getElementById('lbl-click-toggles');
-            const clickTogglesInput = document.getElementById('click-toggles-checkbox');
+            const clickTogglesInput = document.getElementById('click-toggle-checkbox');
 
             clickBehaviorSelect.addEventListener('change', () => {
                 tree1.setAttribute('click-behavior', clickBehaviorSelect.value);
@@ -159,9 +159,9 @@
 
             clickTogglesInput.addEventListener('change', () => {
                 if (clickTogglesInput.checked) {
-                    tree1.setAttribute('click-toggles-checkbox', 'true');
+                    tree1.setAttribute('click-toggle-checkbox', 'true');
                 } else {
-                    tree1.removeAttribute('click-toggles-checkbox');
+                    tree1.removeAttribute('click-toggle-checkbox');
                 }
             });
 

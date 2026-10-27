@@ -13,7 +13,7 @@ import { test, expect, Page, Locator } from './fixtures';
  * had ever visited. The renderer now tracks `data-focused` / `data-selected`
  * in the dirty check so a row that loses focus/selection is always re-rendered.
  *
- * Fixture: /test/selection-focus.html — selection-mode="multi",
+ * Fixture: /test/selection-focus.html — selection-mode="multiple",
  * click-behavior="select", focusedNodeClass selectable as `test-focus`.
  * Data (alpha-sorted): '1' Documents, '1.1' Work, '1.2' Personal, '2' Downloads.
  */

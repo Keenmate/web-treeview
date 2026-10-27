@@ -324,7 +324,7 @@
    ============================================================================== */
 
 /* FALLBACK marker for selected nodes (multi-select via Ctrl/Shift-click).
-   Ships a subtle default look so opting into selectionMode='multi' produces
+   Ships a subtle default look so opting into selectionMode='multiple' produces
    visible feedback without configuring `selectedNodeClass`. The renderer
    only applies this class when NO selectedNodeClass is set (see
    dom-renderer.ts), so the default look never fights a configured variant —
@@ -537,7 +537,7 @@
   transform: scale(var(--wtv-empty-zone-hover-scale, 1));
 }
 
-/* Whole-tree drop zone (shouldEnableTreeDropZone): while a drag hovers the tree the
+/* Whole-tree drop zone (isTreeDropZoneEnabled): while a drag hovers the tree the
    container shows an engaged outline so the "basket" reads as active. */
 .wtv__container.wtv__tree-drop-zone--active {
   outline: 2px dashed var(--wtv-empty-zone-hover-border-color, var(--wtv-accent-color));

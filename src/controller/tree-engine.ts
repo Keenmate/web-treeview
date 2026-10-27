@@ -107,13 +107,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     iconMember: undefined,
     iconColorMember: undefined,
     shouldAlignNodeIcons: true,
-    shouldShowCheckboxes: false,
-    shouldShowNodeTooltips: false,
+    isCheckboxesShown: false,
+    isNodeTooltipsShown: false,
     getNodeTooltipCallback: undefined,
     tooltipPlacement: 'top-start',
     tooltipDelay: { show: 400, hide: 100 },
     tooltipOffset: 8,
-    tooltipFollowCursor: false,
+    shouldTooltipFollowCursor: false,
     nodeClass: undefined,
     nodeContentClass: undefined
   };
@@ -164,7 +164,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _checkedPaths: Set<string> = new Set();
   private _lastSelectedPath: string | null = null;
   private _rangeSelectionMode: import('./types').RangeSelectionMode = 'visual';
-  private _selectionMode: 'single' | 'multi' = 'single';
+  private _selectionMode: 'single' | 'multiple' = 'single';
   // Keyboard navigation: the defaults merged with the consumer's navigationOverrides.
   private _navigation!: TreeNavigation<T>;
   private _navigationOverrides: TreeNavigationOverrides<T> | null = null;
@@ -397,12 +397,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   get selectionMode() { return this._selectionMode; }
-  set selectionMode(v: 'single' | 'multi') {
+  set selectionMode(v: 'single' | 'multiple') {
     this._selectionMode = v;
   }
 
-  get shouldShowCheckboxes() { return this._shouldShowCheckboxes; }
-  set shouldShowCheckboxes(v: boolean) {
+  get isCheckboxesShown() { return this._shouldShowCheckboxes; }
+  set isCheckboxesShown(v: boolean) {
     this._shouldShowCheckboxes = v;
     this._updateNodeConfig();
   }
@@ -448,8 +448,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   set checkedNodeClass(v: string | null | undefined) { this._checkedNodeClass = v; this._updateNodeConfig(); }
 
   get insertResult() { return this._insertResult; }
-  get searchText() { return this._searchText; }
-  set searchText(v: string | null | undefined) {
+  get searchTerm() { return this._searchText; }
+  set searchTerm(v: string | null | undefined) {
     this._searchText = v;
     this.tree?.filterNodes(v as string);
     this._scheduleNotify();
@@ -493,8 +493,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get shouldIndicateUndraggable() { return this._shouldIndicateUndraggable; }
   set shouldIndicateUndraggable(v: boolean) { this._shouldIndicateUndraggable = v; }
 
-  get shouldEnableTreeDropZone() { return this._shouldEnableTreeDropZone; }
-  set shouldEnableTreeDropZone(v: boolean) { this._shouldEnableTreeDropZone = v; }
+  get isTreeDropZoneEnabled() { return this._shouldEnableTreeDropZone; }
+  set isTreeDropZoneEnabled(v: boolean) { this._shouldEnableTreeDropZone = v; }
 
   get clickBehavior() { return this._clickBehavior; }
   set clickBehavior(v: import('./types').ClickBehavior) { this._clickBehavior = v; this._updateNodeConfig(); }
@@ -526,8 +526,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get draggedNodeClass() { return this._draggedNodeClass; }
   set draggedNodeClass(v: string | null | undefined) { this._draggedNodeClass = v; this._updateNodeConfig(); }
 
-  get shouldShowNodeTooltips() { return this._shouldShowNodeTooltips; }
-  set shouldShowNodeTooltips(v: boolean) { this._shouldShowNodeTooltips = v; this._updateNodeConfig(); }
+  get isNodeTooltipsShown() { return this._shouldShowNodeTooltips; }
+  set isNodeTooltipsShown(v: boolean) { this._shouldShowNodeTooltips = v; this._updateNodeConfig(); }
 
   get getNodeTooltipCallback() { return this._getNodeTooltipCallback; }
   set getNodeTooltipCallback(v: ((node: LTreeNode<T>) => string | HTMLElement | null | undefined) | undefined) { this._getNodeTooltipCallback = v; this._updateNodeConfig(); }
@@ -541,8 +541,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get tooltipOffset() { return this._tooltipOffset; }
   set tooltipOffset(v: number) { this._tooltipOffset = v; this._updateNodeConfig(); }
 
-  get tooltipFollowCursor() { return this._tooltipFollowCursor; }
-  set tooltipFollowCursor(v: boolean) { this._tooltipFollowCursor = v; this._updateNodeConfig(); }
+  get shouldTooltipFollowCursor() { return this._tooltipFollowCursor; }
+  set shouldTooltipFollowCursor(v: boolean) { this._tooltipFollowCursor = v; this._updateNodeConfig(); }
 
   get dropZoneMode() { return this._dropZoneMode; }
   set dropZoneMode(v: 'floating' | 'glow') { this._dropZoneMode = v; this._updateNodeConfig(); }
@@ -639,14 +639,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._scheduleNotify();
   }
 
-  get virtualRowHeight() { return this._virtualRowHeight; }
-  set virtualRowHeight(v: number | undefined) { this._virtualRowHeight = v; this._scheduleNotify(); }
+  get virtualScrollItemHeight() { return this._virtualRowHeight; }
+  set virtualScrollItemHeight(v: number | undefined) { this._virtualRowHeight = v; this._scheduleNotify(); }
 
-  get virtualOverscan() { return this._virtualOverscan; }
-  set virtualOverscan(v: number) { this._virtualOverscan = v; this._scheduleNotify(); }
+  get virtualScrollOverscan() { return this._virtualOverscan; }
+  set virtualScrollOverscan(v: number) { this._virtualOverscan = v; this._scheduleNotify(); }
 
-  get virtualContainerHeight() { return this._virtualContainerHeight; }
-  set virtualContainerHeight(v: string | undefined) { this._virtualContainerHeight = v; this._scheduleNotify(); }
+  get virtualScrollContainerHeight() { return this._virtualContainerHeight; }
+  set virtualScrollContainerHeight(v: string | undefined) { this._virtualContainerHeight = v; this._scheduleNotify(); }
 
   /** Called by renderer on scroll (triggers full state-change pipeline). */
   setVirtualScrollTop(scrollTop: number): void {
@@ -730,11 +730,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this._data = props.data;
     this._focusedNode = props.focusedNode ?? null;
-    this._searchText = props.searchText;
+    this._searchText = props.searchTerm;
     this._rangeSelectionMode = props.rangeSelectionMode ?? 'visual';
     this._selectionMode = props.selectionMode ?? 'single';
     this._applyNavigationOverrides(props.navigationOverrides);
-    this._shouldShowCheckboxes = props.shouldShowCheckboxes ?? false;
+    this._shouldShowCheckboxes = props.isCheckboxesShown ?? false;
     this._checkboxMode = props.checkboxMode ?? 'independent';
     this._cascadeCheckPolicy = props.cascadeCheckPolicy ?? 'rolled-up';
     this._shouldClickToggleCheckbox = props.shouldClickToggleCheckbox ?? false;
@@ -759,12 +759,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldHandleKeyboardShortcuts = props.shouldHandleKeyboardShortcuts ?? true;
     this._touchDragDelay = props.touchDragDelay ?? 300;
     this._shouldIndicateUndraggable = props.shouldIndicateUndraggable ?? true;
-    this._shouldEnableTreeDropZone = props.shouldEnableTreeDropZone ?? false;
+    this._shouldEnableTreeDropZone = props.isTreeDropZoneEnabled ?? false;
 
     this._isVirtualScrollEnabled = props.isVirtualScrollEnabled ?? false;
-    this._virtualRowHeight = props.virtualRowHeight;
-    this._virtualOverscan = props.virtualOverscan ?? 5;
-    this._virtualContainerHeight = props.virtualContainerHeight;
+    this._virtualRowHeight = props.virtualScrollItemHeight;
+    this._virtualOverscan = props.virtualScrollOverscan ?? 5;
+    this._virtualContainerHeight = props.virtualScrollContainerHeight;
 
     this._clickBehavior = props.clickBehavior ?? 'expand-and-focus';
     this._isAccordionExpand = props.isAccordionExpand ?? false;
@@ -778,12 +778,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._checkedNodeClass = props.checkedNodeClass;
     this._dragOverNodeClass = props.dragOverNodeClass;
     this._draggedNodeClass = props.draggedNodeClass;
-    this._shouldShowNodeTooltips = props.shouldShowNodeTooltips ?? false;
+    this._shouldShowNodeTooltips = props.isNodeTooltipsShown ?? false;
     this._getNodeTooltipCallback = props.getNodeTooltipCallback;
     this._tooltipPlacement = props.tooltipPlacement ?? 'top-start';
     this._tooltipDelay = props.tooltipDelay ?? { show: 400, hide: 100 };
     this._tooltipOffset = props.tooltipOffset ?? 8;
-    this._tooltipFollowCursor = props.tooltipFollowCursor ?? false;
+    this._tooltipFollowCursor = props.shouldTooltipFollowCursor ?? false;
     this._dropZoneMode = props.dropZoneMode ?? 'glow';
     this._dropZoneLayout = props.dropZoneLayout ?? 'around';
     this._dropZoneStart = props.dropZoneStart ?? 33;
@@ -1677,7 +1677,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   //   - selectedPaths = multi-select set built by Ctrl/Shift+click
   //   - checkedPaths    = checkbox data state (touched by check/uncheck)
   //
-  // When `shouldShowCheckboxes` is false, every change to `selectedPaths` is
+  // When `isCheckboxesShown` is false, every change to `selectedPaths` is
   // mirrored into `checkedPaths` so the form-style checked set still reflects
   // what the user picked via the mouse. With checkboxes visible the two sets
   // stay independent.
@@ -1908,7 +1908,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const ctrl = modifiers?.ctrl ?? false;
     const shift = modifiers?.shift ?? false;
     // Single-mode degrades Ctrl/Shift+click to plain click (matches rc09).
-    const isMulti = this._selectionMode === 'multi';
+    const isMulti = this._selectionMode === 'multiple';
     const useCtrl = ctrl && isMulti;
     const useShift = shift && isMulti;
 
@@ -2003,7 +2003,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return out;
   }
 
-  /** When `shouldShowCheckboxes` is false, the selected set IS the checked set —
+  /** When `isCheckboxesShown` is false, the selected set IS the checked set —
    *  mirror it onto `_checkedPaths` so consumers reading the bindable
    *  checkbox state see what the user picked via the mouse. With checkboxes
    *  visible the two sets stay independent. Mirrors svelte-treeview rc09. */
@@ -2648,7 +2648,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  focused node on the first Shift move; a plain move resets it to the new
    *  node). No-op in single selection mode. */
   private _navSelectTo(path: string): void {
-    if (this._selectionMode !== 'multi') return;
+    if (this._selectionMode !== 'multiple') return;
     const focused = this._focusedNode;
     if (!this._lastSelectedPath && focused) {
       this._lastSelectedPath = focused.path;
@@ -3749,8 +3749,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._selectionMode = updates.selectionMode ?? 'single';
     if (updates.navigationOverrides !== undefined && (updates.navigationOverrides ?? null) !== this._navigationOverrides)
       this._applyNavigationOverrides(updates.navigationOverrides);
-    if (updates.shouldShowCheckboxes !== undefined) {
-      this._shouldShowCheckboxes = updates.shouldShowCheckboxes ?? false;
+    if (updates.isCheckboxesShown !== undefined) {
+      this._shouldShowCheckboxes = updates.isCheckboxesShown ?? false;
       this._updateNodeConfig();
     }
     if (updates.checkboxMode !== undefined) {
@@ -3773,7 +3773,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._shouldClickToggleCheckbox = updates.shouldClickToggleCheckbox ?? false;
     if (updates.beforeCheckboxToggleCallback !== undefined)
       this.beforeCheckboxToggleCb = updates.beforeCheckboxToggleCallback;
-    if (updates.searchText !== undefined && updates.searchText !== this._searchText) this.searchText = updates.searchText;
+    if (updates.searchTerm !== undefined && updates.searchTerm !== this._searchText) this.searchTerm = updates.searchTerm;
     if (updates.isLoading !== undefined) this._isLoading = updates.isLoading ?? false;
     if (updates.bodyClass !== undefined) this._bodyClass = updates.bodyClass;
 
@@ -3803,8 +3803,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._dragOverNodeClass = updates.dragOverNodeClass;
     if (updates.draggedNodeClass !== undefined)
       this._draggedNodeClass = updates.draggedNodeClass;
-    if (updates.shouldShowNodeTooltips !== undefined)
-      this._shouldShowNodeTooltips = updates.shouldShowNodeTooltips ?? false;
+    if (updates.isNodeTooltipsShown !== undefined)
+      this._shouldShowNodeTooltips = updates.isNodeTooltipsShown ?? false;
     if (updates.getNodeTooltipCallback !== undefined)
       this._getNodeTooltipCallback = updates.getNodeTooltipCallback;
     if (updates.tooltipPlacement !== undefined)
@@ -3813,8 +3813,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._tooltipDelay = updates.tooltipDelay ?? { show: 400, hide: 100 };
     if (updates.tooltipOffset !== undefined)
       this._tooltipOffset = updates.tooltipOffset ?? 8;
-    if (updates.tooltipFollowCursor !== undefined)
-      this._tooltipFollowCursor = updates.tooltipFollowCursor ?? false;
+    if (updates.shouldTooltipFollowCursor !== undefined)
+      this._tooltipFollowCursor = updates.shouldTooltipFollowCursor ?? false;
     if (updates.dropZoneMode !== undefined)
       this._dropZoneMode = updates.dropZoneMode ?? 'glow';
     if (updates.dropZoneLayout !== undefined)
@@ -3836,8 +3836,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._touchDragDelay = updates.touchDragDelay ?? 300;
     if (updates.shouldIndicateUndraggable !== undefined)
       this._shouldIndicateUndraggable = updates.shouldIndicateUndraggable ?? true;
-    if (updates.shouldEnableTreeDropZone !== undefined)
-      this._shouldEnableTreeDropZone = updates.shouldEnableTreeDropZone ?? false;
+    if (updates.isTreeDropZoneEnabled !== undefined)
+      this._shouldEnableTreeDropZone = updates.isTreeDropZoneEnabled ?? false;
     if (updates.dragDropMode !== undefined)
       this._dragDropMode = updates.dragDropMode ?? 'none';
     if (updates.scrollHighlightTimeout !== undefined)
@@ -3892,9 +3892,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     // Virtual scroll
     if (updates.isVirtualScrollEnabled !== undefined) this._isVirtualScrollEnabled = updates.isVirtualScrollEnabled ?? false;
-    if (updates.virtualRowHeight !== undefined) this._virtualRowHeight = updates.virtualRowHeight;
-    if (updates.virtualOverscan !== undefined) this._virtualOverscan = updates.virtualOverscan ?? 5;
-    if (updates.virtualContainerHeight !== undefined) this._virtualContainerHeight = updates.virtualContainerHeight;
+    if (updates.virtualScrollItemHeight !== undefined) this._virtualRowHeight = updates.virtualScrollItemHeight;
+    if (updates.virtualScrollOverscan !== undefined) this._virtualOverscan = updates.virtualScrollOverscan ?? 5;
+    if (updates.virtualScrollContainerHeight !== undefined) this._virtualContainerHeight = updates.virtualScrollContainerHeight;
 
     // Multi-select
     if (updates.rangeSelectionMode !== undefined) this._rangeSelectionMode = updates.rangeSelectionMode ?? 'visual';
@@ -4059,8 +4059,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
       // Virtual scroll
       isVirtualScrollEnabled: this._isVirtualScrollEnabled,
-      virtualRowHeight: this.resolvedRowHeight,
-      virtualContainerHeight: this.resolvedContainerHeight,
+      virtualScrollItemHeight: this.resolvedRowHeight,
+      virtualScrollContainerHeight: this.resolvedContainerHeight,
       virtualTotalHeight: this._isVirtualScrollEnabled ? this.allVisibleFlatNodes.length * this.resolvedRowHeight : 0,
       virtualStartIndex: this._isVirtualScrollEnabled
         ? Math.max(0, Math.floor(this._vsScrollTop / this.resolvedRowHeight) - this._virtualOverscan)
@@ -4326,13 +4326,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       iconMember: this._iconMember,
       iconColorMember: this._iconColorMember,
       shouldAlignNodeIcons: this._shouldAlignNodeIcons,
-      shouldShowCheckboxes: this._shouldShowCheckboxes,
-      shouldShowNodeTooltips: this._shouldShowNodeTooltips,
+      isCheckboxesShown: this._shouldShowCheckboxes,
+      isNodeTooltipsShown: this._shouldShowNodeTooltips,
       getNodeTooltipCallback: this._getNodeTooltipCallback,
       tooltipPlacement: this._tooltipPlacement,
       tooltipDelay: this._tooltipDelay,
       tooltipOffset: this._tooltipOffset,
-      tooltipFollowCursor: this._tooltipFollowCursor,
+      shouldTooltipFollowCursor: this._tooltipFollowCursor,
       nodeClass: this._nodeClass,
       nodeContentClass: this._nodeContentClass
     };
@@ -4934,7 +4934,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._onNodeDragEnd(event);
   }
 
-  // ── Tree-level drop zone (shouldEnableTreeDropZone) ─────────────────────
+  // ── Tree-level drop zone (isTreeDropZoneEnabled) ─────────────────────
   // The whole populated tree becomes ONE drop target: a drop anywhere lands with
   // dropNode = null (route via beforeDropCallback's DropGroup[] return), regardless
   // of per-node isDropAllowed. Wired on the always-present container (only when the

@@ -76,7 +76,7 @@ test.describe("selectionMode='single'", () => {
 
 test.describe('selectAll focus', () => {
   test('selectAll() moves focus to the last visible row and announces it with focus-change', async ({ page }) => {
-    await load(page, '?mode=multi');
+    await load(page, '?mode=multiple');
     await click(page, '1');
     const focusedBefore = await page.evaluate(() => (window as any).tree.focusedNode?.path);
     await page.evaluate(() => {

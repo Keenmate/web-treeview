@@ -157,7 +157,7 @@
             for (const sib of btn.parentElement.querySelectorAll('button')) sib.classList.toggle('secondary', sib !== btn);
         }
         window.setPlacement = (p, btn) => { document.getElementById('tree1').tooltipPlacement = p; activate(btn); };
-        window.toggleFollow = (cb) => { document.getElementById('tree1').tooltipFollowCursor = cb.checked; };
+        window.toggleFollow = (cb) => { document.getElementById('tree1').shouldTooltipFollowCursor = cb.checked; };
         window.setTheme = (t, btn) => {
             const tree = document.getElementById('tree3');
             if (t) tree.setAttribute('theme', t); else tree.removeAttribute('theme');

@@ -89,9 +89,9 @@
             // The JS property also accepts { show, hide } (per the input docs).
             document.getElementById('delayed').tooltipDelay = { show: 0, hide: 800 };
             document.getElementById('toggle').addEventListener('click', () => {
-                const on = !text.shouldShowNodeTooltips;
-                text.shouldShowNodeTooltips = on;
-                rich.shouldShowNodeTooltips = on;
+                const on = !text.isNodeTooltipsShown;
+                text.isNodeTooltipsShown = on;
+                rich.isNodeTooltipsShown = on;
             });
         });
     </script>

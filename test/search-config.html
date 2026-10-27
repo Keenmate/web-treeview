@@ -12,7 +12,7 @@
     <!--
       ?mode=member    (default) search-value-member="tags"
       ?mode=callback  getSearchValueCallback → `${code} ${name}`
-      ?mode=off       should-use-internal-search-index="false"
+      ?mode=off       use-internal-search-index="false"
     -->
     <div id="host"></div>
 
@@ -34,7 +34,7 @@
         const tree = document.createElement('web-treeview');
         tree.id = 'tree';
         tree.setAttribute('expand-level', '2');
-        tree.setAttribute('should-use-internal-search-index', mode === 'off' ? 'false' : 'true');
+        tree.setAttribute('use-internal-search-index', mode === 'off' ? 'false' : 'true');
         const extra = {};
         if (mode === 'member' || mode === 'off') extra.searchValueMember = 'tags';
         if (mode === 'callback') extra.getSearchValueCallback = ({ node }) => `${node.data.code} ${node.data.name}`;

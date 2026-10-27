@@ -412,7 +412,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // normal click/select flow. Expand-on-click still fires.
         if (
           this.controller.shouldClickToggleCheckbox &&
-          this.lastNodeConfig?.shouldShowCheckboxes &&
+          this.lastNodeConfig?.isCheckboxesShown &&
           node.isSelectable &&
           isPlainClick
         ) {
@@ -658,7 +658,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // When the tree drop zone is on, the container also listens for `drop`. bodyEl
     // fully owns in-body drops (node / zone / empty, plus forwarding rejects to the
     // zone), so stop the event here to keep the container handler from double-placing.
-    if (this.controller.shouldEnableTreeDropZone) event.stopPropagation();
+    if (this.controller.isTreeDropZoneEnabled) event.stopPropagation();
     const target = event.target as HTMLElement;
 
     // Check for drop zone (zones are appended to bodyEl, not inside .wtv__node)
@@ -746,7 +746,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   };
 
-  // Tree-level drop zone (shouldEnableTreeDropZone): container-level fallback so a
+  // Tree-level drop zone (isTreeDropZoneEnabled): container-level fallback so a
   // drop anywhere over the tree is accepted even when every node rejects it. The
   // controller handlers no-op unless the flag is on, so these can attach always.
   private _onContainerDragOver = (event: DragEvent) => this.controller?.handleTreeZoneDragOver(event);
@@ -781,7 +781,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const ctrl = this.controller;
     const rowHeight = ctrl.resolvedRowHeight;
     const containerHeightPx = parseFloat(ctrl.resolvedContainerHeight) || 400;
-    const overscan = ctrl.virtualOverscan;
+    const overscan = ctrl.virtualScrollOverscan;
     const allNodes = ctrl.allVisibleFlatNodes;
 
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
@@ -835,7 +835,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // the document-level dragend listener is a LIVE resource, attached in mount() /
     // activate() and removed in deactivate() / destroy().
     // Tree-level drop zone: fallback dragover/drop on the whole container (gated
-    // inside the controller handlers by shouldEnableTreeDropZone).
+    // inside the controller handlers by isTreeDropZoneEnabled).
     if (this.container) {
       this.container.addEventListener('dragover', this._onContainerDragOver);
       this.container.addEventListener('drop', this._onContainerDrop);
@@ -871,7 +871,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (snapshot.isVirtualScrollEnabled && !this.vsSpacerEl) {
       // Enable virtual scroll: add class, create spacer + content wrapper
       this.bodyEl.classList.add('wtv__virtual-scroll');
-      this.bodyEl.style.height = snapshot.virtualContainerHeight;
+      this.bodyEl.style.height = snapshot.virtualScrollContainerHeight;
 
       this.vsSpacerEl = document.createElement('div');
       this.vsSpacerEl.className = 'wtv__vs-spacer';
@@ -921,8 +921,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!snapshot.isVirtualScrollEnabled || !this.vsSpacerEl || !this.vsContentEl || !this.bodyEl) return;
 
     // Update container height if changed
-    if (this.bodyEl.style.height !== snapshot.virtualContainerHeight) {
-      this.bodyEl.style.height = snapshot.virtualContainerHeight;
+    if (this.bodyEl.style.height !== snapshot.virtualScrollContainerHeight) {
+      this.bodyEl.style.height = snapshot.virtualScrollContainerHeight;
     }
 
     // Update spacer height (creates the correct scrollbar size)
@@ -996,11 +996,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
 
-    // Whole-tree drop-zone engaged outline (shouldEnableTreeDropZone): light the
+    // Whole-tree drop-zone engaged outline (isTreeDropZoneEnabled): light the
     // container while a drag hovers it (isDropPlaceholderActive is set by the
     // container-level tree-zone dragover handler).
     if (this.container) {
-      const zoneActive = !!this.controller?.shouldEnableTreeDropZone && snapshot.isDropPlaceholderActive;
+      const zoneActive = !!this.controller?.isTreeDropZoneEnabled && snapshot.isDropPlaceholderActive;
       this.container.classList.toggle('wtv__tree-drop-zone--active', zoneActive);
     }
 
@@ -1135,10 +1135,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this._lastEmptyState = emptyState;
     }
     // Show the empty drop zone when a drag is over an empty tree, OR permanently
-    // when shouldShowDropPlaceholderWhenEmpty keeps it up so a Ctrl/Cmd+V can land.
+    // when isEmptyDropPlaceholderShown keeps it up so a Ctrl/Cmd+V can land.
     const showZone =
       (snapshot.isDragInProgress && snapshot.isDropPlaceholderActive) ||
-      !!this.config.shouldShowDropPlaceholderWhenEmpty;
+      !!this.config.isEmptyDropPlaceholderShown;
 
     if (showZone && !snapshot.isLoading) {
       target.style.minHeight = '';
@@ -1160,7 +1160,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         }
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
         // (routed through the body keydown listener) pastes into the empty tree.
-        if (this.config.shouldShowDropPlaceholderWhenEmpty) {
+        if (this.config.isEmptyDropPlaceholderShown) {
           zone.tabIndex = 0;
           const grabFocus = () => this.bodyEl?.focus();
           zone.addEventListener('pointerenter', grabFocus);
@@ -1390,8 +1390,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     row.appendChild(toggle);
 
     // Checkbox (between toggle and content). Rendered only when
-    // shouldShowCheckboxes is true and the node is selectable.
-    if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
+    // isCheckboxesShown is true and the node is selectable.
+    if (nodeConfig?.isCheckboxesShown && node.isSelectable) {
       row.appendChild(
         this._buildCheckbox(
           snapshot.checkedPaths.has(node.path),
@@ -1522,7 +1522,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const key = this._nodeKey(node);
     this._destroyTooltip(key);
     const cfg = this.lastNodeConfig;
-    if (!triggerEl || !cfg?.shouldShowNodeTooltips || !cfg.getNodeTooltipCallback) return;
+    if (!triggerEl || !cfg?.isNodeTooltipsShown || !cfg.getNodeTooltipCallback) return;
     const content = cfg.getNodeTooltipCallback(node);
     if (content == null || (typeof content === 'string' && content.trim() === '')) return;
     const handle = createTooltip({
@@ -1532,7 +1532,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       placement: cfg.tooltipPlacement,
       offset: cfg.tooltipOffset,
       delay: cfg.tooltipDelay,
-      shouldFollowCursor: cfg.tooltipFollowCursor,
+      shouldFollowCursor: cfg.shouldTooltipFollowCursor,
       cssClass: 'wtv__tooltip',
       visibleClass: 'wtv__tooltip--visible'
     });
@@ -1604,7 +1604,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // now (single-element contract) — indeterminate is a modifier class, not the
     // native .indeterminate property, so it survives the diff reconciler + virtual
     // scroll recycling.
-    if (nodeConfig?.shouldShowCheckboxes && node.isSelectable) {
+    if (nodeConfig?.isCheckboxesShown && node.isSelectable) {
       let cb = el.querySelector('.wtv__checkbox') as HTMLInputElement | null;
       if (!cb) {
         // Showed checkboxes was just toggled on — insert one.

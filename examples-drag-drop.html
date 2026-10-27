@@ -31,7 +31,7 @@
         <div class="card">
             <h2>DD01 · Drag Between Trees</h2>
             <p><strong>Source tree (left):</strong> Drag to reorganize nodes (move). Enable "Allow Ctrl+drag to copy" then hold Ctrl while dragging to copy nodes.
-                With <code>selection-mode="multi"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole selected set moves together.
+                With <code>selection-mode="multiple"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole selected set moves together.
                 <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag (it's still a valid drop target).
                 <strong>Target tree (right):</strong> Drag from source to add nodes. Starts empty to demo drop placeholder.</p>
             <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>shouldHandleKeyboardShortcuts</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
@@ -94,7 +94,7 @@
                     Selection mode:
                     <select id="ctrl-selection-mode" onchange="applySettings()">
                         <option value="single">single (one selected node; one node per drag)</option>
-                        <option value="multi" selected>multi (Ctrl/Shift+click; drag the whole set)</option>
+                        <option value="multiple" selected>multiple (Ctrl/Shift+click; drag the whole set)</option>
                     </select>
                 </label>
             </div>
@@ -132,7 +132,7 @@
         <!-- Multi-Drag -->
         <div class="card">
             <h2>DD02 · Multi-Drag (Select Multiple &amp; Drag as Group)</h2>
-            <p>Set <code>selection-mode="multi"</code> and the tree honors OS-explorer drag semantics: Ctrl/Shift-click several rows, then drag any one of them &mdash; the whole selected set moves together. Grabbing a row that's <strong>not</strong> in the selected set replaces the selection with just that row, matching how Finder / Explorer behave.</p>
+            <p>Set <code>selection-mode="multiple"</code> and the tree honors OS-explorer drag semantics: Ctrl/Shift-click several rows, then drag any one of them &mdash; the whole selected set moves together. Grabbing a row that's <strong>not</strong> in the selected set replaces the selection with just that row, matching how Finder / Explorer behave.</p>
 
             <div class="note">
                 <p class="note-title">Try it</p>
@@ -173,7 +173,7 @@
                     <p class="demo-label">Multi-Select Tree</p>
                     <div class="tree-container" id="multi-container">
                         <web-treeview id="multi-tree"
-                            selection-mode="multi"
+                            selection-mode="multiple"
                             click-behavior="select"
                             drag-drop-mode="both"
                             selected-node-class="wtv__node-content--selected-bold"
@@ -416,7 +416,7 @@
                 targetTreeEl.dropZoneMaxWidth = maxWidth;
                 targetTreeEl.isCopyAllowed = isCopyAllowed;
                 targetTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
-                targetTreeEl.shouldShowDropPlaceholderWhenEmpty = showEmptyPlaceholder;
+                targetTreeEl.isEmptyDropPlaceholderShown = showEmptyPlaceholder;
                 targetTreeEl.setAttribute('selection-mode', selectionMode);
             }
 
@@ -670,7 +670,7 @@
                 restrictedLogEl.textContent = restrictedLogEntries.join('\n');
             };
 
-            // Multi-Drag tree (rc03 selection-mode='multi' + drag-drop-mode='both')
+            // Multi-Drag tree (rc03 selection-mode='multiple' + drag-drop-mode='both')
             const multiTreeEl = document.getElementById('multi-tree');
             multiTreeEl.idMember = 'id';
             multiTreeEl.pathMember = 'path';
@@ -701,7 +701,7 @@
             multiTreeEl.addEventListener('checked-change', (e) => {
                 const paths = [...e.detail.paths].sort();
                 if (paths.length === 0) {
-                    multiCheckedEl.textContent = multiTreeEl.shouldShowCheckboxes ? '(none)' : '(checkboxes off)';
+                    multiCheckedEl.textContent = multiTreeEl.isCheckboxesShown ? '(none)' : '(checkboxes off)';
                     return;
                 }
                 const names = e.detail.nodes.map(n => n.data?.name).join(', ');

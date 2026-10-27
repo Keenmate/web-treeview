@@ -33,7 +33,7 @@ The tree maintains three independent state sets — see [usage.md](./usage.md) f
 
 - `focusedNode` — single node. Driven by clicks (per `clickBehavior`) and arrow keys. Renders the `.wtv__node-content--focused` always-on marker class plus the optional `focusedNodeClass` (if configured).
 - `selectedPaths` — multi-select set. Driven by Ctrl / Shift + click, Shift + Arrow / Home / End / PageUp / PageDown, and `Ctrl+A`. Renders `.wtv__node-content--selected` plus the optional `selectedNodeClass`.
-- `checkedPaths` — checkbox / data-state set. Driven by checkbox clicks when `shouldShowCheckboxes` is on, or mirrored from `selectedPaths` when checkboxes are off.
+- `checkedPaths` — checkbox / data-state set. Driven by checkbox clicks when `isCheckboxesShown` is on, or mirrored from `selectedPaths` when checkboxes are off.
 
 `silent: true` on `selectNode` / `clearSelection` / `uncheckAll` suppresses BOTH the user callback AND the corresponding DOM event — useful when restoring state from a URL parameter so consumers don't see a phantom "user interaction" event on page load.
 

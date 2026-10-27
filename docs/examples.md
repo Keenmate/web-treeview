@@ -79,7 +79,7 @@ Hold Ctrl while dragging to copy instead of move. `shouldAutoHandleCopy` (defaul
 Out of the box with no configuration in single mode; opt into multi mode for Ctrl / Shift modifiers.
 
 ```html
-<web-treeview selection-mode="multi" range-selection-mode="visual"></web-treeview>
+<web-treeview selection-mode="multiple" range-selection-mode="visual"></web-treeview>
 ```
 
 ```javascript
@@ -111,7 +111,7 @@ tree.addEventListener('selection-change', (e) => {
 
 - `checkbox-mode="independent"` (default) — checkbox state is per-node.
 - `checkbox-mode="cascade"` — toggling a parent cascades to every descendant; partial selection shows an indeterminate state on the parent.
-- `click-toggles-checkbox` — plain click toggles the checkbox instead of focusing.
+- `click-toggle-checkbox` — plain click toggles the checkbox instead of focusing.
 
 Intercept a toggle (e.g. to require confirmation):
 
@@ -197,7 +197,7 @@ tree.pasteNodes('1.2', ({ data }) => ({ ...data, id: crypto.randomUUID() }));
 
 ### Empty-tree paste
 
-Set `show-drop-placeholder-when-empty` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `no-data-text`.
+Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `no-data-text`.
 
 ## Per-node icons
 
@@ -340,12 +340,12 @@ tree.contextMenuYOffset = -30; // Shift menu 30px up
 
 | Mode | Config | DOM Nodes | Best For |
 |------|--------|-----------|----------|
-| Flat (default) | `use-flat-rendering="true"` | All | Most trees (up to ~10k nodes) |
-| Virtual | `virtual-scroll="true"` | ~50 | Large trees (10k+) |
+| Flat (default) | `enable-flat-rendering="true"` | All | Most trees (up to ~10k nodes) |
+| Virtual | `enable-virtual-scroll` | ~50 | Large trees (10k+) |
 
 ```html
 <!-- Virtual scroll for large trees -->
-<web-treeview virtual-scroll virtual-container-height="500px"></web-treeview>
+<web-treeview enable-virtual-scroll virtual-scroll-container-height="500px"></web-treeview>
 
 <!-- Flat mode (default) with progressive batching -->
 <web-treeview progressive-render="true" initial-batch-size="200" max-batch-size="800"></web-treeview>

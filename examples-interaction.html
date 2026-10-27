@@ -71,7 +71,7 @@
                 <li><strong>checkedPaths</strong> &mdash; checkbox data state. Surfaces as <code>checked-change</code>.</li>
             </ul>
             <p>
-                With <code>selection-mode="multi"</code>:
+                With <code>selection-mode="multiple"</code>:
                 <span class="kbd">Click</span> picks one node,
                 <span class="kbd">Ctrl/Cmd+Click</span> toggles individual nodes,
                 <span class="kbd">Shift+Click</span> range-selects, and
@@ -93,7 +93,7 @@
                     Selection mode:
                     <select id="in1-selection-mode">
                         <option value="single">single (plain click only)</option>
-                        <option value="multi" selected>multi (Ctrl-toggle, Shift-range)</option>
+                        <option value="multiple" selected>multiple (Ctrl-toggle, Shift-range)</option>
                     </select>
                 </label>
                 <label>
@@ -146,7 +146,7 @@
                     <div class="demo-label">Tree</div>
                     <div class="tree-container">
                         <web-treeview id="in1-tree" expand-level="2"
-                            selection-mode="multi"
+                            selection-mode="multiple"
                             click-behavior="expand-and-focus"></web-treeview>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                 <p>
                     <strong>Checkboxes</strong> are a separate channel &mdash; <code>checkedPaths</code>, independent of
                     selection/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
-                    partial branches); <code>independent</code> toggles one node. With <code>click-toggles-checkbox</code> on,
+                    partial branches); <code>independent</code> toggles one node. With <code>click-toggle-checkbox</code> on,
                     a plain row click flips that node's checkbox instead of just focusing the row.
                 </p>
                 <p style="margin-bottom:0">
@@ -240,7 +240,7 @@
                 <em>behaves</em>; <code>cascade-check-policy</code> controls which paths the checked set
                 <em>emits</em> (what <code>checkedPaths</code> / the <code>checked-change</code> event report).
                 Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
-                (The <code>click-toggles-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
+                (The <code>click-toggle-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
                 the IN01 picker above.)
             </p>
 
@@ -371,7 +371,7 @@ function restoreFromUrl(nodePath) {
                     <div class="demo-label">Source tree</div>
                     <div class="tree-container tree-container-sm">
                         <web-treeview id="in6-source" expand-level="2" tree-id="source"
-                            selection-mode="multi"
+                            selection-mode="multiple"
                             selected-node-class="wtv__node-content--selected-border"></web-treeview>
                     </div>
                     <div class="controls">
@@ -548,8 +548,8 @@ function restoreFromUrl(nodePath) {
                 in1.setAttribute('checkbox-mode', e.target.value);
             });
             document.getElementById('in1-click-toggles').addEventListener('change', (e) => {
-                if (e.target.checked) in1.setAttribute('click-toggles-checkbox', 'true');
-                else in1.removeAttribute('click-toggles-checkbox');
+                if (e.target.checked) in1.setAttribute('click-toggle-checkbox', 'true');
+                else in1.removeAttribute('click-toggle-checkbox');
             });
             document.getElementById('in1-range-mode').addEventListener('change', (e) => {
                 in1.rangeSelectionMode = e.target.value;

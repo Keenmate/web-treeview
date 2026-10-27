@@ -42,39 +42,39 @@ test.describe('removing an attribute resets the input to its default', () => {
     await page.evaluate(() => (window as any).tree.removeAttribute('expand-level'));
     await expect(nodeByPath(page, '1.1')).toHaveCount(0);
   });
-  test('is-loading removed → the loading overlay hides', async ({ page }) => {
+  test('loading removed → the loading overlay hides', async ({ page }) => {
     await load(page);
     const overlay = page.locator('.wtv__loading-overlay');
-    await page.evaluate(() => (window as any).tree.setAttribute('is-loading', 'true'));
+    await page.evaluate(() => (window as any).tree.setAttribute('loading', 'true'));
     await expect(overlay).toBeVisible();
-    await page.evaluate(() => (window as any).tree.removeAttribute('is-loading'));
+    await page.evaluate(() => (window as any).tree.removeAttribute('loading'));
     await expect(overlay).toBeHidden();
   });
 
   test('virtual-scroll removed → back to the plain (non-virtual) body', async ({ page }) => {
     await load(page);
     const body = page.locator('.wtv__tree').first();
-    await page.evaluate(() => (window as any).tree.setAttribute('virtual-scroll', 'true'));
+    await page.evaluate(() => (window as any).tree.setAttribute('enable-virtual-scroll', 'true'));
     await expect(body).toHaveClass(/wtv__virtual-scroll/);
-    await page.evaluate(() => (window as any).tree.removeAttribute('virtual-scroll'));
+    await page.evaluate(() => (window as any).tree.removeAttribute('enable-virtual-scroll'));
     await expect(body).not.toHaveClass(/wtv__virtual-scroll/);
   });
 
-  test('virtual-overscan / context-menu-x-offset removed → their defaults (5 / 8)', async ({ page }) => {
+  test('virtual-scroll-overscan / context-menu-x-offset removed → their defaults (5 / 8)', async ({ page }) => {
     await load(page);
     const read = () => page.evaluate(() => {
       const t = (window as any).tree;
-      return [t.virtualOverscan, t.contextMenuXOffset];
+      return [t.virtualScrollOverscan, t.contextMenuXOffset];
     });
     await page.evaluate(() => {
       const t = (window as any).tree;
-      t.setAttribute('virtual-overscan', '12');
+      t.setAttribute('virtual-scroll-overscan', '12');
       t.setAttribute('context-menu-x-offset', '30');
     });
     await expect.poll(read).toEqual([12, 30]);
     await page.evaluate(() => {
       const t = (window as any).tree;
-      t.removeAttribute('virtual-overscan');
+      t.removeAttribute('virtual-scroll-overscan');
       t.removeAttribute('context-menu-x-offset');
     });
     await expect.poll(read).toEqual([5, 8]);

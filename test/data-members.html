@@ -12,9 +12,9 @@
     <!--
       ?mode=default   no sort config → siblings by display value
       ?mode=order     order-member="rank"
-      ?mode=callback  sortCallback (descending by name), is-sorted unset
-      ?mode=presorted  is-sorted + the sortCallback spy; data given in display order
-      ?mode=presorted-bad  is-sorted with a child listed before its parent
+      ?mode=callback  sortCallback (descending by name), sorted unset
+      ?mode=presorted  sorted + the sortCallback spy; data given in display order
+      ?mode=presorted-bad  sorted with a child listed before its parent
       ?mode=display   display-value-member="missing" + getDisplayValueCallback
       ?mode=members   id-member="key", parent-path-member="parent", level-member="lvl"
     -->
@@ -58,7 +58,7 @@
             tree.setAttribute('parent-path-member', 'parent');
             tree.setAttribute('level-member', 'lvl');
         }
-        // is-sorted is a hint: the data is already in insert order (parents first,
+        // sorted is a hint: the data is already in insert order (parents first,
         // siblings in display order) — the tree renders it exactly as given.
         const byPath = (p) => data.find((d) => d.path === p);
         if (mode === 'presorted') tree.data = ['3', '1', '1.2', '1.1', '2'].map(byPath);

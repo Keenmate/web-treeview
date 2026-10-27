@@ -28,7 +28,7 @@ test('order-member orders siblings by that field (then by name)', async ({ page 
   expect(await labels(page)).toEqual(['Banana', 'Cucumber', 'Apple', '  Cherry', '  Date']);
 });
 
-test('a sibling sortCallback without is-sorted keeps every node (no orphaned children)', async ({ page }) => {
+test('a sibling sortCallback without sorted keeps every node (no orphaned children)', async ({ page }) => {
   await load(page, 'callback');
   expect(await labels(page)).toEqual(['Cucumber', 'Banana', 'Apple', '  Date', '  Cherry']);
   expect(await page.evaluate(() => (window as any).tree.getInsertResult()?.failed?.length ?? 0)).toBe(0);
@@ -41,18 +41,18 @@ test('sortCallback only ever sees the children of one parent', async ({ page }) 
   expect(calls.map((c) => [...c].sort())).toEqual([['1', '2', '3'], ['1.1', '1.2']]);
 });
 
-test('is-sorted renders pre-sorted data exactly as given (no reorder)', async ({ page }) => {
+test('sorted renders pre-sorted data exactly as given (no reorder)', async ({ page }) => {
   await load(page, 'presorted');
   // display order given: 3, 1 (1.2, 1.1), 2 — not by name, not by the descending callback
   expect(await labels(page)).toEqual(['Cucumber', 'Apple', '  Cherry', '  Date', 'Banana']);
 });
 
-test('is-sorted skips all sorting on insert (sortCallback is never called)', async ({ page }) => {
+test('sorted skips all sorting on insert (sortCallback is never called)', async ({ page }) => {
   await load(page, 'presorted');
   expect(await page.evaluate(() => (window as any).sortCalls.length)).toBe(0);
 });
 
-test('is-sorted with badly ordered data drops orphans into getInsertResult().failed', async ({ page }) => {
+test('sorted with badly ordered data drops orphans into getInsertResult().failed', async ({ page }) => {
   await load(page, 'presorted-bad');
   // 1.1 is listed before its parent 1 → caller broke the hint's contract; it is reported, not rendered
   const failed: string[] = await page.evaluate(() =>
@@ -61,7 +61,7 @@ test('is-sorted with badly ordered data drops orphans into getInsertResult().fai
   expect(await labels(page)).toEqual(['Apple', '  Cherry', 'Banana', 'Cucumber']);
 });
 
-test('is-sorted: insertBranch still re-sorts the affected parent (the hint covers the input only)', async ({ page }) => {
+test('sorted: insertBranch still re-sorts the affected parent (the hint covers the input only)', async ({ page }) => {
   await load(page, 'presorted');
   // as given: Apple's children Cherry, Date; the callback orders descending by name
   const result = await page.evaluate(() => {

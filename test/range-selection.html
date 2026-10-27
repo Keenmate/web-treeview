@@ -10,7 +10,7 @@
     </style>
 </head>
 <body>
-    <!-- ?range=visual|logical  ?mode=multi|single -->
+    <!-- ?range=visual|logical  ?mode=multiple|single -->
     <web-treeview id="tree" expand-level="1" click-behavior="select"></web-treeview>
     <pre data-testid="rs-log"></pre>
 
@@ -34,7 +34,7 @@
 
         await customElements.whenDefined('web-treeview');
         const tree = document.getElementById('tree');
-        tree.setAttribute('selection-mode', params.get('mode') ?? 'multi');
+        tree.setAttribute('selection-mode', params.get('mode') ?? 'multiple');
         tree.setAttribute('range-selection-mode', params.get('range') ?? 'visual');
         setupTree(tree, data);
         logEvents(tree, 'rs-log', ['selection-change', 'focus-change']);

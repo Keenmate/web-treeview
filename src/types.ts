@@ -198,9 +198,9 @@ export interface TreeViewConfig<T = any> {
 
   // Virtual scroll
   isVirtualScrollEnabled?: boolean | null;
-  virtualRowHeight?: number | null;
-  virtualOverscan?: number | null;
-  virtualContainerHeight?: string | null;
+  virtualScrollItemHeight?: number | null;
+  virtualScrollOverscan?: number | null;
+  virtualScrollContainerHeight?: string | null;
 
   // Visual
   /** Per-instance theme override. Forwarded to the root `.wtv__container`
@@ -225,8 +225,8 @@ export interface TreeViewConfig<T = any> {
   /** Enable hover/focus tooltips on node rows (the direct analog of web-multiselect's
    *  option tooltips). Content from `getNodeTooltipCallback`; no content ⇒ no tooltip.
    *  Portaled + Floating-UI positioned (shared core createTooltip), themed via
-   *  `--base-tooltip-*`. Parity with svelte-treeview's `shouldShowNodeTooltips`. */
-  shouldShowNodeTooltips?: boolean;
+   *  `--base-tooltip-*`. Parity with svelte-treeview's `isNodeTooltipsShown`. */
+  isNodeTooltipsShown?: boolean;
   /** Tooltip content for a node — plain text OR a built `HTMLElement` for rich content
    *  (the wtv analog of svelte-treeview's `tooltip` snippet). Return null/empty to skip. */
   getNodeTooltipCallback?: (ctx: NodeContext<T>) => string | HTMLElement | null | undefined;
@@ -242,7 +242,7 @@ export interface TreeViewConfig<T = any> {
   /** Gap from the row (or cursor), px. Default `8`. */
   tooltipOffset?: number | null;
   /** Anchor the tooltip to the pointer instead of the row. Default `false`. */
-  tooltipFollowCursor?: boolean | null;
+  shouldTooltipFollowCursor?: boolean | null;
   /** Disclosure glyph set: 'chevron' (default) | 'triangle' | 'plus-minus' | 'arrow'.
    *  Re-points the --wtv-icon-* variables; see IconSet in controller/types. */
   iconSet?: 'chevron' | 'triangle' | 'plus-minus' | 'arrow' | null;
@@ -279,13 +279,13 @@ export interface TreeViewConfig<T = any> {
   getNodeContentClassCallback?: (ctx: NodeContext<T>) => string | null | undefined;
 
   // Bindable properties
-  searchText?: string | null;
+  searchTerm?: string | null;
   /** Single focused node (click, arrow keys). Distinct from the multi-select
    *  selected set. */
   focusedNode?: LTreeNode<T> | null;
   /** Multi-select selected set (Ctrl/Shift+click). */
   selectedPaths?: Set<string>;
-  /** Checkbox / data-state checked set. When `shouldShowCheckboxes` is false,
+  /** Checkbox / data-state checked set. When `isCheckboxesShown` is false,
    *  the controller mirrors `selectedPaths` into this set. */
   checkedPaths?: Set<string>;
 
@@ -324,8 +324,8 @@ export interface TreeViewConfig<T = any> {
 
   // Selection model (rc06+: focusedNode / selectedPaths / checkedPaths)
   /** `'single'` (default) — Ctrl/Shift+click degrade to plain click.
-   *  `'multi'` — Ctrl+click toggles, Shift+click range-extends. */
-  selectionMode?: 'single' | 'multi';
+   *  `'multiple'` — Ctrl+click toggles, Shift+click range-extends. */
+  selectionMode?: 'single' | 'multiple';
   /** Replace individual keyboard-navigation methods — merged over the defaults
    *  (`{ ...defaults, ...navigationOverrides }`), so a method you leave out keeps its
    *  built-in behavior. Keys: navTo, navNext, navPrev, navNextSibling, navPrevSibling,
@@ -334,7 +334,7 @@ export interface TreeViewConfig<T = any> {
    *  navSelectPageUp. Reassign to swap at runtime; `null` restores the defaults. */
   navigationOverrides?: TreeNavigationOverrides<T> | null;
   /** Render a checkbox per selectable node. Default `false`. */
-  shouldShowCheckboxes?: boolean;
+  isCheckboxesShown?: boolean;
   /** `'independent'` (default) — checkbox state is per-node; toggling a parent
    *  does NOT cascade to descendants. `'cascade'` — toggling a parent cascades
    *  to every descendant; a partially checked subtree shows an indeterminate state on
@@ -347,7 +347,7 @@ export interface TreeViewConfig<T = any> {
    *  nodes; `'all'` — every fully-checked node. */
   cascadeCheckPolicy?: 'rolled-up' | 'leaves' | 'all';
   /** When `true`, plain clicks on a selectable node toggle its checkbox
-   *  instead of focusing/selecting. Requires `shouldShowCheckboxes=true`. */
+   *  instead of focusing/selecting. Requires `isCheckboxesShown=true`. */
   shouldClickToggleCheckbox?: boolean;
   /** Runs before a checkbox toggle (`ctx.node`, `ctx.isChecked` = the new state,
    *  `ctx.affectedPaths`). Return `false` to cancel, a `string[]` to override which paths
@@ -468,7 +468,7 @@ export interface TreeViewConfig<T = any> {
   shouldIndicateUndraggable?: boolean | null;
   /** Make the whole populated tree ONE drop target: a drop anywhere lands with
    *  `target = null` regardless of per-node `getIsDropAllowedCallback`. Default `false`. */
-  shouldEnableTreeDropZone?: boolean | null;
+  isTreeDropZoneEnabled?: boolean | null;
 
   // Render callbacks (for DomRenderer) — one ctx each
   /** Fill `ctx.contentElement` for `ctx.node` (render state on the ctx: device, container, isExpanded, …). */
@@ -479,7 +479,7 @@ export interface TreeViewConfig<T = any> {
   renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */
-  shouldShowDropPlaceholderWhenEmpty?: boolean | null;
+  isEmptyDropPlaceholderShown?: boolean | null;
   renderLoadingCallback?: (ctx: ContainerRenderContext<T>) => void;
   renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => void;
   renderFooterCallback?: (ctx: ContainerRenderContext<T>) => void;

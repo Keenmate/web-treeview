@@ -336,8 +336,6 @@ tree.contextMenuXOffset = 10;  // Shift menu 10px right
 tree.contextMenuYOffset = -30; // Shift menu 30px up
 ```
 
-Set `shouldDisplayContextMenuInDebugMode = true` to render the menu at a fixed offset from the tree (useful while developing context-menu CSS without right-clicking every time).
-
 ## Rendering modes
 
 | Mode | Config | DOM Nodes | Best For |

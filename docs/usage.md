@@ -205,12 +205,6 @@ a child listed before its parent is dropped as an orphan and reported in
 | `virtual-overscan` | `number` | `5` | Extra rows above/below viewport |
 | `virtual-container-height` | `string` | `'400px'` | Viewport height |
 
-### Debug
-
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `should-display-debug-information` | `boolean` | `false` | Show debug overlay |
-
 ## Properties (JS only)
 
 Set via JavaScript, not HTML attributes.

@@ -643,8 +643,6 @@ export class WebTreeView<T = any> {
       shouldUseInternalSearchIndex: o.shouldUseInternalSearchIndex,
       indexerBatchSize: o.indexerBatchSize,
       indexerTimeout: o.indexerTimeout,
-      shouldDisplayDebugInformation: o.shouldDisplayDebugInformation ?? false,
-      shouldDisplayContextMenuInDebugMode: o.shouldDisplayContextMenuInDebugMode ?? false,
       isLoading: o.isLoading ?? false,
 
       isProgressiveRender: o.isProgressiveRender ?? true,

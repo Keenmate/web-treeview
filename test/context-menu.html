@@ -22,10 +22,6 @@
         <div class="card">
             <h2>Callback Approach</h2>
             <div class="controls">
-                <label>
-                    <input type="checkbox" id="debug-mode-1">
-                    Debug Mode (menu appears at fixed position)
-                </label>
                 <button id="clear-log-1">Clear Log</button>
             </div>
             <div class="tree-container">
@@ -76,10 +72,6 @@
                 logLines.length = 0;
                 logEl.textContent = '';
                 logWrap.hidden = true;
-            });
-
-            document.getElementById('debug-mode-1').addEventListener('change', (e) => {
-                tree.shouldDisplayContextMenuInDebugMode = e.target.checked;
             });
 
             // Core menu items: `text`, `onClick(detail)`, `isDanger`, `children`; dividers

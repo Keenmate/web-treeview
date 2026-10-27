@@ -105,8 +105,6 @@ export interface Ltree<T> {
 	isCollapsibleMember: string | null | undefined;
 	getIsCollapsibleCallback?: (node: LTreeNode<T>) => boolean;
 
-	shouldDisplayDebugInformation: boolean | null | undefined;
-
 	// onChange callback — replaces Svelte's $state reactivity
 	onChange: (() => void) | null;
 

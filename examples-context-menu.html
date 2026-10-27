@@ -55,10 +55,6 @@
             <p>Right-click any node. web-treeview builds the menu with <code>getContextMenuItemsCallback(ctx) =&gt; TreeMenuEntry[]</code> — <code>ctx</code> is <code>{ node, path, parent, siblings, controller, element }</code> and the entries are core action items. This demo shows shortcuts, a nested submenu, a named divider (<code>menuDivider(text)</code>), an <code>isDanger</code> item, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item. An enabled leaf closes the menu after its <code>onClick</code> — no <code>close()</code> needed.</p>
 
             <div class="controls">
-                <label class="inline">
-                    <input type="checkbox" id="cm1-debug">
-                    Debug Mode (menu appears at a fixed position)
-                </label>
                 <div class="offset-inputs">
                     <label>X Offset <input type="number" id="cm1-x" value="8"> <span class="muted">px</span></label>
                     <label>Y Offset <input type="number" id="cm1-y" value="0"> <span class="muted">px</span></label>
@@ -111,7 +107,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
         <!-- CM02 · Custom Item Render -->
         <div class="card">
             <h2>CM02 · Custom Item Render</h2>
-            <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback({ node, menuItem, buttonElement, … })</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>buttonElement</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer item element (classes, ARIA, <code>data-*</code> attrs, disabled state, submenu hover, keyboard) stays component-managed. Debug mode is on so the controls below preview live.</p>
+            <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback({ node, menuItem, buttonElement, … })</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>buttonElement</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer item element (classes, ARIA, <code>data-*</code> attrs, disabled state, submenu hover, keyboard) stays component-managed. Right-click a node to preview the controls below.</p>
 
             <div class="controls ctx-config">
                 <label>
@@ -132,10 +128,6 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
                         <option value="8px 16px" selected>Default</option>
                         <option value="12px 20px">Spacious</option>
                     </select>
-                </label>
-                <label class="inline">
-                    <input type="checkbox" id="cm2-debug" checked>
-                    <code>Debug: keep menu open</code>
                 </label>
             </div>
 
@@ -206,13 +198,6 @@ tree.addEventListener('action', ({ detail }) =&gt; log(detail.id, detail.node));
                         <td><code>(detail: TreeViewActionEventDetail) =&gt; void</code></td>
                         <td><code>undefined</code></td>
                         <td>An item was activated. <code>detail</code>: <code>action</code> (built-in name or <code>'custom'</code>), <code>id</code>, <code>item</code>, <code>source: 'context-menu'</code>, <code>node</code> / <code>path</code> / <code>parent</code> / <code>siblings</code>. Fires after the item's <code>onClick</code>, before the built-in.</td>
-                    </tr>
-                    <tr>
-                        <td><code>shouldDisplayContextMenuInDebugMode</code></td>
-                        <td>&mdash;</td>
-                        <td><code>boolean</code></td>
-                        <td><code>false</code></td>
-                        <td>Show the menu at a fixed position (200px right, 100px down from the tree container) for dev/testing.</td>
                     </tr>
                 </tbody>
             </table>
@@ -358,10 +343,6 @@ type TreeMenuEntry  = TreeMenuItem | MenuDivider | TreeViewAction;</code></pre>
                     <input type="range" id="cm6-y" min="-60" max="60" step="1" value="0">
                     <span id="cm6-y-val" class="val">0px</span>
                 </label>
-                <label class="inline">
-                    <input type="checkbox" id="cm6-debug">
-                    <code>shouldDisplayContextMenuInDebugMode</code>
-                </label>
             </div>
 
             <div class="tree-container" id="cm6-container">
@@ -381,7 +362,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
         <!-- CM07 · CSS Customization -->
         <div class="card">
             <h2>CM07 · CSS Customization</h2>
-            <p>The context menu is styled through <code>--wtv-context-menu-*</code> custom properties (set on the host element or inline). Drag the controls — they re-style the <strong>menu</strong>, not the tree rows. Debug mode is on so changes preview live.</p>
+            <p>The context menu is styled through <code>--wtv-context-menu-*</code> custom properties (set on the host element or inline). Drag the controls — they re-style the <strong>menu</strong>, not the tree rows. Right-click a node to preview the changes.</p>
 
             <div class="controls ctx-config">
                 <label>
@@ -469,10 +450,6 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 <label>
                     <code>--wtv-context-menu-divider-color</code>
                     <input type="color" id="cm7-divider" value="#e2e8f0">
-                </label>
-                <label class="inline">
-                    <input type="checkbox" id="cm7-debug" checked>
-                    <code>Debug: keep menu open</code>
                 </label>
             </div>
 
@@ -597,9 +574,6 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 return entries;
             };
 
-            document.getElementById('cm1-debug').addEventListener('change', (e) => {
-                cm1.shouldDisplayContextMenuInDebugMode = e.target.checked;
-            });
             document.getElementById('cm1-x').addEventListener('input', (e) => {
                 cm1.contextMenuXOffset = Number(e.target.value);
             });
@@ -612,7 +586,6 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             configure(cm2, teamTree);
             cm2.expandLevel = 2;
             cm2.contextMenuYOffset = -30;
-            cm2.shouldDisplayContextMenuInDebugMode = true;
 
             const cm2LogEl = document.getElementById('cm2-log');
             const cm2Log = (action, node) => {
@@ -684,9 +657,6 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 });
             }
             document.getElementById('cm2-padding').addEventListener('change', (e) => setVar2('--wtv-context-menu-item-padding', e.target.value));
-            document.getElementById('cm2-debug').addEventListener('change', (e) => {
-                cm2.shouldDisplayContextMenuInDebugMode = e.target.checked;
-            });
 
             // ── CM06 · Menu position offset ─────────────────────────────
             const cm6 = document.getElementById('cm6-tree');
@@ -708,14 +678,10 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 document.getElementById('cm6-y-val').textContent = v + 'px';
                 cm6.contextMenuYOffset = v;
             });
-            document.getElementById('cm6-debug').addEventListener('change', (e) => {
-                cm6.shouldDisplayContextMenuInDebugMode = e.target.checked;
-            });
 
             // ── CM07 · CSS customization ────────────────────────────────
             const cm7 = document.getElementById('cm7-tree');
             configure(cm7, fileTree);
-            cm7.shouldDisplayContextMenuInDebugMode = true;
             cm7.getContextMenuItemsCallback = ({ node }) => {
                 const d = node.data || {};
                 const isReadonly = !!d.readonly;
@@ -766,9 +732,6 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             for (const [id, varName] of cm7Colors) {
                 document.getElementById(id).addEventListener('input', (e) => setVar7(varName, e.target.value));
             }
-            document.getElementById('cm7-debug').addEventListener('change', (e) => {
-                cm7.shouldDisplayContextMenuInDebugMode = e.target.checked;
-            });
 
             // Persist .controls across reloads (shared helper — parity with web-multiselect).
             persistControls('context-menu');

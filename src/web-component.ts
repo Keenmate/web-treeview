@@ -184,8 +184,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'contextMenuXOffset', attribute: 'context-menu-x-offset', converter: toInt(), default: 8, on: 'update', description: 'Horizontal offset (px) of the context menu from the pointer.' },
   { configKey: 'contextMenuYOffset', attribute: 'context-menu-y-offset', converter: toInt(), default: 0, on: 'update', description: 'Vertical offset (px) of the context menu from the pointer.' },
 
-  // ── Debug / loading ────────────────────────────────────────────────────────
-  { configKey: 'shouldDisplayDebugInformation', attribute: 'should-display-debug-information', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Render in-tree debug diagnostics.' },
+  // ── Loading ──────────────────────────────────────────────────────────────
   { configKey: 'isLoading', attribute: 'is-loading', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show the loading state.' },
 
   // ── Drag and drop ──────────────────────────────────────────────────────────
@@ -236,9 +235,6 @@ const INPUTS: readonly InputDef[] = [
 
   // ── Complex property (data; too large for an attribute) ────────────────────
   { configKey: 'data', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', type: 'ReadonlyArray<Record<string, unknown>>', description: 'The array of node objects to render. Assign `el.data` directly (JS API).' },
-
-  // ── JS-only flag (no attribute) ────────────────────────────────────────────
-  { configKey: 'shouldDisplayContextMenuInDebugMode', converter: toBool('tristate'), on: 'update', type: 'boolean', description: 'Show the built-in context menu even while debug info is displayed.' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
   { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },

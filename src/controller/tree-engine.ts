@@ -130,8 +130,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _isRendering: boolean = false;
 
   // Behaviour
-  private _shouldDisplayDebugInformation: boolean = false;
-  private _shouldDisplayContextMenuInDebugMode: boolean = false;
   private _isLoading: boolean = false;
   private _isFlatRenderingEnabled: boolean = true;
   private _flatIndentSize: string = 'var(--wtv-indent-size)';
@@ -267,7 +265,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _contextMenuX: number = 0;
   private _contextMenuY: number = 0;
   private _contextMenuNode: LTreeNode<T> | null = null;
-  private _isDebugMenuActive: boolean = false;
 
   // Scroll highlight
   private currentSelection: {
@@ -345,7 +342,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // Progressive flat rendering tracker
   private lastFlatNodesTracker: Symbol | undefined | null = null;
 
-  // Container element (set by the host component for scrollToPath / debug menu)
+  // Container element (set by the host component for scrollToPath)
   containerElement: HTMLElement | null = null;
   /** Where this engine logs (the element's instance loggers when hosted). */
   log: TreeLoggers = defaultTreeLoggers;
@@ -459,18 +456,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   get isRendering() { return this._isRendering; }
-  get shouldDisplayDebugInformation() { return this._shouldDisplayDebugInformation; }
-  set shouldDisplayDebugInformation(v: boolean) {
-    this._shouldDisplayDebugInformation = v;
-    this._scheduleNotify();
-  }
-
-  get shouldDisplayContextMenuInDebugMode() { return this._shouldDisplayContextMenuInDebugMode; }
-  set shouldDisplayContextMenuInDebugMode(v: boolean) {
-    this._shouldDisplayContextMenuInDebugMode = v;
-    this._updateDebugContextMenu();
-  }
-
   get isLoading() { return this._isLoading; }
   set isLoading(v: boolean) { this._isLoading = v; this._scheduleNotify(); }
 
@@ -755,8 +740,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldClickToggleCheckbox = props.shouldClickToggleCheckbox ?? false;
     this.beforeCheckboxToggleCb = props.beforeCheckboxToggleCallback;
 
-    this._shouldDisplayDebugInformation = props.shouldDisplayDebugInformation ?? false;
-    this._shouldDisplayContextMenuInDebugMode = props.shouldDisplayContextMenuInDebugMode ?? false;
     this._isLoading = props.isLoading ?? false;
 
     this._isFlatRenderingEnabled = props.isFlatRenderingEnabled ?? true;
@@ -883,7 +866,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       props.indexerBatchSize,
       props.indexerTimeout,
       {
-        shouldDisplayDebugInformation: props.shouldDisplayDebugInformation,
         log: this.log,
         isSorted: props.isSorted,
         sortCallback: props.sortCallback,
@@ -3263,7 +3245,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._contextMenuX = screenX;
     this._contextMenuY = screenY;
     this._contextMenuVisible = true;
-    this._isDebugMenuActive = false;
     this._scheduleNotify();
   }
 
@@ -3271,7 +3252,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (!this._contextMenuVisible && !this._contextMenuNode) return;
     this._contextMenuVisible = false;
     this._contextMenuNode = null;
-    this._isDebugMenuActive = false;
     this._scheduleNotify();
   }
 
@@ -3770,11 +3750,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.beforeCheckboxToggleCallback !== undefined)
       this.beforeCheckboxToggleCb = updates.beforeCheckboxToggleCallback;
     if (updates.searchText !== undefined && updates.searchText !== this._searchText) this.searchText = updates.searchText;
-    if (updates.shouldDisplayDebugInformation !== undefined)
-      this._shouldDisplayDebugInformation = updates.shouldDisplayDebugInformation ?? false;
-    if (updates.shouldDisplayContextMenuInDebugMode !== undefined) {
-      this._shouldDisplayContextMenuInDebugMode = updates.shouldDisplayContextMenuInDebugMode ?? false;
-    }
     if (updates.isLoading !== undefined) this._isLoading = updates.isLoading ?? false;
     if (updates.bodyClass !== undefined) this._bodyClass = updates.bodyClass;
 
@@ -3987,7 +3962,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         updates.indexerBatchSize,
         updates.indexerTimeout,
         {
-          shouldDisplayDebugInformation: this._shouldDisplayDebugInformation,
           log: this.log,
           isSorted: updates.isSorted ?? this.tree.isSorted,
           sortCallback: updates.sortCallback,
@@ -4029,7 +4003,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     this._updateNodeConfig();
-    this._updateDebugContextMenu();
     this._scheduleNotify();
   }
 
@@ -4049,14 +4022,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       contextMenuXOffset: this._contextMenuXOffset,
       contextMenuYOffset: this._contextMenuYOffset,
       contextMenuNode: this._contextMenuNode,
-      isContextMenuPinned: this._isDebugMenuActive,
       isDropPlaceholderActive: this._isDropPlaceholderActive,
       isLoading: this._isLoading,
       isRendering: this._isRendering,
       bodyClass: this._bodyClass,
       isFlatRenderingEnabled: this._isFlatRenderingEnabled,
       flatIndentSize: this._flatIndentSize,
-      shouldDisplayDebugInformation: this._shouldDisplayDebugInformation,
       focusedNode: this._focusedNode,
       selectedPaths: this._selectedPaths,
       checkedPaths: this._checkedPaths,
@@ -4343,34 +4314,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     };
     this.log.RENDER.debug('config-change, focusedNodeClass =', JSON.stringify(this._focusedNodeClass));
     this.emit('config-change', this._nodeConfig);
-  }
-
-  // ── Internal: debug context menu ────────────────────────────────────
-
-  private _updateDebugContextMenu() {
-    if (
-      this._shouldDisplayContextMenuInDebugMode &&
-      (this._hasContextMenuRenderer || this.contextMenuCallbackCb) &&
-      this.tree?.tree &&
-      this.tree.tree.length > 0
-    ) {
-      const targetNode =
-        this.tree.tree.length > 1 ? this.tree.tree[1] : this.tree.tree[0];
-      if (targetNode && this.containerElement) {
-        const treeRect = this.containerElement.getBoundingClientRect();
-        this._contextMenuNode = targetNode;
-        this._contextMenuX = treeRect.left + 200;
-        this._contextMenuY = treeRect.top + 100;
-        this._contextMenuVisible = true;
-        this._isDebugMenuActive = true;
-        this._scheduleNotify();
-      }
-    } else if (!this._shouldDisplayContextMenuInDebugMode && this._isDebugMenuActive) {
-      this._contextMenuVisible = false;
-      this._contextMenuNode = null;
-      this._isDebugMenuActive = false;
-      this._scheduleNotify();
-    }
   }
 
   // ── Internal event handlers ─────────────────────────────────────────

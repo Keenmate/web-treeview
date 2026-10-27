@@ -359,10 +359,6 @@ export interface TreeViewConfig<T = any> {
   /** Twin of `selection-change`. */
   onSelectionChange?: (detail: SelectionChangeEventDetail<T>) => void;
 
-  // Debug
-  shouldDisplayDebugInformation?: boolean | null;
-  shouldDisplayContextMenuInDebugMode?: boolean | null;
-
   // Drag and Drop
   dragDropMode?: DragDropMode;
   dropZoneMode?: 'floating' | 'glow';

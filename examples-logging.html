@@ -178,28 +178,9 @@
             </div>
         </div>
 
-        <!-- ── 5. Debug overlay ────────────────────────────────────────────── -->
-        <div class="card">
-            <h2>LG05 · Debug information overlay</h2>
-            <p>
-                Toggle the in-tree debug overlay (the
-                <code>should-display-debug-information</code> input) to inspect internal
-                node state directly on the tree.
-            </p>
-
-            <div class="controls">
-                <button onclick="toggleDebug(true)">Show Debug Info</button>
-                <button class="btn-outline" onclick="toggleDebug(false)">Hide Debug Info</button>
-            </div>
-
-            <div class="tree-container">
-                <web-treeview id="tree-debug"></web-treeview>
-            </div>
-        </div>
-
         <!-- ── Reference ───────────────────────────────────────────────────── -->
         <div class="card">
-            <h2>LG06 · Log categories</h2>
+            <h2>LG05 · Log categories</h2>
             <ul>
                 <li><strong>INIT</strong> — component initialization, configuration parsing, destruction</li>
                 <li><strong>DATA</strong> — data insertion, tree building, node updates</li>
@@ -211,7 +192,7 @@
         </div>
 
         <div class="card">
-            <h2>LG07 · Usage</h2>
+            <h2>LG06 · Usage</h2>
             <div class="code-block">
 <pre><code>// No import needed at call sites — the registry is a global, populated the
 // moment the component module is loaded anywhere on the page.
@@ -416,11 +397,6 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             document.getElementById('tree-perf').data = generateTree(n);
         };
 
-        // ── 5. debug overlay ─────────────────────────────────────────────────
-        window.toggleDebug = (show) => {
-            document.getElementById('tree-debug').shouldDisplayDebugInformation = show;
-        };
-
         // ── boot ─────────────────────────────────────────────────────────────
         customElements.whenDefined(TAG).then(() => {
             wrapLevels();
@@ -428,7 +404,6 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             treeCfg(document.getElementById('tree-a'));
             treeCfg(document.getElementById('tree-b'), sampleData, { dragDropMode: 'both' });
             treeCfg(document.getElementById('tree-perf'), [], { expandLevel: 0 });
-            treeCfg(document.getElementById('tree-debug'));
 
             // Start silent (production default), then paint the panel.
             reg().logging.disableLogging();

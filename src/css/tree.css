@@ -659,51 +659,6 @@
 }
 
 /* ==============================================================================
-   DEBUG INFO
-   ============================================================================== */
-
-.wtv__debug-info {
-  font-size: var(--wtv-font-size-xs);
-  background-color: color-mix(in srgb, var(--wtv-accent-color) 5%, transparent);
-  border: var(--wtv-border-width) solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
-  border-radius: var(--wtv-border-radius-sm);
-  padding: var(--wtv-spacing-md);
-  margin-bottom: var(--wtv-spacing-md);
-}
-
-.wtv__debug-info details summary {
-  cursor: pointer;
-  font-weight: var(--wtv-font-weight-semibold);
-  color: var(--wtv-accent-color);
-  padding: var(--wtv-spacing-sm) 0;
-}
-
-.wtv__debug-info details summary:hover {
-  color: var(--wtv-accent-color-hover);
-}
-
-.wtv__debug-info details[open] summary {
-  margin-bottom: var(--wtv-spacing-md);
-  border-bottom: var(--wtv-border-width) solid color-mix(in srgb, var(--wtv-accent-color) 20%, transparent);
-}
-
-.wtv__debug-info .wtv__debug-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wtv-spacing-lg);
-}
-
-.wtv__debug-info .wtv__debug-stats span {
-  background: var(--wtv-light-bg);
-  padding: calc(0.2 * var(--wtv-rem)) var(--wtv-spacing-sm);
-  border-radius: calc(0.2 * var(--wtv-rem));
-  font-family: var(--base-font-family-mono, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
-  font-size: var(--wtv-font-size-xs);
-  color: var(--wtv-text-color);
-  border: var(--wtv-border-width) solid var(--wtv-border-color);
-}
-
-/* ==============================================================================
    SCROLL HIGHLIGHT
    ============================================================================== */
 

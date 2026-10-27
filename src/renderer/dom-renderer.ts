@@ -60,7 +60,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private headerEl: HTMLElement | null = null;
   private bodyEl: HTMLElement | null = null;
   private footerEl: HTMLElement | null = null;
-  private debugEl: HTMLElement | null = null;
   /** The open context menu (core `/menu`) and what it was opened for. */
   private _menu: MenuHandle | null = null;
   private _menuKey: string | null = null;
@@ -135,12 +134,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (config.renderHeaderCallback) {
       config.renderHeaderCallback(this.headerEl);
     }
-
-    // Debug info
-    this.debugEl = document.createElement('div');
-    this.debugEl.className = 'wtv__debug-info';
-    this.debugEl.style.display = 'none';
-    this.container.appendChild(this.debugEl);
 
     // Tree body
     this.bodyEl = document.createElement('div');
@@ -779,7 +772,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * Fast synchronous virtual scroll update.
    * Bypasses the controller's queueMicrotask + state-change event pipeline.
    * Computes the visible window, updates DOM positioning, and reconciles
-   * only the node list — skips drag/drop/context-menu/debug updates.
+   * only the node list — skips drag/drop/context-menu updates.
    */
   private _performScrollUpdate(): void {
     if (!this.bodyEl || !this.controller || !this.vsSpacerEl || !this.vsContentEl || !this.lastSnapshot) return;
@@ -992,9 +985,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.loadingEl) {
       this.loadingEl.style.display = snapshot.isLoading ? 'flex' : 'none';
     }
-
-    // Debug info
-    this._updateDebugInfo(snapshot);
 
     // Body class
     if (this.bodyEl) {
@@ -1834,7 +1824,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       host: this.container,
       shouldFocusFirst: isFromKeyboard,
       returnFocusTo: this.bodyEl,
-      shouldCloseOnOutsideInteraction: !snapshot.isContextMenuPinned,
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
       renderItem: config.renderContextMenuItemCallback
         ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)
@@ -1884,35 +1873,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._isMenuOpeningFromKeyboard = true;
     ctrl.openContextMenu(node, rect.left, rect.bottom);
     return true;
-  }
-
-  // ── Debug info ──────────────────────────────────────────────────────
-
-  private _updateDebugInfo(snapshot: TreeEngineSnapshot<T>): void {
-    if (!this.debugEl || !this.controller) return;
-
-    if (!snapshot.shouldDisplayDebugInformation) {
-      this.debugEl.style.display = 'none';
-      return;
-    }
-
-    this.debugEl.style.display = 'block';
-    const stats = this.controller.statistics;
-    if (!stats) return;
-
-    this.debugEl.innerHTML = `
-      <details>
-        <summary>Tree Debug Info</summary>
-        <div class="wtv__debug-stats">
-          <span>Nodes: ${stats.nodeCount}</span>
-          <span>Visible: ${snapshot.flatNodesToRender.length}</span>
-          <span>Max Level: ${stats.maxLevel}</span>
-          <span>Flat: ${snapshot.isFlatRenderingEnabled}</span>
-          <span>Rendering: ${snapshot.isRendering}</span>
-          ${snapshot.isVirtualScrollEnabled ? `<span>VScroll: on</span><span>RowH: ${snapshot.virtualRowHeight}px</span>` : ''}
-        </div>
-      </details>
-    `;
   }
 
   // ── Full render (for config changes) ────────────────────────────────

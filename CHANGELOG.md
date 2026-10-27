@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed — BREAKING (in-tree debug aids)
+
+- **`should-display-debug-information` / `shouldDisplayDebugInformation`** is gone, together
+  with the "Tree Debug Info" stats box (`.wtv__debug-info` / `.wtv__debug-stats`) and the
+  `shouldDisplayDebugInformation` field of the engine snapshot / `Ltree`. The attribute is no
+  longer observed. Read the numbers from `el.statistics` (unchanged) and turn on diagnostics
+  with `el.enableLogging()` / `window.components['web-treeview'].logging`.
+- **`shouldDisplayContextMenuInDebugMode`** (pinned the context menu open at a fixed offset)
+  is gone, with the engine snapshot's `isContextMenuPinned`. The context menu always closes on
+  outside interaction.
+
 ### Fixed — page-wide `--km-menu-*` theming reaches the context menu
 
 - The tree set `:host { --km-menu-bg: var(--wtv-context-menu-bg); }` with every

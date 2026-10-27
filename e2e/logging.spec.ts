@@ -60,16 +60,22 @@ test('TREEVIEW:UI is silent until logging.enableLogging() turns the categories o
 });
 
 test.describe('debug smoke', () => {
-  test('should-display-debug-information shows the debug panel', async ({ page }) => {
+  // The in-tree debug aids were removed (BREAKING, v2): no debug panel, no
+  // pinned debug context menu. Diagnostics go through the logger instead.
+  test('removed debug inputs are inert (no panel, no property)', async ({ page }) => {
     await load(page, '?should-display-debug-information=true');
-    const dbg = page.locator('.wtv__debug-info');
-    await expect(dbg).toBeVisible();
-    await expect(dbg).not.toBeEmpty();
-  });
-
-  test('off by default', async ({ page }) => {
-    await load(page);
-    await expect(page.locator('.wtv__debug-info')).toBeHidden();
+    await expect(nodeByPath(page, '1.1')).toBeVisible();
+    await expect(page.locator('.wtv__debug-info')).toHaveCount(0);
+    const props = await page.evaluate(() => {
+      const t = (window as any).tree;
+      const ctor = customElements.get('web-treeview') as any;
+      return {
+        observed: ctor.observedAttributes.includes('should-display-debug-information'),
+        info: 'shouldDisplayDebugInformation' in t,
+        menu: 'shouldDisplayContextMenuInDebugMode' in t
+      };
+    });
+    expect(props).toEqual({ observed: false, info: false, menu: false });
   });
 
   test('tree-id: rows carry it in their element id; nodes report it', async ({ page }) => {

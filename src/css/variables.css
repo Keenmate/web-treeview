@@ -107,7 +107,7 @@
      surface (#dc2626 on #1a1a1a = 3.6:1), so text reads the role's text colour. */
   --wtv-danger-text-color: var(--base-danger-text-color, light-dark(#721c24, #f87171));
   --wtv-light-bg: var(--base-elevated-bg, light-dark(oklch(from var(--wtv-bg-color) calc(l - 0.03) c h), oklch(from var(--wtv-bg-color) calc(l + 0.06) c h)));
-  /* Stroke width of the hairlines (menu, checkbox, debug panel). */
+  /* Stroke width of the hairlines (menu, checkbox). */
   --wtv-border-width: var(--base-border-width, 1px);
 
   /* Hover / Active — the contract's translucent overlays of the bg's own hue, so the

@@ -131,11 +131,28 @@ The render callbacks take ONE ctx that includes the `NodeRenderContext` fields �
 
 ## Node states — focused / selected / checked
 
-Names follow `@keenmate/base-css-variables` 2.0 (rc06 rename, no aliases): **focused** = the single cursor row (`focusNode`, `focus-change`, `.wtv__node-content--focused`); **selected** = the click / Ctrl / Shift-click set (`selectedPaths`, `selectNode(path, SelectMode)` / `selectNodes` / `selectAll` / `clearSelection`, `onSelectionChange` / `selection-change`, `selectedNodeClass`, row class `.wtv__node-content--selected`, `--wtv-selected-*` ← `--base-selected-*`); **checked** = the checkbox (`checkedPaths`, `checkNode` / `checkNodes` / `checkAll` / `uncheckNode` / `clearChecked`, `onCheckedChange` / `checked-change`, `checkedNodeClass`, `cascadeCheckPolicy`, `VisualState.checked/unchecked`). Before rc06 these were *highlighted* / *selected* — svelte-treeview still uses the old names until it follows. `isSelectable` gates both sets; `selectionMode` / `rangeSelectionMode` belong to the selected set. Scroll / dragover / search "highlight" are unrelated and keep the word.
+Names follow `@keenmate/base-css-variables` 2.0 (rc06 rename, no aliases): **focused** = the single cursor row (`focusNode`, `focus-change`, `.wtv__node-content--focused`); **selected** = the click / Ctrl / Shift-click set (`selectedPaths` property, `selectNode(path, SelectMode)` / `selectNodes` / `selectAll` / `clearSelection`, `onSelectionChange` / `selection-change`, `selectedNodeClass`, row class `.wtv__node-content--selected`, `--wtv-selected-*` ← `--base-selected-*`); **checked** = the checkbox (`checkedPaths` property, `checkNode` / `checkNodes` / `checkAll` / `uncheckNode` / `uncheckNodes` / `uncheckAll`, `onCheckedChange` / `checked-change`, `checkedNodeClass`, `cascadeCheckPolicy`, `VisualState.checked/unchecked`). Before rc06 these were *highlighted* / *selected* — svelte-treeview still uses the old names until it follows. `isSelectable` gates both sets; `selectionMode` / `rangeSelectionMode` belong to the selected set. Scroll / dragover / search "highlight" are unrelated and keep the word.
 
 ## Per-node icons (every node)
 
 `iconMember` / `getIconCallback({ node })` resolve a per-node icon VALUE; it renders as a dedicated `.wtv__node-icon` element on EVERY node (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot anymore (so branches get icons and the toggle keeps its chevron). Default render is `<i class="wtv__node-icon {value}">` (FontAwesome-friendly) when the value reads as a class list (`ICON_CLASS_LIST`); any other value (emoji, symbol) is rendered as the `<i>`'s text; override with `renderIconCallback({ node, value, iconElement })` for SVG/unicode/markup. COLOR via `iconColorMember` / `getIconColorCallback({ node })` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); `renderIconCallback` lives on RendererConfig (like renderNodeCallback) and a post-data assignment triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `getCustomStylesCallback`.
+
+## v2 naming rules (2026-10-27 unification — CHANGELOG [Unreleased])
+
+BlissFramework `naming-conventions.md` D-NC-13..27 apply; the svelte-treeview mirror is tracked in
+`C:/Git/KM/_agent-progress/treeview-naming-pass.md`. In short:
+- Core lifecycle: `defer` / `release()` / `ready` event + `ready` attr + `:state(ready)` (the FOUC
+  guard keys off `[ready]`); `destroy()` → `destroyCallback()` destroys the WebTreeView.
+- State is a property (element read/assign, controller read-only): `expandedPaths`,
+  `selectedPaths`, `checkedPaths`, `focusedNode` — no `get*()` / `set*()` twins.
+- Verbs: `check*` / `uncheck*` symmetric (`uncheckNodes`, `uncheckAll`); *remove* =
+  programmatic (`removeNode(s)`, `removeBranch`), *delete* = the user command (Delete key, menu
+  `delete`, `beforeDeleteCallback`, `node-delete`; engine `runDeleteCommand`).
+- Booleans: `is*Shown` → `show-*`, `is*Enabled` → `enable-*`, `should*` → bare; `virtualScroll*`
+  family; `selectionMode: 'multiple'`; search text = `searchTerm` / `term`.
+- Events: `<state>-change` for sets (`selection-change`, `checked-change`, `expanded-change`,
+  `focus-change`), `node-<verb>` for acts. ctx nouns: `nodes` (never `items`), no bare `index`.
+- UI strings: `labels` (`src/labels.ts`, `resolveLabel` is the seam for core `/locale`).
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 
@@ -198,11 +215,12 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
   `node-drag-reject` / `node-drop-reject`, `selection-change` / `checked-change` (`{ paths, nodes }`),
   `focus-change` (`{ focusedNode }`), `tree-change`, `action`.
 - `el.controller` replaced `el.getController()` (which leaked the engine): the element's methods +
-  `getNodeRef(path)`, `getFocusedNode()`, `getChildren(path)`, `getSiblings(path)`,
+  the state properties `expandedPaths` / `selectedPaths` / `checkedPaths` / `focusedNode` (read-only),
+  `getNodeRef(path)`, `getChildren(path)`, `getSiblings(path)`,
   `openContextMenu(path, x, y)`, `applyChanges`.
 
-New surface: `deleteNodes(paths?)` + Delete/Shift+Delete keys; `shouldHandleKeyboardShortcuts`
-(default `true`, opt-out); `noDataText`; `isEmptyDropPlaceholderShown` (empty-tree
+New surface: `removeNodes(paths)` (programmatic, no veto / no `node-delete`) + Delete/Shift+Delete keys (the user Delete command: `beforeDeleteCallback` + `node-delete`); `shouldHandleKeyboardShortcuts`
+(default `true`, opt-out); `labels` (UI strings, `src/labels.ts`); `isEmptyDropPlaceholderShown` (empty-tree
 Ctrl/Cmd+V paste — focusable empty zone); `shouldAutoHandlePaste`; `PasteResult` is now
 `{ success, count, skipped, error?, entries?, operation? }` (`count` was `pastedCount`);
 cross-tree cut removes the source via the clipboard registry

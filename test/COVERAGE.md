@@ -57,7 +57,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `accordion-expand` | ✓ | `basic.spec.ts` | `basic.html` |
 | Exclusive expand collapses previously-open sibling | ✓ | `exclusive-expand.spec.ts` | `exclusive-expand.html` |
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
-| `get/setExpandedPaths` round-trip | ✓ | `expand-members.spec.ts` | `expand-members.html` |
+| `expandedPaths` round-trip + `expanded-change` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-expanded-member` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `getIsExpandedCallback` reading `node.data` on the initial load (NOTES #12) | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-collapsible-member` ignores toggle | ✓ | `expand-members.spec.ts` | `expand-members.html` |
@@ -77,7 +77,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |
-| `selectAll`, `setSelectedPaths` (+ silent), `focusNode` / `clearFocus`, `focus-change` payload | ✓ | `selection-api.spec.ts` | `selection-api.html` |
+| `selectAll`, assigning `selectedPaths` (+ silent replace), `focusNode` / `clearFocus`, `focus-change` payload | ✓ | `selection-api.spec.ts` | `selection-api.html` |
 | Silent focus / select fire no `focus-change` (NOTES #11) | ✓ | `selection-api.spec.ts` | `selection-api.html` |
 | Runtime state survives a config-change re-insert | ✓ | `state-persistence.spec.ts` | `selection-focus.html` |
 
@@ -89,7 +89,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `checkbox-mode` switch re-derives indeterminate | ✓ | `checkbox-mode.spec.ts` | `checkbox-mode.html` |
 | `click-toggle-checkbox` | ✓ | `interaction.spec.ts` | `interaction.html` |
 | `isSelectableMember` / `isCheckedMember` / `checkedPaths` | ✓ | `member-props.spec.ts` | `member-props.html` |
-| `checkNode/checkNodes/setCheckedPaths/checkAll/uncheckNode` (+ silent) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
+| `checkNode/checkNodes/checkedPaths=/checkAll/uncheckNode/uncheckNodes/uncheckAll` (+ silent) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 | `cascade-check-policy` rolled-up / leaves / all | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 | `beforeCheckboxToggleCallback` (ctx, false cancels, `string[]` overrides) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 

@@ -160,6 +160,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `search-term` attribute / `searchTerm` prop at runtime; a config change doesn't re-insert `data` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
 | `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
+| Index stays correct across `removeNode` / `removeBranch`; `addNode` indexes the new node | ✓ | `search-index-removal.spec.ts` | `search.html` |
 
 ## 9. Context menu & actions
 

@@ -101,6 +101,27 @@ export function createLTree<T>(
 	// Placeholder for a removed flatTreeNodes slot (positions are the search-index keys,
 	// so slots are never spliced out; the slot is also dropped from the index).
 	const searchTombstone: LTreeNode<T> = createLTreeNode<T>();
+
+	/** Drop removed nodes from search: tombstone their slots + remove them from the index (and its queue). */
+	function dropFromSearch(paths: Set<string>): void {
+		if (paths.size === 0) return;
+		const removedPositions = new Set<number>();
+		flatTreeNodes.forEach((n, i) => {
+			if (n !== searchTombstone && paths.has(n.path)) removedPositions.add(i);
+		});
+		for (const i of removedPositions) flatTreeNodes[i] = searchTombstone;
+		indexer?.dropItems(removedPositions);
+	}
+
+	/** Resolve search-index hits (slot numbers) to live nodes, skipping tombstones. */
+	function nodesAt(rows: unknown[]): LTreeNode<T>[] {
+		const out: LTreeNode<T>[] = [];
+		for (const row of rows) {
+			const n = flatTreeNodes[row as number];
+			if (n && n !== searchTombstone) out.push(n);
+		}
+		return out;
+	}
 	let filteredTree: LTreeNode<T>[] | null = null;
 	let isFiltered = false;
 
@@ -472,7 +493,7 @@ export function createLTree<T>(
 
 			perfStart(`[${_treeId}] filterNodes:search`);
 			const resultIndices = searchIndex!.search(_searchText!, _searchOptions);
-			const foundPaths = resultIndices.map((row) => flatTreeNodes[row as number].path);
+			const foundPaths = nodesAt(resultIndices).map((n) => n.path);
 			perfEnd(`[${_treeId}] filterNodes:search`, resultIndices.length);
 
 			this.createFilteredTree(foundPaths);
@@ -488,7 +509,7 @@ export function createLTree<T>(
 			}
 
 			const resultIndices = searchIndex!.search(_searchText!, _searchOptions);
-			const foundNodes = resultIndices.map((row) => flatTreeNodes[row as number]);
+			const foundNodes = nodesAt(resultIndices);
 
 			return foundNodes;
 		},
@@ -1176,6 +1197,17 @@ export function createLTree<T>(
 				return { success: false, error: `Parent not found: ${parentPath}` };
 			}
 
+			// Leave the search index too (node + subtree — the subtree goes with it), else it stays findable
+			const removedPaths = new Set<string>([node.path]);
+			const collectRemoved = (n: LTreeNode<T>) => {
+				for (const child of Object.values(n.children)) {
+					removedPaths.add(child.path);
+					collectRemoved(child);
+				}
+			};
+			collectRemoved(node);
+			dropFromSearch(removedPaths);
+
 			// Remove from parent
 			const segment = segmentPrefix + node.pathSegment;
 			delete parent.children[segment];
@@ -1283,8 +1315,11 @@ export function createLTree<T>(
 			nodeCount++;
 			maxLevel = Math.max(maxLevel, newNode.level || 0);
 
-			// Add to flat tree for search indexing
+			// Add to flat tree for search indexing (slot number = index id) and index it
 			flatTreeNodes.push(newNode);
+			if (indexer && _shouldUseInternalSearchIndex) {
+				indexer.addItem({ node: newNode, index: flatTreeNodes.length - 1 });
+			}
 
 			// Re-sort siblings to place new node in correct position
 			this.refreshSiblings(parentPath);
@@ -1713,14 +1748,7 @@ export function createLTree<T>(
 			// The search index is keyed by flatTreeNodes POSITION — filtering the array
 			// would shift every later position and map hits to the wrong nodes. Tombstone
 			// the removed slots instead and drop them from the index (+ its pending queue).
-			if (removedCount > 0) {
-				const removedPositions = new Set<number>();
-				flatTreeNodes.forEach((n, i) => {
-					if (n !== searchTombstone && pathsToRemove.has(n.path)) removedPositions.add(i);
-				});
-				for (const i of removedPositions) flatTreeNodes[i] = searchTombstone;
-				indexer?.dropItems(removedPositions);
-			}
+			dropFromSearch(pathsToRemove);
 
 			// Clear children
 			parentNode.children = {};

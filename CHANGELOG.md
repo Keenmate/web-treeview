@@ -101,6 +101,15 @@ aliases — rename on upgrade.
   is gone, with the engine snapshot's `isContextMenuPinned`. The context menu always closes on
   outside interaction.
 
+### Fixed — search after removals finds the right nodes
+
+- The internal search index is keyed by a node's slot in a flat array. `removeNode` (and
+  `applyChanges` deletes / `removeNodes`, which go through it) never dropped the node or its
+  subtree from search — removed nodes stayed findable; removed slots are now tombstones and their
+  index entries are removed (the `removeBranch` path already did this; it now shares the helper).
+  `addNode` also indexes the new node (it was never searchable). Search hits skip tombstones.
+  Port of svelte-treeview `a060d13`.
+
 ### Fixed — page-wide `--km-menu-*` theming reaches the context menu
 
 - The tree set `:host { --km-menu-bg: var(--wtv-context-menu-bg); }` with every

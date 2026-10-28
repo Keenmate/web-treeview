@@ -22,7 +22,8 @@ import {
   type DragDropMode,
   type DropOperation,
   type TreeChange,
-  type ApplyChangesResult
+  type ApplyChangesResult,
+  type ExpandOptions
 } from '../ltree/types';
 import {
   createRenderCoordinator,
@@ -947,12 +948,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * children and is collapsed goes through `beforeExpandCallback` first (a
    * `false` keeps it collapsed; an async hook defers it, showing the loading
    * state). Fires `node-expand` for every node that actually expanded (the
-   * collapsed ancestors on the way included) unless `noEmit`. `exclusive`
+   * collapsed ancestors on the way included) unless `silent`. `isExclusive`
    * side-effect collapses fire no `node-collapse`.
    */
   expandNodes(
     nodePath: string | string[],
-    options?: { exclusive?: boolean; noEmit?: boolean }
+    options?: ExpandOptions
   ) {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
     if (!this.beforeExpandCb) {
@@ -976,18 +977,18 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (now.length) this._expandWithEvents(now, options);
   }
 
-  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `noEmit`). */
+  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `silent`). */
   collapseNodes(
     nodePath: string | string[],
-    options?: { noEmit?: boolean }
+    options?: ExpandOptions
   ) {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
     const wereExpanded = paths
       .map((p) => this.tree?.getNodeByPath(p))
       .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
     this.tree.collapseNodes(nodePath, options);
-    this._markExpanded(options?.noEmit);
-    if (options?.noEmit) return;
+    this._markExpanded(options?.silent);
+    if (options?.silent) return;
     for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
   }
 
@@ -997,7 +998,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Expand `paths` (no gate) and fire `node-expand` for each node that changed. */
-  private _expandWithEvents(paths: string[], options?: { exclusive?: boolean; noEmit?: boolean }): void {
+  private _expandWithEvents(paths: string[], options?: ExpandOptions): void {
     const sep = this._treePathSeparator;
     const changing = new Map<string, LTreeNode<T>>();
     for (const p of paths) {
@@ -1011,8 +1012,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(paths, options);
-    this._markExpanded(options?.noEmit);
-    if (options?.noEmit) return;
+    this._markExpanded(options?.silent);
+    if (options?.silent) return;
     for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
   }
 
@@ -1062,8 +1063,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  in a single batch. Programmatic `expandNodes` / `expandAll` callers
    *  bypass the accordion. Mirrors svelte-treeview Node.svelte's
    *  toggleExpanded() flow. An expand goes through `beforeExpandCallback`;
-   *  a node whose async hook is pending ignores the toggle. */
-  toggleNodeExpanded(path: string): void {
+   *  a node whose async hook is pending ignores the toggle.
+   *  `options.isExclusive` (expand only) replaces the accordion with the
+   *  exclusive expand of `expandNodes`; `options.silent` fires no events. */
+  toggleNodeExpanded(path: string, options?: ExpandOptions): void {
     const node = this.getNodeByPath(path);
     if (!node || !node.hasChildren) return;
     // svelte-treeview blocks the entire toggle (both directions) when
@@ -1081,16 +1084,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     });
 
     if (!shouldExpand) {
-      this.collapseNodes(path);
+      this.collapseNodes(path, options);
       return;
     }
-    this._gateExpand(node, () => this._toggleExpandApply(path));
+    this._gateExpand(node, () => this._toggleExpandApply(path, options));
   }
 
   /** The expand half of a UI toggle, after the gate: accordion side-effect + expand + events. */
-  private _toggleExpandApply(path: string): void {
+  private _toggleExpandApply(path: string, options?: ExpandOptions): void {
     const node = this.getNodeByPath(path);
     if (!node || node.isExpanded) return;
+    if (options?.isExclusive) {
+      this._expandWithEvents([path], options);
+      return;
+    }
     const collapsedSiblings: LTreeNode<T>[] = [];
     if (this._shouldExpandAsAccordion) {
       const siblings = this.tree.getSiblings(path);
@@ -1102,25 +1109,29 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         }
       }
     }
-    this.tree.expandNodes(path);
+    this.tree.expandNodes(path, options);
+    if (options?.silent) {
+      this._markExpanded(true);
+      return;
+    }
     for (const s of collapsedSiblings) this.nodeCollapseCb?.(this.nodeRef(s));
     if (node.isExpanded) this.nodeExpandCb?.(this.nodeRef(node));
   }
 
   expandAll(
     nodePath?: string | string[] | null | undefined,
-    options?: { exclusive?: boolean; noEmit?: boolean }
+    options?: ExpandOptions
   ) {
     this.tree?.expandAll(nodePath, options);
-    this._markExpanded(options?.noEmit);
+    this._markExpanded(options?.silent);
   }
 
   collapseAll(
     nodePath?: string | string[] | null | undefined,
-    options?: { noEmit?: boolean }
+    options?: ExpandOptions
   ) {
     this.tree?.collapseAll(nodePath, options);
-    this._markExpanded(options?.noEmit);
+    this._markExpanded(options?.silent);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -1958,7 +1969,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Emit the `selectionChangeCallback` callback. */
   private _emitSelectionChange(): void {
-    this.selectionChangeCb?.({ paths: new Set(this._selectedPaths), nodes: this.getSelectedNodes() });
+    this.selectionChangeCb?.({ paths: [...this._selectedPaths], nodes: this.getSelectedNodes() });
   }
 
   /** Emit the `checkedChangeCallback` callback (checkbox state). */
@@ -1970,7 +1981,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       const n = this.tree?.getNodeByPath(p);
       if (n) nodes.push(n);
     }
-    this.checkedChangeCb({ paths, nodes });
+    this.checkedChangeCb({ paths: [...paths], nodes });
   }
 
   /**
@@ -4157,7 +4168,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _expandedDirty = false;
   private _lastExpandedKey: string | undefined = undefined;
 
-  /** After an expansion op: `silent` (noEmit) re-baselines without announcing. */
+  /** After an expansion op: `silent` re-baselines without announcing. */
   private _markExpanded(silent?: boolean): void {
     if (silent) {
       this._lastExpandedKey = this.getExpandedPaths().join('\u0000');

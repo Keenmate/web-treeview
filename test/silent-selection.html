@@ -98,7 +98,7 @@
             });
             tree.addEventListener('checked-change', (e) => {
                 bump('checked');
-                setText('checked-size', String(e.detail.paths.size));
+                setText('checked-size', String(e.detail.paths.length));
             });
 
             // Mirror the selected set into the readout even when the change came
@@ -110,7 +110,7 @@
                 setText('selected-paths', paths.join(','));
             }
             function refreshCheckedReadout() {
-                setText('checked-size', String(tree.checkedPaths.size));
+                setText('checked-size', String(tree.checkedPaths.length));
             }
 
             const wire = (testid, fn) => {

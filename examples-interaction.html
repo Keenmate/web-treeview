@@ -676,7 +676,7 @@ function restoreFromUrl(nodePath) {
                 const has = in6src.hasClipboardContent?.() ?? false;
                 document.getElementById('in6-op').textContent = has ? op : 'empty';
                 document.getElementById('in6-info').textContent = has
-                    ? `(${in6src.selectedPaths.size || '?'} entries)` : '';
+                    ? `(${in6src.selectedPaths.length || '?'} entries)` : '';
             }
             in6src.addEventListener('selection-change', updateClipboardStatus);
             in6src.addEventListener('tree-change', updateClipboardStatus);

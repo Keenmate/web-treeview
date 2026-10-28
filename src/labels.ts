@@ -27,6 +27,10 @@ export interface TreeViewLabels {
   delete: string;
   expand: string;
   collapse: string;
+  expandSubtree: string;
+  collapseSubtree: string;
+  expandAll: string;
+  collapseAll: string;
 }
 
 /** Built-in English strings. */
@@ -42,6 +46,10 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   delete: 'Delete',
   expand: 'Expand',
   collapse: 'Collapse',
+  expandSubtree: 'Expand subtree',
+  collapseSubtree: 'Collapse subtree',
+  expandAll: 'Expand all',
+  collapseAll: 'Collapse all',
 });
 
 /**

@@ -127,7 +127,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
-| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
+| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
 **Sibling order.** On insert (`data`, `insertBranch`) the tree puts parents before their
@@ -228,8 +228,8 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | Property | Type | Description |
 |----------|------|-------------|
 | `expandedPaths` | `string[]` | The expanded set. Assigning replaces it (branches not listed collapse) — save / restore a view |
-| `selectedPaths` | `Set<string>` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it and fires `selection-change` |
-| `checkedPaths` | `Set<string>` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it and fires `checked-change` |
+| `selectedPaths` | `string[]` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it and fires `selection-change` |
+| `checkedPaths` | `string[]` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it and fires `checked-change` |
 | `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
 
 Assigned before the first build, `expandedPaths` / `selectedPaths` / `checkedPaths` are held and
@@ -285,7 +285,7 @@ A `TreeMenuEntry` is one of:
 
 - a **core action item** — `{ id, text, icon, shortcut, cssClass, isDanger, isDisabled, isVisible, isToggled, tooltip, onClick(detail), children, getChildrenCallback(ctx), shouldCloseOnClick }`. The static fields have `get*Callback(ctx)` variants (text, icon, tooltip, class, visible, disabled, toggled). `onClick` receives the `action` detail. An enabled leaf closes the menu after it activates unless `shouldCloseOnClick: false`. `getChildrenCallback` loads a submenu lazily (sync or async — a loading row shows meanwhile).
 - a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
-- a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state).
+- a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state). `expand` / `collapse` = one level; `expand-subtree` / `collapse-subtree` = the targets and all their descendants; `expand-all` / `collapse-all` = the whole tree.
 
 Activation order: `beforeActionCallback` → item `onClick` → built-in → `action` event (+ `onAction`). The event is a notification after the fact — a listener sees the tree as the built-in left it (after `collapse` the node is collapsed, after `delete` it is gone); to prevent a built-in use `beforeActionCallback`. A throwing built-in is logged and the event still fires. Menu items carry `data-action` (built-in name or `custom`) and `data-id`.
 
@@ -382,11 +382,13 @@ All methods are available on the element **and** on `el.controller`.
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `expandAll` | `(nodePath?, options?)` | Expand all nodes (or subtree). `{ exclusive?, noEmit? }` |
-| `collapseAll` | `(nodePath?, options?)` | Collapse all nodes (or subtree). `{ noEmit? }` |
-| `expandNodes` | `(nodePath \| string[], options?)` | Expand ancestors up to node(s) |
-| `collapseNodes` | `(nodePath \| string[], options?)` | Collapse node(s) |
-| `toggleNodeExpanded` | `(path)` | Toggle (honors `shouldExpandAsAccordion`) |
+| `expandNodes` | `(paths: string \| string[], options?)` | Expand the node(s) one level (collapsed ancestors are opened) |
+| `collapseNodes` | `(paths: string \| string[], options?)` | Collapse the node(s) |
+| `toggleNodeExpanded` | `(path, options?)` | Toggle as the user would (honors `shouldExpandAsAccordion`; `isExclusive` replaces the accordion) |
+| `expandAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
+| `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
+
+`ExpandOptions`: `{ isExclusive?: boolean; silent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `silent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
 | `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
 | `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
@@ -503,14 +505,14 @@ tree.navigationOverrides = null; // back to the defaults
 | `node-drop` | `{ source, target, dragged, dropped, position, operation, event }` | Drop completed |
 | `node-drag-reject` | `{ path, node, parent, siblings }` | An undraggable / locked node drag was attempted |
 | `node-drop-reject` | `{ path, node, parent, siblings }` | A drop was rejected by the target |
-| `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed |
-| `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed |
+| `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed (`paths`: `string[]`) |
+| `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed (`paths`: `string[]`) |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
-| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ noEmit: true }` |
+| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ silent: true }` |
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
-Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ noEmit: true }` fire none of them.
+Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ silent: true }` fire none of them.
 
 `silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 

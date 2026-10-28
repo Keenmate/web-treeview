@@ -57,7 +57,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `expand-as-accordion` | ✓ | `basic.spec.ts` | `basic.html` |
 | Exclusive expand collapses previously-open sibling | ✓ | `exclusive-expand.spec.ts` | `exclusive-expand.html` |
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
-| `expandedPaths` round-trip + `expanded-change` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
+| `expandedPaths` round-trip + `expanded-change`; `toggleNodeExpanded` `{ silent, isExclusive }` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-expanded-member` | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `getIsExpandedCallback` reading `node.data` on the initial load (NOTES #12) | ✓ | `expand-members.spec.ts` | `expand-members.html` |
 | `is-collapsible-member` ignores toggle | ✓ | `expand-members.spec.ts` | `expand-members.html` |
@@ -167,7 +167,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | `getContextMenuItemsCallback` items, submenu, disabled, divider | ✓ | `context-menu.spec.ts` | `context-menu.html` |
-| Core action items, built-ins, `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
+| Core action items, built-ins (incl. expand / collapse -subtree / -all, selection targeting), `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |
 | `openContextMenu(path,x,y)` + offsets, `closeContextMenu`; shortcut keys + Escape in menu | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |

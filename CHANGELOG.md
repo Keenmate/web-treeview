@@ -21,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   text as its `aria-label`.
 - A `labels` value of `''` deliberately renders nothing; a missing / `undefined` key is the
   English default. All labels are inserted as text.
+- **`ExpandOptions { isExclusive?, silent? }`** (exported type) for `expandNodes` /
+  `collapseNodes` / `toggleNodeExpanded` / `expandAll` / `collapseAll` — was
+  `{ exclusive?, noEmit? }`. `toggleNodeExpanded(path, options?)` now takes the options too.
+  The first parameter of the family is `paths` (`string | string[]`; `expandAll` /
+  `collapseAll`: `null` = the whole tree, paths = those nodes + all descendants).
+- **Path sets are `string[]`:** `selectedPaths` / `checkedPaths` (element and controller) and
+  the `selection-change` / `checked-change` detail `paths` are arrays (were `Set`). Use
+  `.includes()` / `.length` instead of `.has()` / `.size`.
+
+### Added (2026-10-28)
+
+- Context-menu built-ins **`expand-subtree`** / **`collapse-subtree`** (the targets and all
+  descendants) and **`expand-all`** / **`collapse-all`** (whole tree), with labels
+  `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll`. `expand` / `collapse`
+  now act on the whole selection when the clicked node is in it (same rule as copy / cut /
+  delete).
 
 ### Changed — BREAKING (v2 naming unification, 2026-10-27)
 

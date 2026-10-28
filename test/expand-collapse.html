@@ -83,15 +83,15 @@
 
             wire('expand-nodes-single', () => tree.expandNodes('1.1.1'));
             wire('expand-nodes-array', () => tree.expandNodes(['1.1.1', '2.1.1']));
-            wire('expand-nodes-exclusive', () => tree.expandNodes('1.1.1', { exclusive: true }));
-            wire('expand-nodes-array-exclusive', () => tree.expandNodes(['1.1.1', '3.1.1'], { exclusive: true }));
+            wire('expand-nodes-exclusive', () => tree.expandNodes('1.1.1', { isExclusive: true }));
+            wire('expand-nodes-array-exclusive', () => tree.expandNodes(['1.1.1', '3.1.1'], { isExclusive: true }));
 
             wire('collapse-nodes-single', () => tree.collapseNodes('1.1'));
             wire('collapse-nodes-array', () => tree.collapseNodes(['1.1', '2.1']));
 
             wire('expand-all-subtree', () => tree.expandAll('2'));
             wire('expand-all-array', () => tree.expandAll(['1', '3']));
-            wire('expand-all-exclusive', () => tree.expandAll('1.1', { exclusive: true }));
+            wire('expand-all-exclusive', () => tree.expandAll('1.1', { isExclusive: true }));
 
             wire('collapse-all-subtree', () => tree.collapseAll('1'));
             wire('collapse-all-array', () => tree.collapseAll(['1', '2']));

@@ -242,7 +242,7 @@
             multi.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(multi, 'multi', 'multi');
             multi.addEventListener('selection-change', (e) => {
-                setText('multi-selected-size', String(e.detail.paths.size));
+                setText('multi-selected-size', String(e.detail.paths.length));
             });
             multi.data = multiData;
 
@@ -263,7 +263,7 @@
             locked.getIsDraggableCallback = ({ node }) => node.data?.draggable !== false;
             wireDrop(locked, 'locked', 'locked');
             locked.addEventListener('selection-change', (e) => {
-                setText('locked-selected-size', String(e.detail.paths.size));
+                setText('locked-selected-size', String(e.detail.paths.length));
             });
             locked.data = lockedData;
 

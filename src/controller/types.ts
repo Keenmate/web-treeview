@@ -281,7 +281,7 @@ export interface ClipboardEventContext<T> {
  * resolved live nodes.
  */
 export interface SelectionChangeContext<T> {
-  paths: Set<string>;
+  paths: string[];
   nodes: LTreeNode<T>[];
 }
 
@@ -422,8 +422,8 @@ export interface TreeEngineConfig<T> {
   // DATA
   data: T[];
   focusedNode?: LTreeNode<T> | null | undefined;
-  selectedPaths?: Set<string>;
-  checkedPaths?: Set<string>;
+  selectedPaths?: string[];
+  checkedPaths?: string[];
 
   // BEHAVIOUR
   expandLevel?: number | null | undefined;

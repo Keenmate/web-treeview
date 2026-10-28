@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 
 /**
- * Regression: an API call to `expandNodes(path, { exclusive: true })` must
+ * Regression: an API call to `expandNodes(path, { isExclusive: true })` must
  * collapse off-spine branches *visually*, including flipping their toggle
  * icon back to the collapsed state. A pure data-only mutation that leaves the
  * toggle UI showing the expanded chevron is a bug.

@@ -27,6 +27,7 @@
         const data = [
             { id: 1, path: '1', name: 'Documents' },
             { id: 2, path: '1.1', name: 'Reports' },
+            { id: 5, path: '1.1.1', name: 'Q1.pdf' },
             { id: 3, path: '1.2', name: 'Notes.txt' },
             { id: 4, path: '2', name: 'Images' },
         ];
@@ -55,6 +56,10 @@
             tree.getContextMenuItemsCallback = ({ node }) => [
                 'expand',
                 'collapse',
+                'expand-subtree',
+                'collapse-subtree',
+                'expand-all',
+                'collapse-all',
                 'copy',
                 'paste',
                 { divider: true },

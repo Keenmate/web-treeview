@@ -97,7 +97,7 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 
 import type { LTreeNode } from './ltree/ltree-node';
 import type { DropPosition } from './ltree/ltree-node';
-import type { DragDropMode, DropOperation, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { DragDropMode, DropOperation, ExpandOptions, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type {
   ClickBehavior,
   RangeSelectionMode,
@@ -283,10 +283,10 @@ export interface TreeViewConfig<T = any> {
    *  selected set. */
   focusedNode?: LTreeNode<T> | null;
   /** Multi-select selected set (Ctrl/Shift+click). */
-  selectedPaths?: Set<string>;
+  selectedPaths?: string[];
   /** Checkbox / data-state checked set. When `isCheckboxesShown` is false,
    *  the controller mirrors `selectedPaths` into this set. */
-  checkedPaths?: Set<string>;
+  checkedPaths?: string[];
 
   // Loading
   isLoading?: boolean | null;
@@ -310,7 +310,7 @@ export interface TreeViewConfig<T = any> {
    * The context-menu entries for the node right-clicked (`ctx.node`, with `parent` /
    * `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`,
    * `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a
-   * built-in name (`'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`). Every
+   * built-in name (`'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'`). Every
    * activation fires the `action` event.
    */
   getContextMenuItemsCallback?: (ctx: TreeMenuContext<T>) => TreeMenuEntry<T>[];
@@ -500,21 +500,21 @@ export interface TreeViewConfig<T = any> {
 
 export interface TreeViewMethods<T = any> {
   expandNodes(
-    nodePath: string | string[],
-    options?: { exclusive?: boolean; noEmit?: boolean }
+    paths: string | string[],
+    options?: ExpandOptions
   ): void;
   collapseNodes(
-    nodePath: string | string[],
-    options?: { noEmit?: boolean }
+    paths: string | string[],
+    options?: ExpandOptions
   ): void;
-  toggleNodeExpanded(path: string): void;
+  toggleNodeExpanded(path: string, options?: ExpandOptions): void;
   expandAll(
-    nodePath?: string | string[] | null,
-    options?: { exclusive?: boolean; noEmit?: boolean }
+    paths?: string | string[] | null,
+    options?: ExpandOptions
   ): void;
   collapseAll(
-    nodePath?: string | string[] | null,
-    options?: { noEmit?: boolean }
+    paths?: string | string[] | null,
+    options?: ExpandOptions
   ): void;
   filterNodes(term: string): void;
   searchNodes(term: string | null): LTreeNode<T>[];
@@ -534,7 +534,7 @@ export interface TreeViewMethods<T = any> {
   selectAll(options?: TreeMutationOptions): void;
   clearSelection(paths?: string[], options?: TreeMutationOptions): void;
   getSelectedNodes(): LTreeNode<T>[];
-  selectedPaths: Set<string>;
+  selectedPaths: string[];
   isNodeSelected(path: string): boolean;
 
   // Checked set (checkbox / data state)
@@ -545,7 +545,7 @@ export interface TreeViewMethods<T = any> {
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
   uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
-  checkedPaths: Set<string>;
+  checkedPaths: string[];
   isNodeChecked(path: string): boolean;
 
   // Focus (single cursor)

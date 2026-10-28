@@ -5,7 +5,7 @@ import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext
 import type { TreeViewRenderer, RendererConfig } from './renderer/types';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
-import type { Ltree, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
@@ -67,7 +67,7 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
   }
   // Real state = read-only properties (the element's are writable).
   const STATE: Record<string, () => unknown> = {
-    expandedPaths: () => [], selectedPaths: () => new Set(), checkedPaths: () => new Set(), focusedNode: () => null,
+    expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: () => null,
     insertResult: () => undefined,
   };
   for (const [name, empty] of Object.entries(STATE)) {
@@ -213,15 +213,19 @@ export class WebTreeView<T = any> {
 
   /** Built-in state of the default actions (text, disabled, danger). */
   private menuItemDefaults(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>): Partial<ResolvedActionItem<TreeViewAction>> | undefined {
-    const node = ctx.node;
     const label = (key: keyof TreeViewLabels) => resolveLabel(this.options.labels, key);
+    const targets = () => this.actionTargets(ctx.node).map((p) => this.engine.getNodeByPath(p)).filter((n): n is LTreeNode<T> => !!n && !!n.hasChildren);
     switch (item.action) {
       case 'copy': return { text: label('copy') };
       case 'cut': return { text: label('cut') };
       case 'paste': return { text: label('paste'), isDisabled: !this.engine.hasClipboardContent() };
       case 'delete': return { text: label('delete'), isDanger: true };
-      case 'expand': return { text: label('expand'), isDisabled: !node.hasChildren || !!node.isExpanded };
-      case 'collapse': return { text: label('collapse'), isDisabled: !node.hasChildren || !node.isExpanded };
+      case 'expand': return { text: label('expand'), isDisabled: !targets().some((n) => !n.isExpanded) };
+      case 'collapse': return { text: label('collapse'), isDisabled: !targets().some((n) => n.isExpanded) };
+      case 'expand-subtree': return { text: label('expandSubtree'), isDisabled: targets().length === 0 };
+      case 'collapse-subtree': return { text: label('collapseSubtree'), isDisabled: targets().length === 0 };
+      case 'expand-all': return { text: label('expandAll') };
+      case 'collapse-all': return { text: label('collapseAll') };
       default: return undefined;
     }
   }
@@ -246,17 +250,26 @@ export class WebTreeView<T = any> {
     });
   }
 
+  /** Targets of a built-in menu action: the whole selection when `node` is in it, else just `node`. */
+  private actionTargets(node: LTreeNode<T>): string[] {
+    const selected = this.engine.getSelectedPaths();
+    return selected.has(node.path) ? [...selected] : [node.path];
+  }
+
   /** The built-in menu actions act on the node — or on the whole selection when the node is in it. */
   private runBuiltInAction(action: string, node: LTreeNode<T>): void {
-    const selected = this.engine.getSelectedPaths();
-    const paths = selected.has(node.path) ? [...selected] : [node.path];
+    const paths = this.actionTargets(node);
     switch (action) {
       case 'copy': this.engine.copyNodes(paths); break;
       case 'cut': this.engine.cutNodes(paths); break;
       case 'paste': this.engine.pasteNodes(node.path); break;
       case 'delete': this.engine.runDeleteCommand(paths); break;
-      case 'expand': this.engine.expandNodes(node.path); break;
-      case 'collapse': this.engine.collapseNodes(node.path); break;
+      case 'expand': this.engine.expandNodes(paths); break;
+      case 'collapse': this.engine.collapseNodes(paths); break;
+      case 'expand-subtree': this.engine.expandAll(paths); break;
+      case 'collapse-subtree': this.engine.collapseAll(paths); break;
+      case 'expand-all': this.engine.expandAll(null); break;
+      case 'collapse-all': this.engine.collapseAll(null); break;
     }
   }
 
@@ -279,26 +292,26 @@ export class WebTreeView<T = any> {
     }
   }
 
-  expandNodes(nodePath: string | string[], options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.engine.expandNodes(nodePath, options);
+  expandNodes(paths: string | string[], options?: ExpandOptions): void {
+    this.engine.expandNodes(paths, options);
   }
 
-  collapseNodes(nodePath: string | string[], options?: { noEmit?: boolean }): void {
-    this.engine.collapseNodes(nodePath, options);
+  collapseNodes(paths: string | string[], options?: ExpandOptions): void {
+    this.engine.collapseNodes(paths, options);
   }
 
   /** Toggle the expand state of a node as if the user had clicked its toggle
    *  icon. Honors `shouldExpandAsAccordion`. */
-  toggleNodeExpanded(path: string): void {
-    this.engine.toggleNodeExpanded(path);
+  toggleNodeExpanded(path: string, options?: ExpandOptions): void {
+    this.engine.toggleNodeExpanded(path, options);
   }
 
-  expandAll(nodePath?: string | string[] | null, options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.engine.expandAll(nodePath, options);
+  expandAll(paths?: string | string[] | null, options?: ExpandOptions): void {
+    this.engine.expandAll(paths, options);
   }
 
-  collapseAll(nodePath?: string | string[] | null, options?: { noEmit?: boolean }): void {
-    this.engine.collapseAll(nodePath, options);
+  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): void {
+    this.engine.collapseAll(paths, options);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -467,8 +480,8 @@ export class WebTreeView<T = any> {
   }
 
   /** The selected set (snapshot); assigning replaces it and fires `selection-change`. */
-  get selectedPaths(): Set<string> {
-    return this.engine.getSelectedPaths();
+  get selectedPaths(): string[] {
+    return [...this.engine.getSelectedPaths()];
   }
 
   set selectedPaths(paths: Iterable<string>) {
@@ -510,8 +523,8 @@ export class WebTreeView<T = any> {
   }
 
   /** The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it and fires `checked-change`. */
-  get checkedPaths(): Set<string> {
-    return this.engine.getCheckedPaths();
+  get checkedPaths(): string[] {
+    return [...this.engine.getCheckedPaths()];
   }
 
   set checkedPaths(paths: Iterable<string>) {

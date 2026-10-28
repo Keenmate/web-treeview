@@ -109,6 +109,42 @@ test('copy + paste built-ins act on the node', async ({ page }) => {
   await expect.poll(() => page.locator('web-treeview').evaluate((el: any) => el.getChildren('2').length)).toBe(1);
 });
 
+test('expand / collapse built-ins: one level, subtree, whole tree', async ({ page }) => {
+  const expanded = () => page.locator('web-treeview').evaluate((el: any) => el.expandedPaths.filter((p: string) => p === '1' || p === '1.1').sort());  // folders only (leaves carry the flag too)
+  await openMenu(page, '1');
+  await item(page, '[data-action="collapse-all"]').click();
+  await expect.poll(expanded).toEqual([]);
+  await openMenu(page, '1');
+  await expect(item(page, '[data-action="collapse"]')).toHaveClass(/km-menu__item--disabled/);
+  await expect(item(page, '[data-action="expand-subtree"]')).toHaveText('Expand subtree');
+  await item(page, '[data-action="expand"]').click();
+  await expect.poll(expanded).toEqual(['1']);
+  await openMenu(page, '1');
+  await item(page, '[data-action="expand-subtree"]').click();
+  await expect.poll(expanded).toEqual(['1', '1.1']);
+  await openMenu(page, '1');
+  await item(page, '[data-action="collapse-subtree"]').click();
+  await expect.poll(expanded).toEqual([]);
+  await openMenu(page, '1');
+  await item(page, '[data-action="expand-all"]').click();
+  await expect.poll(expanded).toEqual(['1', '1.1']);
+});
+
+test('expand / collapse built-ins target the selection when the clicked node is in it', async ({ page }) => {
+  const t = page.locator('web-treeview');
+  const expanded = () => t.evaluate((el: any) => el.expandedPaths.filter((p: string) => p === '1' || p === '1.1').sort());  // folders only (leaves carry the flag too)
+  await expect.poll(expanded).toEqual(['1', '1.1']);
+  await t.evaluate((el: any) => { el.selectedPaths = ['1', '1.1']; });
+  await openMenu(page, '1.1');
+  await item(page, '[data-action="collapse"]').click();
+  await expect.poll(expanded).toEqual([]);
+  // A node outside the selection acts alone.
+  await t.evaluate((el: any) => { el.selectedPaths = ['2']; });
+  await openMenu(page, '1');
+  await item(page, '[data-action="expand"]').click();
+  await expect.poll(expanded).toEqual(['1']);
+});
+
 test('getChildrenCallback loads a submenu lazily with the menu ctx', async ({ page }) => {
   await openMenu(page, '1.1');
   await item(page, '[data-id="more"]').hover();

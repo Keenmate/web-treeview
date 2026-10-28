@@ -10,7 +10,7 @@
 import type { ComponentContext } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type {
   NodeRef,
   NodeRenderContext,
@@ -37,11 +37,11 @@ import type { ScrollToPathOptions } from './types';
  */
 export interface TreeViewController<T = any> {
   // expand / collapse
-  expandAll(nodePath?: string | string[] | null, options?: { exclusive?: boolean; noEmit?: boolean }): void;
-  collapseAll(nodePath?: string | string[] | null, options?: { noEmit?: boolean }): void;
-  expandNodes(nodePath: string | string[], options?: { exclusive?: boolean; noEmit?: boolean }): void;
-  collapseNodes(nodePath: string | string[], options?: { noEmit?: boolean }): void;
-  toggleNodeExpanded(path: string): void;
+  expandAll(paths?: string | string[] | null, options?: ExpandOptions): void;
+  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): void;
+  expandNodes(paths: string | string[], options?: ExpandOptions): void;
+  collapseNodes(paths: string | string[], options?: ExpandOptions): void;
+  toggleNodeExpanded(path: string, options?: ExpandOptions): void;
   /** The expanded set (assign `el.expandedPaths` to change it). */
   readonly expandedPaths: string[];
   // search / scroll
@@ -79,7 +79,7 @@ export interface TreeViewController<T = any> {
   clearSelection(paths?: string[], options?: TreeMutationOptions): void;
   getSelectedNodes(): LTreeNode<T>[];
   /** The selected set (snapshot; assign `el.selectedPaths` to replace it). */
-  readonly selectedPaths: Set<string>;
+  readonly selectedPaths: string[];
   isNodeSelected(path: string): boolean;
   // checked
   checkNode(path: string, options?: TreeMutationOptions): void;
@@ -90,7 +90,7 @@ export interface TreeViewController<T = any> {
   uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
   /** The checked set as emitted (assign `el.checkedPaths` to replace it). */
-  readonly checkedPaths: Set<string>;
+  readonly checkedPaths: string[];
   isNodeChecked(path: string): boolean;
   // focus
   focusNode(path: string, options?: TreeMutationOptions): void;
@@ -170,8 +170,13 @@ export interface TreeMenuContext<T = any> extends NodeRef<T>, TreeViewContext<T>
   node: LTreeNode<T>;
 }
 
-/** Built-in context-menu actions — act on the node, or on the whole selection when the node is in it. */
-export type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse';
+/**
+ * Built-in context-menu actions — act on the node, or on the whole selection when the node is
+ * in it. `expand` / `collapse` = one level (ancestors opened); `expand-subtree` /
+ * `collapse-subtree` = the targets and all their descendants; `expand-all` / `collapse-all` =
+ * the whole tree.
+ */
+export type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all';
 
 /** A context-menu item (core `MenuItem`): text, icon, shortcut, `get*Callback(ctx)`, `onClick(detail)`, children. */
 export type TreeMenuItem<T = any> = MenuItem<TreeMenuContext<T>, TreeViewAction>;

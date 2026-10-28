@@ -39,7 +39,7 @@ import {
 import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import type { PasteResult } from './clipboard';
@@ -203,7 +203,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse` (built-in context-menu items). `{name}` placeholders.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
@@ -256,7 +256,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
   { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
   { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.nodes` are siblings — return them in the new order. Not called on the input under `sorted` (still used by insertBranch / addNode / move re-sorts).' },
-  { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'). Every activation fires `action`." },
+  { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'). Every activation fires `action`." },
 
   // ── Callbacks: render hooks ──────────────────────────────────────────────
   { configKey: 'renderNodeCallback', converter: cb(), on: 'update', type: '(ctx: NodeRenderCallbackContext) => void', description: 'Custom render for a node row: fill `ctx.contentElement` (render state on the ctx).' },
@@ -334,7 +334,7 @@ const EVENTS: readonly EventDef[] = [
   { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' },
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
-  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ noEmit: true }` operations. Twin: `onExpandedChange(detail)`.' },
+  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ silent: true }` operations. Twin: `onExpandedChange(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
 ];
@@ -638,20 +638,20 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     else this.#pendingState[key] = list;
   }
 
-  expandAll(nodePath?: string | string[] | null, options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.#live?.expandAll(nodePath, options);
+  expandAll(paths?: string | string[] | null, options?: ExpandOptions): void {
+    this.#live?.expandAll(paths, options);
   }
 
-  collapseAll(nodePath?: string | string[] | null, options?: { noEmit?: boolean }): void {
-    this.#live?.collapseAll(nodePath, options);
+  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): void {
+    this.#live?.collapseAll(paths, options);
   }
 
-  expandNodes(nodePath: string | string[], options?: { exclusive?: boolean; noEmit?: boolean }): void {
-    this.#live?.expandNodes(nodePath, options);
+  expandNodes(paths: string | string[], options?: ExpandOptions): void {
+    this.#live?.expandNodes(paths, options);
   }
 
-  collapseNodes(nodePath: string | string[], options?: { noEmit?: boolean }): void {
-    this.#live?.collapseNodes(nodePath, options);
+  collapseNodes(paths: string | string[], options?: ExpandOptions): void {
+    this.#live?.collapseNodes(paths, options);
   }
 
   filterNodes(term: string): void {
@@ -804,8 +804,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   /** The selected set (a snapshot). Assigning replaces it and fires `selection-change`
    *  (use `clearSelection` / `selectNodes` with `{ silent: true }` for a silent restore). */
-  get selectedPaths(): Set<string> {
-    return this.#live?.selectedPaths ?? new Set(this.#pendingState.selectedPaths ?? []);
+  get selectedPaths(): string[] {
+    return this.#live?.selectedPaths ?? [...(this.#pendingState.selectedPaths ?? [])];
   }
 
   set selectedPaths(paths: Iterable<string>) {
@@ -848,8 +848,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   /** The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning
    *  replaces it and fires `checked-change`. */
-  get checkedPaths(): Set<string> {
-    return this.#live?.checkedPaths ?? new Set(this.#pendingState.checkedPaths ?? []);
+  get checkedPaths(): string[] {
+    return this.#live?.checkedPaths ?? [...(this.#pendingState.checkedPaths ?? [])];
   }
 
   set checkedPaths(paths: Iterable<string>) {
@@ -872,8 +872,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Expand toggle (honors shouldExpandAsAccordion) ────────────────────────────────
 
-  toggleNodeExpanded(path: string): void {
-    this.#live?.toggleNodeExpanded(path);
+  toggleNodeExpanded(path: string, options?: ExpandOptions): void {
+    this.#live?.toggleNodeExpanded(path, options);
   }
 
   // ── Insert diagnostics ──────────────────────────────────────────────────────

@@ -631,7 +631,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 const op = source.getClipboardOperation?.() ?? target.getClipboardOperation?.();
                 document.getElementById('cb-op').textContent = has ? op : 'empty';
                 document.getElementById('cb-info').textContent = has
-                    ? `(${source.checkedPaths.size || source.selectedPaths.size || '?'} entries)` : '';
+                    ? `(${source.checkedPaths.length || source.selectedPaths.length || '?'} entries)` : '';
             }
 
             source.addEventListener('selection-change', updateClipboardStatus);

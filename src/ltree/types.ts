@@ -1,6 +1,17 @@
 import type { Index, SearchOptions } from 'flexsearch';
 import type { LTreeNode, DropPosition } from './ltree-node';
 
+/** Options of the expand / collapse family (`expandNodes`, `collapseNodes`,
+ *  `toggleNodeExpanded`, `expandAll`, `collapseAll`). */
+export interface ExpandOptions {
+	/** Expand: collapse every expanded node that is not on the target's ancestor
+	 *  chain (or under the target). No effect on collapse. */
+	isExclusive?: boolean;
+	/** Change the state without announcing it: no `node-expand` / `node-collapse`
+	 *  / `expanded-change`. */
+	silent?: boolean;
+}
+
 // Re-export LTreeNode and DropPosition for convenience
 export type { LTreeNode, DropPosition } from './ltree-node';
 
@@ -134,11 +145,11 @@ export interface Ltree<T> {
 
 	expandAll(
 		nodePath?: string | string[] | null | undefined,
-		options?: { exclusive?: boolean; noEmit?: boolean }
+		options?: ExpandOptions
 	): void;
 	collapseAll(
 		nodePath?: string | string[] | null | undefined,
-		options?: { noEmit?: boolean }
+		options?: ExpandOptions
 	): void;
 
 	insert(path: string, data: T, noEmitChanges?: boolean): void;
@@ -147,12 +158,12 @@ export interface Ltree<T> {
 
 	expandNodes(
 		path: string | string[],
-		options?: { exclusive?: boolean; noEmit?: boolean }
+		options?: ExpandOptions
 	): Ltree<T>; // Returns self for chaining
 
 	collapseNodes(
 		path: string | string[],
-		options?: { noEmit?: boolean }
+		options?: ExpandOptions
 	): Ltree<T>; // Returns self for chaining
 
 	getNodeDisplayValue(node: LTreeNode<T>): string;

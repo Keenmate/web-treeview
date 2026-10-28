@@ -23,7 +23,9 @@ import {
   type DropOperation,
   type TreeChange,
   type ApplyChangesResult,
-  type ExpandOptions
+  type ExpandOptions,
+  type SortOptions,
+  type NodesReorderContext
 } from '../ltree/types';
 import {
   createRenderCoordinator,
@@ -222,6 +224,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // Visual config
   private _clickBehavior: import('./types').ClickBehavior = 'expand-and-focus';
   private _shouldExpandAsAccordion: boolean = false;
+  /** `false` = never auto-sort (input order / exact positions kept); see Ltree.isSortingEnabled. */
+  private _isSortingEnabled: boolean = true;
   private _iconSet: import('./types').IconSet = 'chevron';
   private _expandIconClass: string = 'wtv__toggle-icon--expand';
   private _collapseIconClass: string = 'wtv__toggle-icon--collapse';
@@ -769,6 +773,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this._clickBehavior = props.clickBehavior ?? 'expand-and-focus';
     this._shouldExpandAsAccordion = props.shouldExpandAsAccordion ?? false;
+    this._isSortingEnabled = props.isSortingEnabled !== false;
     this._iconSet = props.iconSet ?? 'chevron';
     this._expandIconClass = props.expandIconClass ?? 'wtv__toggle-icon--expand';
     this._collapseIconClass = props.collapseIconClass ?? 'wtv__toggle-icon--collapse';
@@ -869,6 +874,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       {
         log: this.log,
         isSorted: props.isSorted,
+        isSortingEnabled: this._isSortingEnabled,
         sortCallback: props.sortCallback,
         displayValueFallback: props.displayValueFallback ?? '[N/A]'
       }
@@ -1132,6 +1138,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   ) {
     this.tree?.collapseAll(nodePath, options);
     this._markExpanded(options?.isSilent);
+  }
+
+  /** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites
+   *  (the facade fires `nodes-reorder` for them). */
+  sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
+    return this.tree?.sortNodes(paths, options) ?? [];
+  }
+
+  /** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
+  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
+    return this.tree?.sortAll(paths, options) ?? [];
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -3735,6 +3752,15 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // (buildConfig copies the stored field, it does not rebuild closures), so
     // identity compare is sound for callbacks and string compare for members.
     // `changed(x, cur)` is false when x is undefined (key absent from updates).
+    // isSortingEnabled is a live flag on the tree (consulted per operation) — set it before
+    // any re-insert below; switching it back on re-sorts the whole tree once (at the end).
+    let isSortingReenabled = false;
+    if (updates.isSortingEnabled !== undefined) {
+      const next = updates.isSortingEnabled !== false;
+      isSortingReenabled = next && !this._isSortingEnabled;
+      this._isSortingEnabled = next;
+      if (this.tree) this.tree.isSortingEnabled = next;
+    }
     const t = this.tree;
     const changed = <V>(next: V | undefined, current: V): boolean =>
       next !== undefined && next !== current;
@@ -4025,6 +4051,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         {
           log: this.log,
           isSorted: updates.isSorted ?? this.tree.isSorted,
+          isSortingEnabled: this._isSortingEnabled,
           sortCallback: updates.sortCallback,
           displayValueFallback: updates.displayValueFallback ?? this.tree.displayValueFallback
         }
@@ -4062,6 +4089,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       // tree and drop the active filter (NOTES #18).
       this.data = updates.data;
     }
+    if (isSortingReenabled) this.tree?.sortAll(null);
 
     this._updateNodeConfig();
     this._scheduleNotify();

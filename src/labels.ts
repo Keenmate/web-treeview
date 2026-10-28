@@ -31,6 +31,9 @@ export interface TreeViewLabels {
   collapseSubtree: string;
   expandAll: string;
   collapseAll: string;
+  sort: string;
+  sortSubtree: string;
+  sortAll: string;
 }
 
 /** Built-in English strings. */
@@ -50,6 +53,9 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   collapseSubtree: 'Collapse subtree',
   expandAll: 'Expand all',
   collapseAll: 'Collapse all',
+  sort: 'Sort',
+  sortSubtree: 'Sort subtree',
+  sortAll: 'Sort all',
 });
 
 /**

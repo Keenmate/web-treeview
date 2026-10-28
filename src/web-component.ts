@@ -39,7 +39,7 @@ import {
 import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import type { PasteResult } from './clipboard';
@@ -55,6 +55,7 @@ import type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
+  NodesReorderEventDetail,
   TreeEventDetail,
   TreeViewActionEventDetail,
 } from './interaction';
@@ -151,6 +152,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'treePathSeparator', attribute: 'tree-path-separator', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Separator between segments in a materialized tree path.' },
   { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus.' },
   { configKey: 'shouldExpandAsAccordion', attribute: 'expand-as-accordion', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
+  { configKey: 'isSortingEnabled', attribute: 'enable-sorting', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Automatic sorting of siblings (default on). Off: the input order is kept, `addNode` appends, `insertNode` / `insertBranch` / `moveNode` / drop keep the exact position (with `orderMember` the order values are still computed). `sortNodes` / `sortAll` still sort; switching it back on re-sorts the tree.' },
   { configKey: 'isSorted', attribute: 'sorted', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
 
   // ── Search / indexer ───────────────────────────────────────────────────────
@@ -207,7 +209,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll` (built-in context-menu items). `{name}` placeholders.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
@@ -260,7 +262,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
   { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
   { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.nodes` are siblings — return them in the new order. Not called on the input under `sorted` (still used by addBranch / addNode / move re-sorts).' },
-  { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'). Every activation fires `action`." },
+  { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all' | 'sort' | 'sort-subtree' | 'sort-all'). Every activation fires `action`." },
 
   // ── Callbacks: render hooks ──────────────────────────────────────────────
   { configKey: 'renderNodeCallback', converter: cb(), on: 'update', type: '(ctx: NodeRenderCallbackContext) => void', description: 'Custom render for a node row: fill `ctx.contentElement` (render state on the ctx).' },
@@ -318,6 +320,7 @@ type TreeViewEvents = {
   'checked-change': SelectionChangeEventDetail;
   'focus-change': FocusChangeEventDetail;
   'expanded-change': ExpandedChangeEventDetail;
+  'nodes-reorder': NodesReorderEventDetail;
   'tree-change': TreeEventDetail;
   'action': TreeViewActionEventDetail;
 };
@@ -339,6 +342,7 @@ const EVENTS: readonly EventDef[] = [
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
   { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ isSilent: true }` operations. Twin: `onExpandedChange(detail)`.' },
+  { name: 'nodes-reorder', description: 'A sort (`sortNodes` / `sortAll` / the `sort*` menu items) with a `compareCallback` or `direction: "desc"` rewrote the `orderMember` values (10, 20, 30…) of the children of one parent — one event per parent; never without `orderMember`. `detail`: `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`. Twin: `onNodesReorder(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
 ];
@@ -373,6 +377,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onCheckedChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
   declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
   declare onExpandedChange: ((detail: ExpandedChangeEventDetail<T>) => void) | null;
+  declare onNodesReorder: ((detail: NodesReorderEventDetail<T>) => void) | null;
   declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
   declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
 
@@ -398,6 +403,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onCheckedChange: (d) => this.emit('checked-change', d),
     onFocusChange: (d) => this.emit('focus-change', d),
     onExpandedChange: (d) => this.emit('expanded-change', d),
+    onNodesReorder: (d) => this.emit('nodes-reorder', d),
     onTreeChange: (d) => this.emit('tree-change', d),
     onAction: (d) => this.emit('action', d),
   };
@@ -888,6 +894,22 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   toggleNodeExpanded(path: string, options?: ExpandOptions): void {
     this.#live?.toggleNodeExpanded(path, options);
+  }
+
+  // ── Sorting ────────────────────────────────────────────────────────────────
+
+  /** Sort the children of each node (one level; `''` = the roots) by the tree's rule
+   *  (`sortCallback` → `orderMember` → display value, numeric-aware) or `options.compareCallback`;
+   *  `direction: 'desc'` reverses it. Fires `nodes-reorder` when `orderMember` values were
+   *  rewritten (unless `isSilent`). Works with `isSortingEnabled` off too. */
+  sortNodes(paths: string | string[], options?: SortOptions<T>): void {
+    this.#live?.sortNodes(paths, options);
+  }
+
+  /** Sort whole subtrees — the nodes' children at every depth; `null` / omitted = the whole
+   *  tree. Same rule / options / event as {@link sortNodes}. */
+  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): void {
+    this.#live?.sortAll(paths, options);
   }
 
   // ── Insert diagnostics ──────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext
 import type { TreeViewRenderer, RendererConfig } from './renderer/types';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
@@ -25,7 +25,7 @@ import { runAction, type ResolvedActionItem } from '@keenmate/web-components-cor
 
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
 const CONTROLLER_METHODS = [
-  'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded',
+  'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded', 'sortNodes', 'sortAll',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree',
   'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
@@ -226,6 +226,9 @@ export class WebTreeView<T = any> {
       case 'collapse-subtree': return { text: label('collapseSubtree'), isDisabled: targets().length === 0 };
       case 'expand-all': return { text: label('expandAll') };
       case 'collapse-all': return { text: label('collapseAll') };
+      case 'sort': return { text: label('sort'), isDisabled: targets().length === 0 };
+      case 'sort-subtree': return { text: label('sortSubtree'), isDisabled: targets().length === 0 };
+      case 'sort-all': return { text: label('sortAll') };
       default: return undefined;
     }
   }
@@ -270,6 +273,9 @@ export class WebTreeView<T = any> {
       case 'collapse-subtree': this.engine.collapseAll(paths); break;
       case 'expand-all': this.engine.expandAll(null); break;
       case 'collapse-all': this.engine.collapseAll(null); break;
+      case 'sort': this.sortNodes(paths); break;
+      case 'sort-subtree': this.sortAll(paths); break;
+      case 'sort-all': this.sortAll(null); break;
     }
   }
 
@@ -304,6 +310,20 @@ export class WebTreeView<T = any> {
    *  icon. Honors `shouldExpandAsAccordion`. */
   toggleNodeExpanded(path: string, options?: ExpandOptions): void {
     this.engine.toggleNodeExpanded(path, options);
+  }
+
+  sortNodes(paths: string | string[], options?: SortOptions<T>): void {
+    this.announceReorders(this.engine.sortNodes(paths, options), options);
+  }
+
+  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): void {
+    this.announceReorders(this.engine.sortAll(paths, options), options);
+  }
+
+  /** `nodes-reorder` — one per parent whose `orderMember` values the sort rewrote. */
+  private announceReorders(reorders: NodesReorderContext<T>[], options?: SortOptions<T>): void {
+    if (options?.isSilent) return;
+    for (const r of reorders) this.options.onNodesReorder?.(this.ctx({ ...r }));
   }
 
   expandAll(paths?: string | string[] | null, options?: ExpandOptions): void {
@@ -675,6 +695,7 @@ export class WebTreeView<T = any> {
       getIsCollapsibleCallback: this.nodeCallback(o.getIsCollapsibleCallback),
       hasChildrenMember: o.hasChildrenMember,
       isSorted: o.isSorted,
+      isSortingEnabled: o.isSortingEnabled,
       displayValueMember: o.displayValueMember,
       getDisplayValueCallback: this.nodeCallback(o.getDisplayValueCallback),
       // labels.noDisplayValue → the Ltree's display fallback (only when labels are (re)set).

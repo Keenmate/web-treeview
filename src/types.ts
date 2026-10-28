@@ -48,6 +48,7 @@ export type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
+  NodesReorderEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -97,7 +98,7 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 
 import type { LTreeNode } from './ltree/ltree-node';
 import type { DropPosition } from './ltree/ltree-node';
-import type { DragDropMode, DropOperation, ExpandOptions, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { DragDropMode, DropOperation, ExpandOptions, SortOptions, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
 import type {
   ClickBehavior,
   RangeSelectionMode,
@@ -137,6 +138,7 @@ import type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
+  NodesReorderEventDetail,
   TreeEventDetail,
 } from './interaction';
 
@@ -182,6 +184,11 @@ export interface TreeViewConfig<T = any> {
    *  tree. A child listed before its parent is dropped as an orphan
    *  (`insertResult.failed`) — caller's responsibility. */
   isSorted?: boolean | null;
+  /** `false` = never auto-sort: the input order is kept, `addNode` appends, `insertNode` /
+   *  `insertBranch` / `moveNode` / drop keep the exact position (with `orderMember` the order
+   *  values are still computed between the neighbours, for persistence). `sortNodes` /
+   *  `sortAll` still sort. Switching it back on re-sorts the whole tree. Default `true`. */
+  isSortingEnabled?: boolean | null;
 
   // Search
   shouldUseInternalSearchIndex?: boolean | null;
@@ -463,6 +470,8 @@ export interface TreeViewConfig<T = any> {
   onFocusChange?: (detail: FocusChangeEventDetail<T>) => void;
   /** Twin of `expanded-change` (the expanded set changed; `detail.paths` = the whole new set). */
   onExpandedChange?: (detail: ExpandedChangeEventDetail<T>) => void;
+  /** Twin of `nodes-reorder` (a sort rewrote one parent's `orderMember` values). */
+  onNodesReorder?: (detail: NodesReorderEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
   shouldHandleKeyboardShortcuts?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
@@ -510,6 +519,8 @@ export interface TreeViewMethods<T = any> {
     options?: ExpandOptions
   ): void;
   toggleNodeExpanded(path: string, options?: ExpandOptions): void;
+  sortNodes(paths: string | string[], options?: SortOptions<T>): void;
+  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): void;
   expandAll(
     paths?: string | string[] | null,
     options?: ExpandOptions
@@ -614,6 +625,7 @@ export interface TreeEventMap<T = any> {
   'checked-change': CustomEvent<SelectionChangeEventDetail<T>>;
   'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
   'expanded-change': CustomEvent<ExpandedChangeEventDetail<T>>;
+  'nodes-reorder': CustomEvent<NodesReorderEventDetail<T>>;
   'tree-change': CustomEvent<TreeEventDetail<T>>;
   'action': CustomEvent<TreeViewActionEventDetail<T>>;
 }

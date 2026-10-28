@@ -118,6 +118,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
 | `expand-as-accordion` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `shouldExpandAsAccordion`) |
+| `enable-sorting` | `boolean` | `true` | Automatic sibling sorting (config key: `isSortingEnabled`). `false` = never auto-sort: input order kept, `addNode` appends, insert / move / drop keep the exact position — see [Sorting](#sorting) |
 | `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `insertResult.failed`) |
 | `use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
@@ -127,16 +128,20 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
-| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
+| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` / `sort` / `sortSubtree` / `sortAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
 **Sibling order.** On insert (`nodes`, `addBranch`) the tree puts parents before their
-children itself and orders each parent's children with `sortCallback` (one call per
-sibling group — `items` are siblings, never the whole list), or by `order-member` then
-display value when there is no callback. `addNode`, `refreshSiblings` and `moveNode`
-(as a child, or before/after with `order-member`) re-sort the affected parent the same
-way; a before/after move without `order-member` keeps the dropped position. Children are kept in that order — there is
-no render-time sorting.
+children itself and orders each parent's children by one rule: `sortCallback` when set
+(one call per sibling group — `items` are siblings, never the whole list), else
+`order-member` (display value breaks ties), else the display value (`Intl.Collator`,
+numeric-aware: "Item 2" before "Item 10"). `addNode`, `refreshSiblings`, `updateNode`
+(an `order-member` change), `moveNode` / drop / paste as a child, and `insertNode` /
+`insertBranch` / `moveNode` before/after **with** `order-member` re-sort the affected parent
+the same way — only that parent's children (its siblings), nothing else. A before/after
+insert / move without `order-member` keeps the exact position. Children are kept in that
+order — there is no render-time sorting. `enable-sorting="false"` turns all of this off —
+see [Sorting](#sorting).
 
 `sorted` is a **performance hint**, not a sort switch: "my data is already in insert
 order (parents first, siblings in display order)". The tree then skips sorting the
@@ -285,7 +290,7 @@ A `TreeMenuEntry` is one of:
 
 - a **core action item** — `{ id, text, icon, shortcut, cssClass, isDanger, isDisabled, isVisible, isToggled, tooltip, onClick(detail), children, getChildrenCallback(ctx), shouldCloseOnClick }`. The static fields have `get*Callback(ctx)` variants (text, icon, tooltip, class, visible, disabled, toggled). `onClick` receives the `action` detail. An enabled leaf closes the menu after it activates unless `shouldCloseOnClick: false`. `getChildrenCallback` loads a submenu lazily (sync or async — a loading row shows meanwhile).
 - a **divider** — `{ divider: true, text? }` or `menuDivider(text?)` (exported from the package).
-- a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state). `expand` / `collapse` = one level; `expand-subtree` / `collapse-subtree` = the targets and all their descendants; `expand-all` / `collapse-all` = the whole tree.
+- a **built-in name** — `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all' | 'sort' | 'sort-subtree' | 'sort-all'` (acts on the node, or on the whole selection when the node is in it; default text, disabled and danger state). `expand` / `collapse` = one level; `expand-subtree` / `collapse-subtree` = the targets and all their descendants; `expand-all` / `collapse-all` = the whole tree. `sort` = the targets' children (one level, `sortNodes`); `sort-subtree` = at every depth (`sortAll(targets)`); `sort-all` = the whole tree (`sortAll(null)`). There is no default menu — list the built-ins you want.
 
 Activation order: `beforeActionCallback` → item `onClick` → built-in → `action` event (+ `onAction`). The event is a notification after the fact — a listener sees the tree as the built-in left it (after `collapse` the node is collapsed, after `delete` it is gone); to prevent a built-in use `beforeActionCallback`. A throwing built-in is logged and the event still fires. Menu items carry `data-action` (built-in name or `custom`) and `data-id`.
 
@@ -369,7 +374,7 @@ The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase:
 
 ### Event twins (`on*`)
 
-Every event below has a camelCase `on*` property twin that receives the **detail** (not the `CustomEvent`): `onNodeClick`, `onNodeDoubleClick`, `onNodeCopy`, `onNodeCut`, `onNodePaste`, `onNodeDelete`, `onNodeDragStart`, `onNodeDragOver`, `onNodeDrop`, `onNodeDragReject`, `onNodeDropReject`, `onSelectionChange`, `onCheckedChange`, `onFocusChange`, `onTreeChange`, `onAction`, `onRenderStart`, `onRenderProgress`, `onRenderComplete`.
+Every event below has a camelCase `on*` property twin that receives the **detail** (not the `CustomEvent`): `onNodeClick`, `onNodeDoubleClick`, `onNodeCopy`, `onNodeCut`, `onNodePaste`, `onNodeDelete`, `onNodeDragStart`, `onNodeDragOver`, `onNodeDrop`, `onNodeDragReject`, `onNodeDropReject`, `onSelectionChange`, `onCheckedChange`, `onFocusChange`, `onExpandedChange`, `onNodesReorder`, `onTreeChange`, `onAction`, `onRenderStart`, `onRenderProgress`, `onRenderComplete`.
 
 ```javascript
 tree.onNodeClick = ({ node, parent }) => console.log('clicked', node.path, 'under', parent?.path);
@@ -387,8 +392,8 @@ All methods are available on the element **and** on `el.controller`.
 | `toggleNodeExpanded` | `(path, options?)` | Toggle as the user would (honors `shouldExpandAsAccordion`; `isExclusive` replaces the accordion) |
 | `expandAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
 | `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
-
-`ExpandOptions`: `{ isExclusive?: boolean; isSilent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `isSilent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
+| `sortNodes` | `(paths: string \| string[], options?)` | Sort the children of each node, one level (`''` = the roots) — see [Sorting](#sorting) |
+| `sortAll` | `(paths?: string \| string[] \| null, options?)` | Sort whole subtrees (the nodes' children at every depth); `null` / omitted = the whole tree |
 | `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
 | `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
@@ -445,6 +450,10 @@ All methods are available on the element **and** on `el.controller`.
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
 | `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |
 | `destroy` | `()` | Core final teardown (element only): releases the tree engine, renderer and clipboard registration; `isDestroyed` turns `true` |
+
+`ExpandOptions`: `{ isExclusive?: boolean; isSilent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `isSilent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
+
+`SortOptions`: `{ compareCallback?: ({ a, b }) => number; direction?: 'asc' | 'desc'; isSilent?: boolean }` — see [Sorting](#sorting).
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
@@ -511,12 +520,52 @@ tree.navigationOverrides = null; // back to the defaults
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed (`paths`: `string[]`) |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
 | `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ isSilent: true }` |
+| `nodes-reorder` | `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }` | A sort with `compareCallback` or `direction: 'desc'` rewrote one parent's `order-member` values (one event per parent; `nodes` = all its children in the new order, `changes` = only those whose value changed). Never without `order-member`; not with `isSilent` |
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
 Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 
 `isSilent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
+
+## Sorting
+
+Siblings are sorted automatically (see **Sibling order** under [Behavior](#behavior)) by the
+tree's rule: `sortCallback` → `order-member` → display value (`Intl.Collator`, numeric).
+
+**Turning it off — `enable-sorting="false"` / `isSortingEnabled = false`.** The tree never
+auto-sorts: `nodes` keep the input order (parents must still come before their children),
+`addNode` / `addBranch` append, `insertNode` / `insertBranch` / `moveNode` / drop / paste keep
+the exact before/after position. With `order-member` the order values are still computed
+between the neighbours (so the position can be persisted). Switching it back on re-sorts the
+whole tree once.
+
+**An exact before/after position needs `order-member` OR `enable-sorting="false"`** — without
+either, the next automatic sort of that parent puts the node back in display-value order.
+Sorting only ever touches the children of the affected parent (its siblings).
+
+**Sorting on demand** (works with automatic sorting off too):
+
+```javascript
+tree.sortNodes('1');                 // the children of node 1 (one level); '' = the roots
+tree.sortAll('1');                   // node 1's whole subtree
+tree.sortAll();                      // the whole tree
+tree.sortAll(null, { direction: 'desc' });
+tree.sortNodes('', { compareCallback: ({ a, b }) => a.data.size - b.data.size });
+```
+
+`SortOptions`: `compareCallback({ a, b })` — an ascending comparator (negative = `a` first;
+default = the tree's rule); `direction: 'desc'` reverses whichever rule applies; `isSilent`
+suppresses `nodes-reorder` only (the tree always re-renders).
+
+**With `order-member`**, a `compareCallback` or `direction: 'desc'` sort rewrites the order
+values of the sorted children (10, 20, 30…) so the new order survives the next automatic
+sort, and fires `nodes-reorder` once per parent whose values changed —
+`{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }` — persist `changes` from it.
+A sort by the tree's own rule changes no values and fires nothing.
+
+The context-menu built-ins `sort`, `sort-subtree` and `sort-all` call these (labels `sort`,
+`sortSubtree`, `sortAll`).
 
 ## Lazy loading
 

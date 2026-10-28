@@ -12,6 +12,35 @@ export interface ExpandOptions {
 	isSilent?: boolean;
 }
 
+/** ctx of `SortOptions.compareCallback`: two siblings. */
+export interface SortCompareContext<T = any> {
+	a: LTreeNode<T>;
+	b: LTreeNode<T>;
+}
+
+/** Options of `sortNodes` / `sortAll`. */
+export interface SortOptions<T = any> {
+	/** Ascending comparator (negative = `a` first). Default: the tree's own rule — `sortCallback`
+	 *  → `orderMember` → `Intl.Collator(numeric)` by display value. With `orderMember` set, a
+	 *  custom compare rewrites the order values (10, 20, 30…) and fires `nodes-reorder`. */
+	compareCallback?: (ctx: SortCompareContext<T>) => number;
+	/** `'desc'` reverses whichever rule applies (with `orderMember`: the values are rewritten,
+	 *  like a custom compare). Default `'asc'`. */
+	direction?: 'asc' | 'desc';
+	/** Suppress `nodes-reorder` only — the tree always re-renders. */
+	isSilent?: boolean;
+}
+
+/** One parent whose children's `orderMember` values a sort rewrote. */
+export interface NodesReorderContext<T = any> {
+	/** The parent ('' = root). */
+	parentPath: string;
+	/** All its children, in the new order. */
+	nodes: LTreeNode<T>[];
+	/** Only the children whose order value changed. */
+	changes: Array<{ path: string; oldOrder: number | undefined; newOrder: number }>;
+}
+
 // Re-export LTreeNode and DropPosition for convenience
 export type { LTreeNode, DropPosition } from './ltree-node';
 
@@ -103,6 +132,10 @@ export interface Ltree<T> {
 	isSorted: boolean | null | undefined;
 	/** Orders the children of ONE parent (`items` are siblings). */
 	sortCallback?: (items: LTreeNode<T>[]) => LTreeNode<T>[];
+	/** `false` = never auto-sort: the input order is kept, addNode appends, insertNode /
+	 *  insertBranch / moveNode / copy keep the exact position (with `orderMember` the order
+	 *  values are still computed). `sortNodes` / `sortAll` still sort. Default `true`. */
+	isSortingEnabled: boolean;
 
 	// Filtering properties
 	filteredTree: LTreeNode<T>[] | null;
@@ -178,7 +211,16 @@ export interface Ltree<T> {
 
 	_defaultSort(self: Ltree<T>, items: LTreeNode<T>[]): LTreeNode<T>[];
 
-	_sortSiblings(items: LTreeNode<T>[]): LTreeNode<T>[];
+	_sortSiblings(items: LTreeNode<T>[], options?: Pick<SortOptions<T>, 'compareCallback' | 'direction'>): LTreeNode<T>[];
+	/** Stable sort by level only (parents before children, input order kept among siblings). */
+	_sortByLevel(items: LTreeNode<T>[]): LTreeNode<T>[];
+	/** The automatic re-sort after a mutation: `refreshSiblings` unless `isSortingEnabled` is false. */
+	_autoSortSiblings(parentPath: string): void;
+	_sortChildrenOf(parent: LTreeNode<T>, options: SortOptions<T> | undefined, out: NodesReorderContext<T>[]): void;
+	/** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites. */
+	sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[];
+	/** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
+	sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[];
 
 	_emitTreeChanged(): void;
 

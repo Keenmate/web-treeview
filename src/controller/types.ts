@@ -433,6 +433,8 @@ export interface TreeEngineConfig<T> {
    *  Respects `isCollapsibleMember` / `getIsCollapsibleCallback`.
    *  Mirrors svelte-treeview rc03. */
   shouldExpandAsAccordion?: boolean | null | undefined;
+  /** `false` = never auto-sort (input order kept, mutations keep the exact position). Default true. */
+  isSortingEnabled?: boolean | null | undefined;
   clickBehavior?: ClickBehavior | null | undefined;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default true. */
   shouldHandleKeyboardShortcuts?: boolean | null | undefined;

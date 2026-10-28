@@ -14,6 +14,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`isSilent` = no events / callbacks only — the tree always re-renders.** `expandNodes` /
   `collapseNodes` / `expandAll` / `collapseAll` with the flag used to skip the tree-changed
   notification, so the change didn't show until something else re-rendered.
+- **Display-value sort is numeric-aware.** The last tie-break of the sibling rule
+  (`sortCallback` → `orderMember` → display value) compares with
+  `Intl.Collator(undefined, { numeric: true })` instead of `localeCompare` — "Item 2" now
+  sorts before "Item 10". Applies to the input and every automatic re-sort.
+
+### Added (round 3, 2026-10-28)
+
+- **`isSortingEnabled` / `enable-sorting`** (default `true`). `false` = never auto-sort: the
+  input order is kept, `addNode` / `addBranch` append, `insertNode` / `insertBranch` /
+  `moveNode` / drop keep the exact position (with `orderMember` the order values are still
+  computed between the neighbours, for persistence). Switching it back on re-sorts the tree.
+- **`sortNodes(paths, options?)`** (the nodes' children, one level; `''` = the roots) and
+  **`sortAll(paths?, options?)`** (whole subtrees; `null` / omitted = the whole tree), on the
+  element and the controller; they sort with automatic sorting off too. **`SortOptions`**
+  `{ compareCallback?: ({ a, b }) => number, direction?: 'asc' | 'desc', isSilent? }`
+  (exported with `SortCompareContext` / `NodesReorderContext`).
+- **`nodes-reorder` event** (`onNodesReorder` twin): with `orderMember`, a `compareCallback` or
+  `direction: 'desc'` sort rewrites the sorted children's order values (10, 20, 30…) so the
+  order survives the next automatic sort, and fires once per parent whose values changed —
+  `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`.
+- **Context-menu built-ins `sort` / `sort-subtree` / `sort-all`** (selection targeting like
+  the expand family) + labels `sort`, `sortSubtree`, `sortAll`.
+- **`el.nodes` reads the live state** once built (core `getLiveValue`) — see the `data` →
+  `nodes` entry below.
+- Docs: usage.md "Sorting" — an exact before/after position needs `orderMember` or
+  `enable-sorting="false"`; sorting only touches the affected parent's children.
 
 ### Changed — BREAKING (leftover naming decisions, 2026-10-28)
 

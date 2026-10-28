@@ -348,7 +348,7 @@ tree.contextMenuYOffset = -30; // Shift menu 30px up
 <web-treeview enable-virtual-scroll virtual-scroll-container-height="500px"></web-treeview>
 
 <!-- Flat mode (default) with progressive batching -->
-<web-treeview progressive-render="true" initial-batch-size="200" max-batch-size="800"></web-treeview>
+<web-treeview enable-progressive-render="true" initial-batch-size="200" max-batch-size="800"></web-treeview>
 ```
 
 ## Pluggable renderers

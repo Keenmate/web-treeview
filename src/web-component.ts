@@ -147,7 +147,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'expandLevel', attribute: 'expand-level', converter: toInt({ default: 0 }), on: 'update', description: 'Depth to auto-expand on load (0 = roots only, the default).' },
   { configKey: 'treePathSeparator', attribute: 'tree-path-separator', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Separator between segments in a materialized tree path.' },
   { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus.' },
-  { configKey: 'isAccordionExpand', attribute: 'accordion-expand', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
+  { configKey: 'shouldExpandAsAccordion', attribute: 'expand-as-accordion', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
   { configKey: 'isSorted', attribute: 'sorted', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
 
   // ── Search / indexer ───────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
-  { configKey: 'isProgressiveRender', attribute: 'progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
+  { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
   { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), default: 20, on: 'update', description: 'Rows rendered in the first progressive batch.' },
   { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), default: 500, on: 'update', description: 'Maximum rows per progressive batch.' },
 
@@ -871,7 +871,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.clearFocus(options);
   }
 
-  // ── Expand toggle (honors isAccordionExpand) ────────────────────────────────
+  // ── Expand toggle (honors shouldExpandAsAccordion) ────────────────────────────────
 
   toggleNodeExpanded(path: string): void {
     this.#live?.toggleNodeExpanded(path);

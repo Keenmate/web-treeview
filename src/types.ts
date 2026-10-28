@@ -176,7 +176,7 @@ export interface TreeViewConfig<T = any> {
    *  siblings. Programmatic `expandNodes` / `expandAll` are unaffected.
    *  Respects `isCollapsibleMember` / `getIsCollapsibleCallback`.
    *  Mirrors svelte-treeview rc03. */
-  isAccordionExpand?: boolean | null;
+  shouldExpandAsAccordion?: boolean | null;
   /** Performance hint: the input is already in insert order (parents before
    *  children, siblings in display order) — `data` / insertBranch skip sorting the
    *  input (no depth sort, no `sortCallback`). insertBranch still re-sorts each
@@ -191,7 +191,7 @@ export interface TreeViewConfig<T = any> {
   indexerTimeout?: number | null;
 
   // Progressive rendering
-  isProgressiveRender?: boolean | null;
+  isProgressiveRenderEnabled?: boolean | null;
   initialBatchSize?: number | null;
   maxBatchSize?: number | null;
 

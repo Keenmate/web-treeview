@@ -431,7 +431,7 @@ export interface TreeEngineConfig<T> {
    *  siblings. Programmatic `expandNodes` / `expandAll` are NOT constrained.
    *  Respects `isCollapsibleMember` / `getIsCollapsibleCallback`.
    *  Mirrors svelte-treeview rc03. */
-  isAccordionExpand?: boolean | null | undefined;
+  shouldExpandAsAccordion?: boolean | null | undefined;
   clickBehavior?: ClickBehavior | null | undefined;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default true. */
   shouldHandleKeyboardShortcuts?: boolean | null | undefined;
@@ -450,7 +450,7 @@ export interface TreeEngineConfig<T> {
   isLoading?: boolean;
 
   // Progressive rendering
-  isProgressiveRender?: boolean;
+  isProgressiveRenderEnabled?: boolean;
   initialBatchSize?: number;
   maxBatchSize?: number;
   renderStartCallback?: () => void;

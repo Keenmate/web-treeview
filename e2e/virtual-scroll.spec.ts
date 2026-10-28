@@ -87,7 +87,7 @@ test.describe('enable-flat-rendering', () => {
   });
 });
 
-test.describe('progressive-render', () => {
+test.describe('enable-progressive-render', () => {
   test('a large tree renders in growing batches until every row is in the DOM', async ({ page }) => {
     await page.goto(`${PAGE}?mode=progressive`);
     await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
@@ -107,10 +107,10 @@ test.describe('progressive-render', () => {
     await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
   });
 
-  test('progressive-render can be switched at runtime (NOTES #9)', async ({ page }) => {
+  test('enable-progressive-render can be switched at runtime (NOTES #9)', async ({ page }) => {
     await page.goto(`${PAGE}?mode=progressive`);
     await expect.poll(async () => (await rowPaths(page)).length, { timeout: 8_000 }).toBe(2000);
-    await page.evaluate(() => (window as any).tree.setAttribute('progressive-render', 'false'));
+    await page.evaluate(() => (window as any).tree.setAttribute('enable-progressive-render', 'false'));
     await page.evaluate(() => (window as any).tree.expandNodes('1'));
     await page.evaluate(() => (window as any).tree.collapseNodes('1'));
     await expect.poll(async () => (await rowPaths(page)).length).toBe(1901);

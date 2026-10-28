@@ -235,12 +235,12 @@ original and the copy are rendered") and `mutation-api.spec.ts`
 
 ## 9. ~~Flat / progressive inputs are construction-only (runtime changes ignored)~~ — fixed
 
-**Fixed 2026-10-25:** `update()` applies `flatIndentSize`, `initialBatchSize`, `maxBatchSize`, `isFlatRenderingEnabled` and `isProgressiveRender` (switching flat/progressive at runtime shows the currently visible rows at once; later inserts batch as usual). The `test.fail` passes; added "progressive-render can be switched at runtime".
+**Fixed 2026-10-25:** `update()` applies `flatIndentSize`, `initialBatchSize`, `maxBatchSize`, `isFlatRenderingEnabled` and `isProgressiveRenderEnabled` (switching flat/progressive at runtime shows the currently visible rows at once; later inserts batch as usual). The `test.fail` passes; added "enable-progressive-render can be switched at runtime".
 
 Original report:
 
 **Where:** `src/controller/tree-engine.ts` — `flatIndentSize`,
-`isFlatRenderingEnabled`, `isProgressiveRender`, `initialBatchSize`,
+`isFlatRenderingEnabled`, `isProgressiveRenderEnabled`, `initialBatchSize`,
 `maxBatchSize` are read in the constructor (~744-748) but the `update(updates)`
 handler (~3440-3460) never applies them, although the inputs are declared
 `on: 'update'` in `web-component.ts` (~179-183).
@@ -268,7 +268,7 @@ pending, it *replaces* `flatRenderQueue` with the new call's remainder
 queue is lost.
 
 **Symptom:** `virtual-scroll.html?mode=progressive` (2000 rows,
-`use-flat-rendering` + `progressive-render`, configured before connect):
+`use-flat-rendering` + `enable-progressive-render`, configured before connect):
 the DOM grows 20 → 40 → 80 → 109 rows and stays at 109 forever
 (`getVisibleFlatNodes()` also reports 109). Flat + progressive are the
 DEFAULTS when virtual scroll is off, so any large, sorted, non-virtual tree
@@ -280,7 +280,7 @@ rows counted after 2.5 s):
 | config | rows rendered |
 | --- | --- |
 | defaults | 2000 ✓ |
-| `use-flat-rendering` + `progressive-render` explicit | 2000 ✓ |
+| `use-flat-rendering` + `enable-progressive-render` explicit | 2000 ✓ |
 | + `initial-batch-size="10"` only | **1990** (the first batch is lost) |
 | + `isSorted` + `sortCallback` only | **119** (stalls) |
 | all of the above | **109** |

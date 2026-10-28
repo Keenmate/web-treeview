@@ -288,7 +288,7 @@ export class WebTreeView<T = any> {
   }
 
   /** Toggle the expand state of a node as if the user had clicked its toggle
-   *  icon. Honors `isAccordionExpand`. */
+   *  icon. Honors `shouldExpandAsAccordion`. */
   toggleNodeExpanded(path: string): void {
     this.engine.toggleNodeExpanded(path);
   }
@@ -664,7 +664,7 @@ export class WebTreeView<T = any> {
       checkedPaths: o.checkedPaths,
 
       expandLevel: o.expandLevel,
-      isAccordionExpand: o.isAccordionExpand,
+      shouldExpandAsAccordion: o.shouldExpandAsAccordion,
       clickBehavior: o.clickBehavior,
       searchTerm: o.searchTerm,
       shouldUseInternalSearchIndex: o.shouldUseInternalSearchIndex,
@@ -672,7 +672,7 @@ export class WebTreeView<T = any> {
       indexerTimeout: o.indexerTimeout,
       isLoading: o.isLoading ?? false,
 
-      isProgressiveRender: o.isProgressiveRender ?? true,
+      isProgressiveRenderEnabled: o.isProgressiveRenderEnabled ?? true,
       initialBatchSize: o.initialBatchSize,
       maxBatchSize: o.maxBatchSize,
       isFlatRenderingEnabled: o.isFlatRenderingEnabled ?? true,

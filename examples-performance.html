@@ -328,7 +328,7 @@
                 nodeCountTarget: +$('cfg-node-count').value,
                 shouldUseInternalSearchIndex: $('cfg-search-index').checked,
                 indexerBatchSize: +$('cfg-indexer-batch').value,
-                isProgressiveRender: $('opt-progressive').checked,
+                isProgressiveRenderEnabled: $('opt-progressive').checked,
                 initialBatchSize: +$('opt-initial-batch').value,
                 maxBatchSize: +$('opt-max-batch').value,
                 virtualScrollContainerHeight: $('opt-container-height').value,
@@ -343,7 +343,7 @@
             if (c.nodeCountTarget !== undefined) $('cfg-node-count').value = c.nodeCountTarget;
             if (c.shouldUseInternalSearchIndex !== undefined) $('cfg-search-index').checked = c.shouldUseInternalSearchIndex;
             if (c.indexerBatchSize !== undefined) $('cfg-indexer-batch').value = c.indexerBatchSize;
-            if (c.isProgressiveRender !== undefined) $('opt-progressive').checked = c.isProgressiveRender;
+            if (c.isProgressiveRenderEnabled !== undefined) $('opt-progressive').checked = c.isProgressiveRenderEnabled;
             if (c.initialBatchSize !== undefined) $('opt-initial-batch').value = c.initialBatchSize;
             if (c.maxBatchSize !== undefined) $('opt-max-batch').value = c.maxBatchSize;
             if (c.virtualScrollContainerHeight) $('opt-container-height').value = c.virtualScrollContainerHeight;
@@ -447,9 +447,9 @@
             if (isVirtual) {
                 cfg.virtualScrollContainerHeight = $('opt-container-height').value;
                 cfg.virtualScrollOverscan = +$('opt-overscan').value;
-                cfg.isProgressiveRender = false;
+                cfg.isProgressiveRenderEnabled = false;
             } else {
-                cfg.isProgressiveRender = $('opt-progressive').checked;
+                cfg.isProgressiveRenderEnabled = $('opt-progressive').checked;
                 cfg.initialBatchSize = +$('opt-initial-batch').value;
                 cfg.maxBatchSize = +$('opt-max-batch').value;
             }

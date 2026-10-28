@@ -11,7 +11,7 @@
 <body>
     <!--
       ?mode=virtual      (default) virtual-scroll, 5000 rows, 400px viewport, overscan 5
-      ?mode=progressive  enable-flat-rendering + progressive-render, initial-batch-size 10, 2000 rows
+      ?mode=progressive  enable-flat-rendering + enable-progressive-render, initial-batch-size 10, 2000 rows
       ?mode=flat         enable-flat-rendering, progressive off, flat-indent-size 30px, small tree
     -->
     <!-- The element is created + configured in JS BEFORE it connects (like markup). -->
@@ -46,7 +46,7 @@
             data = makeData(50, 99); // 5000 nodes, all visible (expand-level=1)
         } else if (mode === 'progressive') {
             tree.setAttribute('enable-flat-rendering', 'true');
-            tree.setAttribute('progressive-render', 'true');
+            tree.setAttribute('enable-progressive-render', 'true');
             tree.setAttribute('initial-batch-size', '10');
             data = makeData(20, 99); // 2000 nodes
             // Record the rendered row count every frame until it stops growing.
@@ -59,7 +59,7 @@
             window.startSampling = () => requestAnimationFrame(sample);
         } else {
             tree.setAttribute('enable-flat-rendering', 'true');
-            tree.setAttribute('progressive-render', 'false');
+            tree.setAttribute('enable-progressive-render', 'false');
             tree.setAttribute('flat-indent-size', '30px');
             data = [
                 { id: '1', path: '1', name: 'Root' },

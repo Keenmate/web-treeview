@@ -98,7 +98,7 @@
             </div>
 
             <div class="tree-container tree-container-lg" id="tree3-container">
-                <web-treeview id="tree3" progressive-render="true"></web-treeview>
+                <web-treeview id="tree3" enable-progressive-render="true"></web-treeview>
             </div>
 
             <div class="output">
@@ -149,7 +149,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
         <!-- NEW (rc03): Accordion Expand -->
         <div class="card">
             <h2>BU06 · Accordion Expand</h2>
-            <p>With <code>accordion-expand="true"</code>, opening one branch automatically collapses its siblings at the same level. Useful when you want only one section open at a time (e.g. file managers, settings panels). User-driven toggles honor it; programmatic <code>expandNodes()</code> calls are unaffected.</p>
+            <p>With <code>expand-as-accordion="true"</code>, opening one branch automatically collapses its siblings at the same level. Useful when you want only one section open at a time (e.g. file managers, settings panels). User-driven toggles honor it; programmatic <code>expandNodes()</code> calls are unaffected.</p>
 
             <div class="controls">
                 <label>
@@ -160,7 +160,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             </div>
 
             <div class="tree-container">
-                <web-treeview id="tree-acc" accordion-expand="true" expand-level="1"></web-treeview>
+                <web-treeview id="tree-acc" expand-as-accordion="true" expand-level="1"></web-treeview>
             </div>
             <p class="form-text mt-1">
                 Try expanding "src", then "public" &mdash; with accordion on, opening "public" auto-collapses "src". Untick the box and the two sections can stay open together.
@@ -412,8 +412,8 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             accTree.displayValueMember = 'name';
             window.applyAccordion = function () {
                 const on = document.getElementById('acc-enabled').checked;
-                if (on) accTree.setAttribute('accordion-expand', 'true');
-                else accTree.removeAttribute('accordion-expand');
+                if (on) accTree.setAttribute('expand-as-accordion', 'true');
+                else accTree.removeAttribute('expand-as-accordion');
             };
 
             // Persist .controls across reloads (shared helper — parity with web-multiselect).

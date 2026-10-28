@@ -117,7 +117,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `tree-path-separator` | `string` | `'.'` | Separator character in paths |
 | `tree-id` | `string` | — | Unique tree identifier (for cross-tree DnD) |
 | `click-behavior` | `string` | `'expand-and-focus'` | `'select'` \| `'expand'` \| `'expand-and-focus'` |
-| `accordion-expand` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `isAccordionExpand`) |
+| `expand-as-accordion` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `shouldExpandAsAccordion`) |
 | `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `insertResult.failed`) |
 | `use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
@@ -197,7 +197,7 @@ a child listed before its parent is dropped as an orphan and reported in
 |-----------|------|---------|-------------|
 | `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
 | `flat-indent-size` | `string` | `'1.5rem'` | Per-level indent step in flat mode |
-| `progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRender`) |
+| `enable-progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRenderEnabled`) |
 | `initial-batch-size` | `number` | — | First batch size |
 | `max-batch-size` | `number` | — | Subsequent batch ceiling |
 | `enable-virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
@@ -386,7 +386,7 @@ All methods are available on the element **and** on `el.controller`.
 | `collapseAll` | `(nodePath?, options?)` | Collapse all nodes (or subtree). `{ noEmit? }` |
 | `expandNodes` | `(nodePath \| string[], options?)` | Expand ancestors up to node(s) |
 | `collapseNodes` | `(nodePath \| string[], options?)` | Collapse node(s) |
-| `toggleNodeExpanded` | `(path)` | Toggle (honors `isAccordionExpand`) |
+| `toggleNodeExpanded` | `(path)` | Toggle (honors `shouldExpandAsAccordion`) |
 | `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
 | `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |

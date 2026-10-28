@@ -42,8 +42,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| `enable-flat-rendering` + `flat-indent-size`, runtime changes incl. `progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| `progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `enable-flat-rendering` + `flat-indent-size`, runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `enable-progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | Lazy load via `beforeExpandCallback` (async load → `insertBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `node-expand` / `node-collapse` for click, keyboard, `expandNodes` / `collapseNodes`; none for `expandAll` / `collapseAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
@@ -54,7 +54,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | `expandNodes` / `collapseNodes` (string, array, exclusive) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
 | `expandAll` / `collapseAll` (all, subtree, array, exclusive) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
-| `accordion-expand` | ✓ | `basic.spec.ts` | `basic.html` |
+| `expand-as-accordion` | ✓ | `basic.spec.ts` | `basic.html` |
 | Exclusive expand collapses previously-open sibling | ✓ | `exclusive-expand.spec.ts` | `exclusive-expand.html` |
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
 | `expandedPaths` round-trip + `expanded-change` | ✓ | `expand-members.spec.ts` | `expand-members.html` |

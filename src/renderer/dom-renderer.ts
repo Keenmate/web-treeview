@@ -394,7 +394,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (path) {
         const node = this.controller.getNodeByPath(path);
         if (node) {
-          // toggleNodeExpanded honors isAccordionExpand and the
+          // toggleNodeExpanded honors shouldExpandAsAccordion and the
           // isCollapsible gate. Programmatic expandNodes / collapseNodes
           // callers still bypass the accordion.
           this.controller.toggleNodeExpanded(path);

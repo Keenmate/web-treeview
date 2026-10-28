@@ -133,7 +133,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _isLoading: boolean = false;
   private _isFlatRenderingEnabled: boolean = true;
   private _flatIndentSize: string = 'var(--wtv-indent-size)';
-  private _isProgressiveRender: boolean = true;
+  private _isProgressiveRenderEnabled: boolean = true;
   private _initialBatchSize: number = 20;
   private _maxBatchSize: number = 500;
   private _bodyClass: string | null | undefined = undefined;
@@ -220,7 +220,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // Visual config
   private _clickBehavior: import('./types').ClickBehavior = 'expand-and-focus';
-  private _isAccordionExpand: boolean = false;
+  private _shouldExpandAsAccordion: boolean = false;
   private _iconSet: import('./types').IconSet = 'chevron';
   private _expandIconClass: string = 'wtv__toggle-icon--expand';
   private _collapseIconClass: string = 'wtv__toggle-icon--collapse';
@@ -465,7 +465,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get flatIndentSize() { return this._flatIndentSize; }
   set flatIndentSize(v: string) { this._flatIndentSize = v; this._scheduleNotify(); }
 
-  get isProgressiveRender() { return this._isProgressiveRender; }
+  get isProgressiveRenderEnabled() { return this._isProgressiveRenderEnabled; }
   get initialBatchSize() { return this._initialBatchSize; }
   get maxBatchSize() { return this._maxBatchSize; }
 
@@ -499,8 +499,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get clickBehavior() { return this._clickBehavior; }
   set clickBehavior(v: import('./types').ClickBehavior) { this._clickBehavior = v; this._updateNodeConfig(); }
 
-  get isAccordionExpand() { return this._isAccordionExpand; }
-  set isAccordionExpand(v: boolean) { this._isAccordionExpand = v; }
+  get shouldExpandAsAccordion() { return this._shouldExpandAsAccordion; }
+  set shouldExpandAsAccordion(v: boolean) { this._shouldExpandAsAccordion = v; }
 
   get iconSet() { return this._iconSet; }
   set iconSet(v: import('./types').IconSet) { this._iconSet = v; this._updateNodeConfig(); }
@@ -691,7 +691,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  When virtual scroll is active, bypasses the progressive render filter
    *  because virtual scroll already limits rendered nodes to the visible window. */
   get allVisibleFlatNodes(): LTreeNode<T>[] {
-    if (!this._isVirtualScrollEnabled && this._isFlatRenderingEnabled && this._isProgressiveRender) {
+    if (!this._isVirtualScrollEnabled && this._isFlatRenderingEnabled && this._isProgressiveRenderEnabled) {
       return this.tree?.visibleFlatNodes?.filter(
         (n) => this.flatRenderedIds.has(n.path)
       ) ?? [];
@@ -744,7 +744,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this._isFlatRenderingEnabled = props.isFlatRenderingEnabled ?? true;
     this._flatIndentSize = props.flatIndentSize ?? 'var(--wtv-indent-size)';
-    this._isProgressiveRender = props.isProgressiveRender ?? true;
+    this._isProgressiveRenderEnabled = props.isProgressiveRenderEnabled ?? true;
     this._initialBatchSize = props.initialBatchSize ?? 20;
     this._maxBatchSize = props.maxBatchSize ?? 500;
     this._bodyClass = props.bodyClass;
@@ -767,7 +767,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._virtualContainerHeight = props.virtualScrollContainerHeight;
 
     this._clickBehavior = props.clickBehavior ?? 'expand-and-focus';
-    this._isAccordionExpand = props.isAccordionExpand ?? false;
+    this._shouldExpandAsAccordion = props.shouldExpandAsAccordion ?? false;
     this._iconSet = props.iconSet ?? 'chevron';
     this._expandIconClass = props.expandIconClass ?? 'wtv__toggle-icon--expand';
     this._collapseIconClass = props.collapseIconClass ?? 'wtv__toggle-icon--collapse';
@@ -887,7 +887,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.tree.onChange = () => this._onTreeChanged();
 
     // ── Create render coordinator ───────────────────────────────────
-    this.renderCoordinator = this._isProgressiveRender
+    this.renderCoordinator = this._isProgressiveRenderEnabled
       ? createRenderCoordinator(2, {
           onStart: () => {
             this._isRendering = true;
@@ -1057,7 +1057,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Toggle expand/collapse for a node clicked via the toggle UI. Honors the
-   *  `isAccordionExpand` config: when expanding under accordion mode, every
+   *  `shouldExpandAsAccordion` config: when expanding under accordion mode, every
    *  expanded sibling (whose `isCollapsible` allows it) is first collapsed
    *  in a single batch. Programmatic `expandNodes` / `expandAll` callers
    *  bypass the accordion. Mirrors svelte-treeview Node.svelte's
@@ -1077,7 +1077,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     uiLogger.debug(`Node ${shouldExpand ? 'expanded' : 'collapsed'}: ${path}`, {
       path,
       id: node.id,
-      accordion: shouldExpand && this._isAccordionExpand
+      accordion: shouldExpand && this._shouldExpandAsAccordion
     });
 
     if (!shouldExpand) {
@@ -1092,7 +1092,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const node = this.getNodeByPath(path);
     if (!node || node.isExpanded) return;
     const collapsedSiblings: LTreeNode<T>[] = [];
-    if (this._isAccordionExpand) {
+    if (this._shouldExpandAsAccordion) {
       const siblings = this.tree.getSiblings(path);
       for (const sibling of siblings) {
         if (sibling.path !== path && sibling.isExpanded && this.tree.getNodeIsCollapsible(sibling)) {
@@ -3784,8 +3784,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (updates.clickBehavior !== undefined)
       this._clickBehavior = updates.clickBehavior ?? 'expand-and-focus';
-    if (updates.isAccordionExpand !== undefined)
-      this._isAccordionExpand = updates.isAccordionExpand ?? false;
+    if (updates.shouldExpandAsAccordion !== undefined)
+      this._shouldExpandAsAccordion = updates.shouldExpandAsAccordion ?? false;
     if (updates.iconSet !== undefined)
       this._iconSet = updates.iconSet ?? 'chevron';
     if (updates.expandIconClass !== undefined)
@@ -3860,10 +3860,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.initialBatchSize !== undefined) this._initialBatchSize = updates.initialBatchSize ?? 20;
     if (updates.maxBatchSize !== undefined) this._maxBatchSize = updates.maxBatchSize ?? 500;
     const nextFlat = updates.isFlatRenderingEnabled !== undefined ? (updates.isFlatRenderingEnabled ?? true) : this._isFlatRenderingEnabled;
-    const nextProgressive = updates.isProgressiveRender !== undefined ? (updates.isProgressiveRender ?? true) : this._isProgressiveRender;
-    if (nextFlat !== this._isFlatRenderingEnabled || nextProgressive !== this._isProgressiveRender) {
+    const nextProgressive = updates.isProgressiveRenderEnabled !== undefined ? (updates.isProgressiveRenderEnabled ?? true) : this._isProgressiveRenderEnabled;
+    if (nextFlat !== this._isFlatRenderingEnabled || nextProgressive !== this._isProgressiveRenderEnabled) {
       this._isFlatRenderingEnabled = nextFlat;
-      this._isProgressiveRender = nextProgressive;
+      this._isProgressiveRenderEnabled = nextProgressive;
       // Switching at runtime: show what is visible now (no re-batching of rows
       // the user already sees); later inserts batch as usual.
       if (this.flatRenderAnimationFrame) {
@@ -4267,7 +4267,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── Internal: progressive flat rendering ────────────────────────────
 
   private _updateProgressiveRendering() {
-    if (!this._isFlatRenderingEnabled || !this._isProgressiveRender || !this.tree?.visibleFlatNodes)
+    if (!this._isFlatRenderingEnabled || !this._isProgressiveRenderEnabled || !this.tree?.visibleFlatNodes)
       return;
     // Virtual scroll already limits rendered nodes to the visible window —
     // skip progressive rendering to avoid background batches firing _scheduleNotify

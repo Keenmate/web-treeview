@@ -95,7 +95,7 @@
             tree.onNodeClick = (d) => window.__log.push('onNodeClick:' + d.path + ':' + (d instanceof Event));
             tree.addEventListener('node-click', (e) => window.__log.push('node-click:' + e.detail.path));
             tree.addEventListener('checked-change', (e) => window.__log.push('checked-change:' + [...e.detail.paths].join(',')));
-            tree.data = data;
+            tree.nodes = data;
         });
     </script>
 </body>

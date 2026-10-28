@@ -84,7 +84,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByPath(nodes);
-            tree.data = data;
+            tree.nodes = data;
 
             tree.addEventListener('node-click', (e) => {
                 bump('click');

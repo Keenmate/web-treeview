@@ -390,7 +390,7 @@ test('replaceBranch keeps the search index aligned: a node after the replaced br
     const t = (window as any).tree;
     t.shouldUseInternalSearchIndex = true;
     t.searchValueMember = 'name';
-    t.data = [
+    t.nodes = [
       { id: 1, path: '1', name: 'Root-A', sortOrder: 10 },
       { id: 2, path: '1.1', name: 'A-child-1', sortOrder: 10 },
       { id: 3, path: '1.2', name: 'A-child-2', sortOrder: 20 },

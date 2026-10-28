@@ -328,7 +328,7 @@ tree.getSearchValueCallback = ({ node }) =>
             tree.searchValueMember = 'name';
             tree.shouldUseInternalSearchIndex = true;
             tree.expandLevel = 1;
-            tree.data = locationTree;
+            tree.nodes = locationTree;
 
             const input = document.getElementById('sf01-input');
             const counter = document.getElementById('sf01-counter');
@@ -429,7 +429,7 @@ tree.getSearchValueCallback = ({ node }) =>
             sf02a.displayValueMember = 'name';
             sf02a.searchValueMember = 'name';
             sf02a.shouldUseInternalSearchIndex = true;
-            sf02a.data = projectTree;
+            sf02a.nodes = projectTree;
 
             const sf02b = document.getElementById('sf02b-tree');
             sf02b.idMember = 'id';
@@ -437,7 +437,7 @@ tree.getSearchValueCallback = ({ node }) =>
             sf02b.displayValueMember = 'name';
             sf02b.searchValueMember = 'name';
             sf02b.shouldUseInternalSearchIndex = true;
-            sf02b.data = projectTree;
+            sf02b.nodes = projectTree;
 
             const sf02out = document.getElementById('sf02-output');
 
@@ -467,7 +467,7 @@ tree.getSearchValueCallback = ({ node }) =>
             sf03.displayValueMember = 'name';
             sf03.searchValueMember = 'name';
             sf03.shouldUseInternalSearchIndex = true;
-            sf03.data = orgTree;
+            sf03.nodes = orgTree;
 
             const sf03out = document.getElementById('sf03-output');
             const sf03input = document.getElementById('sf03-input');
@@ -475,7 +475,7 @@ tree.getSearchValueCallback = ({ node }) =>
 
             window.applyIndexToggle = () => {
                 sf03.shouldUseInternalSearchIndex = sf03toggle.checked;
-                sf03.data = [...orgTree];        // rebuild (and re-index if enabled)
+                sf03.nodes = [...orgTree];        // rebuild (and re-index if enabled)
                 if (sf03input.value.trim()) window.onIndexDemo(sf03input.value);
             };
 

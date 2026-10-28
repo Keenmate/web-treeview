@@ -264,7 +264,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
             // Tree 1: Simple file tree
             const tree1 = document.getElementById('tree1');
-            tree1.data = fileTree;
+            tree1.nodes = fileTree;
             tree1.idMember = 'id';
             tree1.pathMember = 'path';
             tree1.displayValueMember = 'name';
@@ -337,7 +337,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
             // Tree 2: Org chart with expand-level=2
             const tree2 = document.getElementById('tree2');
-            tree2.data = orgChart;
+            tree2.nodes = orgChart;
             tree2.idMember = 'id';
             tree2.pathMember = 'path';
             tree2.displayValueMember = 'name';
@@ -360,23 +360,23 @@ element.setAttribute('display-value-member', 'label');</code></pre>
                     `${count} nodes loaded · ${tree3.controller.getVisibleFlatNodes().length} visible`;
             };
             window.loadLargeTree = async () => {
-                tree3.data = generateLargeTree(1000);
+                tree3.nodes = generateLargeTree(1000);
                 await tree3.whenSettled();
                 showLargeTreeStats(1000);
             };
             window.loadVeryLargeTree = async () => {
-                tree3.data = generateLargeTree(5000);
+                tree3.nodes = generateLargeTree(5000);
                 await tree3.whenSettled();
                 showLargeTreeStats(5000);
             };
             window.clearLargeTree = () => {
-                tree3.data = [];
+                tree3.nodes = [];
                 document.getElementById('tree3-output').textContent = 'Load data to see node counts';
             };
 
             // Tree 4: Custom member mappings
             const tree4 = document.getElementById('tree4');
-            tree4.data = categories;
+            tree4.nodes = categories;
             tree4.idMember = 'categoryId';
             tree4.pathMember = 'categoryPath';
             tree4.displayValueMember = 'label';
@@ -384,7 +384,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
             // Tree 5: Events
             const tree5 = document.getElementById('tree5');
-            tree5.data = fileTree;
+            tree5.nodes = fileTree;
             tree5.idMember = 'id';
             tree5.pathMember = 'path';
             tree5.displayValueMember = 'name';
@@ -406,7 +406,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
             // Example 6: Accordion expand
             const accTree = document.getElementById('tree-acc');
-            accTree.data = fileTree;
+            accTree.nodes = fileTree;
             accTree.idMember = 'id';
             accTree.pathMember = 'path';
             accTree.displayValueMember = 'name';

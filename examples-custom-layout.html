@@ -368,8 +368,8 @@ tree.renderLoadingCallback = ({ containerElement }) => {
 
 tree.isLoading = true;   // show the loading template
 tree.isLoading = false;
-tree.data = [];          // empty → empty template
-tree.data = someRows;    // populated → the tree</code></pre>
+tree.nodes = [];          // empty → empty template
+tree.nodes = someRows;    // populated → the tree</code></pre>
         </div>
     </div>
 
@@ -652,7 +652,7 @@ node.data; node.path; node.hasChildren;</code></pre>
     customElements.whenDefined('web-treeview').then(() => {
         // ── CL01: custom node template ──
         const tree1 = document.getElementById('tree1');
-        tree1.data = fileTree;
+        tree1.nodes = fileTree;
         tree1.idMember = 'id';
         tree1.pathMember = 'path';
         tree1.displayValueMember = 'name';
@@ -670,7 +670,7 @@ node.data; node.path; node.hasChildren;</code></pre>
 
         // ── CL02: status badges ──
         const tree2 = document.getElementById('tree2');
-        tree2.data = gitTree;
+        tree2.nodes = gitTree;
         tree2.idMember = 'id';
         tree2.pathMember = 'path';
         tree2.displayValueMember = 'name';
@@ -688,7 +688,7 @@ node.data; node.path; node.hasChildren;</code></pre>
 
         // ── CL03: header & footer ──
         const tree5 = document.getElementById('tree5');
-        tree5.data = menuTree;
+        tree5.nodes = menuTree;
         tree5.idMember = 'id';
         tree5.pathMember = 'path';
         tree5.displayValueMember = 'name';
@@ -713,7 +713,7 @@ node.data; node.path; node.hasChildren;</code></pre>
         tree4.idMember = 'id';
         tree4.pathMember = 'path';
         tree4.displayValueMember = 'name';
-        tree4.data = [];
+        tree4.nodes = [];
         tree4.renderEmptyStateCallback = ({ containerElement }) => {
             containerElement.innerHTML = `
                 <div class="empty-state">
@@ -729,14 +729,14 @@ node.data; node.path; node.hasChildren;</code></pre>
                     <span>Loading tree data...</span>
                 </div>`;
         };
-        window.showEmpty = () => { tree4.isLoading = false; tree4.data = []; };
+        window.showEmpty = () => { tree4.isLoading = false; tree4.nodes = []; };
         window.showLoading = () => { tree4.isLoading = true; };
-        window.showData = () => { tree4.isLoading = false; tree4.data = menuTree; tree4.expandLevel = 2; };
+        window.showData = () => { tree4.isLoading = false; tree4.nodes = menuTree; tree4.expandLevel = 2; };
 
         // ── CL05: icon sets + FontAwesome ──
         function initTree(id, extra) {
             const el = document.getElementById(id);
-            el.data = menuTree;
+            el.nodes = menuTree;
             el.idMember = 'id';
             el.pathMember = 'path';
             el.displayValueMember = 'name';

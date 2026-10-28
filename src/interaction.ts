@@ -57,7 +57,8 @@ export interface TreeViewController<T = any> {
   /** The focused node (`focusNode(path)` / `clearFocus()` move it). */
   readonly focusedNode: LTreeNode<T> | null;
   getVisibleFlatNodes(): LTreeNode<T>[];
-  getAllData(): T[];
+  /** Every node's data object in tree order — the current state (mutations included). */
+  readonly nodes: T[];
   getTree(): Ltree<T> | undefined;
   /** Result of the most recent data insert (successful / failed / failedDetails). */
   readonly insertResult: InsertArrayResult<T> | undefined;

@@ -112,7 +112,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
-            tree.data = sampleData;
+            tree.nodes = sampleData;
         }
 
         function show(el, text) {
@@ -153,7 +153,7 @@
                 // walk runs against the new level.
                 expandControls.collapseAll();
                 expandControls.expandLevel = level;
-                expandControls.data = sampleData;
+                expandControls.nodes = sampleData;
             });
             accordionInput.addEventListener('change', () => {
                 if (accordionInput.checked) {

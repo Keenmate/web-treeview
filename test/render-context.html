@@ -27,7 +27,7 @@
         ];
         customElements.whenDefined('web-treeview').then(() => {
             Object.assign(document.getElementById('tree'), {
-                idMember: 'id', pathMember: 'path', displayValueMember: 'name', data,
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data,
                 renderIconCallback: (ctx) => {
                     const iconEl = ctx.iconElement;
                     iconEl.setAttribute('data-testid', 'ctx');

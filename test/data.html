@@ -81,7 +81,7 @@
                 span.textContent = `${node.data?.name ?? ''} (${node.path})`;
                 container.appendChild(span);
             };
-            tree.data = data;
+            tree.nodes = data;
         }
 
         customElements.whenDefined('web-treeview').then(() => {
@@ -132,7 +132,7 @@
             const fallbackTree = document.getElementById('tree-fallback');
             fallbackTree.idMember = 'id';
             fallbackTree.pathMember = 'path';
-            fallbackTree.data = [
+            fallbackTree.nodes = [
                 { id: 1, path: '1' },
                 { id: 2, path: '1.1' },
                 { id: 3, path: '1.2' }

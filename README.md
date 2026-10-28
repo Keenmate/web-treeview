@@ -7,7 +7,7 @@ A lightweight, framework-agnostic treeview web component built with vanilla Type
 
 ## What is it
 
-`@keenmate/web-treeview` is a custom element that renders a hierarchical data list with full keyboard navigation, drag-and-drop, multi-select, search, context menus, and pluggable rendering. Works in any framework or plain HTML — assign `data`, and the tree renders.
+`@keenmate/web-treeview` is a custom element that renders a hierarchical data list with full keyboard navigation, drag-and-drop, multi-select, search, context menus, and pluggable rendering. Works in any framework or plain HTML — assign `nodes`, and the tree renders.
 
 Built on the same LTree path-based engine as [`@keenmate/svelte-treeview`](https://github.com/KeenMate/svelte-treeview) and ported to vanilla TypeScript with zero framework dependencies. If you know svelte-treeview, you already know the API surface.
 
@@ -68,7 +68,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
 <script>
   const tree = document.getElementById('my-tree');
-  tree.data = [
+  tree.nodes = [
     { id: 1, path: '1',     displayValue: 'Documents' },
     { id: 2, path: '1.1',   displayValue: 'Projects' },
     { id: 3, path: '1.1.1', displayValue: 'Web App' },

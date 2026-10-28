@@ -218,7 +218,7 @@ test('a deferred tree stays hidden (no ready) until release()', async ({ page })
   const state = await page.evaluate(async () => {
     const el = document.createElement('web-treeview') as any;
     el.setAttribute('defer', '');
-    el.data = [{ id: 1, path: '1', name: 'X' }];
+    el.nodes = [{ id: 1, path: '1', name: 'X' }];
     document.body.appendChild(el);
     await new Promise((r) => setTimeout(r, 50));
     const before = { ready: el.hasAttribute('ready'), visibility: getComputedStyle(el).visibility, rows: el.shadowRoot.querySelectorAll('.wtv__node').length };
@@ -251,7 +251,7 @@ test('state properties: assigned before the first build are applied after it; co
     const el = document.createElement('web-treeview') as any;
     el.setAttribute('show-checkboxes', '');
     el.setAttribute('selection-mode', 'multiple');
-    el.data = [{ id: 1, path: '1', name: 'A' }, { id: 11, path: '1.1', name: 'A1' }, { id: 2, path: '2', name: 'B' }];
+    el.nodes = [{ id: 1, path: '1', name: 'A' }, { id: 11, path: '1.1', name: 'A1' }, { id: 2, path: '2', name: 'B' }];
     el.expandedPaths = ['1'];
     el.selectedPaths = new Set(['1.1', '2']);
     el.checkedPaths = ['2'];

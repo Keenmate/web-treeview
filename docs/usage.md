@@ -19,7 +19,7 @@ npm install @keenmate/web-treeview
 
 <script>
   const tree = document.getElementById('my-tree');
-  tree.data = [
+  tree.nodes = [
     { id: 1, path: '1',     displayValue: 'Documents' },
     { id: 2, path: '1.1',   displayValue: 'Projects' },
     { id: 3, path: '1.1.1', displayValue: 'Web App' },
@@ -60,7 +60,7 @@ If your data uses different property names, map them via attributes:
 </web-treeview>
 
 <script>
-  document.querySelector('web-treeview').data = [
+  document.querySelector('web-treeview').nodes = [
     { nodeId: 1, treePath: '1',   label: 'Root' },
     { nodeId: 2, treePath: '1.1', label: 'Child' },
   ];
@@ -130,7 +130,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
-**Sibling order.** On insert (`data`, `addBranch`) the tree puts parents before their
+**Sibling order.** On insert (`nodes`, `addBranch`) the tree puts parents before their
 children itself and orders each parent's children with `sortCallback` (one call per
 sibling group — `items` are siblings, never the whole list), or by `order-member` then
 display value when there is no callback. `addNode`, `refreshSiblings` and `moveNode`
@@ -140,7 +140,7 @@ no render-time sorting.
 
 `sorted` is a **performance hint**, not a sort switch: "my data is already in insert
 order (parents first, siblings in display order)". The tree then skips sorting the
-input (no depth sort, no `sortCallback`) and renders `data` as given. The hint covers
+input (no depth sort, no `sortCallback`) and renders `nodes` as given. The hint covers
 the input batch only: `addBranch` still re-sorts each affected parent's children
 (existing + new), so a new child lands in its sibling position. Ordering is the caller's responsibility:
 a child listed before its parent is dropped as an orphan and reported in
@@ -218,7 +218,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `data` | `T[]` | Array of data objects to display |
+| `nodes` | `T[]` | Array of node objects to display (input; `controller.nodes` reads the current state) |
 | `renderer` | `TreeViewRenderer<T>` | Custom renderer (replaces default DomRenderer) |
 | `navigationOverrides` | `TreeNavigationOverrides<T> \| null` | Replace individual keyboard-navigation methods — see [Keyboard navigation overrides](#keyboard-navigation-overrides). Reassign to swap at runtime; `null` restores the defaults |
 | `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + the state properties below (read-only there) + `getNodeRef(path)`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
@@ -396,7 +396,7 @@ All methods are available on the element **and** on `el.controller`.
 | `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
 | `getChildren` / `getSiblings` | `(path): LTreeNode[]` | Children of a node / siblings of a node (including itself) |
 | `getVisibleFlatNodes` | `(): LTreeNode[]` | The visible rows in order |
-| `getAllData` | `(): T[]` | Current data |
+| `controller.nodes` | `T[]` (read-only) | Current state: every node's data in tree order, mutations included (`el.nodes` is the input) |
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
 | `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |

@@ -86,7 +86,7 @@
         }
 
         function refreshTotals(tree) {
-            setText('total-node-count', String(tree.getAllData().length));
+            setText('total-node-count', String(tree.controller.nodes.length));
             setText('clipboard-source', clipboard ? clipboard.sourcePath : '(empty)');
         }
 
@@ -159,7 +159,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByOrder(nodes);
-            tree.data = initialData();
+            tree.nodes = initialData();
 
             // Initial total — wait one microtask for the batched update to land.
             queueMicrotask(() => queueMicrotask(() => refreshTotals(tree)));

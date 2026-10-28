@@ -202,7 +202,7 @@
             single.displayValueMember = 'name';
             single.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(single, 'single', 'single');
-            single.data = singleData;
+            single.nodes = singleData;
 
             // ── Section 3 ──
             const rMember = document.getElementById('tree-r-member');
@@ -211,7 +211,7 @@
             rMember.displayValueMember = 'name';
             rMember.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(rMember, 'r-member', 'rMember');
-            rMember.data = restrictedMemberData;
+            rMember.nodes = restrictedMemberData;
 
             // ── Section 4 ──
             const rCallback = document.getElementById('tree-r-callback');
@@ -225,7 +225,7 @@
                 return id % 2 === 0 ? ['child'] : ['before'];
             };
             wireDrop(rCallback, 'r-callback', 'rCallback');
-            rCallback.data = restrictedCallbackData;
+            rCallback.nodes = restrictedCallbackData;
 
             // ── Section 6 ──
             const multi = document.getElementById('tree-multi');
@@ -244,7 +244,7 @@
             multi.addEventListener('selection-change', (e) => {
                 setText('multi-selected-size', String(e.detail.paths.length));
             });
-            multi.data = multiData;
+            multi.nodes = multiData;
 
             // ── Section 6b: locked multi-drag ──
             counters.locked = 0;
@@ -265,7 +265,7 @@
             locked.addEventListener('selection-change', (e) => {
                 setText('locked-selected-size', String(e.detail.paths.length));
             });
-            locked.data = lockedData;
+            locked.nodes = lockedData;
 
             // ── Section 7: no-drop node ──
             counters.noDrop = 0;
@@ -279,7 +279,7 @@
                 setText('no-drop-drop-count', String(counters.noDrop));
                 setText('no-drop-drop-target', ctx.target?.node?.data?.name ?? '');
             };
-            noDrop.data = noDropData;
+            noDrop.nodes = noDropData;
         });
     </script>
 </body>

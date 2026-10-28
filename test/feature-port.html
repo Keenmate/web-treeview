@@ -90,7 +90,7 @@
             document.getElementById('btn-cut').addEventListener('click', () => tree.cutNodes(['1.2']));
             document.getElementById('btn-paste').addEventListener('click', () => tree.pasteNodes('2', transform, 'child'));
 
-            tree.data = data;
+            tree.nodes = data;
         });
     </script>
 </body>

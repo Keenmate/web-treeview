@@ -322,7 +322,7 @@
             // still drags" symptom is an HMR half-reload leaving the callback unwired
             // — hard-reload to clear it.
             if (opts.getIsDraggableCallback) el.getIsDraggableCallback = opts.getIsDraggableCallback;
-            el.data = structuredClone(data);
+            el.nodes = structuredClone(data);
             el.idMember = 'id';
             el.pathMember = 'path';
             el.displayValueMember = 'name';
@@ -427,7 +427,7 @@
 
         window.clearTarget = function() {
             if (targetTreeEl) {
-                targetTreeEl.data = [];
+                targetTreeEl.nodes = [];
                 document.getElementById('target-label').textContent = 'Target Tree (Empty - Drop Here!)';
             }
             addLog('Cleared target tree');
@@ -446,7 +446,7 @@
                 }
             }
             if (targetTreeEl) {
-                targetTreeEl.data = nodes;
+                targetTreeEl.nodes = nodes;
                 document.getElementById('target-label').textContent = 'Target Tree';
             }
             addLog(`Reset target tree with ${nodes.length} nodes`);
@@ -676,7 +676,7 @@
             multiTreeEl.pathMember = 'path';
             multiTreeEl.displayValueMember = 'name';
             multiTreeEl.orderMember = 'sortOrder';
-            multiTreeEl.data = structuredClone(multiSeedData);
+            multiTreeEl.nodes = structuredClone(multiSeedData);
 
             const multiSelectedEl = document.getElementById('multi-selected');
             const multiFocusedEl = document.getElementById('multi-focused');
@@ -734,7 +734,7 @@
             };
 
             window.resetMultiTree = function () {
-                multiTreeEl.data = structuredClone(multiSeedData);
+                multiTreeEl.nodes = structuredClone(multiSeedData);
                 multiTreeEl.clearSelection?.();
                 multiTreeEl.uncheckAll({ silent: true });
                 multiSelectedEl.textContent = '(none)';

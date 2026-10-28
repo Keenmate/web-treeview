@@ -274,7 +274,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             el.displayValueMember = 'name';
             el.expandLevel = opts.expandLevel ?? 2;
             if (opts.dragDropMode) el.dragDropMode = opts.dragDropMode;
-            el.data = data;
+            el.nodes = data;
         };
 
         // ── 1. registry inspector ────────────────────────────────────────────
@@ -394,7 +394,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             console.log(`%c Perf threshold set to ${ms}ms`, 'color:#3b82f6;font-weight:bold;');
         };
         window.loadTree = (n) => {
-            document.getElementById('tree-perf').data = generateTree(n);
+            document.getElementById('tree-perf').nodes = generateTree(n);
         };
 
         // ── boot ─────────────────────────────────────────────────────────────

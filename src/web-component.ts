@@ -234,8 +234,8 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
   { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggle-checkbox', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
-  // ── Complex property (data; too large for an attribute) ────────────────────
-  { configKey: 'data', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', type: 'ReadonlyArray<Record<string, unknown>>', description: 'The array of node objects to render. Assign `el.data` directly (JS API).' },
+  // ── Complex property (nodes; too large for an attribute) ───────────────────
+  { configKey: 'nodes', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', type: 'ReadonlyArray<Record<string, unknown>>', description: 'The array of node objects to render. Assign `el.nodes` directly (JS API). `el.controller.nodes` reads the current state (every node data object in tree order, mutations included).' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
   { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
@@ -493,7 +493,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
       idMember: config.idMember,
       pathMember: config.pathMember,
       displayValueMember: config.displayValueMember,
-      dataLength: (config.data as unknown[] | undefined)?.length ?? 0,
+      dataLength: (config.nodes as unknown[] | undefined)?.length ?? 0,
     });
 
     this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
@@ -686,10 +686,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   getNodeByPath(path: string): LTreeNode<T> | null {
     return this.#live?.getNodeByPath(path) ?? null;
-  }
-
-  getAllData(): T[] {
-    return this.#live?.getAllData() ?? [];
   }
 
   moveNode(sourcePath: string, targetPath: string, position: DropPosition): any {

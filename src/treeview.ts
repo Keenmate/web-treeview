@@ -27,7 +27,7 @@ import { runAction, type ResolvedActionItem } from '@keenmate/web-components-cor
 const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
-  'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getAllData', 'getTree',
+  'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree',
   'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
   'applyChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected',
@@ -43,7 +43,7 @@ const CONTROLLER_METHODS = [
 const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = {
   searchNodes: () => [], getNodeByPath: () => null, getChildren: () => [],
   getSiblings: () => [], getNodeRef: () => ({ path: '', node: null, parent: null, siblings: [] }),
-  getVisibleFlatNodes: () => [], getAllData: () => [], getSelectedNodes: () => [],
+  getVisibleFlatNodes: () => [], getSelectedNodes: () => [],
   isNodeSelected: () => false, getCheckedNodes: () => [],
   isNodeChecked: () => false, hasClipboardContent: () => false,
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
@@ -68,7 +68,7 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
   // Real state = read-only properties (the element's are writable).
   const STATE: Record<string, () => unknown> = {
     expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: () => null,
-    insertResult: () => undefined,
+    insertResult: () => undefined, nodes: () => [],
   };
   for (const [name, empty] of Object.entries(STATE)) {
     Object.defineProperty(facade, name, {
@@ -457,8 +457,14 @@ export class WebTreeView<T = any> {
     this.engine.setExpandedPaths([...paths]);
   }
 
-  getAllData(): T[] {
+  /** The node objects: assigning replaces the tree (input); reading returns every node's
+   *  data in tree order — the current state, mutations included. */
+  get nodes(): T[] {
     return this.engine.getAllData();
+  }
+
+  set nodes(nodes: T[]) {
+    this.update({ nodes });
   }
 
   getNodeByPath(path: string): LTreeNode<T> | null {
@@ -680,7 +686,7 @@ export class WebTreeView<T = any> {
       treePathSeparator: o.treePathSeparator,
       sortCallback: this.wrap(o.sortCallback, 'sort', (f) => (nodes: LTreeNode<T>[]) => f(this.ctx({ nodes }))),
 
-      data: o.data || [],
+      data: o.nodes || [],
       focusedNode: o.focusedNode,
       selectedPaths: o.selectedPaths,
       checkedPaths: o.checkedPaths,

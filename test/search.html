@@ -60,7 +60,7 @@
             tree.displayValueMember = 'name';
             tree.searchValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
-            tree.data = data;
+            tree.nodes = data;
 
             const input = document.querySelector('[data-testid="search-input"]');
             const counter = document.querySelector('[data-testid="search-counter"]');

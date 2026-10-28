@@ -72,7 +72,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByPath(nodes);
-            tree.data = sampleData;
+            tree.nodes = sampleData;
 
             const wire = (testid, fn) => {
                 document.querySelector(`[data-testid="${testid}"]`).addEventListener('click', fn);

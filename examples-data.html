@@ -30,7 +30,7 @@ const data = [
   { id: 4, path: '1.1.1', name: 'Grandchild' }
 ];
 
-tree.data = data;
+tree.nodes = data;
 tree.idMember = 'id';
 tree.pathMember = 'path';
 tree.displayValueMember = 'name';</code></pre>
@@ -102,7 +102,7 @@ tree.labels = { noDisplayValue: '(no name)' };</code></pre>
                     </div>
                     <div class="code-block">
 <pre><code>tree.treePathSeparator = '/';
-tree.data = [
+tree.nodes = [
   { id: 1, path: 'home',               name: '/home' },
   { id: 2, path: 'home/user',          name: '/home/user' },
   { id: 3, path: 'home/user/docs',     name: '/home/user/docs' }
@@ -116,7 +116,7 @@ tree.data = [
                     </div>
                     <div class="code-block">
 <pre><code>tree.treePathSeparator = '::';
-tree.data = [
+tree.nodes = [
   { id: 1, path: 'App',                name: 'App' },
   { id: 2, path: 'App::Services',      name: 'App::Services' },
   { id: 3, path: 'App::Services::Auth', name: 'App::Services::Auth' }
@@ -269,7 +269,7 @@ const data = [
   { categoryId: 2, categoryPath: '1.1', label: 'Phones' }
 ];
 
-tree.data = data;
+tree.nodes = data;
 tree.idMember = 'categoryId';
 tree.pathMember = 'categoryPath';
 tree.displayValueMember = 'label';</code></pre>
@@ -365,14 +365,14 @@ tree.displayValueMember = 'label';</code></pre>
 
             // DS01
             const ds01 = document.getElementById('ds01');
-            ds01.data = simpleTree;
+            ds01.nodes = simpleTree;
             ds01.idMember = 'id';
             ds01.pathMember = 'path';
             ds01.displayValueMember = 'name';
 
             // DS02a — with member
             const ds02a = document.getElementById('ds02a');
-            ds02a.data = simpleTree;
+            ds02a.nodes = simpleTree;
             ds02a.idMember = 'id';
             ds02a.pathMember = 'path';
             ds02a.displayValueMember = 'name';
@@ -382,7 +382,7 @@ tree.displayValueMember = 'label';</code></pre>
             ds02b.idMember = 'id';
             ds02b.pathMember = 'path';
             ds02b.labels = { noDisplayValue: '(no name)' };
-            ds02b.data = simpleTree;
+            ds02b.nodes = simpleTree;
 
             const fallbackInput = document.getElementById('ds02-fallback');
             fallbackInput.addEventListener('input', () => {
@@ -395,7 +395,7 @@ tree.displayValueMember = 'label';</code></pre>
             ds03a.pathMember = 'path';
             ds03a.displayValueMember = 'name';
             ds03a.treePathSeparator = '/';
-            ds03a.data = slashData;
+            ds03a.nodes = slashData;
 
             // DS03b — double-colon separator
             const ds03b = document.getElementById('ds03b');
@@ -403,14 +403,14 @@ tree.displayValueMember = 'label';</code></pre>
             ds03b.pathMember = 'path';
             ds03b.displayValueMember = 'name';
             ds03b.treePathSeparator = '::';
-            ds03b.data = colonData;
+            ds03b.nodes = colonData;
 
             // DS04 — branch operations
             const ds04 = document.getElementById('ds04');
             ds04.idMember = 'id';
             ds04.pathMember = 'path';
             ds04.displayValueMember = 'name';
-            ds04.data = branchData;
+            ds04.nodes = branchData;
 
             const ds04out = document.getElementById('ds04-output');
             const logBranch = (msg) => { ds04out.textContent = msg; };
@@ -451,7 +451,7 @@ tree.displayValueMember = 'label';</code></pre>
             window.resetBranch = () => {
                 branchData = createOrgChart();
                 nextBranchId = 200;
-                ds04.data = branchData;
+                ds04.nodes = branchData;
                 logBranch('Reset to initial org chart');
             };
 
@@ -460,7 +460,7 @@ tree.displayValueMember = 'label';</code></pre>
             ds05.idMember = 'id';
             ds05.pathMember = 'path';
             ds05.displayValueMember = 'name';
-            ds05.data = taskData;
+            ds05.nodes = taskData;
 
             const ds05out = document.getElementById('ds05-output');
             const dumpTasks = () => { ds05out.textContent = JSON.stringify(taskData, null, 2); };
@@ -494,7 +494,7 @@ tree.displayValueMember = 'label';</code></pre>
             window.resetNodes = () => {
                 taskData = createTasks();
                 nextTaskId = 7;
-                ds05.data = taskData;
+                ds05.nodes = taskData;
                 dumpTasks();
             };
 
@@ -503,7 +503,7 @@ tree.displayValueMember = 'label';</code></pre>
             ds06.idMember = 'id';
             ds06.pathMember = 'path';
             ds06.displayValueMember = 'name';
-            ds06.data = projectTree;
+            ds06.nodes = projectTree;
 
             const ds06out = document.getElementById('ds06-output');
 
@@ -524,7 +524,7 @@ tree.displayValueMember = 'label';</code></pre>
 
             // DS07 — custom member mapping
             const ds07 = document.getElementById('ds07');
-            ds07.data = categories;
+            ds07.nodes = categories;
             ds07.idMember = 'categoryId';
             ds07.pathMember = 'categoryPath';
             ds07.displayValueMember = 'label';

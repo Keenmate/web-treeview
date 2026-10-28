@@ -18,7 +18,7 @@ export function setupTree(tree, data, extra = {}) {
     tree.displayValueMember = 'name';
     tree.sortCallback = ({ nodes }) => [...nodes].sort(byPath);
     Object.assign(tree, extra);
-    tree.data = data;
+    tree.nodes = data;
     return tree;
 }
 

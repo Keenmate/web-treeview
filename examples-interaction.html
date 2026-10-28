@@ -506,7 +506,7 @@ function restoreFromUrl(nodePath) {
             const in1 = document.getElementById('in1-tree');
             Object.assign(in1, treeConfig);
             in1.getCustomStylesCallback = focusStyles;
-            in1.data = fileTree;
+            in1.nodes = fileTree;
 
             in1.addEventListener('focus-change', (e) => {
                 const { focusedNode: n } = e.detail;
@@ -568,7 +568,7 @@ function restoreFromUrl(nodePath) {
             const in3 = document.getElementById('in3-tree');
             Object.assign(in3, treeConfig);
             in3.getCustomStylesCallback = focusStyles;
-            in3.data = fileTree;
+            in3.nodes = fileTree;
 
             in3.addEventListener('focus-change', (e) => {
                 const { focusedNode: n } = e.detail;
@@ -588,7 +588,7 @@ function restoreFromUrl(nodePath) {
             // ── IN04 · Cascade Checkboxes & Value Policy ──────────────────
             const in4 = document.getElementById('in4-tree');
             Object.assign(in4, treeConfig);
-            in4.data = fileTree;
+            in4.nodes = fileTree;
 
             function refreshIn4Emitted() {
                 // checkedPaths already projects through cascadeCheckPolicy.
@@ -620,7 +620,7 @@ function restoreFromUrl(nodePath) {
             // ── IN05 · Silent State Restore ───────────────────────────────
             const in5 = document.getElementById('in5-tree');
             Object.assign(in5, treeConfig);
-            in5.data = fileTree;
+            in5.nodes = fileTree;
 
             let in5Fires = 0;
             const in5FormEl = document.getElementById('in5-form');
@@ -665,11 +665,11 @@ function restoreFromUrl(nodePath) {
             // ── IN06 · Clipboard & Bulk ───────────────────────────────────
             const in6src = document.getElementById('in6-source');
             Object.assign(in6src, treeConfig);
-            in6src.data = sourceTree;
+            in6src.nodes = sourceTree;
 
             const in6tgt = document.getElementById('in6-target');
             Object.assign(in6tgt, treeConfig);
-            in6tgt.data = targetTree;
+            in6tgt.nodes = targetTree;
 
             function updateClipboardStatus() {
                 const op = in6src.getClipboardOperation?.() ?? in6tgt.getClipboardOperation?.();
@@ -706,10 +706,10 @@ function restoreFromUrl(nodePath) {
             // Bulk mutations
             const in6bulk = document.getElementById('in6-bulk');
             Object.assign(in6bulk, treeConfig);
-            in6bulk.data = JSON.parse(JSON.stringify(bulkData));
+            in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
 
             function updateBulkOutput() {
-                const data = in6bulk.getAllData?.() ?? [];
+                const data = in6bulk.controller.nodes;
                 document.getElementById('in6-bulk-out').textContent = JSON.stringify(
                     data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
             }
@@ -749,7 +749,7 @@ function restoreFromUrl(nodePath) {
             });
             document.getElementById('in6-reset').addEventListener('click', () => {
                 nextId = 1000;
-                in6bulk.data = JSON.parse(JSON.stringify(bulkData));
+                in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
                 updateBulkOutput();
                 document.getElementById('in6-bulk-result').style.display = 'none';
             });

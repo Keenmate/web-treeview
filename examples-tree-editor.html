@@ -276,7 +276,7 @@
                     <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
                     <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>focusedNode</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
                     <tr><td><code>selectedPaths</code> / <code>checkedPaths</code> / <code>expandedPaths</code> / <code>focusNode(path)</code></td><td>Selected, checked, expanded state (properties — assign to replace) &amp; focus.</td></tr>
-                    <tr><td><code>getAllData()</code> / <code>getNodeByPath(path)</code></td><td>Snapshot all node data; look up one node.</td></tr>
+                    <tr><td><code>controller.nodes</code> / <code>getNodeByPath(path)</code></td><td>Current node data (mutations included); look up one node.</td></tr>
                     <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
                 </tbody>
             </table>
@@ -458,7 +458,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
 
             Object.assign(tree, treeConfig);
             tree.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            tree.data = data;
+            tree.nodes = data;
 
             const logEl = document.getElementById('te-log');
             const warnEl = document.getElementById('te-warning');
@@ -480,7 +480,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
             function focused() { return tree.focusedNode; }
 
             function refreshState() {
-                const all = tree.getAllData();
+                const all = tree.controller.nodes;
                 document.getElementById('te-json').textContent = JSON.stringify(
                     all.map(d => ({ path: d.path, name: d.name, sortOrder: d.sortOrder })), null, 2
                 );
@@ -567,7 +567,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
             window.moveDown = () => move(1);
 
             window.exportConsole = () => {
-                const all = tree.getAllData();
+                const all = tree.controller.nodes;
                 console.log('Exported tree data:', all);
                 addLog(`Exported ${all.length} nodes to console`);
             };
@@ -575,7 +575,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
             window.resetEditor = () => {
                 data = editorData();
                 nextId = 500;
-                tree.data = data;
+                tree.nodes = data;
                 logEl.innerHTML = '';
                 addLog('Tree reset to initial state');
                 refreshState();
@@ -613,11 +613,11 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
 
             Object.assign(source, treeConfig);
             source.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            source.data = JSON.parse(JSON.stringify(sourceData));
+            source.nodes = JSON.parse(JSON.stringify(sourceData));
 
             Object.assign(target, treeConfig);
             target.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            target.data = JSON.parse(JSON.stringify(targetData));
+            target.nodes = JSON.parse(JSON.stringify(targetData));
 
             const cbLog = document.getElementById('cb-log');
             function addCbLog(msg) {
@@ -666,7 +666,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 const el = document.getElementById(id);
                 Object.assign(el, treeConfig);
                 el.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-                el.data = JSON.parse(JSON.stringify(seed));
+                el.nodes = JSON.parse(JSON.stringify(seed));
                 el._nextId = 7000 + Math.floor(Math.random() * 1000);
                 return el;
             }

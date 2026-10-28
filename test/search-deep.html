@@ -75,7 +75,7 @@
                 span.textContent = node.data?.name ?? '';
                 container.appendChild(span);
             };
-            tree.data = data;
+            tree.nodes = data;
 
             const input = document.querySelector('[data-testid="search-input"]');
             const resultCount = document.querySelector('[data-testid="result-count"]');

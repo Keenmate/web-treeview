@@ -117,7 +117,7 @@ test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
     await load(page);
     const name = await page.evaluate(() => {
       const t = (window as any).tree;
-      t.data = (window as any).moreData;
+      t.nodes = (window as any).moreData;
       return t.getNodeByPath('3.1')?.data?.name ?? null;
     });
     expect(name).toBe('C1');
@@ -139,7 +139,7 @@ test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
     await load(page);
     const name = await page.evaluate(() => {
       const t = (window as any).tree;
-      t.data = (window as any).moreData;
+      t.nodes = (window as any).moreData;
       return t.controller.getNodeByPath('3.1')?.data?.name ?? null;
     });
     expect(name).toBe('C1');

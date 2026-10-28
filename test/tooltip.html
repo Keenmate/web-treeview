@@ -60,7 +60,7 @@
             const text = document.getElementById('text');
             const rich = document.getElementById('rich');
             const cursor = document.getElementById('cursor');
-            const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', data };
+            const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data };
 
             Object.assign(text, common, {
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
@@ -77,7 +77,7 @@
             });
 
             Object.assign(cursor, {
-                idMember: 'id', pathMember: 'path', displayValueMember: 'name', data: wideData,
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: wideData,
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
 

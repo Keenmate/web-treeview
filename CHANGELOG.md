@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed — BREAKING (leftover naming decisions, 2026-10-28)
 
+- **`data` → `nodes`.** The input is now **`el.nodes`** (`TreeViewConfig.nodes`);
+  `getAllData()` is removed from the element and the controller — read
+  **`el.controller.nodes`** (every node's data in tree order, mutations included). `node.data`
+  (your object on a node) is unchanged.
 - **Boolean inputs (canonical L8 forms):** `isProgressiveRender` / `progressive-render` →
   **`isProgressiveRenderEnabled`** / **`enable-progressive-render`**; `isAccordionExpand` /
   `accordion-expand` → **`shouldExpandAsAccordion`** / **`expand-as-accordion`**.

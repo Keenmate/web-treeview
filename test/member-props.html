@@ -55,7 +55,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
-            tree.data = data;
+            tree.nodes = data;
 
             const countEl = document.querySelector('[data-testid="checked-paths-count"]');
             const listEl = document.querySelector('[data-testid="checked-paths-list"]');

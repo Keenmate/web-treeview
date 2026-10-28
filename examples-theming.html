@@ -751,7 +751,7 @@
         function initTree(id, opts = {}) {
             const el = document.getElementById(id);
             if (!el) return;
-            el.data = sampleData;
+            el.nodes = sampleData;
             el.idMember = 'id';
             el.pathMember = 'path';
             el.displayValueMember = 'name';

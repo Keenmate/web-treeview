@@ -320,7 +320,7 @@ tree.renderIconCallback = ({ node, value, iconElement, deviceClass, container })
         { value: '351', path: '3.5.1', label: 'Information and Communications Technology Operations Technicians' }
     ];
 
-    const baseConfig = { idMember: 'value', pathMember: 'path', displayValueMember: 'label', data };
+    const baseConfig = { idMember: 'value', pathMember: 'path', displayValueMember: 'label', nodes: data };
 
     customElements.whenDefined('web-treeview').then(() => {
         // Expose button handlers (inline onclick) once the element is defined.

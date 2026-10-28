@@ -20,7 +20,7 @@ Enable drag-and-drop with the `drag-drop-mode` attribute:
 Control which drop positions (`before`, `after`, `child`) are valid per node:
 
 ```javascript
-tree.data = [
+tree.nodes = [
   // Trash: only accept drops as children
   { id: 1, path: '1', name: 'Trash', allowedDropPositions: ['child'] },
 
@@ -209,7 +209,7 @@ The toggle/icon column is unified (`--wtv-column-width`, default 24px) and share
 <web-treeview icon-member="icon"></web-treeview>
 
 <script>
-  tree.data = [
+  tree.nodes = [
     { id: 1, path: '1',   displayValue: 'Documents', icon: 'icon-folder' },
     { id: 2, path: '1.1', displayValue: 'report.pdf', icon: 'icon-file-pdf' },
   ];

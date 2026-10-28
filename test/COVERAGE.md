@@ -27,7 +27,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `labels.noDisplayValue` (display fallback) | ✓ | `data.spec.ts` | `data.html` |
 | Default display-value order, `order-member`, sibling `sortCallback` (descending, children kept) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sortCallback` called once per sibling group, never on the flat list (NOTES #16) | ✓ | `data-members.spec.ts` | `data-members.html` |
-| `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `insertBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `addBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `data` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
@@ -44,7 +44,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `enable-flat-rendering` + `flat-indent-size`, runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `enable-progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| Lazy load via `beforeExpandCallback` (async load → `insertBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
+| Lazy load via `beforeExpandCallback` (async load → `addBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `node-expand` / `node-collapse` for click, keyboard, `expandNodes` / `collapseNodes`; none for `expandAll` / `collapseAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 
@@ -114,8 +114,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| `insertBranch` / `replaceBranch` / `removeBranch` | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
-| `insertBranch` failed[] (mixed validity, empty / duplicate / not-under-parent / orphan), subtree insert, warn once; `replaceBranch` shape (NOTES #1) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
+| `addBranch` / positioned `insertBranch` (+ `orderMember`, `data-members.spec.ts`) / `replaceBranch` / `removeBranch`; `insertNode`; `applyChanges` add / insert / update / remove (`mutation-api.spec.ts`) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
+| `addBranch` failed[] (mixed validity, empty / duplicate / not-under-parent / orphan), subtree insert, warn once; `replaceBranch` shape (NOTES #1) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | `replaceBranch` notifies the tree once (NOTES #2) | ✓ | `branch-operations.spec.ts` | (LTree direct) |
 | Cut / paste branch, paste-into-self error | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Copy/paste/cut events, `beforeCopyCallback`, `beforePasteCallback` | ✓ | `feature-port.spec.ts` | `feature-port.html` |

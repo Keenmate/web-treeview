@@ -19,8 +19,8 @@
         <h1>Branch Operations Fixture</h1>
 
         <div class="controls">
-            <button data-testid="btn-insert-under-1">insertBranch under 1</button>
-            <button data-testid="btn-insert-under-3">insertBranch under 3</button>
+            <button data-testid="btn-insert-under-1">addBranch under 1</button>
+            <button data-testid="btn-insert-under-3">addBranch under 3</button>
             <button data-testid="btn-replace-1">replaceBranch 1</button>
             <button data-testid="btn-replace-2.1">replaceBranch 2.1</button>
             <button data-testid="btn-delete-2.1">removeBranch 2.1</button>
@@ -176,8 +176,8 @@
                     { id: childA, path: `${parentPath}.${rootId}.1`, name: 'New-Child-A', sortOrder: 10 },
                     { id: childB, path: `${parentPath}.${rootId}.2`, name: 'New-Child-B', sortOrder: 20 }
                 ];
-                const result = tree.insertBranch(parentPath, branch);
-                recordInsert(tree, 'insertBranch', branch.length, result);
+                const result = tree.addBranch(parentPath, branch);
+                recordInsert(tree, 'addBranch', branch.length, result);
             };
             wire('btn-insert-under-1', () => insertUnder('1'));
             wire('btn-insert-under-3', () => insertUnder('3'));
@@ -238,7 +238,7 @@
                 });
                 const delResult = tree.removeBranch(sourcePath);
                 recordDelete(tree, 'paste:delete', delResult);
-                const insResult = tree.insertBranch(targetParentPath, rewritten);
+                const insResult = tree.addBranch(targetParentPath, rewritten);
                 recordInsert(tree, 'paste:insert', rewritten.length, insResult);
                 clipboard = null;
                 refreshTotals(tree);
@@ -251,7 +251,7 @@
             // ── Failure cases ──
             wire('btn-fail-insert-parent', () => {
                 const items = [{ id: nextId++, path: '999.999.1', name: 'X', sortOrder: 10 }];
-                recordInsert(tree, 'insertBranch(invalid-parent)', items.length, tree.insertBranch('999.999', items));
+                recordInsert(tree, 'addBranch(invalid-parent)', items.length, tree.addBranch('999.999', items));
             });
 
             wire('btn-fail-insert-items', () => {
@@ -263,7 +263,7 @@
                     { id: base + 2, path: `1.${base + 2}`, name: 'Valid-2', sortOrder: 30 },
                     { id: base + 3, path: null, name: 'Invalid-null', sortOrder: 40 }
                 ];
-                recordInsert(tree, 'insertBranch(mixed-validity)', items.length, tree.insertBranch('1', items));
+                recordInsert(tree, 'addBranch(mixed-validity)', items.length, tree.addBranch('1', items));
             });
 
             wire('btn-fail-replace-parent', () => {

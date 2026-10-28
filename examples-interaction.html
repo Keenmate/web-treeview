@@ -406,7 +406,7 @@ function restoreFromUrl(nodePath) {
             </div>
 
             <div class="controls">
-                <button id="in6-insert">insertBranch('1.1', 3 items)</button>
+                <button id="in6-insert">addBranch('1.1', 3 items)</button>
                 <button id="in6-replace">replaceBranch('1.2', 2 items)</button>
                 <button class="btn-danger" id="in6-delete">removeBranch('1.3')</button>
                 <button class="btn-danger" id="in6-delete-keep">removeBranch('1.1', keepParent)</button>
@@ -725,7 +725,7 @@ function restoreFromUrl(nodePath) {
             }
 
             document.getElementById('in6-insert').addEventListener('click', () => {
-                const r = in6bulk.insertBranch('1.1', [
+                const r = in6bulk.addBranch('1.1', [
                     { id: nextId, path: `1.1.${nextId++}`, name: 'Angular' },
                     { id: nextId, path: `1.1.${nextId++}`, name: 'Svelte' },
                     { id: nextId, path: `1.1.${nextId++}`, name: 'Solid' },

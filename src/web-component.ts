@@ -255,7 +255,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'getNodeClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node row (`.wtv__node`).' },
   { configKey: 'getNodeContentClassCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | null | undefined', description: 'Extra class(es) for a node content element (`.wtv__node-content`).' },
   { configKey: 'getNodeTooltipCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string | HTMLElement | null | undefined', description: 'Tooltip content for a node — plain text or a built HTMLElement. Requires show-node-tooltips.' },
-  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.nodes` are siblings — return them in the new order. Not called on the input under `sorted` (still used by insertBranch / addNode / move re-sorts).' },
+  { configKey: 'sortCallback', converter: cb(), on: 'update', type: '(ctx: SortContext) => LTreeNode[]', description: 'Orders the children of one parent: `ctx.nodes` are siblings — return them in the new order. Not called on the input under `sorted` (still used by addBranch / addNode / move re-sorts).' },
   { configKey: 'getContextMenuItemsCallback', converter: cb(), on: 'update', type: '(ctx: TreeMenuContext) => TreeMenuEntry[]', description: "The context-menu entries for the right-clicked node (`ctx.node`, `parent`, `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`, `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a built-in name ('copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'). Every activation fires `action`." },
 
   // ── Callbacks: render hooks ──────────────────────────────────────────────
@@ -280,12 +280,12 @@ const INPUTS: readonly InputDef[] = [
   /**
    * Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not
    * `expandAll()`, expand-level seeding or accordion side-effects). `false` keeps it
-   * collapsed. A Promise defers the expand — load the children (`ctx.controller.insertBranch`)
+   * collapsed. A Promise defers the expand — load the children (`ctx.controller.addBranch`)
    * and resolve: the node shows a loading state (`.wtv__toggle-icon--loading`, `aria-busy`)
    * and ignores repeat toggles meanwhile; resolving `false` or rejecting (warned) keeps it
    * collapsed. A synchronous hook stays synchronous.
    */
-  { configKey: 'beforeExpandCallback', converter: cb(), on: 'update', type: '(ctx: BeforeExpandContext) => boolean | void | Promise<boolean | void>', description: 'Runs before a node expands (toggle, keyboard, expandNodes — not expandAll / seeding / accordion): `false` keeps it collapsed; a Promise defers the expand with a loading state (lazy loading: insertBranch the children, then resolve). A throw / rejection keeps it collapsed and is logged (error) through the element\'s logger.' },
+  { configKey: 'beforeExpandCallback', converter: cb(), on: 'update', type: '(ctx: BeforeExpandContext) => boolean | void | Promise<boolean | void>', description: 'Runs before a node expands (toggle, keyboard, expandNodes — not expandAll / seeding / accordion): `false` keeps it collapsed; a Promise defers the expand with a loading state (lazy loading: addBranch the children, then resolve). A throw / rejection keeps it collapsed and is logged (error) through the element\'s logger.' },
   { configKey: 'beforeKeydownCallback', converter: cb(), on: 'update', type: '(ctx: KeydownContext) => void | false', description: 'Runs before the built-in keyboard handling (synchronous): return `false` to suppress it for this key. Drive the tree via `ctx.controller`.' },
   { configKey: 'beforeActionCallback', converter: cb(), on: 'update', type: '(detail: TreeViewActionEventDetail) => void | false | Promise<void | false>', description: 'Runs before a context-menu item activates: `false` cancels its onClick, the `action` event and the built-in.' },
   { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data', description: 'OUTPUT (egress) transform — clean/redact `ctx.data` as a node leaves the source (copy/cut/copy-drop).' },
@@ -704,6 +704,11 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.addNode(parentPath, nodeData, pathSegment);
   }
 
+  /** Insert one node before / after `targetPath` (as its sibling) or as its last child. */
+  insertNode(targetPath: string, nodeData: T, position: DropPosition): any {
+    return this.#live?.insertNode(targetPath, nodeData, position);
+  }
+
   updateNode(path: string, dataUpdates: Partial<T>): any {
     return this.#live?.updateNode(path, dataUpdates);
   }
@@ -768,8 +773,13 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Bulk operations ─────────────────────────────────────────────────────────
 
-  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
-    return this.#live?.insertBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
+  addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+    return this.#live?.addBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
+  }
+
+  /** Insert a branch before / after `targetPath` (block order kept) or under it (`'child'`). */
+  insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
+    return this.#live?.insertBranch(targetPath, data, position) ?? { success: false, count: 0, failed: [], parentNode: null, error: 'Not initialized' };
   }
 
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {

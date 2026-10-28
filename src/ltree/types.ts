@@ -24,10 +24,13 @@ export type DropZoneLayout = 'around' | 'before' | 'after' | 'wave' | 'wave2';
 export type DropOperation = 'move' | 'copy';
 
 // Incremental update types
+/** One `applyChanges` operation: `add` (last child of `parentPath`), `insert` (before / after /
+ *  as a child of `targetPath`), `update` (merge `data` into the node's data), `remove`. */
 export type TreeChange<T> =
-	| { operation: 'create'; parentPath: string; data: T; pathSegment?: string }
+	| { operation: 'add'; parentPath: string; data: T; pathSegment?: string }
+	| { operation: 'insert'; targetPath: string; position: DropPosition; data: T }
 	| { operation: 'update'; path: string; data: Partial<T> }
-	| { operation: 'delete'; path: string };
+	| { operation: 'remove'; path: string };
 
 export interface ApplyChangesResult {
 	successful: number;
@@ -44,7 +47,7 @@ export interface InsertArrayResult<T> {
 	total: number;
 }
 
-/** Result of {@link Ltree.insertBranch}: `count` inserted, every skipped item in `failed` with the reason. */
+/** Result of {@link Ltree.addBranch} / {@link Ltree.insertBranch}: `count` inserted, every skipped item in `failed` with the reason. */
 export interface InsertBranchResult<T> {
 	success: boolean;
 	count: number;
@@ -95,7 +98,7 @@ export interface Ltree<T> {
 	orderMember?: string | null | undefined;
 
 	/** Hint: the input is already in insert order (parents first, siblings ordered) —
-	 *  insertArray / insertBranch skip sorting the input. insertBranch still re-sorts
+	 *  insertArray / addBranch skip sorting the input. addBranch still re-sorts
 	 *  each affected parent's children (existing + new). */
 	isSorted: boolean | null | undefined;
 	/** Orders the children of ONE parent (`items` are siblings). */
@@ -191,6 +194,7 @@ export interface Ltree<T> {
 	moveNode(sourcePath: string, targetPath: string, position: DropPosition): { success: boolean; error?: string };
 	removeNode(path: string, includeDescendants?: boolean): { success: boolean; node?: LTreeNode<T>; error?: string };
 	addNode(parentPath: string, data: T, pathSegment?: string): { success: boolean; node?: LTreeNode<T>; error?: string };
+	insertNode(targetPath: string, data: T, position: DropPosition): { success: boolean; node?: LTreeNode<T>; error?: string };
 	updateNode(path: string, dataUpdates: Partial<T>): { success: boolean; node?: LTreeNode<T>; error?: string };
 	applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
 
@@ -204,7 +208,8 @@ export interface Ltree<T> {
 	): { success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string };
 
 	// Bulk operations
-	insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+	addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+	insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
 	replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
 	removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 
@@ -215,4 +220,5 @@ export interface Ltree<T> {
 
 	// Internal helpers
 	_updateDescendantPaths(node: LTreeNode<T>, oldBasePath: string, newBasePath: string): void;
+	_placeRelative(parentPath: string, block: LTreeNode<T>[], targetNode: LTreeNode<T>, position: 'before' | 'after'): void;
 }

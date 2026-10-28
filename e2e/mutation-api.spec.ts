@@ -156,19 +156,53 @@ test('copyNodeWithDescendants: transform returning null skips that node', async 
   await expect.poll(() => domOutline(page)).toEqual([...INITIAL, '  Veg', '    Carrot']);
 });
 
-test('applyChanges applies create/update/delete, reports failures, one tree-change', async ({ page }) => {
+test('applyChanges applies add/insert/update/remove, reports failures, one tree-change', async ({ page }) => {
   await load(page);
   const before = await treeChanges(page);
   const r = await run(page, `tree.applyChanges([
-    { operation: 'create', parentPath: '3', data: { id: 31, name: 'Almond' } },
+    { operation: 'add', parentPath: '3', data: { id: 31, name: 'Almond' } },
+    { operation: 'insert', targetPath: '1.1', position: 'before', data: { id: 13, name: 'Cherry' } },
     { operation: 'update', path: '1', data: { name: 'FRUIT' } },
-    { operation: 'delete', path: '1.2' },
-    { operation: 'delete', path: 'nope' }
+    { operation: 'remove', path: '1.2' },
+    { operation: 'remove', path: 'nope' },
+    { operation: 'insert', targetPath: 'nope', position: 'after', data: { id: 99, name: 'X' } }
   ])`);
-  expect(r.successful).toBe(3);
-  expect(r.failed).toEqual([expect.objectContaining({ changeIndex: 3, operation: 'delete', path: 'nope' })]);
+  expect(r.successful).toBe(4);
+  expect(r.failed).toEqual([
+    expect.objectContaining({ changeIndex: 4, operation: 'remove', path: 'nope' }),
+    expect.objectContaining({ changeIndex: 5, operation: 'insert', path: 'nope' }),
+  ]);
   await expect.poll(() => domOutline(page)).toEqual([
-    'FRUIT', '  Apple', 'Veg', '  Carrot', '    Baby carrot', 'Nuts', '  Almond'
+    'FRUIT', '  Cherry', '  Apple', 'Veg', '  Carrot', '    Baby carrot', 'Nuts', '  Almond'
   ]);
   await expectTreeChanges(page, before, 1);
+});
+
+test('insertNode places one node before / after the target or as its child', async ({ page }) => {
+  await load(page);
+  expect((await run(page, `tree.insertNode('1.2', { id: 13, name: 'Zucchini' }, 'before')`)).success).toBe(true);
+  await run(page, `tree.insertNode('3', { id: 4, name: 'Grains' }, 'after')`);
+  await run(page, `tree.insertNode('3', { id: 31, name: 'Almond' }, 'child')`);
+  await expect.poll(() => domOutline(page)).toEqual([
+    'Fruits', '  Apple', '  Zucchini', '  Banana', 'Veg', '  Carrot', '    Baby carrot', 'Nuts', '  Almond', 'Grains'
+  ]);
+  expect(await run(page, `tree.getNodeByPath('1.13')`)).toBe('1.13');
+  expect((await run(page, `tree.insertNode('nope', { id: 5, name: 'X' }, 'after')`)).success).toBe(false);
+});
+
+test('insertBranch(targetPath, data, position) keeps the block order next to the target', async ({ page }) => {
+  await load(page);
+  const r = await run(page, `tree.insertBranch('1.1', [
+    { id: 15, path: '1.15', name: 'Zest' },
+    { id: 151, path: '1.15.1', name: 'Peel' },
+    { id: 14, path: '1.14', name: 'Yuzu' }
+  ], 'after')`);
+  expect(r).toEqual(expect.objectContaining({ success: true, count: 3, failed: [] }));
+  await expect.poll(() => domOutline(page)).toEqual([
+    'Fruits', '  Apple', '  Zest', '    Peel', '  Yuzu', '  Banana', 'Veg', '  Carrot', '    Baby carrot', 'Nuts'
+  ]);
+  await run(page, `tree.insertBranch('1', [{ id: 0, path: '0', name: 'First' }], 'before')`);
+  await expect.poll(() => domOutline(page)).toEqual([
+    'First', 'Fruits', '  Apple', '  Zest', '    Peel', '  Yuzu', '  Banana', 'Veg', '  Carrot', '    Baby carrot', 'Nuts'
+  ]);
 });

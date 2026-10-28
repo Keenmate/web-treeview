@@ -63,13 +63,15 @@ export interface TreeViewController<T = any> {
   readonly insertResult: InsertArrayResult<T> | undefined;
   // mutate
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any;
+  insertNode(targetPath: string, nodeData: T, position: DropPosition): any;
   updateNode(path: string, dataUpdates: Partial<T>): any;
   removeNode(path: string, includeDescendants?: boolean): any;
   moveNode(sourcePath: string, targetPath: string, position: DropPosition): any;
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any;
   duplicateNodes(paths: string[], targetPath: string, position: DropPosition, transform?: NodeTransformCallback<T>, sourceTree?: Ltree<T>): any;
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
-  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+  addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+  insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
   removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
   // selection
@@ -208,7 +210,7 @@ export interface BeforeCheckboxToggleContext<T = any> extends NodeContext<T> {
 /**
  * ctx of `beforeExpandCallback` — the node about to expand (`node`, `path`, `parent`,
  * `siblings`) + `controller` / `element`. Return `false` (or resolve `false`) to keep it
- * collapsed; return a Promise to load children first (e.g. `ctx.controller.insertBranch`).
+ * collapsed; return a Promise to load children first (e.g. `ctx.controller.addBranch`).
  */
 export type BeforeExpandContext<T = any> = NodeRef<T> & TreeViewContext<T>;
 

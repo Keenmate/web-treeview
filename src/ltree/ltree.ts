@@ -1097,59 +1097,74 @@ export function createLTree<T>(
 			// Insert into new parent
 			newParent.hasChildren = true;
 
-			if (position !== 'child' && this.orderMember && sourceNode.data) {
-				// orderMember mode: calculate order value, insert, then let refreshSiblings sort
-				newParent.children[segmentPrefix + newSegment] = sourceNode;
-				const om = this.orderMember;
-				const siblings = Object.values(newParent.children) as LTreeNode<T>[];
-				const targetOrder = (targetNode.data ? getField(targetNode.data, om) : 0) ?? 0;
-
-				if (position === 'before') {
-					const siblingOrders = siblings
-						.filter(s => s !== sourceNode && s.data && getField(s.data, om) !== undefined)
-						.map(s => getField(s.data!, om) as number)
-						.filter(o => o < targetOrder)
-						.sort((a, b) => b - a);
-					const prevOrder = siblingOrders[0] ?? targetOrder - 20;
-					(sourceNode.data as any)[om] = Math.floor((prevOrder + targetOrder) / 2);
-				} else {
-					const siblingOrders = siblings
-						.filter(s => s !== sourceNode && s.data && getField(s.data, om) !== undefined)
-						.map(s => getField(s.data!, om) as number)
-						.filter(o => o > targetOrder)
-						.sort((a, b) => a - b);
-					const nextOrder = siblingOrders[0] ?? targetOrder + 20;
-					(sourceNode.data as any)[om] = Math.floor((targetOrder + nextOrder) / 2);
-				}
-				this.refreshSiblings(newParentPath);
-			} else if (position !== 'child') {
-				// No orderMember: manually position in children object relative to target
-				const targetSegment = segmentPrefix + targetNode.pathSegment;
-				const sourceSegmentKey = segmentPrefix + newSegment;
-				const newChildren: Record<string, LTreeNode<T>> = {};
-				for (const [key, child] of Object.entries(newParent.children)) {
-					if (key === sourceSegmentKey) continue; // skip source, we'll insert it
-					if (key === targetSegment && position === 'before') {
-						newChildren[sourceSegmentKey] = sourceNode;
-					}
-					newChildren[key] = child as LTreeNode<T>;
-					if (key === targetSegment && position === 'after') {
-						newChildren[sourceSegmentKey] = sourceNode;
-					}
-				}
-				// Fallback if target wasn't found (shouldn't happen)
-				if (!newChildren[sourceSegmentKey]) {
-					newChildren[sourceSegmentKey] = sourceNode;
-				}
-				newParent.children = newChildren;
-				this._emitTreeChanged();
-			} else {
-				// position === 'child': just insert and sort
-				newParent.children[segmentPrefix + newSegment] = sourceNode;
-				this.refreshSiblings(newParentPath);
-			}
+			newParent.children[segmentPrefix + newSegment] = sourceNode;
+			if (position === 'child') this.refreshSiblings(newParentPath);
+			else this._placeRelative(newParentPath, [sourceNode], targetNode, position);
 
 			return { success: true };
+		},
+
+		/**
+		 * Position `block` (already children of `parentPath`, in this order) right before / after
+		 * `targetNode` among its siblings. With `orderMember` (and data on every block node) the
+		 * block gets order values spread between the target and its neighbour, then the siblings
+		 * re-sort; otherwise the children object is rebuilt with the block placed directly.
+		 */
+		_placeRelative(parentPath: string, block: LTreeNode<T>[], targetNode: LTreeNode<T>, position: 'before' | 'after'): void {
+			const parent = parentPath ? this.getNodeByPath(parentPath) : root;
+			if (!parent || block.length === 0) return;
+			const inBlock = new Set(block);
+			const om = this.orderMember;
+			if (om && block.every((n) => n.data)) {
+				const targetOrder = (targetNode.data ? getField(targetNode.data, om) : 0) ?? 0;
+				const others = (Object.values(parent.children) as LTreeNode<T>[])
+					.filter((s) => !inBlock.has(s) && s.data && getField(s.data, om) !== undefined)
+					.map((s) => getField(s.data!, om) as number);
+				const gap = 20 * block.length;
+				let lo: number, hi: number;
+				if (position === 'before') {
+					hi = targetOrder;
+					lo = others.filter((o) => o < targetOrder).sort((a, b) => b - a)[0] ?? targetOrder - gap;
+				} else {
+					lo = targetOrder;
+					hi = others.filter((o) => o > targetOrder).sort((a, b) => a - b)[0] ?? targetOrder + gap;
+				}
+				const n = block.length;
+				const isIntegral = hi - lo >= n + 1;
+				block.forEach((node, k) => {
+					const v = lo + ((hi - lo) * (k + 1)) / (n + 1);
+					(node.data as any)[om] = isIntegral ? Math.floor(v) : v;
+				});
+				this.refreshSiblings(parentPath);
+				return;
+			}
+			const targetKey = segmentPrefix + targetNode.pathSegment;
+			const blockEntries = block.map((n) => [segmentPrefix + n.pathSegment, n] as const);
+			const newChildren: Record<string, LTreeNode<T>> = {};
+			let isPlaced = false;
+			for (const [key, child] of Object.entries(parent.children)) {
+				if (inBlock.has(child as LTreeNode<T>)) continue;
+				if (key === targetKey && position === 'before') { for (const [k, n] of blockEntries) newChildren[k] = n; isPlaced = true; }
+				newChildren[key] = child as LTreeNode<T>;
+				if (key === targetKey && position === 'after') { for (const [k, n] of blockEntries) newChildren[k] = n; isPlaced = true; }
+			}
+			if (!isPlaced) for (const [k, n] of blockEntries) newChildren[k] = n;
+			parent.children = newChildren;
+			this._emitTreeChanged();
+		},
+
+		/**
+		 * Insert one node next to `targetPath` (`'before'` / `'after'`, as its sibling) or as its
+		 * last child (`'child'`, same as {@link addNode} under it). Positioning is moveNode's.
+		 */
+		insertNode(targetPath: string, data: T, position: DropPosition): { success: boolean; node?: LTreeNode<T>; error?: string } {
+			const targetNode = this.getNodeByPath(targetPath);
+			if (!targetNode) return { success: false, error: `Target node not found: ${targetPath}` };
+			if (position === 'child') return this.addNode(targetPath, data);
+			const parentPath = targetNode.parentPath || '';
+			const result = this.addNode(parentPath, data);
+			if (result.success && result.node) this._placeRelative(parentPath, [result.node], targetNode, position);
+			return result;
 		},
 
 		/**
@@ -1369,7 +1384,7 @@ export function createLTree<T>(
 
 		/**
 		 * Apply multiple changes to the tree in a single batch
-		 * @param changes - Array of create/update/delete operations
+		 * @param changes - Array of add / insert / update / remove operations
 		 * @returns Object with count of successful operations and array of failures
 		 */
 		applyChanges(changes: import('./types').TreeChange<T>[]): import('./types').ApplyChangesResult {
@@ -1381,7 +1396,7 @@ export function createLTree<T>(
 				let result: { success: boolean; error?: string };
 
 				switch (change.operation) {
-					case 'create':
+					case 'add':
 						result = this.addNode(change.parentPath, change.data, change.pathSegment);
 						if (result.success) {
 							successCount++;
@@ -1407,7 +1422,20 @@ export function createLTree<T>(
 							});
 						}
 						break;
-					case 'delete':
+					case 'insert':
+						result = this.insertNode(change.targetPath, change.data, change.position);
+						if (result.success) {
+							successCount++;
+						} else {
+							failures.push({
+								changeIndex: i,
+								operation: change.operation,
+								path: change.targetPath,
+								error: result.error || 'Unknown error'
+							});
+						}
+						break;
+					case 'remove':
 						result = this.removeNode(change.path);
 						if (result.success) {
 							successCount++;
@@ -1563,7 +1591,7 @@ export function createLTree<T>(
 		 * @param parentPath - Path of the parent node ('' = root)
 		 * @param data - Data rows to insert (each with its full path)
 		 */
-		insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+		addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
 			const targetParent = parentPath ? this.getNodeByPath(parentPath) : root;
 			if (!targetParent && parentPath) {
 				return { success: false, count: 0, failed: [], parentNode: null, error: 'Parent not found: ' + parentPath };
@@ -1712,7 +1740,7 @@ export function createLTree<T>(
 			// One summary warning (like insertArray) — the details are in `failed`.
 			if (failed.length > 0) {
 				dataLog().warn(
-					`insertBranch("${parentPath}"): ${failed.length} of ${data.length} items failed to insert:`,
+					`addBranch("${parentPath}"): ${failed.length} of ${data.length} items failed to insert:`,
 					failed.map((f) => f.error)
 				);
 			}
@@ -1721,6 +1749,32 @@ export function createLTree<T>(
 			this._emitTreeChanged();
 
 			return { success: true, count: insertedCount, failed, parentNode };
+		},
+
+		/**
+		 * Insert a branch next to `targetPath`: `'before'` / `'after'` = as its siblings (the
+		 * items' paths must be under the target's parent), `'child'` = under the target (same as
+		 * {@link addBranch}). The block's top-level nodes keep their order from `data`; with
+		 * `orderMember` they get order values spread between the target and its neighbour.
+		 */
+		insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
+			const targetNode = this.getNodeByPath(targetPath);
+			if (!targetNode) {
+				return { success: false, count: 0, failed: [], parentNode: null, error: 'Target not found: ' + targetPath };
+			}
+			if (position === 'child') return this.addBranch(targetPath, data);
+			const parentPath = targetNode.parentPath || '';
+			const parent = parentPath ? this.getNodeByPath(parentPath) : root;
+			const before = new Set(Object.values(parent?.children ?? {}) as LTreeNode<T>[]);
+			const result = this.addBranch(parentPath, data);
+			if (!result.success || !parent) return result;
+			const rank = new Map<unknown, number>();
+			data.forEach((d, i) => { if (!rank.has(d)) rank.set(d, i); });
+			const block = (Object.values(parent.children) as LTreeNode<T>[])
+				.filter((n) => !before.has(n))
+				.sort((a, b) => (rank.get(a.data) ?? 0) - (rank.get(b.data) ?? 0));
+			this._placeRelative(parentPath, block, targetNode, position);
+			return result;
 		},
 
 		/**
@@ -1759,8 +1813,8 @@ export function createLTree<T>(
 			parentNode._rev = (parentNode._rev || 0) + 1;
 			nodeCount -= removedCount;
 
-			// Delegate to insertBranch for the new data (it emits unless there is nothing to insert)
-			const result = this.insertBranch(parentPath, data);
+			// Delegate to addBranch for the new data (it emits unless there is nothing to insert)
+			const result = this.addBranch(parentPath, data);
 			if (!data || data.length === 0) this._emitTreeChanged();
 			return { ...result, removed: removedCount, added: result.count };
 		},

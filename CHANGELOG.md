@@ -29,8 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Path sets are `string[]`:** `selectedPaths` / `checkedPaths` (element and controller) and
   the `selection-change` / `checked-change` detail `paths` are arrays (were `Set`). Use
   `.includes()` / `.length` instead of `.has()` / `.size`.
+- **Mutations — add vs insert.** `applyChanges` operations: `'create'` → **`'add'`**
+  (`{ parentPath, data, pathSegment? }`), `'delete'` → **`'remove'`**; `'update'` unchanged.
+  `insertBranch(parentPath, data[])` → **`addBranch(parentPath, data[])`** (also on the
+  `Ltree`); the name `insertBranch` now means the positioned insert below. The context-menu
+  `delete` built-in (the user command) keeps its name.
 
 ### Added (2026-10-28)
+
+- **`insertNode(targetPath, data, position)`** — one node `'before'` / `'after'` the target (as
+  its sibling) or as its `'child'`, positioned like `moveNode` (with `orderMember`: an order
+  value between the neighbours, else placed directly). Also the `applyChanges` operation
+  **`{ operation: 'insert', targetPath, position, data }`**.
+- **`insertBranch(targetPath, data[], position)`** — a batch next to / under the target; the
+  block's top-level nodes keep their order from `data` (with `orderMember`: order values
+  spread between the target and its neighbour).
 
 - Context-menu built-ins **`expand-subtree`** / **`collapse-subtree`** (the targets and all
   descendants) and **`expand-all`** / **`collapse-all`** (whole tree), with labels

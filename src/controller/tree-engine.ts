@@ -1359,6 +1359,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return result;
   }
 
+  insertNode(
+    targetPath: string,
+    nodeData: T,
+    position: DropPosition
+  ): { success: boolean; node?: LTreeNode<T>; error?: string } {
+    this._skipInsertArray = true;
+    const result = this.tree?.insertNode(targetPath, nodeData, position) || {
+      success: false,
+      error: 'Tree not initialized'
+    };
+    queueMicrotask(() => { this._skipInsertArray = false; });
+    return result;
+  }
+
   updateNode(
     path: string,
     dataUpdates: Partial<T>
@@ -1652,9 +1666,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return allOk;
   }
 
-  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+  addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
     this._skipInsertArray = true;
-    const result = this.tree?.insertBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
+    const result = this.tree?.addBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
+    queueMicrotask(() => { this._skipInsertArray = false; });
+    return result;
+  }
+
+  insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
+    this._skipInsertArray = true;
+    const result = this.tree?.insertBranch(targetPath, data, position) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
     return result;
   }

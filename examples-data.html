@@ -129,7 +129,7 @@ tree.data = [
         <!-- DS04 · Branch Operations -->
         <div class="card">
             <h2>DS04 · Branch Operations</h2>
-            <p><code>insertBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>removeBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
+            <p><code>addBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>removeBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
 
             <div class="controls">
                 <button onclick="insertTeam()">Insert branch under "Engineering"</button>
@@ -149,13 +149,13 @@ tree.data = [
             </div>
 
             <div class="code-block">
-<pre><code>// insertBranch(parentPath, data)  → { success, count, failed: [{ data, error }], parentNode }
+<pre><code>// addBranch(parentPath, data)  → { success, count, failed: [{ data, error }], parentNode }
 //   every item is placed by its own path (whole subtrees OK); an item with a
 //   missing/empty path, a duplicate path, or a path not under parentPath is in `failed`
 // replaceBranch(parentPath, data) → the same + { removed, added }
 // removeBranch(path, keepParent?) → { success, count }
 
-const res = tree.insertBranch('1.1', [
+const res = tree.addBranch('1.1', [
   { id: 101, path: '1.1.9',   name: 'New Team' },
   { id: 102, path: '1.1.9.1', name: 'Member A' }
 ]);
@@ -422,9 +422,9 @@ tree.displayValueMember = 'label';</code></pre>
                     { id: nextBranchId++, path: `${base}.1`, name: 'Member A' },
                     { id: nextBranchId++, path: `${base}.2`, name: 'Member B' }
                 ];
-                const res = ds04.insertBranch('1.1', nodes);
+                const res = ds04.addBranch('1.1', nodes);
                 ds04.expandNodes('1.1');
-                logBranch(`insertBranch('1.1', 3 nodes) → ${JSON.stringify({ ...res, parentNode: res.parentNode?.path })}`);
+                logBranch(`addBranch('1.1', 3 nodes) → ${JSON.stringify({ ...res, parentNode: res.parentNode?.path })}`);
             };
 
             window.replaceEng = () => {

@@ -28,6 +28,18 @@ test('order-member orders siblings by that field (then by name)', async ({ page 
   expect(await labels(page)).toEqual(['Banana', 'Cucumber', 'Apple', '  Cherry', '  Date']);
 });
 
+test('order-member: insertNode / insertBranch get order values between the neighbours (block order kept)', async ({ page }) => {
+  await load(page, 'order');
+  await page.evaluate(() => (window as any).tree.insertNode('2', { key: 'k4', name: 'Zebra' }, 'after'));
+  await expect.poll(() => labels(page)).toEqual(['Banana', 'Zebra', 'Cucumber', 'Apple', '  Cherry', '  Date']);
+  expect(await page.evaluate(() => (window as any).tree.getNodeByPath('k4').data.rank)).toBe(1.5);
+  await page.evaluate(() => (window as any).tree.insertBranch('3', [
+    { key: 'k5', path: '5', name: 'Yak' },
+    { key: 'k6', path: '6', name: 'Xenon' },
+  ], 'before'));
+  await expect.poll(() => labels(page)).toEqual(['Banana', 'Zebra', 'Yak', 'Xenon', 'Cucumber', 'Apple', '  Cherry', '  Date']);
+});
+
 test('a sibling sortCallback without sorted keeps every node (no orphaned children)', async ({ page }) => {
   await load(page, 'callback');
   expect(await labels(page)).toEqual(['Cucumber', 'Banana', 'Apple', '  Date', '  Cherry']);
@@ -61,12 +73,12 @@ test('sorted with badly ordered data drops orphans into insertResult.failed', as
   expect(await labels(page)).toEqual(['Apple', '  Cherry', 'Banana', 'Cucumber']);
 });
 
-test('sorted: insertBranch still re-sorts the affected parent (the hint covers the input only)', async ({ page }) => {
+test('sorted: addBranch still re-sorts the affected parent (the hint covers the input only)', async ({ page }) => {
   await load(page, 'presorted');
   // as given: Apple's children Cherry, Date; the callback orders descending by name
   const result = await page.evaluate(() => {
     (window as any).sortCalls.length = 0;
-    const r = (window as any).tree.insertBranch('1', [{ key: 'k13', path: '1.3', name: 'Daisy', rank: 5, parent: '1', lvl: 2 }]);
+    const r = (window as any).tree.addBranch('1', [{ key: 'k13', path: '1.3', name: 'Daisy', rank: 5, parent: '1', lvl: 2 }]);
     return { count: r.count, failed: r.failed.length, calls: (window as any).sortCalls };
   });
   expect(result).toMatchObject({ count: 1, failed: 0 });

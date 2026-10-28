@@ -9,7 +9,7 @@ import { test, expect, type Page, nodeByPath, nodeContent, logLines } from './fi
  *   4 Folder ──── 4.1 Folder child (already loaded)
  *
  * The documented pattern: `beforeExpandCallback` inserts the branch
- * (`ctx.controller.insertBranch`) and resolves; while it's pending the node shows
+ * (`ctx.controller.addBranch`) and resolves; while it's pending the node shows
  * a loading state and ignores repeat toggles. Log lines: before:<path> (hook),
  * inserted:<path>:<n>, expand:<path> / collapse:<path> (node-expand / node-collapse).
  */

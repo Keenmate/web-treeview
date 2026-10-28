@@ -28,8 +28,8 @@ const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getAllData', 'getTree',
-  'addNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
-  'applyChanges', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
+  'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
+  'applyChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected',
   'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
   'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
@@ -391,6 +391,10 @@ export class WebTreeView<T = any> {
     return this.engine.addNode(parentPath, nodeData, pathSegment);
   }
 
+  insertNode(targetPath: string, nodeData: T, position: DropPosition) {
+    return this.engine.insertNode(targetPath, nodeData, position);
+  }
+
   updateNode(path: string, dataUpdates: Partial<T>) {
     return this.engine.updateNode(path, dataUpdates);
   }
@@ -428,8 +432,12 @@ export class WebTreeView<T = any> {
     return this.engine.applyChanges(changes);
   }
 
-  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
-    return this.engine.insertBranch(parentPath, data);
+  addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+    return this.engine.addBranch(parentPath, data);
+  }
+
+  insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
+    return this.engine.insertBranch(targetPath, data, position);
   }
 
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {

@@ -3,10 +3,10 @@ import { test, expect, Page, Locator, nodeByPath } from './fixtures';
 /**
  * E2E coverage for the branch-operations test fixture at /test/branch-operations.html.
  *
- * Exercises insertBranch / replaceBranch / removeBranch plus a minimal
+ * Exercises addBranch / replaceBranch / removeBranch plus a minimal
  * cut/paste flow and failure-path buttons.
  *
- * Return shapes: insertBranch → {success, count, failed[], parentNode, error?}
+ * Return shapes: addBranch → {success, count, failed[], parentNode, error?}
  * (svelte-treeview's InsertBranchResult); replaceBranch adds {removed, added};
  * removeBranch → {success, count, error?}.
  */
@@ -45,16 +45,16 @@ test.describe('initial state', () => {
   });
 });
 
-// ── insertBranch ───────────────────────────────────────────────────────────
+// ── addBranch ───────────────────────────────────────────────────────────
 
-test.describe('insertBranch', () => {
+test.describe('addBranch', () => {
   test('inserts a 3-node branch under "1" — one API call, count=3', async ({ page }) => {
     const before = await readCount(page, 'op-call-count');
     const totalBefore = await readCount(page, 'total-node-count');
 
     await page.getByTestId('btn-insert-under-1').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('insertBranch');
+    await expect(page.getByTestId('last-op-name')).toHaveText('addBranch');
     await expect(page.getByTestId('last-op-success')).toHaveText('true');
     await expect(page.getByTestId('last-op-count')).toHaveText('3');
     await expect(page.getByTestId('last-op-failed-count')).toHaveText('0');
@@ -190,22 +190,22 @@ test.describe('cut/paste workflow', () => {
 // ── Failure cases ─────────────────────────────────────────────────────────
 
 test.describe('failure cases', () => {
-  test('insertBranch on a missing parent returns success=false', async ({ page }) => {
+  test('addBranch on a missing parent returns success=false', async ({ page }) => {
     const totalBefore = await readCount(page, 'total-node-count');
 
     await page.getByTestId('btn-fail-insert-parent').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('insertBranch(invalid-parent)');
+    await expect(page.getByTestId('last-op-name')).toHaveText('addBranch(invalid-parent)');
     await expect(page.getByTestId('last-op-success')).toHaveText('false');
     await expect(page.getByTestId('last-op-count')).toHaveText('0');
     await expect(page.getByTestId('total-node-count')).toHaveText(String(totalBefore));
   });
 
-  test('insertBranch with mixed-validity items reports the failed ones', async ({ page }) => {
+  test('addBranch with mixed-validity items reports the failed ones', async ({ page }) => {
     const totalBefore = await readCount(page, 'total-node-count');
     await page.getByTestId('btn-fail-insert-items').click();
 
-    await expect(page.getByTestId('last-op-name')).toHaveText('insertBranch(mixed-validity)');
+    await expect(page.getByTestId('last-op-name')).toHaveText('addBranch(mixed-validity)');
     await expect(page.getByTestId('last-op-success')).toHaveText('true');
     await expect(page.getByTestId('last-op-count')).toHaveText('2');
     await expect(page.getByTestId('last-op-failed-count')).toHaveText('2');
@@ -295,11 +295,11 @@ test.describe('reset', () => {
   });
 });
 
-// ── insertBranch: placement by path + per-item failure reasons (TV-1) ──────
+// ── addBranch: placement by path + per-item failure reasons (TV-1) ──────
 
 const insert = (page: Page, parentPath: string, items: unknown[]) =>
   page.evaluate(([pp, data]) => {
-    const r = (window as any).tree.insertBranch(pp, data);
+    const r = (window as any).tree.addBranch(pp, data);
     return {
       success: r.success,
       count: r.count,
@@ -308,7 +308,7 @@ const insert = (page: Page, parentPath: string, items: unknown[]) =>
     };
   }, [parentPath, items] as const);
 
-test.describe('insertBranch (TV-1)', () => {
+test.describe('addBranch (TV-1)', () => {
   test('places every item by its own path — a whole subtree in one call, any input order', async ({ page }) => {
     const r = await insert(page, '2.1', [
       { id: 903, path: '2.1.9.1.1', name: 'Deep-leaf', sortOrder: 10 },
@@ -347,11 +347,11 @@ test.describe('insertBranch (TV-1)', () => {
     page.on('console', (m) => { if (m.type() === 'warning') warnings.push(m.text()); });
 
     await insert(page, '3', [{ id: 920, path: '3.1', name: 'Clean' }]);
-    expect(warnings.filter((w) => w.includes('insertBranch'))).toEqual([]);
+    expect(warnings.filter((w) => w.includes('addBranch'))).toEqual([]);
 
     await insert(page, '3', [{ id: 921, path: '', name: 'Bad-1' }, { id: 922, path: '9.9', name: 'Bad-2' }]);
-    await expect.poll(() => warnings.filter((w) => w.includes('insertBranch')).length).toBe(1);
-    expect(warnings.find((w) => w.includes('insertBranch'))).toContain('2 of 2 items failed');
+    await expect.poll(() => warnings.filter((w) => w.includes('addBranch')).length).toBe(1);
+    expect(warnings.find((w) => w.includes('addBranch'))).toContain('2 of 2 items failed');
   });
 
   test('replaceBranch returns the richer shape (failed, removed descendants, added)', async ({ page }) => {

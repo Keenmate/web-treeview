@@ -130,7 +130,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
-**Sibling order.** On insert (`data`, `insertBranch`) the tree puts parents before their
+**Sibling order.** On insert (`data`, `addBranch`) the tree puts parents before their
 children itself and orders each parent's children with `sortCallback` (one call per
 sibling group — `items` are siblings, never the whole list), or by `order-member` then
 display value when there is no callback. `addNode`, `refreshSiblings` and `moveNode`
@@ -141,7 +141,7 @@ no render-time sorting.
 `sorted` is a **performance hint**, not a sort switch: "my data is already in insert
 order (parents first, siblings in display order)". The tree then skips sorting the
 input (no depth sort, no `sortCallback`) and renders `data` as given. The hint covers
-the input batch only: `insertBranch` still re-sorts each affected parent's children
+the input batch only: `addBranch` still re-sorts each affected parent's children
 (existing + new), so a new child lands in its sibling position. Ordering is the caller's responsibility:
 a child listed before its parent is dropped as an orphan and reported in
 `insertResult.failed`.
@@ -400,9 +400,10 @@ All methods are available on the element **and** on `el.controller`.
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
 | `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |
+| `insertNode` | `(targetPath, data, position)` | Insert one node `'before' \| 'after'` the target (as its sibling) or as its `'child'`; positioned like `moveNode` (with `orderMember`: an order value between the neighbours) |
 | `moveNode` / `moveNodes` | `(path \| paths[], targetPath, position)` | Move node(s) `'before' \| 'after' \| 'child'` |
 | `duplicateNodes` | `(paths[], targetPath, position, transform?, sourceTree?)` | Copy node(s) with descendants; `transform({ data, … })` |
-| `applyChanges` | `(changes: TreeChange[]): ApplyChangesResult` | Apply a batch of changes |
+| `applyChanges` | `(changes: TreeChange[]): ApplyChangesResult` | Apply a batch: `{ operation: 'add', parentPath, data, pathSegment? }`, `{ operation: 'insert', targetPath, position, data }`, `{ operation: 'update', path, data }`, `{ operation: 'remove', path }` |
 | `selectNode` | `(path, mode?, options?)` | Select one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
 | `selectNodes` | `(paths[], options?)` | Add nodes to the selected set (**additive**) |
 | `selectAll` | `(options?)` | Select every visible node (Ctrl+A) |
@@ -436,8 +437,9 @@ All methods are available on the element **and** on `el.controller`.
 | `navSelectNext` / `navSelectPrev` | `()` | Extend the selected range to the next / previous sibling (multi mode; no-op in single) |
 | `navSelectFirst` / `navSelectLast` | `()` | Extend the selected range to the first / last visible node (multi mode) |
 | `navSelectPageDown` / `navSelectPageUp` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
-| `insertBranch` | `(parentPath, data[]): InsertBranchResult` | Insert a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
-| `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `insertBranch`); adds `removed` / `added` |
+| `addBranch` | `(parentPath, data[]): InsertBranchResult` | Add a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
+| `insertBranch` | `(targetPath, data[], position): InsertBranchResult` | Insert a batch before / after `targetPath` (items' paths under the target's parent) or under it (`'child'` = `addBranch(targetPath, …)`). The block's top-level nodes keep their order from `data`; with `orderMember` they get order values spread between the target and its neighbour |
+| `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `addBranch`); adds `removed` / `added` |
 | `removeBranch` | `(path, keepParent?): result` | Remove a node and its descendants (or only the descendants with `keepParent`) |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
@@ -519,7 +521,7 @@ Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-
 ## Lazy loading
 
 Flag the unloaded nodes with `has-children-member` (so they get an expand toggle), then load
-their children in `beforeExpandCallback`: return a Promise, `insertBranch` the children
+their children in `beforeExpandCallback`: return a Promise, `addBranch` the children
 and resolve. While it is pending the node's toggle shows a spinner
 (`.wtv__toggle-icon--loading`, `--wtv-expand-spinner-*` variables), the row carries
 `aria-busy="true"` + `data-loading`, and repeat toggles of that node are ignored. The hook
@@ -532,7 +534,7 @@ tree.hasChildrenMember = 'hasChildren';
 tree.beforeExpandCallback = async ({ node, controller }) => {
   if (controller.getChildren(node.path).length > 0) return; // already loaded → expand now
   const rows = await fetch(`/api/children?path=${node.path}`).then((r) => r.json());
-  controller.insertBranch(node.path, rows); // each row carries its full path
+  controller.addBranch(node.path, rows); // each row carries its full path
 };
 tree.addEventListener('node-expand', (e) => console.log('expanded', e.detail.path));
 ```

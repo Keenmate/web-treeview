@@ -12,7 +12,7 @@
 <body>
     <!--
       The documented lazy-load pattern: beforeExpandCallback loads the children
-      (insertBranch) and resolves; the node shows a loading state meanwhile.
+      (addBranch) and resolves; the node shows a loading state meanwhile.
         ?mode=load    (default) async load, 30 ms simulated fetch
         ?mode=manual  the load finishes when the test calls window.finishLoad()
         ?mode=reject  the load rejects (node stays collapsed, console.warn)
@@ -57,7 +57,7 @@
                 // Already loaded (or a local folder): nothing to fetch — expand now (sync).
                 if (controller.getChildren(node.path).length > 0) return;
                 const load = () => {
-                    const r = controller.insertBranch(node.path, server[node.path] ?? []);
+                    const r = controller.addBranch(node.path, server[node.path] ?? []);
                     logTo('ll-log', `inserted:${node.path}:${r.count}`);
                 };
                 if (mode === 'reject') {

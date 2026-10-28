@@ -174,8 +174,8 @@ export interface TreeViewConfig<T = any> {
    *  Mirrors svelte-treeview rc03. */
   shouldExpandAsAccordion?: boolean | null;
   /** Performance hint: the input is already in insert order (parents before
-   *  children, siblings in display order) — `data` / insertBranch skip sorting the
-   *  input (no depth sort, no `sortCallback`). insertBranch still re-sorts each
+   *  children, siblings in display order) — `data` / addBranch skip sorting the
+   *  input (no depth sort, no `sortCallback`). addBranch still re-sorts each
    *  affected parent's children, since the hint covers the batch, not the existing
    *  tree. A child listed before its parent is dropped as an orphan
    *  (`insertResult.failed`) — caller's responsibility. */
@@ -390,7 +390,7 @@ export interface TreeViewConfig<T = any> {
   onNodeCollapse?: (detail: NodeEventDetail<T>) => void;
   /** Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not
    *  `expandAll()`, expand-level seeding or accordion side-effects). Return `false` to keep
-   *  it collapsed. Return a Promise (e.g. load + `insertBranch` the children) to defer the
+   *  it collapsed. Return a Promise (e.g. load + `addBranch` the children) to defer the
    *  expand: the node shows a loading state and ignores repeat toggles until it settles;
    *  resolving `false` or rejecting (warned) keeps it collapsed. A sync hook stays sync. */
   beforeExpandCallback?: (ctx: BeforeExpandContext<T>) => boolean | void | Promise<boolean | void>;
@@ -524,7 +524,8 @@ export interface TreeViewMethods<T = any> {
   getTree(): import('./ltree/types').Ltree<T>;
 
   // Bulk operations
-  insertBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+  addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
+  insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
   removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
 

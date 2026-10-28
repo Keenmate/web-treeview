@@ -267,7 +267,7 @@
                     <tr><td><code>removeNode(path, includeDescendants?)</code></td><td>Remove a single node (and optionally its descendants).</td></tr>
                     <tr><td><code>updateNode(path, dataUpdates)</code></td><td>Patch a node's data in place (e.g. rename).</td></tr>
                     <tr><td><code>moveNode(sourcePath, targetPath, position)</code></td><td>Move a node. <code>position</code> is <code>'before' | 'after' | 'child'</code>.</td></tr>
-                    <tr><td><code>insertBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
+                    <tr><td><code>addBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
                     <tr><td><code>replaceBranch(parentPath, data[])</code></td><td>Replace a parent's children with a new set.</td></tr>
                     <tr><td><code>removeBranch(path, keepParent?)</code></td><td>Remove a whole subtree (optionally keep the parent).</td></tr>
                     <tr><td><code>removeNodes(paths)</code></td><td>Remove the given paths programmatically (no <code>beforeDeleteCallback</code>, no <code>node-delete</code> — those belong to the Delete key / menu command). Returns <code>{ removed, failed }</code>.</td></tr>

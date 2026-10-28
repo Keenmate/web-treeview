@@ -156,6 +156,8 @@ BlissFramework `naming-conventions.md` D-NC-13..27 apply; the svelte-treeview mi
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 
+**Any public API change must update `docs/parity.md` and be mirrored in the sibling library (or recorded as intentional).**
+
 The two packages render the same logical tree but have different DOM strategies. Useful when porting features or debugging visual differences.
 
 | | svelte-treeview | web-treeview |

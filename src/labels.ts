@@ -10,8 +10,14 @@
 
 /** Every UI string of `<web-treeview>`. */
 export interface TreeViewLabels {
-  /** Empty-tree text (no `renderEmptyStateCallback`). */
-  empty: string;
+  /** Empty-tree text when the tree has no nodes at all (no `renderEmptyStateCallback`). */
+  noData: string;
+  /** Empty-tree text when nodes exist but the search filter left none visible. */
+  noResults: string;
+  /** Text of a node with no resolvable display value (`displayValueMember` / `getDisplayValueCallback`). */
+  noDisplayValue: string;
+  /** Accessible label (`aria-label`) of the `isLoading` spinner overlay (no `renderLoadingCallback`). */
+  loading: string;
   /** Text of the empty-tree drop zone (no `renderEmptyZoneCallback`). */
   dropHere: string;
   /** Built-in context-menu items. */
@@ -25,7 +31,10 @@ export interface TreeViewLabels {
 
 /** Built-in English strings. */
 export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
-  empty: 'No data',
+  noData: 'No data',
+  noResults: 'No results found',
+  noDisplayValue: '[N/A]',
+  loading: 'Loading…',
   dropHere: 'Drop here',
   copy: 'Copy',
   cut: 'Cut',
@@ -38,6 +47,10 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
 /**
  * Resolve one UI string: instance `labels[key]` → built-in English, then fill
  * `{name}` placeholders from `vars` (unknown placeholders are left as-is).
+ * A string — including `''` (deliberately empty: render nothing) — wins;
+ * `undefined` / missing / non-string falls back to the English default.
+ * Every label is inserted as text (`textContent` / attributes), so placeholder
+ * values need no HTML escaping.
  */
 export function resolveLabel(
   labels: Partial<TreeViewLabels> | null | undefined,

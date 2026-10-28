@@ -4035,6 +4035,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._scheduleNotify();
   }
 
+  /** The tree holds at least one node (independent of the search filter). */
+  private _hasAnyNode(): boolean {
+    const children = this.tree?.root?.children;
+    if (children) for (const _ in children) return true;
+    return false;
+  }
+
   /** Get a snapshot of the current state for the renderer. */
   getSnapshot(): TreeEngineSnapshot<T> {
     return {
@@ -4053,6 +4060,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       contextMenuNode: this._contextMenuNode,
       isDropPlaceholderActive: this._isDropPlaceholderActive,
       isLoading: this._isLoading,
+      hasNodes: this._hasAnyNode(),
       isRendering: this._isRendering,
       bodyClass: this._bodyClass,
       isFlatRenderingEnabled: this._isFlatRenderingEnabled,

@@ -18,15 +18,23 @@ test.describe('empty tree', () => {
     await expect(tree(page, 'empty-default').locator('.wtv__empty-state')).toHaveText('No data');
   });
 
-  test('labels.empty (JSON attribute) replaces the default text', async ({ page }) => {
+  test('labels.noData (JSON attribute) replaces the default text', async ({ page }) => {
     await expect(tree(page, 'empty-text').locator('.wtv__empty-state')).toHaveText('Nothing here');
   });
 
   test('labels are live: assigning el.labels re-texts the empty state; an unset key falls back to English', async ({ page }) => {
     const t = tree(page, 'empty-text');
-    await t.evaluate((el: any) => { el.labels = { empty: 'Prázdné' }; });
+    await t.evaluate((el: any) => { el.labels = { noData: 'Prázdné' }; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('Prázdné');
     await t.evaluate((el: any) => { el.labels = { copy: 'Kopírovat' }; });
+    await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
+  });
+
+  test("a '' label renders nothing (deliberately empty); a missing key is the English default", async ({ page }) => {
+    const t = tree(page, 'empty-text');
+    await t.evaluate((el: any) => { el.labels = { noData: '' }; });
+    await expect(t.locator('.wtv__empty-state')).toHaveText('');
+    await t.evaluate((el: any) => { el.labels = {}; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
   });
 
@@ -58,6 +66,15 @@ test.describe('loading', () => {
     const t = tree(page, 'loading');
     await expect(t.locator('.wtv__loading-overlay')).toBeVisible();
     await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
+  });
+
+  test('the loading overlay is a status with labels.loading as its accessible name (live)', async ({ page }) => {
+    const t = tree(page, 'loading');
+    const overlay = t.locator('.wtv__loading-overlay');
+    await expect(overlay).toHaveAttribute('role', 'status');
+    await expect(overlay).toHaveAttribute('aria-label', 'Loading…');
+    await t.evaluate((el: any) => { el.labels = { loading: 'Načítám…' }; });
+    await expect(overlay).toHaveAttribute('aria-label', 'Načítám…');
   });
 
   test('turning loading off hides the overlay and shows the empty state', async ({ page }) => {

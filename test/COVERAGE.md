@@ -24,7 +24,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Dot-path hierarchy (`path-member`) | ✓ | `data.spec.ts` | `data.html` |
 | Custom `tree-path-separator` (`/`, `::`) | ✓ | `data.spec.ts` | `data.html` |
 | `insertResult` diagnostics (orphans, empty, duplicate) | ✓ | `data.spec.ts` | `data.html` |
-| `display-value-fallback` | ✓ | `data.spec.ts` | `data.html` |
+| `labels.noDisplayValue` (display fallback) | ✓ | `data.spec.ts` | `data.html` |
 | Default display-value order, `order-member`, sibling `sortCallback` (descending, children kept) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sortCallback` called once per sibling group, never on the flat list (NOTES #16) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `insertBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
@@ -38,7 +38,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `renderLoadingCallback` (NOTES #19), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| `labels` (`empty`, `dropHere`, menu built-ins; JSON attr + live), `loading` on/off | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| `labels` (`noData`, `''` = nothing, `dropHere`, `loading` aria-label, menu built-ins; JSON attr + live), `loading` on/off; `noResults` after a no-match search (`search-config.spec.ts`) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |

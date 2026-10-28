@@ -650,7 +650,8 @@ export class WebTreeView<T = any> {
       isSorted: o.isSorted,
       displayValueMember: o.displayValueMember,
       getDisplayValueCallback: this.nodeCallback(o.getDisplayValueCallback),
-      displayValueFallback: o.displayValueFallback,
+      // labels.noDisplayValue → the Ltree's display fallback (only when labels are (re)set).
+      displayValueFallback: 'labels' in o ? resolveLabel(o.labels, 'noDisplayValue') : undefined,
       searchValueMember: o.searchValueMember,
       getSearchValueCallback: this.nodeCallback(o.getSearchValueCallback),
       orderMember: o.orderMember,

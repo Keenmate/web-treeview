@@ -125,7 +125,6 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'idMember', attribute: 'id-member', converter: toText({ default: 'id' }), on: 'update', description: 'Property name on a node object that holds its id.' },
   { configKey: 'pathMember', attribute: 'path-member', converter: toText({ default: 'path' }), on: 'update', description: 'Property name that holds a node materialized tree path.' },
   { configKey: 'displayValueMember', attribute: 'display-value-member', converter: toText({ default: 'displayValue' }), on: 'update', description: 'Property name that holds a node display label.' },
-  { configKey: 'displayValueFallback', attribute: 'display-value-fallback', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Text shown for a node with no resolvable display value (default "[N/A]"; empty renders nothing).' },
 
   // ── Member mappings: optional (absent → default via engine) ────────────────
   { configKey: 'parentPathMember', attribute: 'parent-path-member', converter: toText({ isNullable: true }), on: 'update', description: 'Property name holding a node parent path.' },
@@ -204,7 +203,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults: `empty` ("No data"), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse` (built-in context-menu items). `{name}` placeholders.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },

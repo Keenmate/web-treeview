@@ -632,6 +632,8 @@ export interface TreeEngineSnapshot<T> {
   contextMenuNode: LTreeNode<T> | null;
   isDropPlaceholderActive: boolean;
   isLoading: boolean;
+  /** The tree holds at least one node (an empty `flatNodesToRender` with `hasNodes` = the filter hid everything). */
+  hasNodes: boolean;
   isRendering: boolean;
   bodyClass: string | null | undefined;
   isFlatRenderingEnabled: boolean;

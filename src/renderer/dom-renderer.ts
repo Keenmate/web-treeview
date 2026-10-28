@@ -188,6 +188,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.loadingEl.innerHTML = '';
     if (cb) cb(this.loadingEl);
     else this.loadingEl.innerHTML = '<div class="wtv__loading-spinner"></div>';
+    this._applyLoadingLabel();
+  }
+
+  /** Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing). */
+  private _emptyLabelKey: 'noData' | 'noResults' = 'noData';
+
+  /** Accessible name of the loading overlay: `role="status"` + `aria-label` = `labels.loading`. */
+  private _applyLoadingLabel(): void {
+    if (!this.loadingEl) return;
+    this.loadingEl.setAttribute('role', 'status');
+    const text = resolveLabel(this.config.labels, 'loading');
+    if (text) this.loadingEl.setAttribute('aria-label', text);
+    else this.loadingEl.removeAttribute('aria-label');
   }
 
   /** The callback the current `.wtv__empty-zone` was built with (NOTES #20). */
@@ -199,8 +212,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!target) return;
     if (!this.config.renderEmptyStateCallback) {
       const emptyState = target.querySelector('.wtv__empty-state');
-      if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, 'empty');
+      if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
     }
+    this._applyLoadingLabel();
     if (!this.config.renderEmptyZoneCallback) {
       const content = target.querySelector('.wtv__empty-zone-content');
       if (content) content.textContent = resolveLabel(this.config.labels, 'dropHere');
@@ -1144,6 +1158,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.nodeElements.clear();
     this._destroyAllTooltips();
 
+    // No nodes at all → `noData`; nodes exist but the search filter hid them all → `noResults`.
+    this._emptyLabelKey = snapshot.hasNodes ? 'noResults' : 'noData';
     // Show empty zone (drop target during drag) or empty state (informational)
     const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}`;
     if (this._lastEmptyState !== emptyState) {
@@ -1210,7 +1226,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (this.config.renderEmptyStateCallback) {
         this.config.renderEmptyStateCallback(emptyState as HTMLElement);
       } else {
-        emptyState.textContent = resolveLabel(this.config.labels, 'empty');
+        emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
       }
     }
   }

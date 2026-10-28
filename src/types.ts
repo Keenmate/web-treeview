@@ -158,10 +158,6 @@ export interface TreeViewConfig<T = any> {
   isDropAllowedMember?: string | null;
   hasChildrenMember?: string | null;
   displayValueMember?: string | null;
-  /** Text shown for a node with no resolvable display value (neither
-   *  `displayValueMember` nor `getDisplayValueCallback` yields one — e.g. a
-   *  synthetic/dataless node). Default `'[N/A]'`; set `''` to render nothing. */
-  displayValueFallback?: string | null;
   searchValueMember?: string | null;
   isSelectableMember?: string | null;
   isCollapsibleMember?: string | null;

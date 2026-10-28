@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Boolean inputs (canonical L8 forms):** `isProgressiveRender` / `progressive-render` →
   **`isProgressiveRenderEnabled`** / **`enable-progressive-render`**; `isAccordionExpand` /
   `accordion-expand` → **`shouldExpandAsAccordion`** / **`expand-as-accordion`**.
+- **Labels — empty states split.** The `labels` key `empty` is removed: **`noData`** ("No data")
+  shows when the tree has no nodes at all, **`noResults`** ("No results found") when nodes
+  exist but the search filter left none visible.
+- **`displayValueFallback` / `display-value-fallback` removed** → **`labels.noDisplayValue`**
+  (default "[N/A]"; `''` renders nothing).
+- **New `labels.loading`** ("Loading…"): the `loading` overlay is now `role="status"` with this
+  text as its `aria-label`.
+- A `labels` value of `''` deliberately renders nothing; a missing / `undefined` key is the
+  English default. All labels are inserted as text.
 
 ### Changed — BREAKING (v2 naming unification, 2026-10-27)
 

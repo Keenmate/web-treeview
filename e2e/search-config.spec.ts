@@ -36,6 +36,19 @@ test.describe('search-term attribute', () => {
     await page.evaluate(() => { (window as any).tree.searchTerm = 'croissant'; });
     await expect.poll(() => rowNames(page)).toEqual(['Europe', 'Paris']);
   });
+
+  test('a search that matches nothing shows labels.noResults (not noData); clearing restores', async ({ page }) => {
+    await load(page, 'member');
+    await expect.poll(() => found(page, 'sushi')).toEqual(['Tokyo']);
+    const empty = page.locator('web-treeview .wtv__empty-state');
+    await page.evaluate(() => { (window as any).tree.searchTerm = 'zzz-no-match'; });
+    await expect(empty).toHaveText('No results found');
+    await page.evaluate(() => { (window as any).tree.labels = { noResults: 'Nic nenalezeno' }; });
+    await expect(empty).toHaveText('Nic nenalezeno');
+    await page.evaluate(() => { (window as any).tree.searchTerm = ''; });
+    await expect.poll(() => rowNames(page)).toEqual(ALL);
+    await expect(empty).toHaveCount(0);
+  });
 });
 
 test('search-value-member: matches the configured field, not the label', async ({ page }) => {

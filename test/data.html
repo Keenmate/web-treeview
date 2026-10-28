@@ -51,13 +51,13 @@
         </div>
 
         <!-- Card 4: display-value fallback — data lacks the display member, so every
-             label must resolve to display-value-fallback. Regression: the insert
+             label must resolve to labels.noDisplayValue. Regression: the insert
              sort's display-value tiebreak used to call localeCompare on an
              undefined value and throw. -->
         <div class="card">
             <h2>Display Value Fallback</h2>
             <div class="tree-container">
-                <web-treeview id="tree-fallback" expand-level="3" display-value-fallback="(no name)"></web-treeview>
+                <web-treeview id="tree-fallback" expand-level="3" labels='{"noDisplayValue":"(no name)"}'></web-treeview>
             </div>
         </div>
     </main>

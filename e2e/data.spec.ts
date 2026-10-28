@@ -141,7 +141,7 @@ test.describe('Insert Result and Validation', () => {
 // ── Display Value Fallback ─────────────────────────────────────────────────
 
 test.describe('Display Value Fallback', () => {
-  test('a missing display member resolves to displayValueFallback and does not crash the sort', async ({ page }) => {
+  test('a missing display member resolves to labels.noDisplayValue and does not crash the sort', async ({ page }) => {
     await gotoData(page);
     const tree = treeInCard(fallbackCard(page));
 
@@ -153,5 +153,9 @@ test.describe('Display Value Fallback', () => {
     // Every label falls back to the configured text instead of being blank/undefined.
     await expect(nodeByPath(tree, '1')).toContainText('(no name)');
     await expect(nodeByPath(tree, '1.1')).toContainText('(no name)');
+
+    // Live: dropping the key falls back to the English default "[N/A]".
+    await fallbackCard(page).locator('web-treeview').evaluate((el: any) => { el.labels = {}; });
+    await expect(nodeByPath(tree, '1')).toContainText('[N/A]');
   });
 });

@@ -18,6 +18,7 @@ import {
   type InsertArrayResult,
   type InsertBranchResult,
   type ReplaceBranchResult,
+  type RemoveBranchResult,
   type DropPosition,
   type DragDropMode,
   type DropOperation,
@@ -92,8 +93,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _nodeConfig: NodeConfig = {
     clickBehavior: 'expand-and-focus',
     iconSet: 'chevron',
-    expandIconClass: 'wtv__toggle-icon--expand',
-    collapseIconClass: 'wtv__toggle-icon--collapse',
     leafIconClass: 'wtv__toggle-icon--leaf-none',
     toggleIconMode: 'rotate',
     selectedNodeClass: undefined,
@@ -233,8 +232,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** `false` = never auto-sort (input order / exact positions kept); see Ltree.isSortingEnabled. */
   private _isSortingEnabled: boolean = true;
   private _iconSet: import('./types').IconSet = 'chevron';
-  private _expandIconClass: string = 'wtv__toggle-icon--expand';
-  private _collapseIconClass: string = 'wtv__toggle-icon--collapse';
   private _leafIconClass: string = 'wtv__toggle-icon--leaf-none';
   private _toggleIconMode: import('./types').ToggleIconMode = 'rotate';
   private _selectedNodeClass: string | null | undefined = undefined;
@@ -516,12 +513,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get iconSet() { return this._iconSet; }
   set iconSet(v: import('./types').IconSet) { this._iconSet = v; this._updateNodeConfig(); }
 
-  get expandIconClass() { return this._expandIconClass; }
-  set expandIconClass(v: string) { this._expandIconClass = v; this._updateNodeConfig(); }
-
-  get collapseIconClass() { return this._collapseIconClass; }
-  set collapseIconClass(v: string) { this._collapseIconClass = v; this._updateNodeConfig(); }
-
   get leafIconClass() { return this._leafIconClass; }
   set leafIconClass(v: string) { this._leafIconClass = v; this._updateNodeConfig(); }
 
@@ -784,8 +775,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldExpandAsAccordion = props.shouldExpandAsAccordion ?? false;
     this._isSortingEnabled = props.isSortingEnabled !== false;
     this._iconSet = props.iconSet ?? 'chevron';
-    this._expandIconClass = props.expandIconClass ?? 'wtv__toggle-icon--expand';
-    this._collapseIconClass = props.collapseIconClass ?? 'wtv__toggle-icon--collapse';
     this._leafIconClass = props.leafIconClass ?? 'wtv__toggle-icon--leaf-none';
     this._toggleIconMode = props.toggleIconMode ?? 'rotate';
     this._selectedNodeClass = props.selectedNodeClass;
@@ -1742,7 +1731,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return result;
   }
 
-  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
     this._skipInsertArray = true;
     const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
@@ -3633,25 +3622,29 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return allowedPositions[0];
   }
 
+  /**
+   * Scroll the node at `path` into view. `shouldExpandAncestors` (default true) expands its
+   * ancestors first; `shouldHighlight` (default false) flashes the scroll-highlight class;
+   * `behavior` / `block` / `inline` are the native ScrollIntoViewOptions (default smooth /
+   * center / nearest). Resolves false when the node or its row isn't found.
+   */
   async scrollToPath(
     path: string,
     options?: {
-      expand?: boolean;
-      expandTarget?: boolean;
-      highlight?: boolean;
-      scrollOptions?: ScrollIntoViewOptions;
-      containerScroll?: boolean;
-      containerElement?: HTMLElement;
+      shouldExpandAncestors?: boolean;
+      shouldHighlight?: boolean;
+      behavior?: ScrollBehavior;
+      block?: ScrollLogicalPosition;
+      inline?: ScrollLogicalPosition;
     }
   ): Promise<boolean> {
     perfStart(`[${this._treeId}] scrollToPath`);
     const {
-      expand = true,
-      expandTarget = false,
-      highlight = true,
-      scrollOptions = { behavior: 'smooth', block: 'center' },
-      containerScroll = false,
-      containerElement
+      shouldExpandAncestors = true,
+      shouldHighlight = false,
+      behavior = 'smooth',
+      block = 'center',
+      inline = 'nearest'
     } = options || {};
 
     const node = this.tree.getNodeByPath(path);
@@ -3661,15 +3654,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return false;
     }
 
-    if (expand && node.parentPath) {
+    if (shouldExpandAncestors && node.parentPath) {
       this.tree.expandNodes(node.parentPath);
-    }
-
-    if (expandTarget) {
-      this.tree.expandNodes(path);
-    }
-
-    if (expand || expandTarget) {
       await new Promise<void>(resolve => queueMicrotask(resolve));
     }
 
@@ -3683,7 +3669,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         const targetScrollTop = Math.max(0, nodeIndex * rowHeight - containerPx / 2 + rowHeight / 2);
         this._vsScrollTop = targetScrollTop;
         // Set the actual DOM scroll position
-        const scrollEl = (containerElement || this.containerElement)?.querySelector('.wtv__tree') as HTMLElement;
+        const scrollEl = this.containerElement?.querySelector('.wtv__tree') as HTMLElement;
         if (scrollEl) {
           scrollEl.scrollTop = targetScrollTop;
         }
@@ -3695,7 +3681,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     const elementId = `${this._treeId}-${node.id}`;
-    const rootEl = containerElement || this.containerElement;
+    const rootEl = this.containerElement;
     const findContent = (): HTMLElement | null => {
       // Find the row by PATH (unique) — ids may repeat (a pasted copy keeps its
       // source id, NOTES #8); the element id is only the fallback without a root.
@@ -3724,29 +3710,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return false;
     }
 
-    if (containerScroll) {
-      // Caller can pass `containerElement` explicitly — useful when the
-      // scrollable wrapper sits in the light DOM (outside the web-component's
-      // Shadow DOM), where `findScrollableAncestor` can't walk to it.
-      const container = containerElement ?? this.findScrollableAncestor(contentDiv);
-      if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = contentDiv.getBoundingClientRect();
-        const scrollTop =
-          container.scrollTop +
-          (elementRect.top - containerRect.top) -
-          containerRect.height / 2 +
-          elementRect.height / 2;
-        container.scrollTo({
-          top: scrollTop,
-          behavior: scrollOptions?.behavior || 'smooth'
-        });
-      }
-    } else {
-      contentDiv.scrollIntoView(scrollOptions);
-    }
+    contentDiv.scrollIntoView({ behavior, block, inline });
 
-    if (highlight && this._scrollHighlightClass) {
+    if (shouldHighlight && this._scrollHighlightClass) {
       if (this.currentSelection) {
         this.currentSelection.element.classList.remove(this._scrollHighlightClass);
         clearTimeout(this.currentSelection.timeoutId);
@@ -3901,10 +3867,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._shouldExpandAsAccordion = updates.shouldExpandAsAccordion ?? false;
     if (updates.iconSet !== undefined)
       this._iconSet = updates.iconSet ?? 'chevron';
-    if (updates.expandIconClass !== undefined)
-      this._expandIconClass = updates.expandIconClass ?? 'wtv__toggle-icon--expand';
-    if (updates.collapseIconClass !== undefined)
-      this._collapseIconClass = updates.collapseIconClass ?? 'wtv__toggle-icon--collapse';
     if (updates.leafIconClass !== undefined)
       this._leafIconClass = updates.leafIconClass ?? 'wtv__toggle-icon--leaf-none';
     if (updates.toggleIconMode !== undefined)
@@ -4502,8 +4464,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._nodeConfig = {
       clickBehavior: this._clickBehavior,
       iconSet: this._iconSet,
-      expandIconClass: this._expandIconClass,
-      collapseIconClass: this._collapseIconClass,
       leafIconClass: this._leafIconClass,
       toggleIconMode: this._toggleIconMode,
       selectedNodeClass: this._selectedNodeClass,

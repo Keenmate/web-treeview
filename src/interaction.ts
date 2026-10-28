@@ -10,7 +10,7 @@
 import type { ComponentContext, DeviceClass } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type {
   NodeRef,
   NodeRenderContext,
@@ -94,7 +94,7 @@ export interface TreeViewController<T = any> {
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
   // selection
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;

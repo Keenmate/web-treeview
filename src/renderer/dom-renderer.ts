@@ -1383,24 +1383,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const nodeConfig = this.lastNodeConfig;
     toggle.className = 'wtv__toggle-icon';
     if (node.hasChildren) {
-      // Built-in glyph path: ONE canonical class (`--expand`) for every expandable
-      // node + the `.expanded` state marker. Rotate vs swap is a pure-CSS concern
-      // (variables.css / tree.css): rotate mode spins the glyph via
-      // --wtv-icon-rotate-*, swap mode repaints its mask to --wtv-icon-collapse.
-      //
-      // Escape-hatch path: a custom expandIconClass (e.g. FontAwesome, `fa-*`) is NOT
-      // a CSS mask, so it can't be repainted — the renderer reproduces swap itself by
-      // swapping class names (the pre-icon-set behaviour). Rotation still works because
-      // the rotate rule keys off the shared `.wtv__toggle-icon.wtv__clickable`, which
-      // every expandable toggle carries regardless of glyph class.
-      const expandIconClass = nodeConfig?.expandIconClass || 'wtv__toggle-icon--expand';
-      const usingCustomGlyph = expandIconClass !== 'wtv__toggle-icon--expand';
-      const swap = nodeConfig?.toggleIconMode === 'swap';
-      if (usingCustomGlyph && swap && node.isExpanded) {
-        addClasses(toggle, nodeConfig?.collapseIconClass || 'wtv__toggle-icon--collapse');
-      } else {
-        addClasses(toggle, expandIconClass);
-      }
+      // ONE canonical class (`--expand`) for every expandable node + the `.expanded`
+      // state marker. Rotate vs swap is a pure-CSS concern (variables.css / tree.css):
+      // rotate mode spins the glyph via --wtv-icon-rotate-*, swap mode repaints its
+      // mask to --wtv-icon-collapse.
+      toggle.classList.add('wtv__toggle-icon--expand');
       if (node.isExpanded) {
         toggle.classList.add('expanded');
       }

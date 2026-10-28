@@ -169,7 +169,7 @@
 
             const pathInput = document.getElementById('scroll-path-input');
             document.getElementById('scroll-btn').addEventListener('click', () => {
-                scroll.scrollToPath(pathInput.value, { scrollOptions: { behavior: 'smooth', block: 'center' } });
+                scroll.scrollToPath(pathInput.value, { shouldHighlight: true });
             });
 
             // ── Card 4: Programmatic Expand/Collapse ──

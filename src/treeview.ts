@@ -6,7 +6,7 @@ import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer
 import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewConfig, ScrollToPathOptions } from './types';
@@ -519,7 +519,7 @@ export class WebTreeView<T = any> {
     return this.engine.replaceBranch(parentPath, data);
   }
 
-  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
     return this.engine.removeBranch(path, keepParent);
   }
 
@@ -857,8 +857,6 @@ export class WebTreeView<T = any> {
       tooltipOffset: o.tooltipOffset ?? undefined,
       shouldTooltipFollowCursor: o.shouldTooltipFollowCursor ?? undefined,
       iconSet: o.iconSet,
-      expandIconClass: o.expandIconClass,
-      collapseIconClass: o.collapseIconClass,
       leafIconClass: o.leafIconClass,
       toggleIconMode: o.toggleIconMode,
       scrollHighlightTimeout: o.scrollHighlightTimeout,

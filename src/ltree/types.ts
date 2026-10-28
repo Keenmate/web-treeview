@@ -93,6 +93,14 @@ export interface ReplaceBranchResult<T> extends InsertBranchResult<T> {
 	added: number;
 }
 
+/** Result of {@link Ltree.removeBranch}: `count` = nodes removed. */
+export interface RemoveBranchResult<T = any> {
+	success: boolean;
+	count: number;
+	/** Set when nothing was removed (e.g. the path wasn't found). */
+	error?: string;
+}
+
 export interface Ltree<T> {
 	// Properties (readonly getters)
 	treePathSeparator: string;
@@ -253,7 +261,7 @@ export interface Ltree<T> {
 	addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
 	insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
 	replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-	removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+	removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
 
 	// State persistence methods
 	getExpandedPaths(): string[];

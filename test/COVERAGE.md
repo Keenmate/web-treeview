@@ -169,6 +169,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `getContextMenuItemsCallback` items, submenu, disabled, divider | ✓ | `context-menu.spec.ts` | `context-menu.html` |
 | Core action items, built-ins (incl. expand / collapse -subtree / -all, selection targeting), `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | Sorting: numeric display sort, sortCallback > orderMember, `isSortingEnabled` / `enable-sorting` (input order, addNode appends, exact insert / move positions, re-enable re-sorts), `sortNodes` / `sortAll` + `SortOptions`, `nodes-reorder` (orderMember rewrite), `sort*` menu built-ins | ✓ | `sorting.spec.ts` | `sorting.html` |
+| svelte parity: search-index default on, `initializeIndexCallback`, `filterNodes` / `searchNodes` `searchOptions`, `refreshNode` / `refreshSiblings`, `isNodeDropAllowed`, `render-start/progress/complete` + `isRendering`, `containerSize` + `container-resize`, `selectionAnchor`, `toggleFocusedSelect`, `auto-handle-move`, `node-title-overflow` (wrap / ellipsis / info reveal), `scrollToPath` options | ✓ | `parity.spec.ts` | `parity.html` |
 | `el.nodes` = input before the build, live state after (core `getLiveValue`) | ✓ | `lifecycle.spec.ts` | (inline) |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |

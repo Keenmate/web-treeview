@@ -378,7 +378,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
     <!-- ================================================================ -->
     <div class="card">
         <h2>CL05 · Toggle-Icon Modes &amp; Icon Sets</h2>
-        <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). The deprecated <code>expand-icon-class</code> / <code>collapse-icon-class</code> / <code>leaf-icon-class</code> escape hatches still work for FontAwesome classes &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>.</p>
+        <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). Leaf rows can carry a class glyph via <code>leaf-icon-class</code> (e.g. FontAwesome &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>); per-node icons go through <code>icon-member</code> / <code>renderIconCallback</code>.</p>
 
         <h3 class="fa-mode-label" style="margin-top:1rem">Built-in icon sets (no FontAwesome)</h3>
         <div class="grid" style="--grid-min: 260px; --grid-gap: 1.5rem;">
@@ -400,62 +400,12 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
             </div>
         </div>
 
-        <h3 class="fa-mode-label" style="margin-top:1.5rem">FontAwesome via the class escape hatch</h3>
-        <div class="grid" style="--grid-min: 300px; --grid-gap: 1.5rem;">
-            <div>
-                <h3 class="fa-mode-label">Rotate mode (chevron)</h3>
-                <div class="tree-container">
-                    <web-treeview id="fa-a"
-                        expand-icon-class="fa-solid fa-chevron-right"
-                        leaf-icon-class="fa-regular fa-file"></web-treeview>
-                </div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">Swap mode (plus/minus)</h3>
-                <div class="tree-container">
-                    <web-treeview id="fa-b"
-                        toggle-icon-mode="swap"
-                        expand-icon-class="fa-solid fa-plus"
-                        collapse-icon-class="fa-solid fa-minus"
-                        leaf-icon-class="fa-solid fa-leaf"></web-treeview>
-                </div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">Swap mode (folder/file)</h3>
-                <div class="tree-container">
-                    <web-treeview id="fa-c"
-                        toggle-icon-mode="swap"
-                        expand-icon-class="fa-regular fa-folder"
-                        collapse-icon-class="fa-regular fa-folder-open"
-                        leaf-icon-class="fa-regular fa-file-lines"></web-treeview>
-                </div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">No leaf icon (empty space)</h3>
-                <div class="tree-container">
-                    <web-treeview id="fa-d"
-                        toggle-icon-mode="swap"
-                        expand-icon-class="fa-solid fa-caret-right"
-                        collapse-icon-class="fa-solid fa-caret-down"
-                        leaf-icon-class="wtv__toggle-icon--leaf-none"></web-treeview>
-                </div>
-            </div>
-        </div>
-
         <div class="code-block mt-1">
 <pre><code>// Built-in — no FontAwesome needed
 &lt;web-treeview icon-set="triangle"&gt;
 
-// FontAwesome escape hatch — inject FA into the shadow root
-tree.getCustomStylesCallback = () =>
-    `@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');`;
-
-// Swap mode — two different glyphs
-&lt;web-treeview
-    toggle-icon-mode="swap"
-    expand-icon-class="fa-regular fa-folder"
-    collapse-icon-class="fa-regular fa-folder-open"
-    leaf-icon-class="fa-regular fa-file-lines"&gt;</code></pre>
+// Swap mode — the set's expand / collapse glyph pair
+&lt;web-treeview icon-set="plus-minus" toggle-icon-mode="swap"&gt;</code></pre>
         </div>
     </div>
 
@@ -646,9 +596,6 @@ node.data; node.path; node.hasChildren;</code></pre>
         deleted: '<span class="node-badge badge-deleted">DELETED</span>'
     };
 
-    const faStylesCallback = () =>
-        `@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css');`;
-
     customElements.whenDefined('web-treeview').then(() => {
         // ── CL01: custom node template ──
         const tree1 = document.getElementById('tree1');
@@ -745,7 +692,6 @@ node.data; node.path; node.hasChildren;</code></pre>
             return el;
         }
         ['is-chevron', 'is-triangle', 'is-plusminus', 'is-arrow'].forEach(id => initTree(id));
-        ['fa-a', 'fa-b', 'fa-c', 'fa-d'].forEach(id => initTree(id, el => { el.getCustomStylesCallback = faStylesCallback; }));
     });
 
     // Persist .controls across reloads (shared helper — parity with web-multiselect).

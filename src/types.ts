@@ -7,6 +7,7 @@ export type {
   InsertArrayResult,
   InsertBranchResult,
   ReplaceBranchResult,
+  RemoveBranchResult,
   TreeChange,
   ApplyChangesResult,
   DragDropMode,
@@ -101,7 +102,7 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 
 import type { LTreeNode } from './ltree/ltree-node';
 import type { DropPosition } from './ltree/ltree-node';
-import type { DragDropMode, DropOperation, ExpandOptions, SortOptions, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
+import type { DragDropMode, DropOperation, ExpandOptions, SortOptions, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type {
   ClickBehavior,
   RangeSelectionMode,
@@ -266,10 +267,6 @@ export interface TreeViewConfig<T = any> {
   /** Disclosure glyph set: 'chevron' (default) | 'triangle' | 'plus-minus' | 'arrow'.
    *  Re-points the --wtv-icon-* variables; see IconSet in controller/types. */
   iconSet?: 'chevron' | 'triangle' | 'plus-minus' | 'arrow' | null;
-  /** @deprecated Use `iconSet`. */
-  expandIconClass?: string | null;
-  /** @deprecated Use `iconSet` + `toggleIconMode`. */
-  collapseIconClass?: string | null;
   leafIconClass?: string | null;
   toggleIconMode?: 'rotate' | 'swap' | null;
   scrollHighlightTimeout?: number | null;
@@ -569,7 +566,7 @@ export interface TreeViewMethods<T = any> {
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string };
+  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
 
   // Selected set (UI multi-select — Ctrl/Shift+click)
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
@@ -669,14 +666,14 @@ export interface TreeEventMap<T = any> {
 
 // ── Scroll Options ─────────────────────────────────────────────────────
 
+/** Options of `scrollToPath(path, options)`. */
 export interface ScrollToPathOptions {
+  /** Expand the node's ancestors first so its row exists. Default `true`. */
+  shouldExpandAncestors?: boolean;
+  /** Flash the scroll-highlight class (`scrollHighlightClass`, `scrollHighlightTimeout`) on the row. Default `false`. */
+  shouldHighlight?: boolean;
+  /** Native ScrollIntoViewOptions. Defaults `'smooth'` / `'center'` / `'nearest'`. */
   behavior?: ScrollBehavior;
   block?: ScrollLogicalPosition;
   inline?: ScrollLogicalPosition;
-  expand?: boolean;
-  expandTarget?: boolean;
-  highlight?: boolean;
-  scrollOptions?: ScrollIntoViewOptions;
-  containerScroll?: boolean;
-  containerElement?: HTMLElement;
 }

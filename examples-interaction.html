@@ -346,7 +346,7 @@
 function restoreFromUrl(nodePath) {
   loadFormDataFromUrl(nodePath);              // preserve this value
   tree.selectNode(nodePath, 'replace', { isSilent: true });
-  tree.scrollToPath(nodePath, { expand: true, highlight: true });
+  tree.scrollToPath(nodePath, { shouldHighlight: true });
 }</code></pre>
             </div>
         </div>
@@ -650,7 +650,7 @@ function restoreFromUrl(nodePath) {
                 // 2. Mark the node; silent skips selection-change.
                 in5.selectNode(path, 'replace', { isSilent });
                 // 3. Scroll into view (scrollToPath never fires selection events).
-                await in5.scrollToPath(path, { expand: true, highlight: true, behavior: 'smooth', block: 'center' });
+                await in5.scrollToPath(path, { shouldHighlight: true, behavior: 'smooth', block: 'center' });
                 updateIn5Fires();
             });
             document.getElementById('in5-silent').addEventListener('change', updateIn5Fires);

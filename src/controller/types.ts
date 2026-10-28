@@ -111,12 +111,6 @@ export type CascadeCheckPolicy = 'rolled-up' | 'leaves' | 'all';
 export interface NodeConfig {
   clickBehavior: ClickBehavior;
   iconSet: IconSet;
-  /** @deprecated Use `iconSet`. Kept as a per-node escape hatch: a non-default
-   *  class name is still attached to the expandable toggle. */
-  expandIconClass: string;
-  /** @deprecated Glyph swap is now handled in CSS via `iconSet` + `toggleIconMode`;
-   *  this no longer selects the expanded glyph. */
-  collapseIconClass: string;
   leafIconClass: string;
   toggleIconMode: ToggleIconMode;
   selectedNodeClass: string | null | undefined;
@@ -589,10 +583,6 @@ export interface TreeEngineConfig<T> {
   tooltipOffset?: number;
   shouldTooltipFollowCursor?: boolean;
   iconSet?: IconSet | null | undefined;
-  /** @deprecated Use `iconSet`. */
-  expandIconClass?: string | null | undefined;
-  /** @deprecated Use `iconSet` + `toggleIconMode`. */
-  collapseIconClass?: string | null | undefined;
   leafIconClass?: string | null | undefined;
   toggleIconMode?: ToggleIconMode | null | undefined;
   scrollHighlightTimeout?: number | null | undefined;

@@ -729,7 +729,7 @@
             currentSearchIdx = idx;
             const node = searchResults[idx];
             if (node?.path) {
-                tree.scrollToPath(node.path, { expand: true, highlight: true, scrollOptions: { behavior: 'smooth', block: 'center' }, containerScroll: true });
+                tree.scrollToPath(node.path, { shouldHighlight: true });
             }
             updateSearchUI();
         }

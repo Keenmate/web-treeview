@@ -120,7 +120,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `expand-as-accordion` | `boolean` | `false` | Expanding via toggle auto-collapses siblings (config key: `shouldExpandAsAccordion`) |
 | `enable-sorting` | `boolean` | `true` | Automatic sibling sorting (config key: `isSortingEnabled`). `false` = never auto-sort: input order kept, `addNode` appends, insert / move / drop keep the exact position — see [Sorting](#sorting) |
 | `sorted` | `boolean` | `false` | Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data. A child listed before its parent is dropped (see `insertResult.failed`) |
-| `use-internal-search-index` | `boolean` | `false` | Build FlexSearch index for fast filter |
+| `use-internal-search-index` | `boolean` | `true` | Build the FlexSearch index `filterNodes` / `searchNodes` / `search-term` query (config key: `shouldUseInternalSearchIndex`; `false` = no index, search finds nothing). Index what `search-value-member` / `getSearchValueCallback` return; `initializeIndexCallback` (JS) supplies a custom `Index` |
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
 | `search-term` | `string` | — | Current search/filter text |
@@ -128,7 +128,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
-| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` / `sort` / `sortSubtree` / `sortAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
+| `labels` | JSON object | — | UI strings, partial, merged per key over the English defaults: `noData` (`'No data'` — the tree has no nodes), `noResults` (`'No results found'` — the search filter left nothing), `noDisplayValue` (`'[N/A]'` — a node with no resolvable display value), `loading` (`'Loading…'` — accessible name of the `loading` spinner), `dropHere` (`'Drop here'`), `showFullLabel` (`'Show full label'` — aria-label of the `node-title-overflow="info"` button), `copy` / `cut` / `paste` / `delete` / `expand` / `collapse` / `expandSubtree` / `collapseSubtree` / `expandAll` / `collapseAll` / `sort` / `sortSubtree` / `sortAll` (built-in context-menu items). `{name}` placeholders. `''` renders nothing; a missing key is the English default. Inserted as text. Also the `labels` property; changes apply live |
 | `show-empty-drop-placeholder` | `boolean` | `false` | Keep the empty drop zone visible + focusable so Ctrl/Cmd+V pastes into an empty tree (config key: `isEmptyDropPlaceholderShown`) |
 
 **Sibling order.** On insert (`nodes`, `addBranch`) the tree puts parents before their
@@ -162,6 +162,7 @@ a child listed before its parent is dropped as an orphan and reported in
 | `drop-zone-max-width` | `number` | — | Max drop-zone width in px |
 | `allow-copy` | `boolean` | `false` | Enable Ctrl+drag copy (config key: `isCopyAllowed`) |
 | `auto-handle-copy` | `boolean` | `true` | Apply copy moves automatically (config key: `shouldAutoHandleCopy`) |
+| `auto-handle-move` | `boolean` | `true` | Apply move drops automatically (config key: `shouldAutoHandleMove`); `false` = the tree isn't mutated — `node-drop` fires and you move the nodes |
 
 ### Selection
 
@@ -181,13 +182,12 @@ a child listed before its parent is dropped as an orphan and reported in
 | `selected-node-class` | `string` | — | Extra class on each selected node-content |
 | `focused-node-class` | `string` | — | Extra class on the focused node-content |
 | `drag-over-node-class` | `string` | — | Extra class while a drag is over the node |
-| `expand-icon-class` | `string` | `wtv__toggle-icon--expand` | Toggle icon class for expandable nodes |
-| `collapse-icon-class` | `string` | `wtv__toggle-icon--collapse` | Toggle icon class for collapsible nodes |
 | `leaf-icon-class` | `string` | — | Toggle icon class for leaves |
 | `toggle-icon-mode` | `string` | `'rotate'` | `'rotate'` \| `'swap'` |
 | `align-node-icons` | `boolean` | `true` | Reserve icon column for nodes without icons (config key: `shouldAlignNodeIcons`) |
 | `scroll-highlight-class` | `string` | — | Extra class while a node is scroll-highlighted |
 | `scroll-highlight-timeout` | `number` | `1500` | Scroll-highlight duration (ms) |
+| `node-title-overflow` | `string` | `'ellipsis'` | A too-long built-in label: `'wrap'` (multi-line; rows grow — avoid with virtual scroll) \| `'ellipsis'` (single-line clip) \| `'info'` (ellipsis + a trailing info button on clipped rows; click reveals the full label in a popover, `labels.showFullLabel` is its aria-label). `renderNodeCallback` content owns its layout |
 
 ### Context menu
 
@@ -236,6 +236,9 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `selectedPaths` | `string[]` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it and fires `selection-change` |
 | `checkedPaths` | `string[]` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it and fires `checked-change` |
 | `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
+| `selectionAnchor` | `string \| null` | The Shift-range anchor (Shift+click / Shift+Arrow extend from it). Writable on the element and the controller — e.g. an alternative renderer keeping its own range selection in sync |
+| `isRendering` | `boolean` | Read-only: `true` while a progressive (batched) render is in flight (`render-start` … `render-complete`) |
+| `containerSize` | `{ width, height } \| null` | Read-only: the tree container's last measured size (`container-resize`); `null` before the first measure |
 
 Assigned before the first build, `expandedPaths` / `selectedPaths` / `checkedPaths` are held and
 applied right after it. For a silent replace use `clearSelection(undefined, { isSilent: true })` +
@@ -374,7 +377,7 @@ The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase:
 
 ### Event twins (`on*`)
 
-Every event below has a camelCase `on*` property twin that receives the **detail** (not the `CustomEvent`): `onNodeClick`, `onNodeDoubleClick`, `onNodeCopy`, `onNodeCut`, `onNodePaste`, `onNodeDelete`, `onNodeDragStart`, `onNodeDragOver`, `onNodeDrop`, `onNodeDragReject`, `onNodeDropReject`, `onSelectionChange`, `onCheckedChange`, `onFocusChange`, `onExpandedChange`, `onNodesReorder`, `onTreeChange`, `onAction`, `onRenderStart`, `onRenderProgress`, `onRenderComplete`.
+Every event below has a camelCase `on*` property twin that receives the **detail** (not the `CustomEvent`): `onNodeClick`, `onNodeDoubleClick`, `onNodeCopy`, `onNodeCut`, `onNodePaste`, `onNodeDelete`, `onNodeDragStart`, `onNodeDragOver`, `onNodeDrop`, `onNodeDragReject`, `onNodeDropReject`, `onSelectionChange`, `onCheckedChange`, `onFocusChange`, `onExpandedChange`, `onNodesReorder`, `onTreeChange`, `onAction`, `onRenderStart`, `onRenderProgress`, `onRenderComplete`, `onContainerResize`, `onNodeExpand`, `onNodeCollapse`.
 
 ```javascript
 tree.onNodeClick = ({ node, parent }) => console.log('clicked', node.path, 'under', parent?.path);
@@ -394,9 +397,12 @@ All methods are available on the element **and** on `el.controller`.
 | `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
 | `sortNodes` | `(paths: string \| string[], options?)` | Sort the children of each node, one level (`''` = the roots) — see [Sorting](#sorting) |
 | `sortAll` | `(paths?: string \| string[] \| null, options?)` | Sort whole subtrees (the nodes' children at every depth); `null` / omitted = the whole tree |
-| `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
-| `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
-| `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
+| `filterNodes` | `(term, searchOptions?)` | Filter the tree by a search term (hide non-matching); `searchOptions` go to FlexSearch (e.g. `{ limit }`) |
+| `searchNodes` | `(term, searchOptions?): LTreeNode[]` | Find matching nodes without filtering |
+| `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll a node into view — `ScrollToPathOptions` below; `false` when the node / its row isn't found |
+| `refreshNode` | `(path)` | Re-render a node whose data object you changed in place |
+| `refreshSiblings` | `(parentPath)` | Re-sort one parent's children (`''` = the roots) by the tree's rule, e.g. after changing `order-member` values in place |
+| `isNodeDropAllowed` | `(path): boolean` | Whether the node accepts drops (`getIsDropAllowedCallback` → `is-drop-allowed-member`); `false` for an unknown path |
 | `getNodeByPath` | `(path): LTreeNode \| null` | Look up a node |
 | `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
 | `getChildren` / `getSiblings` | `(path): LTreeNode[]` | Children of a node / siblings of a node (including itself) |
@@ -415,6 +421,7 @@ All methods are available on the element **and** on `el.controller`.
 | `clearSelection` | `(paths?, options?)` | Clear the given paths, or all when omitted |
 | `getSelectedNodes` | `(): LTreeNode[]` | All selected nodes |
 | `isNodeSelected` | `(path): boolean` | Check selected-set membership |
+| `toggleFocusedSelect` | `()` | Toggle the focused node in / out of the selection (Ctrl+click semantics; `selection-mode="multiple"` only) |
 | `checkNode` | `(path, options?)` | Check one node (cascades in cascade mode) |
 | `checkNodes` | `(paths[], options?)` | Check nodes (**additive**) |
 | `checkAll` | `(options?)` | Check every selectable node |
@@ -445,7 +452,7 @@ All methods are available on the element **and** on `el.controller`.
 | `addBranch` | `(parentPath, data[]): InsertBranchResult` | Add a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
 | `insertBranch` | `(targetPath, data[], position): InsertBranchResult` | Insert a batch before / after `targetPath` (items' paths under the target's parent) or under it (`'child'` = `addBranch(targetPath, …)`). The block's top-level nodes keep their order from `data`; with `orderMember` they get order values spread between the target and its neighbour |
 | `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `addBranch`); adds `removed` / `added` |
-| `removeBranch` | `(path, keepParent?): result` | Remove a node and its descendants (or only the descendants with `keepParent`) |
+| `removeBranch` | `(path, keepParent?): RemoveBranchResult` | Remove a node and its descendants (or only the descendants with `keepParent`); `{ success, count, error? }` |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
 | `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |
@@ -454,6 +461,8 @@ All methods are available on the element **and** on `el.controller`.
 `ExpandOptions`: `{ isExclusive?: boolean; isSilent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `isSilent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
 
 `SortOptions`: `{ compareCallback?: ({ a, b }) => number; direction?: 'asc' | 'desc'; isSilent?: boolean }` — see [Sorting](#sorting).
+
+`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `'smooth'` / `'center'` / `'nearest'`); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
@@ -523,6 +532,10 @@ tree.navigationOverrides = null; // back to the defaults
 | `nodes-reorder` | `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }` | A sort with `compareCallback` or `direction: 'desc'` rewrote one parent's `order-member` values (one event per parent; `nodes` = all its children in the new order, `changes` = only those whose value changed). Never without `order-member`; not with `isSilent` |
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
+| `render-start` | context only | A progressive (batched) render began — `isRendering` is `true` |
+| `render-progress` | `{ pending, processed }` | A render batch finished (`pending` rows still queued) |
+| `render-complete` | `{ pending, processed }` | The progressive render finished — `isRendering` is `false` |
+| `container-resize` | `{ size: { width, height }, deviceClass }` | The tree container was resized (also once when observing starts); `size` = `containerSize` |
 
 Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 

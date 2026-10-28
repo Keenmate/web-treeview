@@ -199,3 +199,21 @@ test.describe('node-title-overflow', () => {
     await expect(info).toHaveCount(0);
   });
 });
+
+test.describe('scrollToPath options', () => {
+  test('default: expands the ancestors, no highlight; shouldHighlight flashes the row', async ({ page }) => {
+    await make(page);
+    expect(await call(page, 'scrollToPath', '1.1')).toBe(true);
+    expect(await prop(page, 'expandedPaths')).toEqual(['1']);
+    const row = nodeContent(nodeByPath(page, '1.1'));
+    await expect(row).not.toHaveClass(/wtv__node-content--scroll-highlight/);
+    expect(await call(page, 'scrollToPath', '1.2', { shouldHighlight: true, behavior: 'instant', block: 'nearest' })).toBe(true);
+    await expect(nodeContent(nodeByPath(page, '1.2'))).toHaveClass(/wtv__node-content--scroll-highlight/);
+  });
+
+  test('shouldExpandAncestors: false leaves a collapsed parent alone (no row → false)', async ({ page }) => {
+    await make(page);
+    expect(await call(page, 'scrollToPath', '1.1', { shouldExpandAncestors: false })).toBe(false);
+    expect(await prop(page, 'expandedPaths')).toEqual([]);
+  });
+});

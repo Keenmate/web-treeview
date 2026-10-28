@@ -78,7 +78,7 @@ test('navOut goes to the parent; navNextSibling / navPrevSibling stay on the lev
 test.describe('scroll highlight', () => {
   test('scrollToPath adds the default highlight class, removed after the timeout', async ({ page }) => {
     await load(page, '?scroll-highlight-timeout=300');
-    await nav(page, 'scrollToPath', '2.1');
+    await nav(page, 'scrollToPath', '2.1', { shouldHighlight: true });
     const c = nodeContent(nodeByPath(page, '2.1'));
     await expect(c).toHaveClass(/wtv__node-content--scroll-highlight/);
     await expect(c).not.toHaveClass(/wtv__node-content--scroll-highlight/, { timeout: 2000 });
@@ -86,7 +86,7 @@ test.describe('scroll highlight', () => {
 
   test('scroll-highlight-class replaces the class', async ({ page }) => {
     await load(page, '?scroll-highlight-class=zap&scroll-highlight-timeout=5000');
-    await nav(page, 'scrollToPath', '1.2');
+    await nav(page, 'scrollToPath', '1.2', { shouldHighlight: true });
     const c = nodeContent(nodeByPath(page, '1.2'));
     await expect(c).toHaveClass(/\bzap\b/);
     await expect(c).not.toHaveClass(/wtv__node-content--scroll-highlight/);
@@ -94,8 +94,8 @@ test.describe('scroll highlight', () => {
 
   test('a second scrollToPath moves the highlight', async ({ page }) => {
     await load(page);
-    await nav(page, 'scrollToPath', '1.1');
-    await nav(page, 'scrollToPath', '3');
+    await nav(page, 'scrollToPath', '1.1', { shouldHighlight: true });
+    await nav(page, 'scrollToPath', '3', { shouldHighlight: true });
     await expect(nodeContent(nodeByPath(page, '3'))).toHaveClass(/wtv__node-content--scroll-highlight/);
     await expect(nodeContent(nodeByPath(page, '1.1'))).not.toHaveClass(/wtv__node-content--scroll-highlight/);
   });

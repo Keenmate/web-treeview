@@ -76,39 +76,6 @@ test('--base-icon-chevron override re-skins the default set through the shadow b
     expect(await hostVar(page, 'base-icon', '--wtv-icon-expand')).toContain('sentinel.test/chevron.svg');
 });
 
-// Class list of the first expandable toggle inside a tree's shadow DOM.
-function toggleClasses(page: Page, id: string) {
-	return page.locator(`#${id}`).evaluate((el) => {
-		const toggle = (el as HTMLElement & { shadowRoot: ShadowRoot })
-			.shadowRoot.querySelector('.wtv__toggle-icon.wtv__clickable');
-		return toggle ? Array.from(toggle.classList) : [];
-	});
-}
-
-test('escape hatch: a custom class in swap mode swaps the class NAME (renderer, not CSS mask)', async ({ page }) => {
-	// Root is expanded → swap mode must have applied the COLLAPSE class, since a
-	// custom (non-mask) glyph can't be repainted via --wtv-icon-collapse.
-	const classes = await toggleClasses(page, 'custom-swap');
-	expect(classes).toContain('fx-minus'); // expanded → collapse glyph class
-	expect(classes).not.toContain('fx-plus');
-	expect(classes).toContain('expanded');
-});
-
-test('escape hatch: a custom class still rotates (rotation keyed off .wtv__clickable, not --expand)', async ({ page }) => {
-	const classes = await toggleClasses(page, 'custom-rotate');
-	expect(classes).toContain('fx-chevron');
-	expect(classes).toContain('expanded');
-	// The expanded rotation actually resolves to a non-identity transform.
-	const transform = await page.locator('#custom-rotate').evaluate((el) => {
-		const t = (el as HTMLElement & { shadowRoot: ShadowRoot })
-			.shadowRoot.querySelector('.wtv__toggle-icon.wtv__clickable.expanded');
-		return getComputedStyle(t as Element).transform;
-	});
-	// rotate(90deg) → matrix(0,1,-1,0,0,0); anything but 'none'/identity proves it rotated.
-	expect(transform).not.toBe('none');
-	expect(transform).toContain('matrix');
-});
-
 test('setting the iconSet JS property reflects icon-set onto the host (CSS matches)', async ({ page }) => {
     // The fixture sets `el.iconSet = 'triangle'` in JS, not via the attribute.
     await expect(page.locator('#by-prop')).toHaveAttribute('icon-set', 'triangle');

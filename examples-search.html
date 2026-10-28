@@ -110,11 +110,7 @@ function onInput() {
 }
 
 function navigateTo(i) {
-  tree.scrollToPath(results[i].path, {
-    expand: true, highlight: true,
-    scrollOptions: { behavior: 'smooth', block: 'center' },
-    containerScroll: true
-  });
+  tree.scrollToPath(results[i].path, { shouldHighlight: true });
 }</code></pre>
             </div>
         </div>
@@ -150,7 +146,7 @@ function navigateTo(i) {
                         <td><code>scrollToPath(path, opts)</code></td>
                         <td>Scrolls a node into view (auto-expands ancestors)</td>
                         <td><code>Promise&lt;boolean&gt;</code></td>
-                        <td>Jumping to a search result (<code>{ expand, highlight }</code>)</td>
+                        <td>Jumping to a search result (<code>{ shouldExpandAncestors, shouldHighlight }</code>)</td>
                     </tr>
                 </tbody>
             </table>
@@ -367,12 +363,7 @@ tree.getSearchValueCallback = ({ node }) =>
                 idx = i;
                 const node = results[i];
                 if (node?.path) {
-                    tree.scrollToPath(node.path, {
-                        expand: true,
-                        highlight: true,
-                        scrollOptions: { behavior: 'smooth', block: 'center' },
-                        containerScroll: true
-                    });
+                    tree.scrollToPath(node.path, { shouldHighlight: true });
                 }
                 updateUI();
             }

@@ -90,11 +90,7 @@
                     // ancestor (including the .tree-scroll wrapper) to bring
                     // the row into view, which works across the Shadow DOM
                     // boundary without us having to pass containerElement.
-                    tree.scrollToPath(results[0].path, {
-                        expand: true,
-                        highlight: true,
-                        scrollOptions: { behavior: 'smooth', block: 'center' }
-                    });
+                    tree.scrollToPath(results[0].path, { shouldHighlight: true });
                 }
             });
         });

@@ -10,7 +10,7 @@ import {
 	getRelativePath
 } from '../helpers/ltree-helpers';
 
-import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './types';
+import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './types';
 import { createSearchIndex } from './flex';
 import { Indexer } from './indexer';
 import { perfStart, perfEnd, perfSummary } from '../perf-logger';
@@ -1834,7 +1834,7 @@ export function createLTree<T>(
 		 * @param keepParent - If true, only remove children, keep the parent node
 		 * @returns Object with success status and count of removed nodes
 		 */
-		removeBranch(path: string, keepParent?: boolean): { success: boolean; count: number; error?: string } {
+		removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
 			const node = this.getNodeByPath(path);
 			if (!node) {
 				return { success: false, count: 0, error: 'Node not found: ' + path };

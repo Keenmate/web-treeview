@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `false`) — `filterNodes` / `searchNodes` / `search-term` work out of the box (with
   `searchValueMember` / `getSearchValueCallback`). Set `use-internal-search-index="false"` to
   skip building the FlexSearch index. Changing it at runtime now rebuilds the index.
+- **`scrollToPath(path, options)` options reworked:** `{ shouldExpandAncestors = true,
+  shouldHighlight = false, behavior, block, inline }` — `behavior` / `block` / `inline` are the
+  native `ScrollIntoViewOptions` (defaults smooth / center / nearest; `scrollIntoView` scrolls
+  every scrollable ancestor, light-DOM wrappers included). Removed: `expand` (→
+  `shouldExpandAncestors`), `highlight` (→ `shouldHighlight`, and the highlight is now **off by
+  default**), `expandTarget`, `scrollOptions`, `containerScroll`, `containerElement`.
+- **`expandIconClass` / `expand-icon-class` and `collapseIconClass` / `collapse-icon-class`
+  removed** (were deprecated) — `icon-set` + `toggle-icon-mode` cover the disclosure glyph;
+  `leaf-icon-class` stays.
+- **`removeBranch` returns the exported `RemoveBranchResult`** (`{ success, count, error? }`,
+  same shape as before) — exported next to `ReplaceBranchResult`.
 
 ### Added (svelte-treeview parity, 2026-10-28)
 
@@ -35,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   (Ctrl+click semantics on the focused node; multiple selection mode).
 - **`initializeIndexCallback`** input (JS only): a factory for a custom FlexSearch `Index`.
 - `TreeEventMap` gains `node-expand`, `node-collapse` and the new events.
+- `filterNodes(term, searchOptions?)` / `searchNodes(term, searchOptions?)` on the element pass
+  `searchOptions` through to FlexSearch (they were dropped).
 
 ### Changed — BREAKING (round 3, 2026-10-28)
 

@@ -30,7 +30,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `addBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `getDisplayValueCallback` | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `parent-path-member` / `level-member` / `id-member` | ✓ | `data-members.spec.ts` | `data-members.html` |
-| `data` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
+| `nodes` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | Leaf ↔ folder toggle reconciliation | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Per-row class hooks (`getNodeClassCallback` / `getNodeContentClassCallback`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
 | Per-node icons (`icon-member`, `icon-color-member`, emoji, `renderIconCallback`) | ✓ | `node-icons.spec.ts` | `node-icons.html` |
@@ -52,8 +52,8 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| `expandNodes` / `collapseNodes` (string, array, exclusive) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
-| `expandAll` / `collapseAll` (all, subtree, array, exclusive) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
+| `expandNodes` / `collapseNodes` (string, array, `isExclusive`) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
+| `expandAll` / `collapseAll` (all, subtree, array, `isExclusive`) | ✓ | `expand-collapse.spec.ts` | `expand-collapse.html` |
 | `expand-as-accordion` | ✓ | `basic.spec.ts` | `basic.html` |
 | Exclusive expand collapses previously-open sibling | ✓ | `exclusive-expand.spec.ts` | `exclusive-expand.html` |
 | `scrollToPath` highlights the target | ✓ | `basic.spec.ts` | `basic.html` |
@@ -157,7 +157,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | --- | :-: | --- | --- |
 | Filter / clear / Escape / `searchNodes` | ✓ | `search.spec.ts` | `search.html` |
 | Result navigation expands + scrolls collapsed hits | ✓ | `search-deep.spec.ts` | `search-deep.html` |
-| `search-term` attribute / `searchTerm` prop at runtime; a config change doesn't re-insert `data` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
+| `search-term` attribute / `searchTerm` prop at runtime; a config change doesn't re-insert `nodes` (NOTES #18) | ✓ | `search-config.spec.ts`, `attr-reactivity.spec.ts` | `search-config.html`, `attr-reactivity.html` |
 | `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Index stays correct across `removeNode` / `removeBranch`; `addNode` indexes the new node | ✓ | `search-index-removal.spec.ts` | `search.html` |

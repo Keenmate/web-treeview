@@ -201,7 +201,7 @@ Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusa
 
 ## Per-node icons
 
-The toggle/icon column is unified (`--wtv-column-width`, default 24px) and shared by toggle arrows, leaf icons, and per-node icons. The indent step equals `--wtv-column-width` too, so labels at every depth align vertically.
+The toggle/icon column is unified (`--wtv-toggle-icon-width`, default 24px) and shared by toggle arrows, leaf icons, and per-node icons. The indent step equals `--wtv-toggle-icon-width` too, so labels at every depth align vertically.
 
 ### Via data field
 

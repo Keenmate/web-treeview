@@ -1,6 +1,6 @@
 :host {
   display: block;
-  color: var(--wtv-text-color);
+  color: var(--wtv-text-color-1);
   font-size: var(--wtv-font-size);
 }
 

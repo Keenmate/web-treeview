@@ -11,12 +11,12 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--wtv-text-color);
+  color: var(--wtv-text-color-1);
 }
 
 .wtv__tree .wtv__empty-state {
   font-style: italic;
-  color: var(--wtv-text-color-2);
+  color: var(--wtv-text-color-3);
   padding: var(--wtv-spacing-xl);
   text-align: center;
   min-height: var(--wtv-tree-min-height);
@@ -65,7 +65,7 @@
      than a square block. Also fixes a specificity trap: this base rule is 2-class
      (.wtv__node .wtv__node-content) and the old `border-radius: 0` here out-
      specified the single-class --selected/--focused modifiers, squaring them. */
-  border-radius: var(--wtv-border-radius-sm);
+  border-radius: var(--wtv-node-border-radius);
   transition: var(--wtv-node-transition);
   flex: 1;
   /* min-width:0 lets the label flex-shrink so text-overflow:ellipsis can engage
@@ -104,67 +104,67 @@
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-before {
   border-radius: 0 !important;
-  box-shadow: inset 0 3px 0 0 var(--wtv-glow-before-color);
+  box-shadow: inset 0 var(--wtv-drop-glow-size) 0 0 var(--wtv-drop-glow-before-color);
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-before::after {
   content: '';
   position: absolute;
-  left: 66%;
+  left: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(0deg);
-  width: calc(2.4 * var(--wtv-rem));
-  height: calc(2.4 * var(--wtv-rem));
+  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-before-rotation));
+  width: var(--wtv-drop-arrow-size);
+  height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
-     retints --wtv-glow-before-color retints the arrow too. */
-  background-color: rgb(from var(--wtv-glow-before-color) r g b);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13a1 1 0 0 0-1-1H5.061a1 1 0 0 1-.75-1.811l6.836-6.835a1.207 1.207 0 0 1 1.707 0l6.835 6.835a1 1 0 0 1-.75 1.811H16a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z'/%3E%3C/svg%3E") no-repeat center / contain;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13a1 1 0 0 0-1-1H5.061a1 1 0 0 1-.75-1.811l6.836-6.835a1.207 1.207 0 0 1 1.707 0l6.835 6.835a1 1 0 0 1-.75 1.811H16a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z'/%3E%3C/svg%3E") no-repeat center / contain;
+     retints --wtv-drop-glow-before-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-drop-glow-before-color) r g b);
+  -webkit-mask: var(--wtv-drop-arrow-before-image) no-repeat center / contain;
+  mask: var(--wtv-drop-arrow-before-image) no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-after {
   border-radius: 0 !important;
-  box-shadow: inset 0 -3px 0 0 var(--wtv-glow-after-color);
+  box-shadow: inset 0 calc(-1 * var(--wtv-drop-glow-size)) 0 0 var(--wtv-drop-glow-after-color);
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-after::after {
   content: '';
   position: absolute;
-  left: 66%;
+  left: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(0deg);
-  width: calc(2.4 * var(--wtv-rem));
-  height: calc(2.4 * var(--wtv-rem));
+  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-after-rotation));
+  width: var(--wtv-drop-arrow-size);
+  height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
-     retints --wtv-glow-after-color retints the arrow too. */
-  background-color: rgb(from var(--wtv-glow-after-color) r g b);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 11a1 1 0 0 0 1 1h2.939a1 1 0 0 1 .75 1.811l-6.835 6.836a1.207 1.207 0 0 1-1.707 0L4.31 13.81a1 1 0 0 1 .75-1.811H8a1 1 0 0 0 1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1z'/%3E%3C/svg%3E") no-repeat center / contain;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 11a1 1 0 0 0 1 1h2.939a1 1 0 0 1 .75 1.811l-6.835 6.836a1.207 1.207 0 0 1-1.707 0L4.31 13.81a1 1 0 0 1 .75-1.811H8a1 1 0 0 0 1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1z'/%3E%3C/svg%3E") no-repeat center / contain;
+     retints --wtv-drop-glow-after-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-drop-glow-after-color) r g b);
+  -webkit-mask: var(--wtv-drop-arrow-after-image) no-repeat center / contain;
+  mask: var(--wtv-drop-arrow-after-image) no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-child {
   border-radius: 0 !important;
-  box-shadow: inset -3px 0 0 0 var(--wtv-glow-child-color);
-  background-color: color-mix(in srgb, var(--wtv-glow-child-color) 19%, transparent);
+  box-shadow: inset calc(-1 * var(--wtv-drop-glow-size)) 0 0 0 var(--wtv-drop-glow-child-color);
+  background-color: var(--wtv-drop-glow-child-bg);
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-child::after {
   content: '';
   position: absolute;
-  left: 66%;
+  left: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(45deg);
-  width: calc(2.4 * var(--wtv-rem));
-  height: calc(2.4 * var(--wtv-rem));
+  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-child-rotation));
+  width: var(--wtv-drop-arrow-size);
+  height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
-     retints --wtv-glow-child-color retints the arrow too. */
-  background-color: rgb(from var(--wtv-glow-child-color) r g b);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M4 9v6'/%3E%3C/svg%3E") no-repeat center / contain;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z'/%3E%3Cpath d='M4 9v6'/%3E%3C/svg%3E") no-repeat center / contain;
+     retints --wtv-drop-glow-child-color retints the arrow too. */
+  background-color: rgb(from var(--wtv-drop-glow-child-color) r g b);
+  -webkit-mask: var(--wtv-drop-arrow-child-image) no-repeat center / contain;
+  mask: var(--wtv-drop-arrow-child-image) no-repeat center / contain;
   pointer-events: none;
   z-index: 1;
 }
@@ -178,13 +178,13 @@
 }
 
 .wtv__node .wtv__toggle-icon {
-  width: var(--wtv-column-width);
+  width: var(--wtv-toggle-icon-width);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--wtv-font-size-xs);
-  color: var(--wtv-toggle-color);
-  transition: transform var(--wtv-transition-speed);
+  font-size: var(--wtv-toggle-icon-size);
+  color: var(--wtv-toggle-icon-color);
+  transition: var(--wtv-toggle-icon-transition);
   flex-shrink: 0;
 }
 
@@ -269,7 +269,7 @@
   height: 1.05em;
   margin-inline: 0.35em var(--wtv-spacing-md);
   padding: 0;
-  color: var(--wtv-node-info-color, light-dark(#5b6472, #9aa4b2));
+  color: var(--wtv-node-info-color);
   background: transparent;
   border: none;
   border-radius: 50%;
@@ -288,8 +288,8 @@
 }
 
 .wtv__node-info:hover {
-  color: var(--wtv-node-info-color-hover, light-dark(#1f6feb, #58a6ff));
-  background: var(--wtv-node-info-bg-hover, light-dark(rgba(31, 111, 235, 0.1), rgba(88, 166, 255, 0.15)));
+  color: var(--wtv-node-info-color-hover);
+  background: var(--wtv-node-info-bg-hover);
 }
 
 /* Full-label reveal popover (position: fixed, placed by core createPopover). */
@@ -303,16 +303,16 @@
   font-size: var(--wtv-font-size-sm);
   line-height: 1.4;
   overflow-wrap: anywhere;
-  color: var(--wtv-node-info-reveal-color, light-dark(#1f2937, #e6edf3));
-  background: var(--wtv-node-info-reveal-bg, light-dark(#ffffff, #1f2937));
-  border: 1px solid var(--wtv-node-info-reveal-border-color, light-dark(#d0d7de, #30363d));
+  color: var(--wtv-node-info-reveal-text-color);
+  background: var(--wtv-node-info-reveal-bg);
+  border: var(--wtv-border-width) solid var(--wtv-node-info-reveal-border-color);
   border-radius: var(--wtv-border-radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--base-shadow-lg, 0 4px 12px var(--wtv-shadow-color));
 }
 
 .wtv__node .wtv__node-path {
   font-size: var(--wtv-font-size-xs);
-  color: var(--wtv-text-color-2);
+  color: var(--wtv-text-color-3);
 }
 
 .wtv__node .wtv__children {
@@ -323,7 +323,7 @@
    TOGGLE GLYPH RENDERING (mask-based)
    ==============================================================================
    The disclosure glyph is a currentColor-tinted mask, so it inherits
-   --wtv-toggle-color and theming flows through --wtv-icon-* → --base-icon-*.
+   --wtv-toggle-icon-color and theming flows through --wtv-icon-* → --base-icon-*.
    There is ONE expandable glyph class (`--expand`) and ONE leaf glyph class
    (`--leaf`); which picture they show is decided by the --wtv-icon-* variables,
    reconfigured per `icon-set` (see variables.css). This replaces the old family
@@ -380,7 +380,7 @@
 }
 
 /* Leaf marker is OPT-IN: the default leafIconClass is `--leaf-none` (no marker), so
-   a leaf row renders an empty toggle slot that still reserves --wtv-column-width,
+   a leaf row renders an empty toggle slot that still reserves --wtv-toggle-icon-width,
    keeping the leaf's label aligned under its expandable siblings. Set leafIconClass
    to `wtv__toggle-icon--leaf` to bring back the bullet dot. Mirrors svelte-treeview. */
 .wtv__toggle-icon--leaf::before {
@@ -404,13 +404,13 @@
    Selection owns the BACKGROUND channel: a soft tint (--wtv-selected-bg ←
    --base-selected-bg). It reads the shared --base-selected-* tokens, so one knob
    themes the tree + web-multiselect's selected option identically. The optional
-   --wtv-selected-ring (← --base-selected-outline, default none) is drawn as
+   --wtv-selected-outline (← --base-selected-outline, default none) is drawn as
    an INSET outline, sharing the focus ring's outline channel — the focused-default
    rule below comes AFTER this one so the focus ring wins on a focused+selected row. */
 .wtv__node-content--selected {
   background-color: var(--wtv-selected-bg);
-  color: var(--wtv-selected-text);
-  outline: var(--wtv-selected-ring);
+  color: var(--wtv-selected-text-color);
+  outline: var(--wtv-selected-outline);
   outline-offset: var(--wtv-focused-outline-offset);
   border-radius: var(--wtv-border-radius-sm);
 }
@@ -424,19 +424,19 @@
 
 /* DEFAULT focus look — a thin INSET OUTLINE ring (the cursor channel), matching
    web-multiselect's focused option. Reads the shared --base-focused-* tokens via
-   --wtv-focused-ring / -color / -bg. The renderer adds this class only when
+   --wtv-focused-outline / -color / -bg. The renderer adds this class only when
    focused AND no focusedNodeClass is set, so it steps aside the moment you
    configure a custom focus style (mirrors the --selected fallback).
    Outline + negative offset = paints inside the pill, never spills onto the
    neighbouring row or clips at the scroll edge, no layout shift. Outline is its
    OWN paint channel, so the box-shadow-based presets (--selected-border /
    --selected-glow) and the scroll flash can't wipe it, and it layers over any
-   background tint. Set --wtv-focused-ring: none to suppress the ring while
+   background tint. Set --wtv-focused-outline: none to suppress the ring while
    keeping the hook. Mirrors svelte-treeview. */
 .wtv__node-content--focused-default {
-  outline: var(--wtv-focused-ring);
+  outline: var(--wtv-focused-outline);
   outline-offset: var(--wtv-focused-outline-offset);
-  color: var(--wtv-focused-text);
+  color: var(--wtv-focused-text-color);
 }
 /* Focus bg only on a NON-selected row, so a focused+selected row keeps the
    selection tint. */
@@ -460,7 +460,7 @@
 /* Explorer-style strong fill — solid-ish accent background + override text color. */
 .wtv__node-content--selected-fill {
   background: var(--wtv-selected-fill-bg) !important;
-  color: var(--wtv-selected-fill-color) !important;
+  color: var(--wtv-selected-fill-text-color) !important;
 }
 
 .wtv__node-content--selected-brackets {
@@ -496,14 +496,14 @@
    ============================================================================== */
 
 .wtv__node-content--dragover-highlight {
-  background: var(--wtv-dragover-highlight-bg) !important;
-  border: var(--wtv-dragover-highlight-border) !important;
+  background: var(--wtv-drag-over-highlight-bg) !important;
+  border: var(--wtv-drag-over-highlight-border) !important;
   border-radius: var(--wtv-border-radius-sm) !important;
 }
 
 .wtv__node-content--dragover-glow {
   background: var(--wtv-drag-over-bg) !important;
-  box-shadow: var(--wtv-drag-over-glow-shadow) !important;
+  box-shadow: var(--wtv-drag-over-box-shadow) !important;
 }
 
 /* ==============================================================================
@@ -537,7 +537,7 @@
      the lift/dim effect without shifting the pill horizontally. (Mirrors
      svelte-treeview, which also scales .stv__node-content.) */
   transform-origin: left center;
-  transition: opacity var(--wtv-transition-speed), transform var(--wtv-transition-speed);
+  transition: opacity var(--wtv-transition-normal) var(--wtv-ease-standard), transform var(--wtv-transition-normal) var(--wtv-ease-standard);
 }
 
 .wtv__node-content--drop-copy {
@@ -550,12 +550,12 @@
   transform: translate(-50%, -50%);
   padding: var(--wtv-spacing-md) var(--wtv-spacing-lg);
   background: var(--wtv-touch-ghost-bg);
-  color: var(--wtv-text-color-on-accent);
+  color: var(--wtv-touch-ghost-text-color);
   border-radius: var(--wtv-border-radius-sm);
   font-size: var(--wtv-font-size-sm);
   pointer-events: none;
   z-index: var(--wtv-z-index-ghost);
-  box-shadow: var(--wtv-touch-ghost-shadow);
+  box-shadow: var(--wtv-touch-ghost-box-shadow);
   white-space: nowrap;
   max-width: calc(20 * var(--wtv-rem));
   overflow: hidden;
@@ -568,19 +568,19 @@
      a full-width zone + 2px border overruns the container and triggers a
      horizontal scrollbar on any ancestor with overflow-x other than visible. */
   box-sizing: border-box;
-  border: var(--wtv-empty-zone-border) !important;
-  background: var(--wtv-empty-zone-bg) !important;
-  border-radius: var(--wtv-empty-zone-radius);
-  min-height: var(--wtv-tree-min-height);
+  border: var(--wtv-drop-placeholder-border) !important;
+  background: var(--wtv-drop-placeholder-bg) !important;
+  border-radius: var(--wtv-drop-placeholder-border-radius);
+  min-height: var(--wtv-drop-placeholder-min-height);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--wtv-transition-speed) ease;
+  transition: all var(--wtv-transition-normal) var(--wtv-ease-standard);
 }
 
 .wtv__empty-zone-content {
-  color: var(--wtv-accent-color);
+  color: var(--wtv-drop-placeholder-color);
   font-size: var(--wtv-font-size-sm);
   font-weight: var(--wtv-font-weight-medium);
   padding: var(--wtv-spacing-xl);
@@ -598,23 +598,23 @@
    (~1% of the width), and because the tree body must keep `overflow: visible`
    for per-node drop-zone glows, that spill can't be clipped and instead surfaces
    as a horizontal scrollbar on an ancestor. Consumers who want a grow-on-hover
-   and control their own overflow can opt in via --wtv-empty-zone-hover-scale. */
+   and control their own overflow can opt in via --wtv-drop-placeholder-scale-hover. */
 .wtv__empty-zone:hover,
 .wtv__empty-zone--active {
   border-style: solid !important;
-  border-color: var(--wtv-empty-zone-hover-border-color) !important;
-  background: var(--wtv-empty-zone-hover-bg) !important;
-  box-shadow: var(--wtv-empty-zone-hover-shadow);
-  transform: scale(var(--wtv-empty-zone-hover-scale, 1));
+  border-color: var(--wtv-drop-placeholder-border-color-hover) !important;
+  background: var(--wtv-drop-placeholder-bg-hover) !important;
+  box-shadow: var(--wtv-drop-placeholder-box-shadow-hover);
+  transform: scale(var(--wtv-drop-placeholder-scale-hover, 1));
 }
 
 /* Whole-tree drop zone (isTreeDropZoneEnabled): while a drag hovers the tree the
    container shows an engaged outline so the "basket" reads as active. */
 .wtv__container.wtv__tree-drop-zone--active {
-  outline: 2px dashed var(--wtv-empty-zone-hover-border-color, var(--wtv-accent-color));
+  outline: 2px dashed var(--wtv-drop-placeholder-border-color-hover, var(--wtv-accent-color));
   outline-offset: -2px;
-  background: var(--wtv-empty-zone-hover-bg, color-mix(in srgb, var(--wtv-accent-color) 8%, transparent));
-  transition: all var(--wtv-transition-speed) ease;
+  background: var(--wtv-drop-placeholder-bg-hover, color-mix(in srgb, var(--wtv-accent-color) 8%, transparent));
+  transition: all var(--wtv-transition-normal) var(--wtv-ease-standard);
 }
 
 /* ==============================================================================
@@ -623,16 +623,15 @@
    via .wtv__node-content--drag-denied + an appended .wtv__drag-denied-badge.
    ============================================================================== */
 
-/* Row tint pulses for as long as the locked node stays pressed (drag-denied is
-   held) — or for one 700ms beat on a rejected drop. */
+/* Row tint fades in and holds for as long as the locked node stays pressed
+   (drag-denied is held) — or for the 700ms beat on a rejected drop. */
 .wtv__node-content--drag-denied {
-  animation: wtv-drag-denied-flash 0.9s ease-in-out infinite;
+  animation: wtv-drag-denied-flash var(--wtv-transition-slow) var(--wtv-ease-out) forwards;
 }
 
 @keyframes wtv-drag-denied-flash {
-  0%,
-  100% { background-color: transparent; }
-  50% { background-color: var(--wtv-drag-denied-flash-bg, var(--base-danger-bg-subtle-hover, color-mix(in srgb, var(--wtv-danger-color) 18%, transparent))); }
+  from { background-color: transparent; }
+  to { background-color: var(--wtv-drag-denied-flash-bg); }
 }
 
 /* No-entry icon pops in and STAYS visible until the finger lifts. */
@@ -645,7 +644,7 @@
   pointer-events: none;
   z-index: 3;
   transform: translateY(-50%);
-  animation: wtv-drag-denied-badge 0.22s ease-out forwards;
+  animation: wtv-drag-denied-badge var(--wtv-transition-normal) var(--wtv-ease-out) forwards;
 }
 
 @keyframes wtv-drag-denied-badge {
@@ -702,12 +701,12 @@
   z-index: var(--wtv-tooltip-z-index, 10000);
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--wtv-transition-speed, 0.15s) ease, visibility var(--wtv-transition-speed, 0.15s) ease;
+  transition: opacity var(--wtv-transition-normal) var(--wtv-ease-standard), visibility var(--wtv-transition-normal) var(--wtv-ease-standard);
 
   /* Hardcoded fallbacks (second arg) keep the tooltip legible even if it ever mounts
      outside the shadow container where the --wtv-tooltip-* vars don't resolve. */
   background: var(--wtv-tooltip-bg, light-dark(#333333, #f5f5f5));
-  color: var(--wtv-tooltip-color, light-dark(#ffffff, #1a1a1a));
+  color: var(--wtv-tooltip-text-color, light-dark(#ffffff, #1a1a1a));
   padding: var(--wtv-tooltip-padding, 0.8rem 1.2rem);
   border-radius: var(--wtv-tooltip-border-radius, 4px);
   font-size: var(--wtv-tooltip-font-size, 1.4rem);
@@ -720,7 +719,7 @@
   max-width: var(--wtv-tooltip-max-width, 32rem);
   word-wrap: break-word;
   white-space: pre-wrap;
-  box-shadow: var(--wtv-tooltip-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
+  box-shadow: var(--wtv-tooltip-box-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
   pointer-events: none; /* never intercept the pointer */
 }
 
@@ -735,7 +734,7 @@
 
 .wtv__node-content--scroll-highlight {
   background: var(--wtv-scroll-highlight-bg) !important;
-  box-shadow: var(--wtv-scroll-highlight-shadow);
+  box-shadow: var(--wtv-scroll-highlight-box-shadow);
   border-radius: var(--wtv-border-radius-sm);
 }
 
@@ -789,38 +788,38 @@
   cursor: pointer;
   pointer-events: auto;
   z-index: var(--wtv-z-index-dropdown);
-  transition: all var(--wtv-transition-speed) ease;
-  border-radius: 0;
+  transition: all var(--wtv-transition-normal) var(--wtv-ease-standard);
+  border-radius: var(--wtv-drop-zone-border-radius);
 }
 
 .wtv__drop-zone.wtv__drop-zone--before {
-  background: var(--wtv-glow-before-bg);
-  color: var(--wtv-glow-before-text);
+  background: var(--wtv-drop-zone-before-bg);
+  color: var(--wtv-drop-zone-before-text-color);
 }
 .wtv__drop-zone.wtv__drop-zone--before.wtv__drop-zone--active {
-  background: var(--wtv-glow-before-bg-active);
-  color: var(--wtv-glow-before-color-active);
-  box-shadow: var(--wtv-glow-before-shadow);
+  background: var(--wtv-drop-zone-before-bg-active);
+  color: var(--wtv-drop-zone-before-text-color-active);
+  box-shadow: var(--wtv-drop-zone-before-box-shadow-active);
 }
 
 .wtv__drop-zone.wtv__drop-zone--after {
-  background: var(--wtv-glow-after-bg);
-  color: var(--wtv-glow-after-text);
+  background: var(--wtv-drop-zone-after-bg);
+  color: var(--wtv-drop-zone-after-text-color);
 }
 .wtv__drop-zone.wtv__drop-zone--after.wtv__drop-zone--active {
-  background: var(--wtv-glow-after-bg-active);
-  color: var(--wtv-glow-after-color-active);
-  box-shadow: var(--wtv-glow-after-shadow);
+  background: var(--wtv-drop-zone-after-bg-active);
+  color: var(--wtv-drop-zone-after-text-color-active);
+  box-shadow: var(--wtv-drop-zone-after-box-shadow-active);
 }
 
 .wtv__drop-zone.wtv__drop-zone--child {
-  background: var(--wtv-glow-child-bg);
-  color: var(--wtv-glow-child-text);
+  background: var(--wtv-drop-zone-child-bg);
+  color: var(--wtv-drop-zone-child-text-color);
 }
 .wtv__drop-zone.wtv__drop-zone--child.wtv__drop-zone--active {
-  background: var(--wtv-glow-child-bg-active);
-  color: var(--wtv-glow-child-color-active);
-  box-shadow: var(--wtv-glow-child-shadow);
+  background: var(--wtv-drop-zone-child-bg-active);
+  color: var(--wtv-drop-zone-child-text-color-active);
+  box-shadow: var(--wtv-drop-zone-child-box-shadow-active);
 }
 
 /* Layout: "around" */
@@ -992,7 +991,7 @@
   border: calc(var(--wtv-checkbox-border-width) * var(--wtv-checkbox-scale)) solid var(--wtv-checkbox-border-color);
   border-radius: calc(var(--wtv-checkbox-border-radius) * var(--wtv-checkbox-scale));
   background: var(--wtv-checkbox-bg);
-  transition: background var(--wtv-transition-speed), border-color var(--wtv-transition-speed);
+  transition: background var(--wtv-transition-normal) var(--wtv-ease-standard), border-color var(--wtv-transition-normal) var(--wtv-ease-standard);
 }
 
 /* Checkmark / dash — a tinted mask following --wtv-icon-check → the shared
@@ -1049,13 +1048,13 @@
 /* Focus ring */
 .wtv__checkbox:focus-visible {
   outline: none;
-  box-shadow: var(--wtv-checkbox-focus-ring);
+  box-shadow: var(--wtv-checkbox-focus-box-shadow);
 }
 
 /* Disabled */
 .wtv__checkbox:disabled {
   cursor: not-allowed;
-  opacity: var(--base-disabled-opacity, 0.65);
+  opacity: var(--wtv-disabled-opacity);
 }
 
 /* ==============================================================================
@@ -1067,11 +1066,11 @@
   width: 100%;
   box-sizing: border-box;
   /* Paint the tree's own surface so consumers don't have to wrap it in a
-     colored container for a visible background. Set --wtv-bg-color: transparent
+     colored container for a visible background. Set --wtv-main-bg: transparent
      to restore the pre-rc03 layered behaviour. Mirrors svelte-treeview's
      equivalent surface variable. */
-  background: var(--wtv-bg-color);
-  color: var(--wtv-text-color);
+  background: var(--wtv-main-bg);
+  color: var(--wtv-text-color-1);
 }
 
 /* ==============================================================================
@@ -1094,7 +1093,7 @@
   border: 3px solid var(--wtv-spinner-track);
   border-top-color: var(--wtv-spinner-color);
   border-radius: 50%;
-  animation: wtv__spin 0.8s linear infinite;
+  animation: wtv__spin var(--wtv-spinner-duration) linear infinite;
 }
 
 @keyframes wtv__spin {
@@ -1117,19 +1116,14 @@
   border: var(--wtv-expand-spinner-width) solid var(--wtv-expand-spinner-track);
   border-top-color: var(--wtv-expand-spinner-color);
   border-radius: 50%;
-  animation: wtv__spin 0.8s linear infinite;
+  animation: wtv__spin var(--wtv-spinner-duration) linear infinite;
 }
 
 .wtv__loading-more {
   padding: var(--wtv-spacing-sm) var(--wtv-spacing-md);
   margin-left: var(--wtv-spacing-md);
   font-size: var(--wtv-font-size-xs);
-  color: var(--wtv-text-color-2);
+  color: var(--wtv-loading-color);
   font-style: italic;
 }
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(-50%); }
-  40% { transform: translateY(-60%); }
-  60% { transform: translateY(-40%); }
-}

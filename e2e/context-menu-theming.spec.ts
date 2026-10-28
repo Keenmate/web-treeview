@@ -55,7 +55,7 @@ test.describe('context menu — CSS variable chain', () => {
     await expect(menu(page)).toHaveCSS('background-color', 'rgb(4, 5, 6)');
   });
 
-  test('--wtv-context-menu-hover-color colours the hovered item text (unset → unchanged)', async ({ page }) => {
+  test('--wtv-context-menu-text-color-hover colours the hovered item text (unset → unchanged)', async ({ page }) => {
     const plain = (p: Page) =>
       menu(p).locator('.km-menu__item:not(.km-menu__item--disabled):not(.km-menu__item--danger):not(.km-menu__item--toggled)').first();
     await openMenu(page);
@@ -64,7 +64,7 @@ test.describe('context menu — CSS variable chain', () => {
     await expect(plain(page)).toHaveCSS('color', before);
     await page.keyboard.press('Escape');
     await expect(menu(page)).toBeHidden();
-    await setTree(page, '--wtv-context-menu-hover-color', 'rgb(200, 0, 100)');
+    await setTree(page, '--wtv-context-menu-text-color-hover', 'rgb(200, 0, 100)');
     await openMenu(page);
     await plain(page).hover();
     await expect(plain(page)).toHaveCSS('color', 'rgb(200, 0, 100)');

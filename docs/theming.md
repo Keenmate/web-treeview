@@ -61,17 +61,18 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 |----------|---------|-------------|
 | `--wtv-accent-color` | `--base-primary-color` \| `#3b82f6` | Primary accent color |
 | `--wtv-accent-color-hover` | `--base-primary-color-hover` \| accent 15% toward black (white in dark) | Accent hover state |
-| `--wtv-text-color` | `--base-text-color-1` \| `light-dark(#334155, #f1f5f9)` | Primary text color |
-| `--wtv-text-color-2` | `--base-text-color-3` \| text color mixed 55% into the bg | Secondary / muted text |
+| `--wtv-text-color-1` | `--base-text-color-1` \| `light-dark(#334155, #f1f5f9)` | Primary text color |
+| `--wtv-text-color-3` | `--base-text-color-3` \| text color mixed 55% into the bg | Secondary / muted text |
 | `--wtv-text-color-on-accent` | `--base-on-primary-text-color` \| black or white by APCA contrast on the accent | Text on accent backgrounds |
-| `--wtv-bg-color` | `--base-main-bg` \| `light-dark(#fff, #1e293b)` | Main background |
+| `--wtv-main-bg` | `--base-main-bg` \| `light-dark(#fff, #1e293b)` | Main background |
 | `--wtv-border-color` | `--base-border-color` \| the bg shifted in lightness (OKLCH) | Default border color (divider) |
 | `--wtv-input-border-color` | `--base-input-border-color` \| text color mixed 45% / 35% into the bg | Control outline (checkbox border), stronger than the divider |
 | `--wtv-shadow-color` | `--base-shadow-color` \| `light-dark(rgba(0,0,0,.15), rgba(0,0,0,.4))` | Shadow tint (tooltip, context menu, touch ghost) |
 | `--wtv-success-color` | `--base-success-color` \| `#10b981` | Success / valid color |
 | `--wtv-danger-color` | `--base-danger-color` \| `#dc2626` | Danger / invalid color (fills, borders, tints) |
 | `--wtv-danger-text-color` | `--base-danger-text-color` \| `light-dark(#721c24, #f87171)` | Danger as text (context menu danger item) |
-| `--wtv-light-bg` | `--base-elevated-bg` \| the bg shifted in lightness (OKLCH) | Elevated surface background |
+| `--wtv-elevated-bg` | `--base-elevated-bg` \| the bg shifted in lightness (OKLCH) | Elevated surface background (full-label popover) |
+| `--wtv-disabled-opacity` | `--base-disabled-opacity` \| `0.65` | Disabled dimming (checkbox) |
 
 ### Node states
 
@@ -81,14 +82,15 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-active-bg` | `--base-active-bg` \| `color-mix(text 14%, bg)` | Base active / pressed background |
 | `--wtv-node-bg-hover` | `= --wtv-hover-bg` | Node hover background |
 | `--wtv-node-bg-active` | `= --wtv-active-bg` | Node active / pressed background |
-| `--wtv-node-transition` | `none` | Node content transition (e.g. `background var(--wtv-transition-speed)` to animate) |
+| `--wtv-node-transition` | `none` | Node content transition (e.g. `background var(--wtv-transition-normal) var(--wtv-ease-standard)` to animate) |
+| `--wtv-node-border-radius` | `= --wtv-border-radius-sm` | Corner radius of the row pill |
 | `--wtv-selected-bg` | `--base-selected-bg` \| `--base-primary-bg-subtle` \| accent 10% (20% dark) | Selected row (click / Ctrl / Shift-click set) background tint; row class `.wtv__node-content--selected` |
 | `--wtv-selected-bg-hover` | `--base-selected-bg-hover` \| `= --wtv-selected-bg` | Selected row background on hover |
-| `--wtv-selected-text` | `--base-selected-text-color` \| `currentColor` | Selected row text color |
-| `--wtv-selected-ring` | `--base-selected-outline` \| `none` | Selected row outline shorthand (drawn inset) |
+| `--wtv-selected-text-color` | `--base-selected-text-color` \| `currentColor` | Selected row text color |
+| `--wtv-selected-outline` | `--base-selected-outline` \| `none` | Selected row outline shorthand (drawn inset) |
 | `--wtv-focused-bg` | `--base-focused-bg` \| `transparent` | Focused row background (only when not selected) |
-| `--wtv-focused-text` | `--base-focused-text-color` \| `currentColor` | Focused row text color |
-| `--wtv-focused-ring` | `--base-focused-outline` \| `1px solid --wtv-accent-color` | Default `.wtv__node-content--focused-default` ring — outline shorthand drawn inset (`none` to suppress) |
+| `--wtv-focused-text-color` | `--base-focused-text-color` \| `currentColor` | Focused row text color |
+| `--wtv-focused-outline` | `--base-focused-outline` \| `1px solid --wtv-accent-color` | Default `.wtv__node-content--focused-default` ring — outline shorthand drawn inset (`none` to suppress) |
 | `--wtv-focused-outline-offset` | `calc(-1 * var(--base-outline-width, 1px))` | Outline offset for the focus ring / selected ring (negative = inset; follows `--base-outline-width`) |
 
 ### Border
@@ -118,12 +120,14 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-spacing-md` | `8px` | Medium spacing |
 | `--wtv-spacing-lg` | `12px` | Large spacing |
 | `--wtv-spacing-xl` | `16px` | Extra large spacing |
-| `--wtv-column-width` | `calc(--wtv-rem * 2.4)` | Toggle / icon column width (24px) |
+| `--wtv-toggle-icon-width` | `calc(--wtv-rem * 2.4)` | Toggle / icon column width (24px) |
 | `--wtv-indent-size` | `calc(--wtv-rem * 1.6)` | Indent per level (16px) — its own knob |
 | `--wtv-node-padding` | `--wtv-spacing-sm --wtv-spacing-md` | Node content padding (4px 8px) |
 | `--wtv-node-height` | `calc(--wtv-rem * 2.4)` | Minimum row height (24px) |
-| `--wtv-icon-size` | `calc(--wtv-rem * 1.6)` | Node icon size (16px) |
-| `--wtv-toggle-color` | `= --wtv-text-color-2` | Toggle icon color |
+| `--wtv-toggle-icon-size` | `= --wtv-font-size-xs` | Toggle glyph size (font-size of the column) |
+| `--wtv-toggle-icon-color` | `= --wtv-text-color-3` | Toggle icon color |
+| `--wtv-node-info-color` / `-color-hover` / `-bg-hover` | `= --wtv-text-color-3` / accent / primary tint | Info button (`node-title-overflow="info"`) |
+| `--wtv-node-info-reveal-bg` / `-text-color` / `-border-color` | `= --wtv-elevated-bg` / `--wtv-text-color-1` / `--wtv-border-color` | Full-label popover |
 | `--wtv-checkbox-gap` | `calc(--wtv-rem * 0.6)` | Space between the checkbox and the node pill |
 
 ### Border radius
@@ -133,26 +137,44 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-border-radius-sm` | `calc(0.4 * --wtv-rem)` | 4px |
 | `--wtv-border-radius-lg` | `calc(0.8 * --wtv-rem)` | 8px |
 
-### Transitions
+### Motion
+
+Only the contract's four speeds and its easings; there is no attribute for animations.
+
+- **Motion off, this tree:** `web-treeview { --wtv-transition-fast: 0s; --wtv-transition-normal: 0s; --wtv-transition-medium: 0s; --wtv-transition-slow: 0s; }`
+- **Motion off, page-wide (every Keenmate component):** `:root { --base-duration-fast: 0s; --base-duration-normal: 0s; --base-duration-medium: 0s; --base-duration-slow: 0s; }`
+- **`prefers-reduced-motion: reduce`** sets the four `--wtv-transition-*` to `0s` (the contract does the same for `--base-duration-*`). The loading spinners keep turning — they show state.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-transition-speed` | `--base-duration-normal` \| `150ms` | Transition duration (empty zone, tooltip fade) |
+| `--wtv-transition-fast` | `--base-duration-fast` \| `0.1s` | Fast |
+| `--wtv-transition-normal` | `--base-duration-normal` \| `0.15s` | Toggle turn, hover, tooltip fade, drop zones, checkbox, drag-denied badge |
+| `--wtv-transition-medium` | `--base-duration-medium` \| `0.25s` | Medium |
+| `--wtv-transition-slow` | `--base-duration-slow` \| `0.3s` | Drag-denied row tint |
+| `--wtv-ease-standard` / `-out` / `-in` | `--base-ease-*` | Easings |
+| `--wtv-toggle-icon-transition` | `transform --wtv-transition-normal --wtv-ease-standard` | Expand / collapse turn of the glyph |
+| `--wtv-spinner-duration` | `0.8s` | One turn of the loading spinners (a loop period, not on the duration scale) |
 
 ### Drag & drop — glow indicators
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-glow-before-color` | `rgba(134,179,152,0.8)` | Drop-before glow border color |
-| `--wtv-glow-after-color` | `rgba(242,182,158,0.8)` | Drop-after glow border color |
-| `--wtv-glow-child-color` | `rgba(167,155,198,0.8)` | Drop-as-child glow border color |
-| `--wtv-glow-{before,after,child}-bg` | `rgba(... 0.25)` | Zone background |
-| `--wtv-glow-{before,after,child}-bg-active` | `rgba(... 0.85)` | Zone active background |
-| `--wtv-glow-{before,after,child}-color-active` | `rgb(...)` | Zone active text color |
-| `--wtv-glow-{before,after,child}-shadow` | `0 2px 12px rgba(... 0.4)` | Zone active box shadow |
-| `--wtv-glow-{before,after,child}-text` | `rgba(... 0.7)` | Default zone text color |
+| `--wtv-drop-glow-before-color` | `rgba(134,179,152,0.8)` | Drop-before glow border color |
+| `--wtv-drop-glow-after-color` | `rgba(242,182,158,0.8)` | Drop-after glow border color |
+| `--wtv-drop-glow-child-color` | `rgba(167,155,198,0.8)` | Drop-as-child glow border color |
+| `--wtv-drop-glow-child-bg` | `drop-glow-child-color 19%` | Drop-as-child row tint |
+| `--wtv-drop-glow-size` | `3px` | Glow line thickness |
+| `--wtv-drop-arrow-size` / `-position` | `calc(2.4 * --wtv-rem)` / `66%` | Drop arrow size and horizontal position |
+| `--wtv-drop-arrow-{before,after,child}-rotation` | `0deg` / `0deg` / `45deg` | Drop arrow rotation |
+| `--wtv-drop-arrow-{before,after,child}-image` | Lucide arrow (mask) | Drop arrow glyph |
+| `--wtv-drop-zone-border-radius` | `0` | Floating drop zone radius |
+| `--wtv-drop-zone-{before,after,child}-bg` | `rgba(... 0.25)` | Zone background |
+| `--wtv-drop-zone-{before,after,child}-text-color` | `rgba(... 0.7)` | Zone text color |
+| `--wtv-drop-zone-{before,after,child}-bg-active` | `rgba(... 0.85)` | Zone active background |
+| `--wtv-drop-zone-{before,after,child}-text-color-active` | `rgb(...)` | Zone active text color |
+| `--wtv-drop-zone-{before,after,child}-box-shadow-active` | `0 2px 12px rgba(... 0.4)` | Zone active box shadow |
 
-The drop-indicator arrows are masks filled with the matching `--wtv-glow-*-color` (alpha dropped),
+The drop-indicator arrows are masks filled with the matching `--wtv-drop-glow-*-color` (alpha dropped),
 so retinting a glow colour retints its arrow too.
 
 ### Drag & drop — state colors
@@ -161,23 +183,27 @@ so retinting a glow colour retints its arrow too.
 |----------|---------|-------------|
 | `--wtv-drag-over-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Drag-over node background |
 | `--wtv-drag-over-border` | `2px dashed accent` | Drag-over node border |
-| `--wtv-drag-over-glow-shadow` | `0 0 8px accent 40%` | Drag-over glow shadow |
+| `--wtv-drag-over-box-shadow` | `0 0 8px accent 40%` | Drag-over glow shadow |
 | `--wtv-drop-valid-bg` | `--base-success-bg-subtle` \| `success 10%` | Valid drop background |
 | `--wtv-drop-valid-border-color` | `= --wtv-success-color` | Valid drop border color |
 | `--wtv-drop-invalid-bg` | `--base-danger-bg-subtle` \| `danger 10%` | Invalid drop background |
 | `--wtv-drop-invalid-border-color` | `= --wtv-danger-color` | Invalid drop border color |
-| `--wtv-dragover-highlight-bg` | `--base-success-bg-subtle-hover` \| `success 15%` | Dragover highlight background |
-| `--wtv-dragover-highlight-border` | `2px dashed success` | Dragover highlight border |
+| `--wtv-drag-over-highlight-bg` | `--base-success-bg-subtle-hover` \| `success 15%` | Dragover highlight background |
+| `--wtv-drag-over-highlight-border` | `2px dashed success` | Dragover highlight border |
 | `--wtv-touch-ghost-bg` | `accent 90%` | Touch drag ghost background |
-| `--wtv-touch-ghost-shadow` | `--base-shadow-lg` \| `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
+| `--wtv-touch-ghost-text-color` | `= --wtv-text-color-on-accent` | Touch drag ghost text |
+| `--wtv-touch-ghost-box-shadow` | `--base-shadow-lg` \| `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
 | `--wtv-scroll-highlight-bg` | `accent 30%` | Scroll-to-node highlight |
-| `--wtv-scroll-highlight-shadow` | `0 0 8px accent 40%` | Scroll highlight shadow |
+| `--wtv-scroll-highlight-box-shadow` | `0 0 8px accent 40%` | Scroll highlight shadow |
 | `--wtv-dragged-opacity` | `0.5` | Dragged node opacity |
-| `--wtv-drag-denied-flash-bg` | `danger 18%` | Optional: pulse of the "can't move / drop here" row |
+| `--wtv-drag-denied-flash-bg` | `--base-danger-bg-subtle-hover` \| `danger 15%` (30% dark) | Row tint of the "can't move / drop here" feedback (fades in, held) |
 | `--wtv-cut-opacity` | `0.4` | Cut node opacity (clipboard) |
-| `--wtv-empty-zone-border` | `2px dashed accent` | Empty zone border (during drag) |
-| `--wtv-empty-zone-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Empty zone background |
-| `--wtv-empty-zone-radius` | `= --wtv-border-radius-lg` | Empty zone border radius |
+| `--wtv-drop-placeholder-border` | `2px dashed accent` | Empty zone border (during drag) |
+| `--wtv-drop-placeholder-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Empty zone background |
+| `--wtv-drop-placeholder-border-radius` | `= --wtv-border-radius-lg` | Empty zone border radius |
+| `--wtv-drop-placeholder-color` | `= --wtv-accent-color` | Empty zone text |
+| `--wtv-drop-placeholder-min-height` | `= --wtv-tree-min-height` | Empty zone min height |
+| `--wtv-drop-placeholder-bg-hover` / `-border-color-hover` / `-box-shadow-hover` / `-scale-hover` | accent 28% / accent / 4px glow / `1` | Engaged zone (hover or a drag over it) |
 
 ### Context menu
 
@@ -199,11 +225,11 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 |----------|---------|-------------|
 | `--wtv-context-menu-bg` | unset → `--km-menu-bg` | Menu background |
 | `--wtv-context-menu-bg-hover` | unset → `--km-menu-hover-bg` | Item hover background |
-| `--wtv-context-menu-hover-color` | unset → `--km-menu-hover-color` | Item text color on hover (default unchanged) |
+| `--wtv-context-menu-text-color-hover` | unset → `--km-menu-hover-color` | Item text color on hover (default unchanged) |
 | `--wtv-context-menu-text-color` | unset → `--km-menu-text-color` | Menu text color |
 | `--wtv-context-menu-border` | unset → `--km-menu-border` | Menu border |
 | `--wtv-context-menu-border-radius` | unset → `--km-menu-border-radius` | Menu border radius |
-| `--wtv-context-menu-shadow` | unset → `--km-menu-shadow` | Menu shadow |
+| `--wtv-context-menu-box-shadow` | unset → `--km-menu-shadow` | Menu shadow |
 | `--wtv-context-menu-min-width` | unset → `--km-menu-min-width` | Menu min width |
 | `--wtv-context-menu-padding` | unset → `--km-menu-padding` | Menu padding |
 | `--wtv-context-menu-font-size` | unset → `--km-menu-font-size` | Menu font size |
@@ -215,6 +241,9 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-context-menu-danger-color` | unset → `--km-menu-danger-color` | Danger item text color |
 | `--wtv-context-menu-danger-bg-hover` | unset → `--km-menu-danger-hover-bg` | Danger item hover background |
 | `--wtv-context-menu-shortcut-color` | unset → `--km-menu-shortcut-color` | Optional: shortcut hint color |
+| `--wtv-context-menu-shortcut-font-size` | unset → `--km-menu-shortcut-font-size` | Shortcut hint size |
+| `--wtv-context-menu-divider-label-color` | unset → `--km-menu-divider-label-color` | Named divider label color |
+| `--wtv-context-menu-toggled-color` | unset → `--km-menu-toggled-color` | Toggled item color |
 | `--wtv-context-menu-divider-color` | unset → `--km-menu-divider-color` | Divider line color |
 | `--wtv-context-menu-divider-margin` | unset → `--km-menu-divider-margin` | Divider margin |
 | `--wtv-context-menu-disabled-opacity` | unset → `--km-menu-disabled-opacity` | Disabled item opacity |
@@ -228,15 +257,17 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-spinner-size` | `calc(--wtv-rem * 3.2)` | Spinner size (32px) |
 | `--wtv-spinner-track` | `= --wtv-border-color` | Spinner track color |
 | `--wtv-spinner-color` | `= --wtv-accent-color` | Spinner accent color |
-| `--wtv-loading-bg` | `--wtv-bg-color` at 80% | Loading overlay veil |
+| `--wtv-loading-bg` | `--wtv-main-bg` at 80% | Loading overlay veil |
+| `--wtv-loading-color` | `= --wtv-text-color-3` | "Loading more…" text |
+| `--wtv-expand-spinner-size` / `-width` / `-track` / `-color` | `0.9em` / `2px` / spinner track / spinner color | Per-node loading spinner (async `beforeExpandCallback`) |
 
 ### Tooltip
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `--wtv-tooltip-bg` | `--base-tooltip-bg` \| text 85% into the bg (light) / the bg lifted (dark) | Tooltip background |
-| `--wtv-tooltip-color` | `--base-tooltip-text-color` \| `light-dark(<bg>, <text color>)` | Tooltip text color |
-| `--wtv-tooltip-shadow` | `--base-shadow-md` \| `0 2px 8px var(--wtv-shadow-color)` | Tooltip shadow |
+| `--wtv-tooltip-text-color` | `--base-tooltip-text-color` \| `light-dark(<bg>, <text color>)` | Tooltip text color |
+| `--wtv-tooltip-box-shadow` | `--base-shadow-md` \| `0 2px 8px var(--wtv-shadow-color)` | Tooltip shadow |
 
 ### Z-index
 

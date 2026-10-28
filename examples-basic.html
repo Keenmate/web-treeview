@@ -31,7 +31,7 @@
                 <input type="range" id="sl-indent" min="0" max="48" step="1" value="32">
                 <output id="out-indent">32px</output>
 
-                <label for="sl-column">--wtv-column-width</label>
+                <label for="sl-column">--wtv-toggle-icon-width</label>
                 <input type="range" id="sl-column" min="0" max="48" step="1" value="24">
                 <output id="out-column">24px</output>
 
@@ -53,11 +53,11 @@
                     indentation buttons only move <code>--wtv-indent-size</code> — multiplied by
                     <code>(level − 1)</code>, so at the <em>root</em> that's × 0 and the root rows never move.
                     The fixed part left of every label (highlighted amber above) is the <strong>toggle column</strong>
-                    (<code>--wtv-column-width</code>, reserved on every row so leaf labels align under branch
+                    (<code>--wtv-toggle-icon-width</code>, reserved on every row so leaf labels align under branch
                     labels) plus the content's left <code>--wtv-node-padding</code> — independent of indent.
                 </p>
                 <p style="margin-bottom:0">
-                    To tighten the root gap, lower <code>--wtv-column-width</code> (and/or
+                    To tighten the root gap, lower <code>--wtv-toggle-icon-width</code> (and/or
                     <code>--wtv-node-padding</code>); to change nesting density, use <code>--wtv-indent-size</code>.
                     All inherit through the Shadow DOM when set inline on <code>&lt;web-treeview&gt;</code>, so rows
                     re-flow instantly.
@@ -271,7 +271,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             tree1.expandLevel = 1;
 
             // Display demo: three sliders drive the CSS knobs that compose a row's
-            // left offset. --wtv-indent-size is the per-level indent; --wtv-column-width
+            // left offset. --wtv-indent-size is the per-level indent; --wtv-toggle-icon-width
             // is the fixed toggle gutter reserved on every row; --wtv-node-padding's
             // horizontal part is the content's left pad. Setting them inline on the host
             // inherits into the Shadow DOM and overrides the stylesheet default, so rows
@@ -292,7 +292,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
                 const column = +slColumn.value;
                 const padding = +slPadding.value;
                 tree1.style.setProperty('--wtv-indent-size', `${indent}px`);
-                tree1.style.setProperty('--wtv-column-width', `${column}px`);
+                tree1.style.setProperty('--wtv-toggle-icon-width', `${column}px`);
                 // Only the horizontal (left/right) part — keep the vertical pad intact.
                 tree1.style.setProperty('--wtv-node-padding', `var(--wtv-spacing-sm) ${padding}px`);
                 document.getElementById('out-indent').textContent = `${indent}px`;
@@ -300,7 +300,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
                 document.getElementById('out-padding').textContent = `${padding}px`;
                 document.getElementById('indent-readout').innerHTML = [
                     `<code>--wtv-indent-size: <b>${indent}px</b></code>`,
-                    `<code>--wtv-column-width: <b>${column}px</b></code>`,
+                    `<code>--wtv-toggle-icon-width: <b>${column}px</b></code>`,
                     `<code>--wtv-node-padding (left): <b>${padding}px</b></code>`,
                     `<code class="is-gap">root gap (gutter + padding): <b>${column + padding}px</b></code>`
                 ].join('');

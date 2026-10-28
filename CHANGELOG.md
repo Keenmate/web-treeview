@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (theming: one token list with svelte-treeview, motion, 2026-10-29)
+
+- **CSS variables renamed** so web-treeview and svelte-treeview share ONE token list (only the
+  prefix differs; `docs/parity.md` → CSS variables) and names state their type like the
+  `--base-*` contract (`-color`, `-bg`, `-border`, `-outline`, `-box-shadow`; state last:
+  `-bg-hover`, `-bg-active`):
+
+  | Was | Now |
+  |-----|-----|
+  | `--wtv-text-color` | `--wtv-text-color-1` |
+  | `--wtv-text-color-2` | `--wtv-text-color-3` |
+  | `--wtv-bg-color` | `--wtv-main-bg` |
+  | `--wtv-light-bg` | `--wtv-elevated-bg` |
+  | `--wtv-column-width` | `--wtv-toggle-icon-width` |
+  | `--wtv-toggle-color` | `--wtv-toggle-icon-color` |
+  | `--wtv-transition-speed` | `--wtv-transition-normal` |
+  | `--wtv-selected-text` | `--wtv-selected-text-color` |
+  | `--wtv-selected-ring` | `--wtv-selected-outline` |
+  | `--wtv-focused-text` | `--wtv-focused-text-color` |
+  | `--wtv-focused-ring` | `--wtv-focused-outline` |
+  | `--wtv-selected-fill-color` | `--wtv-selected-fill-text-color` |
+  | `--wtv-checkbox-focus-ring` | `--wtv-checkbox-focus-box-shadow` |
+  | `--wtv-glow-before-color` | `--wtv-drop-glow-before-color` |
+  | `--wtv-glow-after-color` | `--wtv-drop-glow-after-color` |
+  | `--wtv-glow-child-color` | `--wtv-drop-glow-child-color` |
+  | `--wtv-glow-before-bg` | `--wtv-drop-zone-before-bg` |
+  | `--wtv-glow-after-bg` | `--wtv-drop-zone-after-bg` |
+  | `--wtv-glow-child-bg` | `--wtv-drop-zone-child-bg` |
+  | `--wtv-glow-before-bg-active` | `--wtv-drop-zone-before-bg-active` |
+  | `--wtv-glow-after-bg-active` | `--wtv-drop-zone-after-bg-active` |
+  | `--wtv-glow-child-bg-active` | `--wtv-drop-zone-child-bg-active` |
+  | `--wtv-glow-before-color-active` | `--wtv-drop-zone-before-text-color-active` |
+  | `--wtv-glow-after-color-active` | `--wtv-drop-zone-after-text-color-active` |
+  | `--wtv-glow-child-color-active` | `--wtv-drop-zone-child-text-color-active` |
+  | `--wtv-glow-before-shadow` | `--wtv-drop-zone-before-box-shadow-active` |
+  | `--wtv-glow-after-shadow` | `--wtv-drop-zone-after-box-shadow-active` |
+  | `--wtv-glow-child-shadow` | `--wtv-drop-zone-child-box-shadow-active` |
+  | `--wtv-glow-before-text` | `--wtv-drop-zone-before-text-color` |
+  | `--wtv-glow-after-text` | `--wtv-drop-zone-after-text-color` |
+  | `--wtv-glow-child-text` | `--wtv-drop-zone-child-text-color` |
+  | `--wtv-drag-over-glow-shadow` | `--wtv-drag-over-box-shadow` |
+  | `--wtv-dragover-highlight-bg` | `--wtv-drag-over-highlight-bg` |
+  | `--wtv-dragover-highlight-border` | `--wtv-drag-over-highlight-border` |
+  | `--wtv-touch-ghost-shadow` | `--wtv-touch-ghost-box-shadow` |
+  | `--wtv-scroll-highlight-shadow` | `--wtv-scroll-highlight-box-shadow` |
+  | `--wtv-tooltip-color` | `--wtv-tooltip-text-color` |
+  | `--wtv-tooltip-shadow` | `--wtv-tooltip-box-shadow` |
+  | `--wtv-context-menu-shadow` | `--wtv-context-menu-box-shadow` |
+  | `--wtv-context-menu-hover-color` | `--wtv-context-menu-text-color-hover` |
+  | `--wtv-empty-zone-border` | `--wtv-drop-placeholder-border` |
+  | `--wtv-empty-zone-bg` | `--wtv-drop-placeholder-bg` |
+  | `--wtv-empty-zone-radius` | `--wtv-drop-placeholder-border-radius` |
+  | `--wtv-empty-zone-hover-bg` | `--wtv-drop-placeholder-bg-hover` |
+  | `--wtv-empty-zone-hover-border-color` | `--wtv-drop-placeholder-border-color-hover` |
+  | `--wtv-empty-zone-hover-shadow` | `--wtv-drop-placeholder-box-shadow-hover` |
+  | `--wtv-empty-zone-hover-scale` | `--wtv-drop-placeholder-scale-hover` |
+  | `--wtv-node-info-reveal-color` | `--wtv-node-info-reveal-text-color` |
+
+  Removed: `--wtv-icon-size` (unused).
+- **Motion — only the contract's four speeds, CSS only.** `--wtv-transition-speed` is gone; the
+  tree declares `--wtv-transition-fast | -normal | -medium | -slow` (→ `--base-duration-*`, 0.1 /
+  0.15 / 0.25 / 0.3s) and `--wtv-ease-standard | -out | -in` (→ `--base-ease-*`); every
+  transition and animation reads them. Turn motion off with `--wtv-transition-*: 0s` (this tree)
+  or `--base-duration-*: 0s` (page-wide). Off-scale durations snapped toward faster: the
+  drag-denied badge pop 0.22s → normal (0.15s); the drag-denied row tint no longer pulses
+  (0.9s, infinite) — it fades in over `--wtv-transition-slow` (0.3s) and holds while the node is
+  pressed. The loading spinners turn once per `--wtv-spinner-duration` (0.8s, a loop period,
+  not on the duration scale).
+
+### Added (theming, 2026-10-29)
+
+- **`prefers-reduced-motion: reduce`** sets the four `--wtv-transition-*` to `0s` (the spinners
+  keep turning — they show state).
+- **`--wtv-disabled-opacity`** (→ `--base-disabled-opacity`, 0.65) — the disabled checkbox reads it.
+- Tokens the svelte twin already had, now in both: `--wtv-node-border-radius`,
+  `--wtv-toggle-icon-size`, `--wtv-toggle-icon-transition`, `--wtv-drop-glow-child-bg`,
+  `--wtv-drop-glow-size`, `--wtv-drop-arrow-size | -position | -{before,after,child}-rotation |
+  -{before,after,child}-image`, `--wtv-drop-zone-border-radius`, `--wtv-drop-placeholder-color`,
+  `--wtv-drop-placeholder-min-height`, `--wtv-touch-ghost-text-color`, `--wtv-loading-color`;
+  declared with contract defaults (were read-only with hard-coded colours):
+  `--wtv-node-info-color | -color-hover | -bg-hover`, `--wtv-node-info-reveal-bg | -text-color |
+  -border-color`, `--wtv-drag-denied-flash-bg`. Context menu: `--wtv-context-menu-shortcut-font-size`,
+  `--wtv-context-menu-divider-label-color` (→ core's `--_km-menu-*`).
+- The info button and the full-label popover now follow the theme (they had fixed GitHub-style
+  colours); the popover's shadow is `--base-shadow-lg`.
+
 ### Changed — BREAKING (svelte-treeview parity, 2026-10-28)
 
 - **`shouldUseInternalSearchIndex` / `use-internal-search-index` defaults to `true`** (was

@@ -57,7 +57,7 @@
             --base-selected-bg: rgba(102, 126, 234, 0.15);
 
             /* Component-specific overrides */
-            --wtv-context-menu-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            --wtv-context-menu-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
             --wtv-loading-bg: rgba(26, 26, 26, 0.8);
         }
 
@@ -98,10 +98,10 @@
             --base-on-primary-text-color: #1a0a1a;
 
             /* Component-specific overrides */
-            --wtv-context-menu-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-            --wtv-glow-before-color: rgba(0, 255, 255, 0.8);
-            --wtv-glow-after-color: rgba(255, 0, 255, 0.8);
-            --wtv-glow-child-color: rgba(255, 255, 0, 0.8);
+            --wtv-context-menu-box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            --wtv-drop-glow-before-color: rgba(0, 255, 255, 0.8);
+            --wtv-drop-glow-after-color: rgba(255, 0, 255, 0.8);
+            --wtv-drop-glow-child-color: rgba(255, 255, 0, 0.8);
 
             /* Custom disclosure glyph — one --base-icon-chevron swap re-skins the
                whole tree's toggle (double-chevron to match the neon energy). */
@@ -138,7 +138,7 @@
             /* Component-specific overrides */
             --wtv-border-radius-sm: 2px;
             --wtv-border-radius-lg: 4px;
-            --wtv-context-menu-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --wtv-context-menu-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Rounded/Soft Theme */
@@ -160,7 +160,7 @@
             /* Component-specific overrides */
             --wtv-border-radius-sm: 12px;
             --wtv-border-radius-lg: 20px;
-            --wtv-context-menu-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --wtv-context-menu-box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 
             /* Soft rounded disclosure glyph (circle-chevron) to match the pill shapes. */
             --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m10 8 4 4-4 4'/></svg>");
@@ -186,7 +186,7 @@
             /* Component-specific overrides */
             --wtv-border-radius-sm: 0;
             --wtv-border-radius-lg: 0;
-            --wtv-context-menu-shadow: none;
+            --wtv-context-menu-box-shadow: none;
             --wtv-context-menu-border: 2px solid #000000;
 
             /* Hard geometric disclosure glyph (filled square-chevron) for the brutalist look. */
@@ -212,7 +212,7 @@
             /* Component-specific overrides */
             --wtv-border-radius-sm: 4px;
             --wtv-border-radius-lg: 4px;
-            --wtv-context-menu-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            --wtv-context-menu-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 
             /* Custom glyph + rotation RE-MAP. Material's indicator is a PRE-ORIENTED
                downward caret (arrow_drop_down), so we hand the toggle a down-caret and
@@ -263,7 +263,7 @@
             --base-on-primary-text-color: #1e1b4b;
 
             /* Component-specific overrides */
-            --wtv-context-menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --wtv-context-menu-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             --wtv-loading-bg: rgba(102, 126, 234, 0.3);
         }
 
@@ -414,7 +414,7 @@
                 <li>OS preference via <code>@media (prefers-color-scheme: dark)</code> &mdash; auto-flips when the user's OS is in dark mode.</li>
                 <li>Library defaults &mdash; light, with <code>#1a1a1a</code> as the dark fallback when a signal does flip.</li>
             </ol>
-            <p>Each block re-declares <code>--wtv-bg-color</code>, <code>--wtv-text-color</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
+            <p>Each block re-declares <code>--wtv-main-bg</code>, <code>--wtv-text-color-1</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
 
             <div class="controls">
                 <label>
@@ -576,12 +576,12 @@
                     <div class="color-row">
                         <label>Text color</label>
                         <input type="color" id="cp-text" value="#1e293b">
-                        <code>--wtv-text-color</code>
+                        <code>--wtv-text-color-1</code>
                     </div>
                     <div class="color-row">
                         <label>Secondary text</label>
                         <input type="color" id="cp-text2" value="#64748b">
-                        <code>--wtv-text-color-2</code>
+                        <code>--wtv-text-color-3</code>
                     </div>
                     <div class="color-row">
                         <label>Hover background</label>
@@ -660,9 +660,9 @@
 /* These override the design system for this component only */
 
 --wtv-accent-color     /* = --base-primary-color */
---wtv-text-color       /* = --base-text-color-1 */
---wtv-text-color-2     /* = --base-text-color-3 */
---wtv-bg-color         /* = --base-main-bg */
+--wtv-text-color-1       /* = --base-text-color-1 */
+--wtv-text-color-3     /* = --base-text-color-3 */
+--wtv-main-bg         /* = --base-main-bg */
 --wtv-border-color     /* = --base-border-color */
 --wtv-hover-bg         /* = --base-hover-bg */
 --wtv-selected-bg   /* = --base-selected-bg */
@@ -671,7 +671,7 @@
 --wtv-indent-size      /* = calc(--wtv-rem * 2) */
 --wtv-font-size        /* = --wtv-font-size-sm (14px) */
 --wtv-border-radius-sm /* = calc(--base-border-radius-sm * --wtv-rem) */
---wtv-transition-speed /* = 150ms */</code></pre>
+--wtv-transition-normal /* = 150ms */</code></pre>
             </div>
         </div>
 
@@ -796,8 +796,8 @@
 
             const varMap = {
                 accent: '--wtv-accent-color',
-                text: '--wtv-text-color',
-                text2: '--wtv-text-color-2',
+                text: '--wtv-text-color-1',
+                text2: '--wtv-text-color-3',
                 hover: '--wtv-node-bg-hover',
                 border: '--wtv-border-color',
             };
@@ -821,7 +821,7 @@
                 console.log('[LiveThemeEditor] changed:', changed.length ? changed.join(', ') : '(none)');
                 // Check resolved --wtv-* values
                 const h = getComputedStyle(liveEl);
-                console.log('[LiveThemeEditor] --wtv-text-color:', h.getPropertyValue('--wtv-text-color'));
+                console.log('[LiveThemeEditor] --wtv-text-color-1:', h.getPropertyValue('--wtv-text-color-1'));
                 console.log('[LiveThemeEditor] --wtv-hover-bg:', h.getPropertyValue('--wtv-hover-bg'));
                 console.log('[LiveThemeEditor] --wtv-accent-color:', h.getPropertyValue('--wtv-accent-color'));
                 console.log('[LiveThemeEditor] --wtv-border-color:', h.getPropertyValue('--wtv-border-color'));

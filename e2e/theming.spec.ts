@@ -7,8 +7,8 @@ import { test, expect, Page, Locator } from './fixtures';
  * Three independent paths exercised:
  *
  *   A. Library defaults (no brand theme)
- *      Light: --wtv-bg-color falls back to var(--base-main-bg, #ffffff)  → rgb(255, 255, 255)
- *      Dark:  --wtv-bg-color falls back to var(--base-main-bg, #1e293b)  → rgb(30, 41, 59) (the contract default)
+ *      Light: --wtv-main-bg falls back to var(--base-main-bg, #ffffff)  → rgb(255, 255, 255)
+ *      Dark:  --wtv-main-bg falls back to var(--base-main-bg, #1e293b)  → rgb(30, 41, 59) (the contract default)
  *      Triggered by per-instance theme="dark"/"light" prop (mirrored to
  *      data-theme on the container by _applyTheme).
  *

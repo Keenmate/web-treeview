@@ -101,7 +101,7 @@ test.describe('expanded-change', () => {
     await expect.poll(() => events(page)).toEqual(['2', '']);
   });
 
-  test('expandAll / assigning expandedPaths fire it; { silent: true } does not; the twin gets the detail', async ({ page }) => {
+  test('expandAll / assigning expandedPaths fire it; { isSilent: true } does not; the twin gets the detail', async ({ page }) => {
     await load(page, 'api');
     await listen(page);
     await page.evaluate(() => {
@@ -111,7 +111,7 @@ test.describe('expanded-change', () => {
     });
     await page.evaluate(() => (window as any).tree.expandAll());
     await expect.poll(() => events(page)).toEqual(['1,1.1,1.1.1,2,2.1,3,3.1']);
-    await page.evaluate(() => (window as any).tree.collapseAll(null, { silent: true }));
+    await page.evaluate(() => (window as any).tree.collapseAll(null, { isSilent: true }));
     await page.waitForTimeout(50);
     expect(await events(page)).toEqual(['1,1.1,1.1.1,2,2.1,3,3.1']);
     await page.evaluate(() => { (window as any).tree.expandedPaths = ['3']; });
@@ -119,14 +119,36 @@ test.describe('expanded-change', () => {
     expect(await page.evaluate(() => (window as any).__twin)).toEqual([7, 1]);
   });
 
-  test('toggleNodeExpanded(path, { silent }) changes the state without events; isExclusive collapses the rest', async ({ page }) => {
+  test('toggleNodeExpanded(path, { isSilent }) changes the state without events; isExclusive collapses the rest', async ({ page }) => {
     await load(page, 'api');
     await listen(page);
-    await page.evaluate(() => (window as any).tree.toggleNodeExpanded('2', { silent: true }));
+    await page.evaluate(() => (window as any).tree.toggleNodeExpanded('2', { isSilent: true }));
     await expect.poll(() => page.evaluate(() => (window as any).tree.expandedPaths)).toEqual(['2']);
     await page.waitForTimeout(50);
     expect(await events(page)).toEqual([]);
     await page.evaluate(() => (window as any).tree.toggleNodeExpanded('3', { isExclusive: true }));
     await expect.poll(() => events(page)).toEqual(['3']);
+  });
+
+  test('isSilent = no events only: expandNodes / collapseNodes / expandAll / collapseAll still re-render', async ({ page }) => {
+    await load(page, 'api');
+    await listen(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.__nodeEvents = 0;
+      w.tree.addEventListener('node-expand', () => w.__nodeEvents++);
+      w.tree.addEventListener('node-collapse', () => w.__nodeEvents++);
+    });
+    await page.evaluate(() => (window as any).tree.expandNodes('2', { isSilent: true }));
+    await expect.poll(() => rows(page)).toEqual(['1', '2', '2.1', '3']);
+    await page.evaluate(() => (window as any).tree.collapseNodes('2', { isSilent: true }));
+    await expect.poll(() => rows(page)).toEqual(['1', '2', '3']);
+    await page.evaluate(() => (window as any).tree.expandAll(null, { isSilent: true }));
+    await expect.poll(() => rows(page)).toEqual(['1', '1.1', '1.1.1', '2', '2.1', '3', '3.1']);
+    await page.evaluate(() => (window as any).tree.collapseAll(null, { isSilent: true }));
+    await expect.poll(() => rows(page)).toEqual(['1', '2', '3']);
+    await page.waitForTimeout(50);
+    expect(await events(page)).toEqual([]);
+    expect(await page.evaluate(() => (window as any).__nodeEvents)).toBe(0);
   });
 });

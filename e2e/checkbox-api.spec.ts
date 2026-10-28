@@ -88,7 +88,7 @@ test.describe('checked-set API (cascade)', () => {
 
   test('silent variants skip checked-change but update state', async ({ page }) => {
     await load(page);
-    await call(page, 'checkNode', '2', { silent: true });
+    await call(page, 'checkNode', '2', { isSilent: true });
     await expect(box(page, '2.1')).toBeChecked();
     expect(await lastChecked(page)).toBeUndefined();
   });

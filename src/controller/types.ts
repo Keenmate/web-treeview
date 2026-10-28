@@ -33,8 +33,9 @@ export type SelectMode = 'replace' | 'toggle' | 'range';
 /** Options shared by every imperative select/check/focus mutator. */
 export interface TreeMutationOptions {
   /** Update state without firing the change callbacks (e.g. when restoring
-   *  state from URL params or other external sources). */
-  silent?: boolean;
+   *  state from URL params or other external sources). Events only — the tree
+   *  still re-renders. */
+  isSilent?: boolean;
 }
 
 // ─── Shared interfaces (also used by renderers) ────────────────────────

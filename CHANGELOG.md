@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (round 3, 2026-10-28)
+
+- **`silent` → `isSilent`** in every options object (`TreeMutationOptions` on the
+  select / check / focus mutators, `ExpandOptions`).
+- **`isSilent` = no events / callbacks only — the tree always re-renders.** `expandNodes` /
+  `collapseNodes` / `expandAll` / `collapseAll` with the flag used to skip the tree-changed
+  notification, so the change didn't show until something else re-rendered.
+
 ### Changed — BREAKING (leftover naming decisions, 2026-10-28)
 
 - **`data` → `nodes`.** The input is now **`el.nodes`** (`TreeViewConfig.nodes`);
@@ -26,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   text as its `aria-label`.
 - A `labels` value of `''` deliberately renders nothing; a missing / `undefined` key is the
   English default. All labels are inserted as text.
-- **`ExpandOptions { isExclusive?, silent? }`** (exported type) for `expandNodes` /
+- **`ExpandOptions { isExclusive?, isSilent? }`** (exported type) for `expandNodes` /
   `collapseNodes` / `toggleNodeExpanded` / `expandAll` / `collapseAll` — was
   `{ exclusive?, noEmit? }`. `toggleNodeExpanded(path, options?)` now takes the options too.
   The first parameter of the family is `paths` (`string | string[]`; `expandAll` /
@@ -83,8 +91,8 @@ aliases — rename on upgrade.
   `getSelectedPaths()` / `setSelectedPaths(paths)` → **`selectedPaths`**; `getCheckedPaths()` /
   `setCheckedPaths(paths)` → **`checkedPaths`**; `getFocusedNode()` → **`focusedNode`**
   (read-only); `getInsertResult()` → **`insertResult`** (read-only). Assigning replaces the set and fires its change event; values assigned before
-  the first build are applied right after it. The `{ silent }` option of the removed setters:
-  use `clearSelection(undefined, { silent: true })` + `selectNodes(paths, { silent: true })`.
+  the first build are applied right after it. The `{ isSilent }` option of the removed setters:
+  use `clearSelection(undefined, { isSilent: true })` + `selectNodes(paths, { isSilent: true })`.
 - **Inputs — config keys** (one prefix rule: `is*Shown` visibility, `is*Enabled` feature,
   `should*` policy; one `virtualScroll*` family):
 

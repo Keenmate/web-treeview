@@ -298,17 +298,17 @@ batches until every row is in the DOM" is `test.fail`.
 
 ## 11. ~~Silent focus / selection still fire `focus-change`~~ — fixed
 
-**Fixed 2026-10-25:** a `{ silent: true }` focus / selection operation (`focusNode`, `clearFocus`, `selectNode`, `selectNodes`, `setSelectedPaths`, `clearSelection`, `selectAll`) marks the focus it produced (`engine.takeSilentFocus()`); the facade swallows exactly that `focus-change`. A later non-silent operation clears the marker. Both `test.fail`s in `selection-api.spec.ts` pass.
+**Fixed 2026-10-25:** a `{ isSilent: true }` focus / selection operation (`focusNode`, `clearFocus`, `selectNode`, `selectNodes`, `setSelectedPaths`, `clearSelection`, `selectAll`) marks the focus it produced (`engine.takeSilentFocus()`); the facade swallows exactly that `focus-change`. A later non-silent operation clears the marker. Both `test.fail`s in `selection-api.spec.ts` pass.
 
 Original report:
 
 **Where:** `src/treeview.ts` (~106-116) emits `focus-change` from the
 engine's `state-change` whenever the focused path differs; the engine's
-`focusNode(path, _options)` / `clearFocus(_options)` ignore `silent`, and a
+`focusNode(path, _options)` / `clearFocus(_options)` ignore `isSilent`, and a
 silent `selectNode` moves focus too.
 
-**Symptom:** `focusNode('1.2', { silent: true })`, `clearFocus({ silent: true })`
-and `selectNode('1.2', 'replace', { silent: true })` each fire `focus-change`.
+**Symptom:** `focusNode('1.2', { isSilent: true })`, `clearFocus({ isSilent: true })`
+and `selectNode('1.2', 'replace', { isSilent: true })` each fire `focus-change`.
 That breaks the URL-restore use case the silent flag exists for (restoring
 state without echoing events).
 

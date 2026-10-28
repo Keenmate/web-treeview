@@ -338,7 +338,7 @@ const EVENTS: readonly EventDef[] = [
   { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' },
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
-  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ silent: true }` operations. Twin: `onExpandedChange(detail)`.' },
+  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ isSilent: true }` operations. Twin: `onExpandedChange(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
 ];
@@ -817,7 +817,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /** The selected set (a snapshot). Assigning replaces it and fires `selection-change`
-   *  (use `clearSelection` / `selectNodes` with `{ silent: true }` for a silent restore). */
+   *  (use `clearSelection` / `selectNodes` with `{ isSilent: true }` for a silent restore). */
   get selectedPaths(): string[] {
     return this.#live?.selectedPaths ?? [...(this.#pendingState.selectedPaths ?? [])];
   }

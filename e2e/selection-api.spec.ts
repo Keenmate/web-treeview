@@ -45,19 +45,19 @@ test('assigning selectedPaths replaces the set (hidden paths included) and emits
   expect(lines).toEqual(['selection-change:1.1.1,1.2']);
 });
 
-test('silent replace (clearSelection + selectNodes with { silent }): state + DOM update, no selection-change', async ({ page }) => {
+test('silent replace (clearSelection + selectNodes with { isSilent }): state + DOM update, no selection-change', async ({ page }) => {
   await load(page);
-  await call(page, 'selectNode', '2', 'replace', { silent: true });
-  await call(page, 'clearSelection', undefined, { silent: true });
-  await call(page, 'selectNodes', ['1.2'], { silent: true });
+  await call(page, 'selectNode', '2', 'replace', { isSilent: true });
+  await call(page, 'clearSelection', undefined, { isSilent: true });
+  await call(page, 'selectNodes', ['1.2'], { isSilent: true });
   expect(await selected(page)).toEqual(['1.2']);
   await expect(isSelectedRow(page, '1.2')).toHaveClass(/wtv__node-content--selected/);
   expect((await settledLog(page)).filter((l) => l.startsWith('selection-change'))).toEqual([]);
 });
 
-test('selectAll silent: no selection-change', async ({ page }) => {
+test('selectAll isSilent: no selection-change', async ({ page }) => {
   await load(page);
-  await call(page, 'selectAll', { silent: true });
+  await call(page, 'selectAll', { isSilent: true });
   expect(await selected(page)).toEqual(['1', '1.1', '1.2', '2']);
   expect((await settledLog(page)).filter((l) => l.startsWith('selection-change'))).toEqual([]);
 });
@@ -103,15 +103,15 @@ test('focusNode on a missing path is a no-op', async ({ page }) => {
 
 test('focusNode / clearFocus silent fire no focus-change', async ({ page }) => {
   await load(page);
-  await call(page, 'focusNode', '1.2', { silent: true });
+  await call(page, 'focusNode', '1.2', { isSilent: true });
   expect(await focused(page)).toBe('1.2');
-  await call(page, 'clearFocus', { silent: true });
+  await call(page, 'clearFocus', { isSilent: true });
   expect(await settledLog(page)).toEqual([]);
 });
 
 test('selectNode silent fires nothing (no selection-change, no focus-change)', async ({ page }) => {
   await load(page);
-  await call(page, 'selectNode', '1.2', 'replace', { silent: true });
+  await call(page, 'selectNode', '1.2', 'replace', { isSilent: true });
   expect(await selected(page)).toEqual(['1.2']);
   expect(await settledLog(page)).toEqual([]);
 });

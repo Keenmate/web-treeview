@@ -8,8 +8,8 @@ export interface ExpandOptions {
 	 *  chain (or under the target). No effect on collapse. */
 	isExclusive?: boolean;
 	/** Change the state without announcing it: no `node-expand` / `node-collapse`
-	 *  / `expanded-change`. */
-	silent?: boolean;
+	 *  / `expanded-change` (the tree still re-renders). */
+	isSilent?: boolean;
 }
 
 // Re-export LTreeNode and DropPosition for convenience

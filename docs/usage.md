@@ -233,8 +233,8 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
 
 Assigned before the first build, `expandedPaths` / `selectedPaths` / `checkedPaths` are held and
-applied right after it. For a silent replace use `clearSelection(undefined, { silent: true })` +
-`selectNodes(paths, { silent: true })` (and `uncheckAll` / `checkNodes` likewise).
+applied right after it. For a silent replace use `clearSelection(undefined, { isSilent: true })` +
+`selectNodes(paths, { isSilent: true })` (and `uncheckAll` / `checkNodes` likewise).
 
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
 
@@ -388,7 +388,7 @@ All methods are available on the element **and** on `el.controller`.
 | `expandAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
 | `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
 
-`ExpandOptions`: `{ isExclusive?: boolean; silent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `silent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
+`ExpandOptions`: `{ isExclusive?: boolean; isSilent?: boolean }` — `isExclusive` (expand) collapses every expanded node off the targets' ancestor chains; `isSilent` changes the state without `node-expand` / `node-collapse` / `expanded-change`.
 | `filterNodes` | `(term)` | Filter the tree by a search term (hide non-matching) |
 | `searchNodes` | `(term): LTreeNode[]` | Find matching nodes without filtering |
 | `scrollToPath` | `(path, options?): Promise<boolean>` | Scroll to (and optionally highlight) a node |
@@ -510,13 +510,13 @@ tree.navigationOverrides = null; // back to the defaults
 | `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed (`paths`: `string[]`) |
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed (`paths`: `string[]`) |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
-| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ silent: true }` |
+| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ isSilent: true }` |
 | `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 
-Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ silent: true }` fire none of them.
+Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 
-`silent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
+`isSilent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 
 ## Lazy loading
 

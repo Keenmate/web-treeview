@@ -1,14 +1,14 @@
 import { test, expect, Page } from './fixtures';
 
 /**
- * E2E coverage for the `silent: true` option on selectNode / selectNodes /
+ * E2E coverage for the `isSilent: true` option on selectNode / selectNodes /
  * clearSelection / uncheckAll.
  *
  * The fixture counts node-clicked / selection-change / checked-change events
  * (the web-component's DOM-level events, equivalent to the Svelte build's
  * onNodeClick/onSelectionChange/onCheckedChange callbacks). Each control
  * button calls a single tree method once with options omitted ("loud") and
- * once with { silent: true }. The spec asserts that counters do NOT bump in
+ * once with { isSilent: true }. The spec asserts that counters do NOT bump in
  * silent mode but state still updates.
  */
 

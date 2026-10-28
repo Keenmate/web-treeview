@@ -310,7 +310,7 @@
                 that flow would re-trigger your form-loader and overwrite whatever the URL just supplied.
             </p>
             <p>
-                Pass <code>{ silent: true }</code> to <code>selectNode()</code> / <code>selectNodes()</code> /
+                Pass <code>{ isSilent: true }</code> to <code>selectNode()</code> / <code>selectNodes()</code> /
                 <code>clearSelection()</code> / <code>uncheckAll()</code>. State (selected set, CSS class,
                 focused node) still updates &mdash; only the <code>selection-change</code> / <code>checked-change</code>
                 events are suppressed.
@@ -323,7 +323,7 @@
                 </label>
                 <label>
                     <input type="checkbox" id="in5-silent" checked>
-                    <code>silent: true</code>
+                    <code>isSilent: true</code>
                 </label>
                 <button id="in5-load">Simulate URL load</button>
                 <button class="secondary" id="in5-reset">Reset</button>
@@ -345,7 +345,7 @@
 <pre><code>// Restore tree state from URL params without firing selection-change
 function restoreFromUrl(nodePath) {
   loadFormDataFromUrl(nodePath);              // preserve this value
-  tree.selectNode(nodePath, 'replace', { silent: true });
+  tree.selectNode(nodePath, 'replace', { isSilent: true });
   tree.scrollToPath(nodePath, { expand: true, highlight: true });
 }</code></pre>
             </div>
@@ -643,19 +643,19 @@ function restoreFromUrl(nodePath) {
 
             document.getElementById('in5-load').addEventListener('click', async () => {
                 const path = document.getElementById('in5-path').value.trim();
-                const silent = document.getElementById('in5-silent').checked;
+                const isSilent = document.getElementById('in5-silent').checked;
                 // 1. Load form data from the "URL" — preserve this value.
                 in5FormEl.textContent = `URL-loaded data for "${path}" — do not overwrite`;
                 in5Fires = 0;
                 // 2. Mark the node; silent skips selection-change.
-                in5.selectNode(path, 'replace', { silent });
+                in5.selectNode(path, 'replace', { isSilent });
                 // 3. Scroll into view (scrollToPath never fires selection events).
                 await in5.scrollToPath(path, { expand: true, highlight: true, behavior: 'smooth', block: 'center' });
                 updateIn5Fires();
             });
             document.getElementById('in5-silent').addEventListener('change', updateIn5Fires);
             document.getElementById('in5-reset').addEventListener('click', () => {
-                in5.clearSelection(undefined, { silent: true });
+                in5.clearSelection(undefined, { isSilent: true });
                 in5Fires = 0;
                 in5FormEl.textContent = '(form not loaded yet)';
                 in5FiresEl.textContent = '0 time(s)';

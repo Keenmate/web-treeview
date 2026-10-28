@@ -130,7 +130,7 @@ export class WebTreeView<T = any> {
       this.options.onTreeChange?.(this.ctx({}));
       const focusedNode: LTreeNode<T> | null = snapshot.focusedNode ?? null;
       const path = focusedNode?.path ?? null;
-      // A focus produced by a `{ silent: true }` operation is not echoed (NOTES #11).
+      // A focus produced by a `{ isSilent: true }` operation is not echoed (NOTES #11).
       const silentPath = this.engine.takeSilentFocus();
       const expanded = this.engine.takeExpandedChange();
       if (expanded) this.options.onExpandedChange?.(this.ctx({ paths: expanded }));

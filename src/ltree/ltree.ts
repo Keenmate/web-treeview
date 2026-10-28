@@ -605,8 +605,6 @@ export function createLTree<T>(
 			perfStart(`[${_treeId}] expandAll`);
 			const self = this;
 			const exclusive = options?.isExclusive ?? false;
-			const noEmit = options?.silent ?? false;
-
 			function setExpandedRecursive(node: LTreeNode<T>, value: boolean) {
 				if (node.isExpanded !== value) {
 					node.isExpanded = value;
@@ -680,7 +678,8 @@ export function createLTree<T>(
 				}
 			}
 
-			if (!noEmit) this._emitTreeChanged();
+			// isSilent = no events only; the tree always re-renders.
+			this._emitTreeChanged();
 			perfEnd(`[${_treeId}] expandAll`);
 		},
 
@@ -690,7 +689,6 @@ export function createLTree<T>(
 		): void {
 			perfStart(`[${_treeId}] collapseAll`);
 			const self = this;
-			const noEmit = options?.silent ?? false;
 
 			function collapseRecursive(node: LTreeNode<T>) {
 				if (node.isExpanded && self.getNodeIsCollapsible(node)) {
@@ -717,7 +715,7 @@ export function createLTree<T>(
 				}
 			}
 
-			if (!noEmit) this._emitTreeChanged();
+			this._emitTreeChanged(); // isSilent = no events only; always re-render
 			perfEnd(`[${_treeId}] collapseAll`);
 		},
 
@@ -753,7 +751,6 @@ export function createLTree<T>(
 			perfStart(`[${_treeId}] expandNodes`);
 			const self = this;
 			const exclusive = options?.isExclusive ?? false;
-			const noEmit = options?.silent ?? false;
 			const rootNode = this.isFiltered ? filteredRoot : root;
 			const paths = Array.isArray(path) ? path : [path];
 			let hasChanges = false;
@@ -805,7 +802,7 @@ export function createLTree<T>(
 				}
 			}
 
-			if (!noEmit && hasChanges) {
+			if (hasChanges) {
 				this._emitTreeChanged();
 			}
 
@@ -817,7 +814,6 @@ export function createLTree<T>(
 			path: string | string[],
 			options?: ExpandOptions
 		) {
-			const noEmit = options?.silent ?? false;
 			const rootNode = this.isFiltered ? filteredRoot : this.root;
 			const paths = Array.isArray(path) ? path : [path];
 			let hasChanges = false;
@@ -845,7 +841,7 @@ export function createLTree<T>(
 				}
 			}
 
-			if (!noEmit && hasChanges) {
+			if (hasChanges) {
 				this._emitTreeChanged();
 			}
 

@@ -948,7 +948,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * children and is collapsed goes through `beforeExpandCallback` first (a
    * `false` keeps it collapsed; an async hook defers it, showing the loading
    * state). Fires `node-expand` for every node that actually expanded (the
-   * collapsed ancestors on the way included) unless `silent`. `isExclusive`
+   * collapsed ancestors on the way included) unless `isSilent`. `isExclusive`
    * side-effect collapses fire no `node-collapse`.
    */
   expandNodes(
@@ -977,7 +977,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (now.length) this._expandWithEvents(now, options);
   }
 
-  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `silent`). */
+  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `isSilent`). */
   collapseNodes(
     nodePath: string | string[],
     options?: ExpandOptions
@@ -987,8 +987,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       .map((p) => this.tree?.getNodeByPath(p))
       .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
     this.tree.collapseNodes(nodePath, options);
-    this._markExpanded(options?.silent);
-    if (options?.silent) return;
+    this._markExpanded(options?.isSilent);
+    if (options?.isSilent) return;
     for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
   }
 
@@ -1012,8 +1012,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(paths, options);
-    this._markExpanded(options?.silent);
-    if (options?.silent) return;
+    this._markExpanded(options?.isSilent);
+    if (options?.isSilent) return;
     for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
   }
 
@@ -1065,7 +1065,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  toggleExpanded() flow. An expand goes through `beforeExpandCallback`;
    *  a node whose async hook is pending ignores the toggle.
    *  `options.isExclusive` (expand only) replaces the accordion with the
-   *  exclusive expand of `expandNodes`; `options.silent` fires no events. */
+   *  exclusive expand of `expandNodes`; `options.isSilent` fires no events. */
   toggleNodeExpanded(path: string, options?: ExpandOptions): void {
     const node = this.getNodeByPath(path);
     if (!node || !node.hasChildren) return;
@@ -1110,7 +1110,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(path, options);
-    if (options?.silent) {
+    if (options?.isSilent) {
       this._markExpanded(true);
       return;
     }
@@ -1123,7 +1123,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     options?: ExpandOptions
   ) {
     this.tree?.expandAll(nodePath, options);
-    this._markExpanded(options?.silent);
+    this._markExpanded(options?.isSilent);
   }
 
   collapseAll(
@@ -1131,7 +1131,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     options?: ExpandOptions
   ) {
     this.tree?.collapseAll(nodePath, options);
-    this._markExpanded(options?.silent);
+    this._markExpanded(options?.isSilent);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -1723,7 +1723,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  - `mode='replace'`: replaces the set with `path`
    *  - `mode='toggle'`: toggles `path` in/out of the set
    *  - `mode='range'`: range-selects from focused node to `path`
-   *  Pass `{ silent: true }` to skip the `selectionChangeCallback` / mirror callbacks. */
+   *  Pass `{ isSilent: true }` to skip the `selectionChangeCallback` / mirror callbacks. */
   selectNode(
     path: string,
     mode: SelectMode = 'replace',
@@ -1744,7 +1744,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _markSilentFocus(options?: TreeMutationOptions): void {
     // A later non-silent operation (e.g. setSelectedPaths around its internal
     // silent selectNodes) clears the marker so its focus change is emitted.
-    this._silentFocusPath = options?.silent ? (this._focusedNode?.path ?? null) : undefined;
+    this._silentFocusPath = options?.isSilent ? (this._focusedNode?.path ?? null) : undefined;
   }
 
   /** Consume the silent-focus marker (called by the facade on each state-change). */
@@ -1756,7 +1756,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Add nodes to the selected set (additive — existing selections are kept).
    *  Use setSelectedPaths() to replace the whole set instead.
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   selectNodes(paths: string[], options?: TreeMutationOptions): void {
     let lastNode: LTreeNode<T> | null = null;
     for (const path of paths) {
@@ -1772,7 +1772,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._lastSelectedPath = lastNode.path;
       this._focusedNode = lastNode;
     }
-    if (!options?.silent) {
+    if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
@@ -1783,13 +1783,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Replace the entire selected set with the given paths.
    *  Equivalent to clearSelection() + selectNodes(paths).
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
     this._clearSelectionFlags();
     this._selectedPaths.clear();
     this._lastSelectedPath = null;
-    this.selectNodes(paths, { silent: true });
-    if (!options?.silent) {
+    this.selectNodes(paths, { isSilent: true });
+    if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
@@ -1799,7 +1799,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Clear the selection. Pass `paths` to clear only those nodes, or omit to clear all.
-   *  Pass `{ silent: true }` to skip `selectionChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   clearSelection(paths?: string[], options?: TreeMutationOptions): void {
     if (paths && paths.length > 0) {
       for (const path of paths) {
@@ -1819,7 +1819,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._lastSelectedPath = null;
       this._focusedNode = null;
     }
-    if (!options?.silent) {
+    if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
@@ -1848,7 +1848,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return this._selectedPaths.has(path);
   }
 
-  /** Select every visible node. Pass `{ silent: true }` to skip
+  /** Select every visible node. Pass `{ isSilent: true }` to skip
    *  `selectionChangeCallback`. */
   selectAll(options?: TreeMutationOptions): void {
     this._clearSelectionFlags();
@@ -1864,7 +1864,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._lastSelectedPath = visible[visible.length - 1].path;
       this._focusedNode = visible[visible.length - 1];
     }
-    if (!options?.silent) {
+    if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
@@ -1937,7 +1937,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _applySelection(
     path: string,
     modifiers?: SelectionModifiers,
-    options?: { silent?: boolean }
+    options?: { isSilent?: boolean }
   ): void {
     const node = this.tree?.getNodeByPath(path);
     if (!node) return;
@@ -1979,7 +1979,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._focusedNode = node;
     }
 
-    if (!options?.silent) {
+    if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
     }
@@ -2132,37 +2132,37 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Check a single node (cascades to descendants in cascade mode).
-   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState([path], true);
-    if (changed && !options?.silent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Check multiple nodes (additive — existing checks are kept).
    *  Use setCheckedPaths() to replace the whole set instead.
-   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState(paths, true);
-    if (changed && !options?.silent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Replace the entire checkbox set with the given paths.
    *  Equivalent to uncheckAll() + checkNodes(paths).
-   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
     this._applyCheckboxState(paths, true);
-    if (!options?.silent) this._emitCheckedChange();
+    if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Check every selectable node. Pass `{ silent: true }` to skip
+  /** Check every selectable node. Pass `{ isSilent: true }` to skip
    *  `checkedChangeCallback`. */
   checkAll(options?: TreeMutationOptions): void {
     const newPaths = new Set<string>();
@@ -2177,43 +2177,43 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     };
     for (const root of this.tree?.tree ?? []) traverse(root);
     this._checkedPaths = newPaths;
-    if (!options?.silent) this._emitCheckedChange();
+    if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   /** Uncheck a single node (cascades to descendants in cascade mode).
-   *  Pass `{ silent: true }` to skip `checkedChangeCallback`. */
+   *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   uncheckNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._applyCheckboxState([path], false);
-    if (changed && !options?.silent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Uncheck the given nodes (cascades in cascade mode). Pass `{ silent: true }`
+  /** Uncheck the given nodes (cascades in cascade mode). Pass `{ isSilent: true }`
    *  to skip `checkedChangeCallback`. */
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
     if (!paths || paths.length === 0) return;
     const changed = this._applyCheckboxState(paths, false);
-    if (changed && !options?.silent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
-  /** Uncheck every node (empty the checked set). Pass `{ silent: true }` to skip
+  /** Uncheck every node (empty the checked set). Pass `{ isSilent: true }` to skip
    *  `checkedChangeCallback`. */
   uncheckAll(options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
-    if (!options?.silent) this._emitCheckedChange();
+    if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
 
   // ── Focus (single cursor) ────────────────────────────────────────────
 
-  /** Move focus to a node. `{ silent: true }` suppresses the resulting
+  /** Move focus to a node. `{ isSilent: true }` suppresses the resulting
    *  `focus-change` (URL / state restore). */
   focusNode(path: string, options?: TreeMutationOptions): void {
     const node = this.tree?.getNodeByPath(path);
@@ -4189,9 +4189,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _expandedDirty = false;
   private _lastExpandedKey: string | undefined = undefined;
 
-  /** After an expansion op: `silent` re-baselines without announcing. */
-  private _markExpanded(silent?: boolean): void {
-    if (silent) {
+  /** After an expansion op: `isSilent` re-baselines without announcing. */
+  private _markExpanded(isSilent?: boolean): void {
+    if (isSilent) {
       this._lastExpandedKey = this.getExpandedPaths().join('\u0000');
       this._expandedDirty = false;
     } else {

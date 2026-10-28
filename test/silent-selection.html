@@ -131,14 +131,14 @@
             });
 
             wire('select-loud',         () => tree.selectNode('1.2'));
-            wire('select-silent',       () => tree.selectNode('1.2', 'replace', { silent: true }));
-            wire('select-other-silent', () => tree.selectNode('2.1', 'replace', { silent: true }));
+            wire('select-silent',       () => tree.selectNode('1.2', 'replace', { isSilent: true }));
+            wire('select-other-silent', () => tree.selectNode('2.1', 'replace', { isSilent: true }));
             wire('select-many-loud',    () => tree.selectNodes(['1.1', '1.2']));
-            wire('select-many-silent',  () => tree.selectNodes(['1.1', '1.2'], { silent: true }));
+            wire('select-many-silent',  () => tree.selectNodes(['1.1', '1.2'], { isSilent: true }));
             wire('clear-loud',             () => tree.clearSelection());
-            wire('clear-silent',           () => tree.clearSelection(undefined, { silent: true }));
+            wire('clear-silent',           () => tree.clearSelection(undefined, { isSilent: true }));
             wire('clear-checked-loud',   () => tree.uncheckAll());
-            wire('clear-checked-silent', () => tree.uncheckAll({ silent: true }));
+            wire('clear-checked-silent', () => tree.uncheckAll({ isSilent: true }));
         });
     </script>
     <style>

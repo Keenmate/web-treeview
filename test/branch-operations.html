@@ -86,7 +86,7 @@
         }
 
         function refreshTotals(tree) {
-            setText('total-node-count', String(tree.controller.nodes.length));
+            setText('total-node-count', String(tree.nodes.length));
             setText('clipboard-source', clipboard ? clipboard.sourcePath : '(empty)');
         }
 

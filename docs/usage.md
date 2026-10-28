@@ -218,7 +218,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `nodes` | `T[]` | Array of node objects to display (input; `controller.nodes` reads the current state) |
+| `nodes` | `T[]` | Array of node objects to display - assigning replaces the tree; reading returns the current state (every node's data in tree order, mutations included) |
 | `renderer` | `TreeViewRenderer<T>` | Custom renderer (replaces default DomRenderer) |
 | `navigationOverrides` | `TreeNavigationOverrides<T> \| null` | Replace individual keyboard-navigation methods — see [Keyboard navigation overrides](#keyboard-navigation-overrides). Reassign to swap at runtime; `null` restores the defaults |
 | `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + the state properties below (read-only there) + `getNodeRef(path)`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
@@ -396,7 +396,7 @@ All methods are available on the element **and** on `el.controller`.
 | `getNodeRef` | `(path): NodeRef` | `{ path, node, parent, siblings }` for a path |
 | `getChildren` / `getSiblings` | `(path): LTreeNode[]` | Children of a node / siblings of a node (including itself) |
 | `getVisibleFlatNodes` | `(): LTreeNode[]` | The visible rows in order |
-| `controller.nodes` | `T[]` (read-only) | Current state: every node's data in tree order, mutations included (`el.nodes` is the input) |
+| `controller.nodes` | `T[]` | Same as `el.nodes`: the current state (every node's data in tree order, mutations included) |
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
 | `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |

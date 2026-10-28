@@ -117,6 +117,10 @@ const toTooltipDelay = () =>
 // the rc05 API rename; the table below just moves them from the hand-coded
 // `ATTRIBUTE_TABLE` onto the core input model verbatim.
 // ============================================================================
+/** Live `el.nodes` (core `getLiveValue`, SPEC §4.1): the built tree's current node data.
+ *  Assigned in a static block so it can reach the private `#treeview`. */
+let readLiveNodes: (el: HTMLElement) => unknown[] | undefined = () => undefined;
+
 const INPUTS: readonly InputDef[] = [
   // ── Tree identification ────────────────────────────────────────────────────
   { configKey: 'treeId', attribute: 'tree-id', converter: toText({ isNullable: true }), on: 'update', description: 'Stable identifier for this tree (clipboard / cross-tree operations).' },
@@ -235,7 +239,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggle-checkbox', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
   // ── Complex property (nodes; too large for an attribute) ───────────────────
-  { configKey: 'nodes', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', type: 'ReadonlyArray<Record<string, unknown>>', description: 'The array of node objects to render. Assign `el.nodes` directly (JS API). `el.controller.nodes` reads the current state (every node data object in tree order, mutations included).' },
+  { configKey: 'nodes', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', getLiveValue: (el) => readLiveNodes(el), type: 'ReadonlyArray<Record<string, unknown>>', description: 'The node objects. Assigning replaces the tree (JS API); reading returns the current state once built — every node data object in tree order, mutations included (also `el.controller.nodes`).' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
   { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
@@ -345,6 +349,10 @@ const NON_ENGINE_KEYS = new Set(['getCustomStylesCallback']);
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
   protected static override events = EVENTS;
+
+  static {
+    readLiveNodes = (el) => (el instanceof WebTreeViewElement ? el.#treeview?.nodes : undefined);
+  }
 
   // Type-only: core installs the `on<Name>` twins at runtime (§12.5); each is
   // called with the event detail (not the CustomEvent), right before the event.

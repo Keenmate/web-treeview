@@ -275,3 +275,31 @@ test('state properties: assigned before the first build are applied after it; co
   expect(out.cFocused).toBe(out.focused);
   expect(out.stillSelected).toBe(2);
 });
+
+test('el.nodes: the assigned input before the build, the live state after it (mutations included)', async ({ page }) => {
+  await load(page);
+  const out = await page.evaluate(async () => {
+    const el = document.createElement('web-treeview') as any;
+    const input = [{ id: 1, path: '1', name: 'A' }, { id: 2, path: '2', name: 'B' }];
+    el.nodes = input;
+    const beforeBuild = el.nodes === input;
+    document.body.appendChild(el);
+    await el.whenReady();
+    el.addNode('1', { id: 11, name: 'A1' }, '1');
+    el.removeNode('2');
+    const live = el.nodes.map((n: any) => n.path);
+    const sameAsController = JSON.stringify(el.nodes) === JSON.stringify(el.controller.nodes);
+    el.nodes = [{ id: 9, path: '9', name: 'Z' }];
+    const staged = el.nodes.map((n: any) => n.path);
+    await el.whenSettled();
+    const replaced = el.nodes.map((n: any) => n.path);
+    el.remove();
+    return { beforeBuild, live, sameAsController, inputUntouched: input.length, staged, replaced };
+  });
+  expect(out.beforeBuild).toBe(true);
+  expect(out.live).toEqual(['1', '1.1']);
+  expect(out.sameAsController).toBe(true);
+  expect(out.inputUntouched).toBe(2);
+  expect(out.staged).toEqual(['9']);
+  expect(out.replaced).toEqual(['9']);
+});

@@ -276,7 +276,7 @@
                     <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
                     <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>focusedNode</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
                     <tr><td><code>selectedPaths</code> / <code>checkedPaths</code> / <code>expandedPaths</code> / <code>focusNode(path)</code></td><td>Selected, checked, expanded state (properties — assign to replace) &amp; focus.</td></tr>
-                    <tr><td><code>controller.nodes</code> / <code>getNodeByPath(path)</code></td><td>Current node data (mutations included); look up one node.</td></tr>
+                    <tr><td><code>nodes</code> / <code>getNodeByPath(path)</code></td><td>Current node data (mutations included); look up one node.</td></tr>
                     <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
                 </tbody>
             </table>
@@ -480,7 +480,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
             function focused() { return tree.focusedNode; }
 
             function refreshState() {
-                const all = tree.controller.nodes;
+                const all = tree.nodes;
                 document.getElementById('te-json').textContent = JSON.stringify(
                     all.map(d => ({ path: d.path, name: d.name, sortOrder: d.sortOrder })), null, 2
                 );
@@ -567,7 +567,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
             window.moveDown = () => move(1);
 
             window.exportConsole = () => {
-                const all = tree.controller.nodes;
+                const all = tree.nodes;
                 console.log('Exported tree data:', all);
                 addLog(`Exported ${all.length} nodes to console`);
             };

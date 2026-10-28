@@ -142,8 +142,8 @@ import type {
 
 export interface TreeViewConfig<T = any> {
   // Required
-  /** The node objects to render (input). Read back on the controller (`controller.nodes`) it
-   *  is the current state — every node's data in tree order, mutations included. */
+  /** The node objects to render (input). Read back (`el.nodes` / `controller.nodes`) it is
+   *  the current state — every node's data in tree order, mutations included. */
   nodes: T[];
   idMember: string;
   pathMember: string;

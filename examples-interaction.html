@@ -709,7 +709,7 @@ function restoreFromUrl(nodePath) {
             in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
 
             function updateBulkOutput() {
-                const data = in6bulk.controller.nodes;
+                const data = in6bulk.nodes;
                 document.getElementById('in6-bulk-out').textContent = JSON.stringify(
                     data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
             }

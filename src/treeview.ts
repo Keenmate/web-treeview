@@ -2,7 +2,8 @@ import { resolveLabel, type TreeViewLabels } from './labels';
 import { TreeEngine } from './controller/tree-engine';
 import type { TreeLoggers } from './logger';
 import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext } from './controller/types';
-import type { TreeViewRenderer, RendererConfig } from './renderer/types';
+import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer/types';
+import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
@@ -27,10 +28,10 @@ import { runAction, type ResolvedActionItem } from '@keenmate/web-components-cor
 const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded', 'sortNodes', 'sortAll',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
-  'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree',
+  'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree', 'refreshNode', 'refreshSiblings', 'isNodeDropAllowed',
   'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
   'applyChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
-  'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected',
+  'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected', 'toggleFocusedSelect',
   'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
   'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
   'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
@@ -44,7 +45,7 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
   searchNodes: () => [], getNodeByPath: () => null, getChildren: () => [],
   getSiblings: () => [], getNodeRef: () => ({ path: '', node: null, parent: null, siblings: [] }),
   getVisibleFlatNodes: () => [], getSelectedNodes: () => [],
-  isNodeSelected: () => false, getCheckedNodes: () => [],
+  isNodeSelected: () => false, isNodeDropAllowed: () => false, getCheckedNodes: () => [],
   isNodeChecked: () => false, hasClipboardContent: () => false,
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
   pasteNodes: () => ({ success: false, count: 0, skipped: 0, error: 'Not initialized' }),
@@ -56,7 +57,11 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
  * its current {@link WebTreeView} (so the facade survives rebuilds), a standalone
  * WebTreeView passes itself.
  */
-export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | undefined): TreeViewController<T> {
+export function createTreeViewController<T>(
+  getTarget: () => WebTreeView<T> | undefined,
+  /** State reads while there is no tree yet (the element knows `isRendering` during the first build). */
+  fallback: Partial<Record<string, () => unknown>> = {},
+): TreeViewController<T> {
   const facade: Record<string, unknown> = {};
   for (const name of CONTROLLER_METHODS) {
     facade[name] = (...args: unknown[]) => {
@@ -68,17 +73,26 @@ export function createTreeViewController<T>(getTarget: () => WebTreeView<T> | un
   // Real state = read-only properties (the element's are writable).
   const STATE: Record<string, () => unknown> = {
     expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: () => null,
-    insertResult: () => undefined, nodes: () => [],
+    insertResult: () => undefined, nodes: () => [], isRendering: () => false, containerSize: () => null,
   };
   for (const [name, empty] of Object.entries(STATE)) {
     Object.defineProperty(facade, name, {
       get: () => {
         const target = getTarget() as unknown as Record<string, unknown> | undefined;
-        return target ? target[name] : empty();
+        return target ? target[name] : (fallback[name] ?? empty)();
       },
       enumerable: true,
     });
   }
+  // Writable state (also on the element).
+  Object.defineProperty(facade, 'selectionAnchor', {
+    get: () => getTarget()?.selectionAnchor ?? null,
+    set: (path: string | null) => {
+      const target = getTarget();
+      if (target) target.selectionAnchor = path;
+    },
+    enumerable: true,
+  });
   return facade as unknown as TreeViewController<T>;
 }
 
@@ -105,6 +119,8 @@ export class WebTreeView<T = any> {
   private wrapCache = new WeakMap<object, Map<string, unknown>>();
   private nodeCtxProto: object | null = null;
   private lastFocusedPath: string | null | undefined = undefined;
+  /** The tree container's last measured size (renderer resize observer). */
+  private lastContainerSize: ContainerSize | null = null;
   /** False between deactivate() and activate() (the host is detached). */
   private isActive = true;
 
@@ -367,6 +383,45 @@ export class WebTreeView<T = any> {
 
   getTree(): Ltree<T> {
     return this.engine.tree;
+  }
+
+  /** Re-render the node at `path` after its data object was changed in place. */
+  refreshNode(path: string): void {
+    this.engine.refreshNode(path);
+  }
+
+  /** Re-sort the children of `parentPath` (`''` = the roots) by the tree's rule and re-render. */
+  refreshSiblings(parentPath: string): void {
+    this.engine.refreshSiblings(parentPath);
+  }
+
+  /** Whether the node at `path` accepts drops (`getIsDropAllowedCallback` → `isDropAllowedMember`). */
+  isNodeDropAllowed(path: string): boolean {
+    return this.engine.isNodeDropAllowed(path);
+  }
+
+  /** True while a progressive render is in flight. */
+  get isRendering(): boolean {
+    return this.engine.isRendering;
+  }
+
+  /** The tree container's last measured size; `null` before the first measure. */
+  get containerSize(): ContainerSize | null {
+    return this.lastContainerSize ? { ...this.lastContainerSize } : null;
+  }
+
+  /** The Shift-range anchor; writable, `null` = none. */
+  get selectionAnchor(): string | null {
+    return this.engine.selectionAnchor;
+  }
+
+  set selectionAnchor(path: string | null) {
+    this.engine.selectionAnchor = path;
+  }
+
+  /** Toggle the focused node in / out of the selection (Ctrl+click semantics; multiple mode). */
+  toggleFocusedSelect(): void {
+    this.engine.toggleFocusedSelect();
   }
 
   /** The internal engine — for renderer authors / advanced use; not part of the public API. */
@@ -717,6 +772,7 @@ export class WebTreeView<T = any> {
       clickBehavior: o.clickBehavior,
       searchTerm: o.searchTerm,
       shouldUseInternalSearchIndex: o.shouldUseInternalSearchIndex,
+      initializeIndexCallback: o.initializeIndexCallback,
       indexerBatchSize: o.indexerBatchSize,
       indexerTimeout: o.indexerTimeout,
       isLoading: o.isLoading ?? false,
@@ -745,6 +801,12 @@ export class WebTreeView<T = any> {
       touchDragDelay: o.touchDragDelay,
       shouldIndicateUndraggable: o.shouldIndicateUndraggable,
       isTreeDropZoneEnabled: o.isTreeDropZoneEnabled,
+
+      renderStartCallback: this.wrap(o.onRenderStart, 'renderStart', (f) => () => f(this.ctx({}))),
+      renderProgressCallback: this.wrap(o.onRenderProgress, 'renderStats', (f) => (stats: RenderStats) =>
+        f(this.ctx({ pending: stats.pending, processed: stats.processed }))),
+      renderCompleteCallback: this.wrap(o.onRenderComplete, 'renderStats', (f) => (stats: RenderStats) =>
+        f(this.ctx({ pending: stats.pending, processed: stats.processed }))),
 
       onNodeClick: this.event(o.onNodeClick),
       onNodeDoubleClick: this.event(o.onNodeDoubleClick),
@@ -852,8 +914,13 @@ export class WebTreeView<T = any> {
       contextMenuContext: (node) => this.menuCtx(node),
       contextMenuItemDefaults: (item, ctx) => this.menuItemDefaults(item, ctx),
       activateContextMenuItem: (item, ctx, trigger, event) => this.activateMenuItem(item, ctx, trigger, event),
+      containerResizeCallback: (size, deviceClass) => {
+        this.lastContainerSize = { width: size.width, height: size.height };
+        this.options.onContainerResize?.(this.ctx({ size: { width: size.width, height: size.height }, deviceClass }));
+      },
     };
     if ('theme' in options) cfg.theme = options.theme ?? null;
+    if ('nodeTitleOverflow' in options) cfg.nodeTitleOverflow = options.nodeTitleOverflow ?? null;
     return cfg;
   }
 }

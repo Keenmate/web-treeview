@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (svelte-treeview parity, 2026-10-28)
+
+- **`shouldUseInternalSearchIndex` / `use-internal-search-index` defaults to `true`** (was
+  `false`) — `filterNodes` / `searchNodes` / `search-term` work out of the box (with
+  `searchValueMember` / `getSearchValueCallback`). Set `use-internal-search-index="false"` to
+  skip building the FlexSearch index. Changing it at runtime now rebuilds the index.
+
+### Added (svelte-treeview parity, 2026-10-28)
+
+- **`refreshNode(path)`** (re-render a node whose data object changed in place) and
+  **`refreshSiblings(parentPath)`** (re-sort one parent by the tree's rule), element + controller.
+- **`isNodeDropAllowed(path)`** — evaluates `getIsDropAllowedCallback` → `isDropAllowedMember`
+  (`false` for an unknown path).
+- **`shouldAutoHandleMove` / `auto-handle-move`** (default `true`) on the element — `false`:
+  a move drop doesn't mutate the tree, `node-drop` fires and the consumer moves the nodes.
+- **`nodeTitleOverflow` / `node-title-overflow`**: `wrap` | `ellipsis` (default — the previous
+  look) | `info` (ellipsis + a trailing info button on clipped rows that reveals the full label
+  in a popover; `labels.showFullLabel` = its aria-label). CSS hooks `.wtv__node-info`,
+  `.wtv__node-info-reveal`, `--wtv-icon-info`, `--wtv-node-info-*`.
+- **`isRendering`** (read-only) + events **`render-start`**, **`render-progress`**,
+  **`render-complete`** (`{ pending, processed }`; twins `onRenderStart` / `onRenderProgress` /
+  `onRenderComplete`) around the progressive (batched) flat render.
+- **`containerSize`** (read-only `{ width, height }`) + **`container-resize`** event
+  (`{ size, deviceClass }`, twin `onContainerResize`).
+- **`selectionAnchor`** (get / set — the Shift-range anchor) and **`toggleFocusedSelect()`**
+  (Ctrl+click semantics on the focused node; multiple selection mode).
+- **`initializeIndexCallback`** input (JS only): a factory for a custom FlexSearch `Index`.
+- `TreeEventMap` gains `node-expand`, `node-collapse` and the new events.
+
 ### Changed — BREAKING (round 3, 2026-10-28)
 
 - **`silent` → `isSilent`** in every options object (`TreeMutationOptions` on the

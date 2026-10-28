@@ -16,7 +16,7 @@ import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition } from '../ltree/types';
 import type { TreeMenuContext, TreeMenuItem } from '../interaction';
 import { openMenu, type MenuHandle } from '@keenmate/web-components-core/menu';
-import { createTooltip, type TooltipHandle } from '@keenmate/web-components-core/positioning';
+import { createTooltip, createPopover, type TooltipHandle, type PopoverHandle } from '@keenmate/web-components-core/positioning';
 import {
   classifyDevice,
   observeEnvironment,
@@ -26,6 +26,7 @@ import {
   type ElementSize
 } from '@keenmate/web-components-core';
 import type { NodeRenderContext } from '../controller/types';
+import type { NodeTitleOverflow } from './types';
 import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
@@ -127,6 +128,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.container.innerHTML = '';
     this.container.classList.add('wtv__container');
     this._applyTheme(config.theme);
+    this._applyTitleOverflow(config.nodeTitleOverflow);
 
     // Header
     this.headerEl = document.createElement('div');
@@ -215,6 +217,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
     }
     this._applyLoadingLabel();
+    const showFull = resolveLabel(this.config.labels, 'showFullLabel');
+    for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
     if (!this.config.renderEmptyZoneCallback) {
       const content = target.querySelector('.wtv__empty-zone-content');
       if (content) content.textContent = resolveLabel(this.config.labels, 'dropHere');
@@ -233,6 +237,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
     if ('theme' in config) this._applyTheme(config.theme);
+    if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
+      this._applyTitleOverflow(config.nodeTitleOverflow);
+    }
     if (config.renderHeaderCallback && this.headerEl) {
       this.headerEl.innerHTML = '';
       config.renderHeaderCallback(this.headerEl);
@@ -260,6 +267,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._stopEnvObserve = null;
     this._stopSizeObserve = null;
     this._destroyAllTooltips();
+    this._closeReveal();
+    this._labelObserver?.disconnect();
+    this._labelObserver = null;
     this.nodeElements.clear();
     this.vsSpacerEl = null;
     this.vsContentEl = null;
@@ -268,6 +278,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.container.innerHTML = '';
       this.container.classList.remove('wtv__container');
       this.container.removeAttribute('data-theme');
+      this.container.removeAttribute('data-node-title-overflow');
     }
     this.container = null;
     this.controller = null;
@@ -291,6 +302,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!this._isActive) return;
     this._isActive = false;
     this._closeMenu();
+    this._closeReveal();
     for (const h of this.tooltips.values()) h.hide();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
@@ -336,6 +348,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     });
     this._stopSizeObserve = observeElementSize(this.container, (size) => {
       this._containerBox = size;
+      this.config.containerResizeCallback?.({ width: size.width, height: size.height }, this._deviceClass);
     });
   }
 
@@ -343,6 +356,119 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** Forward the `theme` prop onto `.wtv__container` as `data-theme="..."`.
    *  The dark-mode partial keys off this attribute for per-instance overrides. */
+  // ── Node title overflow (wrap | ellipsis | info) ────────────────────
+  // wrap / ellipsis are pure CSS (gated by data-node-title-overflow on the container).
+  // `info` also measures each built-in label (one ResizeObserver) and, when it is
+  // clipped, appends a trailing info button revealing the full label in a popover — the
+  // touch / no-hover substitute for the native title tooltip. renderNodeCallback rows
+  // own their layout and don't take part.
+
+  private _titleOverflow: NodeTitleOverflow = 'ellipsis';
+  private _labelObserver: ResizeObserver | null = null;
+  private _reveal: { handle: PopoverHandle; button: HTMLElement; stop: () => void } | null = null;
+
+  private _applyTitleOverflow(mode: NodeTitleOverflow | null | undefined): void {
+    this._titleOverflow = mode ?? 'ellipsis';
+    if (!this.container) return;
+    this.container.setAttribute('data-node-title-overflow', this._titleOverflow);
+    this._closeReveal();
+    this._labelObserver?.disconnect();
+    this._labelObserver = null;
+    const labels = this.container.querySelectorAll<HTMLElement>('.wtv__node-label');
+    if (this._titleOverflow === 'info' && typeof ResizeObserver !== 'undefined') {
+      this._labelObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) this._measureLabel(entry.target as HTMLElement);
+      });
+      for (const label of labels) this._labelObserver.observe(label);
+    } else {
+      for (const label of labels) this._setLabelTruncated(label, false);
+    }
+  }
+
+  /** A freshly built default label: watch it in `info` mode. */
+  private _trackLabel(label: HTMLElement): void {
+    this._labelObserver?.observe(label);
+  }
+
+  /** `info` mode: show / drop the info button by whether the label is clipped. */
+  private _measureLabel(label: HTMLElement): void {
+    if (!label.isConnected) {
+      this._labelObserver?.unobserve(label);
+      return;
+    }
+    if (this._titleOverflow !== 'info') return;
+    this._setLabelTruncated(label, label.scrollWidth > label.clientWidth + 1);
+  }
+
+  private _setLabelTruncated(label: HTMLElement, isTruncated: boolean): void {
+    const next = label.nextElementSibling as HTMLElement | null;
+    const button = next?.classList.contains('wtv__node-info') ? next : null;
+    if (!isTruncated) {
+      label.removeAttribute('title');
+      if (button) {
+        if (this._reveal?.button === button) this._closeReveal();
+        button.remove();
+      }
+      return;
+    }
+    label.title = label.textContent ?? '';
+    if (button) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'wtv__node-info';
+    btn.setAttribute('aria-label', resolveLabel(this.config.labels, 'showFullLabel'));
+    const stop = (e: Event) => e.stopPropagation();
+    btn.addEventListener('pointerdown', stop);
+    btn.addEventListener('mousedown', stop);
+    btn.addEventListener('dblclick', stop);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this._toggleReveal(btn, label.textContent ?? '');
+    });
+    label.after(btn);
+  }
+
+  /** Open (or close, on a second click) the full-label popover for an info button. */
+  private _toggleReveal(button: HTMLElement, text: string): void {
+    const isSame = this._reveal?.button === button;
+    this._closeReveal();
+    if (isSame || !this.container) return;
+    const panel = document.createElement('div');
+    panel.className = 'wtv__node-info-reveal';
+    panel.setAttribute('role', 'tooltip');
+    panel.textContent = text;
+    const handle = createPopover({ reference: button, panel, container: this.container, placement: 'top-end', offset: 6 });
+    handle.open();
+    const onPointerDown = (e: Event) => {
+      const path = e.composedPath();
+      if (!path.includes(panel) && !path.includes(button)) this._closeReveal();
+    };
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') this._closeReveal(); };
+    const onScroll = () => this._closeReveal();
+    const body = this.bodyEl;
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    body?.addEventListener('scroll', onScroll, { passive: true });
+    this._reveal = {
+      handle,
+      button,
+      stop: () => {
+        document.removeEventListener('pointerdown', onPointerDown, true);
+        document.removeEventListener('keydown', onKeyDown, true);
+        body?.removeEventListener('scroll', onScroll);
+      },
+    };
+  }
+
+  private _closeReveal(): void {
+    const reveal = this._reveal;
+    if (!reveal) return;
+    this._reveal = null;
+    reveal.stop();
+    reveal.handle.destroy();
+  }
+
   private _applyTheme(theme: 'dark' | 'light' | null | undefined): void {
     if (!this.container) return;
     if (theme === 'dark' || theme === 'light') {
@@ -1493,6 +1619,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       label.className = 'wtv__node-label';
       label.textContent = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
       content.appendChild(label);
+      this._trackLabel(label);
     }
 
     row.appendChild(content);
@@ -1680,7 +1807,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       } else {
         const label = content.querySelector('.wtv__node-label') as HTMLElement;
         if (label) {
-          label.textContent = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
+          const text = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
+          if (label.textContent !== text) {
+            label.textContent = text;
+            if (this._titleOverflow === 'info') this._measureLabel(label);
+          }
         }
       }
     }
@@ -1916,6 +2047,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
     this.nodeElements.clear();
     this._destroyAllTooltips();
+    this._closeReveal();
     this._onStateChange(snapshot);
   }
 

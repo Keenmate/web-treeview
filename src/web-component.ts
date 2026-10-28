@@ -58,7 +58,12 @@ import type {
   NodesReorderEventDetail,
   TreeEventDetail,
   TreeViewActionEventDetail,
+  RenderStartEventDetail,
+  RenderStatsEventDetail,
+  ContainerResizeEventDetail,
 } from './interaction';
+import type { ContainerSize } from './renderer/types';
+import type { SearchOptions } from 'flexsearch';
 import styles from './css/main.css?inline';
 
 /** Any callback input. */
@@ -156,9 +161,10 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isSorted', attribute: 'sorted', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
 
   // ── Search / indexer ───────────────────────────────────────────────────────
-  { configKey: 'shouldUseInternalSearchIndex', attribute: 'use-internal-search-index', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Build an internal FlexSearch index for search.' },
+  { configKey: 'shouldUseInternalSearchIndex', attribute: 'use-internal-search-index', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Build the internal FlexSearch index that filterNodes / searchNodes / search-term query (default on; `false` = no index, search finds nothing).' },
   { configKey: 'indexerBatchSize', attribute: 'indexer-batch-size', converter: toInt(), default: 25, on: 'update', description: 'Nodes indexed per batch when building the search index.' },
   { configKey: 'indexerTimeout', attribute: 'indexer-timeout', converter: toInt(), default: 50, on: 'update', description: 'Idle timeout (ms) between search-index batches.' },
+  { configKey: 'initializeIndexCallback', converter: cb(), on: 'update', type: '() => Index', description: 'Factory for a custom FlexSearch Index (tokenizer, charset, …) used instead of the built-in one. JS only; a change rebuilds the index.' },
   { configKey: 'searchTerm', attribute: 'search-term', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Active search/filter term.' },
 
   // ── Theme / visual classes ─────────────────────────────────────────────────
@@ -183,6 +189,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'toggleIconMode', attribute: 'toggle-icon-mode', converter: toEnum(['rotate', 'swap'] as const), on: 'update', shouldReflect: true, description: 'Whether the toggle glyph rotates (single glyph) or swaps (expand↔collapse glyph). Reflected to the attribute so the :host([toggle-icon-mode="swap"]) CSS matches via the JS property.' },
   { configKey: 'scrollHighlightClass', attribute: 'scroll-highlight-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class flashed on a node after scrollToPath().' },
   { configKey: 'scrollHighlightTimeout', attribute: 'scroll-highlight-timeout', converter: toInt(), default: 4000, on: 'update', description: 'How long (ms) the scroll highlight stays before clearing.' },
+  { configKey: 'nodeTitleOverflow', attribute: 'node-title-overflow', converter: toEnum(['wrap', 'ellipsis', 'info'] as const), default: 'ellipsis', on: 'update', type: "'wrap' | 'ellipsis' | 'info'", description: 'A too-long built-in label: `wrap` (multi-line; rows grow — avoid with virtual scroll), `ellipsis` (single-line clip, default) or `info` (ellipsis + a trailing info button on clipped rows that reveals the full label). renderNodeCallback content owns its layout.' },
 
   // ── Per-node icons ─────────────────────────────────────────────────────────
   { configKey: 'shouldAlignNodeIcons', attribute: 'align-node-icons', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Reserve a fixed icon column so node labels align.' },
@@ -202,6 +209,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toInt(), default: 120, on: 'update', description: 'Maximum drop-zone width (px).' },
   { configKey: 'isCopyAllowed', attribute: 'allow-copy', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Allow the copy clipboard operation.' },
   { configKey: 'shouldAutoHandleCopy', attribute: 'auto-handle-copy', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform the copy itself (vs delegating to onCopy).' },
+  { configKey: 'shouldAutoHandleMove', attribute: 'auto-handle-move', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform a move drop itself (default). `false`: the tree is not mutated — `node-drop` fires and the consumer moves the nodes.' },
   { configKey: 'shouldAutoHandlePaste', attribute: 'auto-handle-paste', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform the paste itself (vs delegating to onPaste).' },
   { configKey: 'shouldHandleKeyboardShortcuts', attribute: 'handle-keyboard-shortcuts', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Handle copy/cut/paste/delete keyboard shortcuts.' },
   { configKey: 'touchDragDelay', attribute: 'touch-drag-delay', converter: toInt(), default: 300, on: 'update', description: 'Long-press hold (ms) before a touch-drag engages (default 300).' },
@@ -323,6 +331,10 @@ type TreeViewEvents = {
   'nodes-reorder': NodesReorderEventDetail;
   'tree-change': TreeEventDetail;
   'action': TreeViewActionEventDetail;
+  'render-start': RenderStartEventDetail;
+  'render-progress': RenderStatsEventDetail;
+  'render-complete': RenderStatsEventDetail;
+  'container-resize': ContainerResizeEventDetail;
 };
 const EVENTS: readonly EventDef[] = [
   { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
@@ -345,6 +357,10 @@ const EVENTS: readonly EventDef[] = [
   { name: 'nodes-reorder', description: 'A sort (`sortNodes` / `sortAll` / the `sort*` menu items) with a `compareCallback` or `direction: "desc"` rewrote the `orderMember` values (10, 20, 30…) of the children of one parent — one event per parent; never without `orderMember`. `detail`: `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`. Twin: `onNodesReorder(detail)`.' },
   { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
+  { name: 'render-start', description: 'A progressive render began (`isRendering` turns true). `detail`: the context only. Twin: `onRenderStart(detail)`.' },
+  { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
+  { name: 'render-complete', description: 'The progressive render finished (`isRendering` turns false). `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' },
+  { name: 'container-resize', description: 'The tree container was resized (also once when the tree starts observing). `detail`: `{ size: { width, height }, deviceClass }` — `size` is also `el.containerSize`. Twin: `onContainerResize(detail)`.' },
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. */
@@ -380,6 +396,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onNodesReorder: ((detail: NodesReorderEventDetail<T>) => void) | null;
   declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
   declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
+  declare onRenderStart: ((detail: RenderStartEventDetail<T>) => void) | null;
+  declare onRenderProgress: ((detail: RenderStatsEventDetail<T>) => void) | null;
+  declare onRenderComplete: ((detail: RenderStatsEventDetail<T>) => void) | null;
+  declare onContainerResize: ((detail: ContainerResizeEventDetail<T>) => void) | null;
 
   /**
    * The tree's notifications → `emit()` (which calls the twin, then dispatches). Built
@@ -406,10 +426,16 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onNodesReorder: (d) => this.emit('nodes-reorder', d),
     onTreeChange: (d) => this.emit('tree-change', d),
     onAction: (d) => this.emit('action', d),
+    onRenderStart: (d) => { this.#isRendering = true; this.emit('render-start', d); },
+    onRenderProgress: (d) => this.emit('render-progress', d),
+    onRenderComplete: (d) => { this.#isRendering = false; this.emit('render-complete', d); },
+    onContainerResize: (d) => this.emit('container-resize', d),
   };
 
   #shadow: ShadowRoot;
   #treeview?: WebTreeView<T>;
+  /** Mirrors render-start / render-complete — also valid while the first build is still constructing the tree. */
+  #isRendering = false;
   #container?: HTMLDivElement;
   #renderer?: TreeViewRenderer<T>;
 
@@ -510,6 +536,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
       dataLength: (config.nodes as unknown[] | undefined)?.length ?? 0,
     });
 
+    this.#isRendering = false;
     this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
     this.#applyCustomStyles();
     const pending = this.#pendingState;
@@ -668,12 +695,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.collapseNodes(paths, options);
   }
 
-  filterNodes(term: string): void {
-    this.#live?.filterNodes(term);
+  /** Filter the visible tree to `term` (empty = clear); `searchOptions` go to FlexSearch. */
+  filterNodes(term: string, searchOptions?: SearchOptions): void {
+    this.#live?.filterNodes(term, searchOptions);
   }
 
-  searchNodes(term: string | null): LTreeNode<T>[] {
-    return this.#live?.searchNodes(term) ?? [];
+  /** The nodes matching `term` (no filtering); `searchOptions` go to FlexSearch. */
+  searchNodes(term: string | null, searchOptions?: SearchOptions): LTreeNode<T>[] {
+    return this.#live?.searchNodes(term, searchOptions) ?? [];
   }
 
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean> {
@@ -771,6 +800,31 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getNodeRef(path) ?? { path, node: null, parent: null, siblings: [] };
   }
 
+  /** Re-render the node at `path` after its data object was changed in place. */
+  refreshNode(path: string): void {
+    this.#live?.refreshNode(path);
+  }
+
+  /** Re-sort the children of `parentPath` (`''` = the roots) by the tree's rule and re-render. */
+  refreshSiblings(parentPath: string): void {
+    this.#live?.refreshSiblings(parentPath);
+  }
+
+  /** Whether the node at `path` accepts drops (`getIsDropAllowedCallback` → `isDropAllowedMember`); `false` for an unknown path. */
+  isNodeDropAllowed(path: string): boolean {
+    return this.#live?.isNodeDropAllowed(path) ?? false;
+  }
+
+  /** True while a progressive render is in flight (`render-start` … `render-complete`). Read-only. */
+  get isRendering(): boolean {
+    return this.#isRendering;
+  }
+
+  /** The tree container's last measured size (`container-resize`); `null` before the first measure. Read-only. */
+  get containerSize(): ContainerSize | null {
+    return this.#treeview?.containerSize ?? null;
+  }
+
   /** The focused node (read-only — `focusNode(path)` / `clearFocus()` move it). */
   get focusedNode(): LTreeNode<T> | null {
     return this.#live?.focusedNode ?? null;
@@ -834,6 +888,22 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   isNodeSelected(path: string): boolean {
     return this.#live?.isNodeSelected(path) ?? false;
+  }
+
+  /** The Shift-range anchor (Shift+click / Shift+Arrow extend from it); `null` = none.
+   *  Writable — e.g. an alternative renderer keeping its own range selection in sync. */
+  get selectionAnchor(): string | null {
+    return this.#live?.selectionAnchor ?? null;
+  }
+
+  set selectionAnchor(path: string | null) {
+    const tree = this.#live;
+    if (tree) tree.selectionAnchor = path;
+  }
+
+  /** Toggle the focused node in / out of the selection (Ctrl+click semantics). Multiple selection mode only. */
+  toggleFocusedSelect(): void {
+    this.#live?.toggleFocusedSelect();
   }
 
   // ── Checked (checkbox data state) ───────────────────────────────────────────
@@ -986,7 +1056,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return createTreeViewController<T>(() => {
       this.flush();
       return this.#treeview;
-    });
+    }, { isRendering: () => this.#isRendering });
   }
 }
 

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — svelte-treeview parity fixture</title>
+    <style>
+        main { padding: 1rem; font-family: sans-serif; }
+        .tree-container { border: 1px solid #e2e8f0; padding: 0.5rem; width: 520px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Parity Fixture</h1>
+        <p>svelte-treeview parity additions: refreshNode / refreshSiblings, isNodeDropAllowed, isRendering + render-*,
+            containerSize + container-resize, selectionAnchor, toggleFocusedSelect, node-title-overflow,
+            auto-handle-move, initializeIndexCallback, the search-index default.
+            <code>window.make({ attrs, props, nodes })</code> builds a fresh tree in <code>#host</code>.</p>
+        <div class="tree-container" id="host"></div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+        import FlexSearch from 'flexsearch';
+
+        window.FlexSearch = FlexSearch;
+
+        window.baseNodes = () => [
+            { id: 1, path: '1', name: 'Alpha', order: 20, canDrop: true },
+            { id: 2, path: '2', name: 'Beta', order: 10, canDrop: false },
+            { id: 3, path: '3', name: 'Gamma', order: 30 },
+            { id: 11, path: '1.1', name: 'Alpha child', order: 10 },
+            { id: 12, path: '1.2', name: 'Alpha other', order: 20 },
+        ];
+
+        /** `count` flat roots — enough rows for a multi-batch progressive render. */
+        window.manyNodes = (count) => Array.from({ length: count }, (_, i) => ({ id: i + 1, path: String(i + 1), name: `Row ${i + 1}` }));
+
+        const EVENTS = ['render-start', 'render-progress', 'render-complete', 'container-resize', 'selection-change'];
+
+        window.make = async ({ attrs = {}, props = {}, nodes } = {}) => {
+            await customElements.whenDefined('web-treeview');
+            const host = document.getElementById('host');
+            host.innerHTML = '';
+            const tree = document.createElement('web-treeview');
+            tree.id = 'tree';
+            for (const [k, v] of Object.entries(attrs)) tree.setAttribute(k, v);
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            Object.assign(tree, props);
+            tree.nodes = nodes ?? window.baseNodes();
+            window.__events = [];
+            for (const name of EVENTS) {
+                tree.addEventListener(name, (e) => window.__events.push({
+                    name,
+                    pending: e.detail.pending,
+                    processed: e.detail.processed,
+                    size: e.detail.size,
+                    deviceClass: e.detail.deviceClass,
+                    paths: e.detail.paths,
+                    hasController: !!e.detail.controller,
+                    isRendering: tree.isRendering,
+                }));
+            }
+            host.appendChild(tree);
+            await tree.whenReady();
+            window.tree = tree;
+            return true;
+        };
+
+        window.eventNames = () => window.__events.map((e) => e.name);
+        /** Visible rows (display names) in DOM order. */
+        window.rowNames = () => [...window.tree.shadowRoot.querySelectorAll('.wtv__node')]
+            .map((e) => e.querySelector('.wtv__node-label')?.textContent?.trim() ?? '');
+    </script>
+</body>
+</html>

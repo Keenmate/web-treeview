@@ -85,7 +85,7 @@ export type { TreeNavigation, TreeNavigationOverrides } from './navigation';
 // Renderer
 export { DomRenderer } from './renderer/dom-renderer';
 export { createRenderCoordinator } from './renderer/render-coordinator';
-export type { TreeViewRenderer, RendererConfig } from './renderer/types';
+export type { TreeViewRenderer, RendererConfig, NodeTitleOverflow, ContainerSize } from './renderer/types';
 export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from './renderer/render-coordinator';
 
 // Export types

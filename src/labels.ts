@@ -20,6 +20,8 @@ export interface TreeViewLabels {
   loading: string;
   /** Text of the empty-tree drop zone (no `renderEmptyZoneCallback`). */
   dropHere: string;
+  /** Accessible label of the trailing info button on a clipped node label (`nodeTitleOverflow: 'info'`). */
+  showFullLabel: string;
   /** Built-in context-menu items. */
   copy: string;
   cut: string;
@@ -43,6 +45,7 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   noDisplayValue: '[N/A]',
   loading: 'Loading…',
   dropHere: 'Drop here',
+  showFullLabel: 'Show full label',
   copy: 'Copy',
   cut: 'Cut',
   paste: 'Paste',

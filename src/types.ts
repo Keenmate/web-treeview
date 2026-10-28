@@ -50,6 +50,9 @@ export type {
   ExpandedChangeEventDetail,
   NodesReorderEventDetail,
   TreeEventDetail,
+  RenderStartEventDetail,
+  RenderStatsEventDetail,
+  ContainerResizeEventDetail,
 } from './interaction';
 
 // Re-export controller types
@@ -91,7 +94,7 @@ export type { ClipboardEntry, TreeClipboard, ClipboardOperation, PasteResult } f
 export type { TreeNavigation, TreeNavigationOverrides } from './navigation';
 
 // Re-export renderer types
-export type { TreeViewRenderer, RendererConfig } from './renderer/types';
+export type { TreeViewRenderer, RendererConfig, NodeTitleOverflow, ContainerSize } from './renderer/types';
 export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from './renderer/render-coordinator';
 
 // ── Configuration ──────────────────────────────────────────────────────
@@ -108,6 +111,8 @@ import type {
 } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeNavigationOverrides } from './navigation';
+import type { NodeTitleOverflow, ContainerSize } from './renderer/types';
+import type { SearchOptions } from 'flexsearch';
 import type {
   TreeViewController,
   NodeContext,
@@ -140,6 +145,9 @@ import type {
   ExpandedChangeEventDetail,
   NodesReorderEventDetail,
   TreeEventDetail,
+  RenderStartEventDetail,
+  RenderStatsEventDetail,
+  ContainerResizeEventDetail,
 } from './interaction';
 
 export interface TreeViewConfig<T = any> {
@@ -191,7 +199,11 @@ export interface TreeViewConfig<T = any> {
   isSortingEnabled?: boolean | null;
 
   // Search
+  /** Build the internal FlexSearch index (needed by `filterNodes` / `searchNodes` / `searchTerm`). Default `true`. */
   shouldUseInternalSearchIndex?: boolean | null;
+  /** Factory for a custom FlexSearch `Index` (tokenizer, charset, …) used instead of the
+   *  built-in one. JS only; a change rebuilds the index. */
+  initializeIndexCallback?: (() => import('flexsearch').Index) | null;
   indexerBatchSize?: number | null;
   indexerTimeout?: number | null;
 
@@ -262,6 +274,10 @@ export interface TreeViewConfig<T = any> {
   toggleIconMode?: 'rotate' | 'swap' | null;
   scrollHighlightTimeout?: number | null;
   scrollHighlightClass?: string | null;
+  /** A too-long built-in label: `wrap` (multi-line), `ellipsis` (single-line clip, the
+   *  default) or `info` (ellipsis + a trailing info button on clipped rows revealing the
+   *  full label). */
+  nodeTitleOverflow?: NodeTitleOverflow | null;
 
   // Per-node icons — rendered as a dedicated .wtv__node-icon element on EVERY node
   // (branch + leaf). VALUE from iconMember/getIconCallback (default <i class={value}>,
@@ -472,6 +488,14 @@ export interface TreeViewConfig<T = any> {
   onExpandedChange?: (detail: ExpandedChangeEventDetail<T>) => void;
   /** Twin of `nodes-reorder` (a sort rewrote one parent's `orderMember` values). */
   onNodesReorder?: (detail: NodesReorderEventDetail<T>) => void;
+  /** Twin of `render-start` (a progressive render began). */
+  onRenderStart?: (detail: RenderStartEventDetail<T>) => void;
+  /** Twin of `render-progress` (`detail.pending` / `detail.processed`). */
+  onRenderProgress?: (detail: RenderStatsEventDetail<T>) => void;
+  /** Twin of `render-complete`. */
+  onRenderComplete?: (detail: RenderStatsEventDetail<T>) => void;
+  /** Twin of `container-resize` (`detail.size`, `detail.deviceClass`). */
+  onContainerResize?: (detail: ContainerResizeEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
   shouldHandleKeyboardShortcuts?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
@@ -529,12 +553,17 @@ export interface TreeViewMethods<T = any> {
     paths?: string | string[] | null,
     options?: ExpandOptions
   ): void;
-  filterNodes(term: string): void;
-  searchNodes(term: string | null): LTreeNode<T>[];
+  filterNodes(term: string, searchOptions?: SearchOptions): void;
+  searchNodes(term: string | null, searchOptions?: SearchOptions): LTreeNode<T>[];
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean>;
   closeContextMenu(): void;
   update(props: Partial<TreeViewConfig<T>>): void;
   getTree(): import('./ltree/types').Ltree<T>;
+  refreshNode(path: string): void;
+  refreshSiblings(parentPath: string): void;
+  isNodeDropAllowed(path: string): boolean;
+  readonly isRendering: boolean;
+  readonly containerSize: ContainerSize | null;
 
   // Bulk operations
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
@@ -550,6 +579,8 @@ export interface TreeViewMethods<T = any> {
   getSelectedNodes(): LTreeNode<T>[];
   selectedPaths: string[];
   isNodeSelected(path: string): boolean;
+  selectionAnchor: string | null;
+  toggleFocusedSelect(): void;
 
   // Checked set (checkbox / data state)
   checkNode(path: string, options?: TreeMutationOptions): void;
@@ -612,6 +643,8 @@ export interface TreeViewMethods<T = any> {
 export interface TreeEventMap<T = any> {
   'node-click': CustomEvent<NodeEventDetail<T>>;
   'node-double-click': CustomEvent<NodeEventDetail<T>>;
+  'node-expand': CustomEvent<NodeEventDetail<T>>;
+  'node-collapse': CustomEvent<NodeEventDetail<T>>;
   'node-copy': CustomEvent<NodeClipboardEventDetail<T>>;
   'node-cut': CustomEvent<NodeClipboardEventDetail<T>>;
   'node-paste': CustomEvent<NodePasteEventDetail<T>>;
@@ -628,6 +661,10 @@ export interface TreeEventMap<T = any> {
   'nodes-reorder': CustomEvent<NodesReorderEventDetail<T>>;
   'tree-change': CustomEvent<TreeEventDetail<T>>;
   'action': CustomEvent<TreeViewActionEventDetail<T>>;
+  'render-start': CustomEvent<RenderStartEventDetail<T>>;
+  'render-progress': CustomEvent<RenderStatsEventDetail<T>>;
+  'render-complete': CustomEvent<RenderStatsEventDetail<T>>;
+  'container-resize': CustomEvent<ContainerResizeEventDetail<T>>;
 }
 
 // ── Scroll Options ─────────────────────────────────────────────────────

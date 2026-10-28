@@ -7,7 +7,7 @@
  * (the public {@link TreeViewController}, also `el.controller`) and `element` (the host) —
  * both non-enumerable, so `JSON.stringify` / logs see only the data.
  */
-import type { ComponentContext } from '@keenmate/web-components-core';
+import type { ComponentContext, DeviceClass } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult } from './ltree/types';
@@ -29,6 +29,8 @@ import type {
 } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { ScrollToPathOptions } from './types';
+import type { ContainerSize } from './renderer/types';
+import type { SearchOptions } from 'flexsearch';
 
 /**
  * The public facade — `el.controller`, and `controller` on every callback ctx and event
@@ -50,8 +52,10 @@ export interface TreeViewController<T = any> {
   /** The expanded set (assign `el.expandedPaths` to change it). */
   readonly expandedPaths: string[];
   // search / scroll
-  filterNodes(term: string): void;
-  searchNodes(term: string | null): LTreeNode<T>[];
+  /** Filter the visible tree to `term` (empty = clear); `searchOptions` go to FlexSearch. */
+  filterNodes(term: string, searchOptions?: SearchOptions): void;
+  /** The nodes matching `term` (no filtering); `searchOptions` go to FlexSearch. */
+  searchNodes(term: string | null, searchOptions?: SearchOptions): LTreeNode<T>[];
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean>;
   // read
   getNodeByPath(path: string): LTreeNode<T> | null;
@@ -67,6 +71,17 @@ export interface TreeViewController<T = any> {
   getTree(): Ltree<T> | undefined;
   /** Result of the most recent data insert (successful / failed / failedDetails). */
   readonly insertResult: InsertArrayResult<T> | undefined;
+  /** Whether the node at `path` accepts drops (`getIsDropAllowedCallback` → `isDropAllowedMember`); `false` for an unknown path. */
+  isNodeDropAllowed(path: string): boolean;
+  /** True while a progressive render is in flight (`render-start` … `render-complete`). */
+  readonly isRendering: boolean;
+  /** The tree container's last measured size (`container-resize`); `null` before the first measure. */
+  readonly containerSize: ContainerSize | null;
+  // refresh
+  /** Re-render the node at `path` after its data object was changed in place. */
+  refreshNode(path: string): void;
+  /** Re-sort the children of `parentPath` (`''` = the roots) by the tree's rule and re-render. */
+  refreshSiblings(parentPath: string): void;
   // mutate
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any;
   insertNode(targetPath: string, nodeData: T, position: DropPosition): any;
@@ -89,6 +104,10 @@ export interface TreeViewController<T = any> {
   /** The selected set (snapshot; assign `el.selectedPaths` to replace it). */
   readonly selectedPaths: string[];
   isNodeSelected(path: string): boolean;
+  /** The Shift-range anchor (Shift+click / Shift+Arrow extend from it); writable, `null` = none. */
+  selectionAnchor: string | null;
+  /** Toggle the focused node in / out of the selection (Ctrl+click semantics). Multiple selection mode only. */
+  toggleFocusedSelect(): void;
   // checked
   checkNode(path: string, options?: TreeMutationOptions): void;
   checkNodes(paths: string[], options?: TreeMutationOptions): void;
@@ -268,3 +287,17 @@ export interface ExpandedChangeEventDetail<T = any> extends TreeViewContext<T> {
 export type NodesReorderEventDetail<T = any> = NodesReorderContext<T> & TreeViewContext<T>;
 /** `tree-change`: the context only. */
 export type TreeEventDetail<T = any> = TreeViewContext<T>;
+/** `render-start`: the context only. */
+export type RenderStartEventDetail<T = any> = TreeViewContext<T>;
+/** `render-progress` / `render-complete`: the progressive-render counters. */
+export interface RenderStatsEventDetail<T = any> extends TreeViewContext<T> {
+  /** Rows still queued. */
+  pending: number;
+  /** Rows rendered so far in this pass. */
+  processed: number;
+}
+/** `container-resize`: the tree container's new size + the current device class. */
+export interface ContainerResizeEventDetail<T = any> extends TreeViewContext<T> {
+  size: ContainerSize;
+  deviceClass: DeviceClass;
+}

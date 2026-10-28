@@ -131,6 +131,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _insertResult: InsertArrayResult<T> | null | undefined = null;
   private _searchText: string | null | undefined = undefined;
   private _isRendering: boolean = false;
+  /** Rows rendered in the current progressive pass (`render-progress` / `render-complete`). */
+  private _renderProcessed: number = 0;
 
   // Behaviour
   private _isLoading: boolean = false;
@@ -154,6 +156,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _shouldAutoHandlePaste: boolean = true;
   // Opt out of built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts (default on).
   private _shouldHandleKeyboardShortcuts: boolean = true;
+  // Internal FlexSearch index (default on) + an optional custom index factory. Both are
+  // baked into the LTree at construction — a change recreates it.
+  private _shouldUseInternalSearchIndex: boolean = true;
+  private _initializeIndexCallback: (() => Index) | undefined;
   // Long-press hold (ms) before a touch-drag engages (svelte-treeview rc14).
   private _touchDragDelay: number = 300;
   // Whole populated tree is one drop target — a drop anywhere lands target=null
@@ -640,6 +646,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       cancelAnimationFrame(this.flatRenderAnimationFrame);
       this.flatRenderAnimationFrame = null;
       this.flatRenderQueue = [];
+      this._finishRenderPass();
     }
     this._scheduleNotify();
   }
@@ -762,6 +769,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldAutoHandleMove = props.shouldAutoHandleMove ?? true;
     this._shouldAutoHandlePaste = props.shouldAutoHandlePaste ?? true;
     this._shouldHandleKeyboardShortcuts = props.shouldHandleKeyboardShortcuts ?? true;
+    this._shouldUseInternalSearchIndex = props.shouldUseInternalSearchIndex ?? true;
+    this._initializeIndexCallback = props.initializeIndexCallback ?? undefined;
     this._touchDragDelay = props.touchDragDelay ?? 300;
     this._shouldIndicateUndraggable = props.shouldIndicateUndraggable ?? true;
     this._shouldEnableTreeDropZone = props.isTreeDropZoneEnabled ?? false;
@@ -867,8 +876,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._treeId,
       this._treePathSeparator,
       props.expandLevel,
-      props.shouldUseInternalSearchIndex,
-      props.initializeIndexCallback,
+      this._shouldUseInternalSearchIndex,
+      this._initializeIndexCallback,
       props.indexerBatchSize,
       props.indexerTimeout,
       {
@@ -1174,8 +1183,37 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.tree?.refreshSiblings(parentPath);
   }
 
+  /** Re-render the node at `path` (its data object was changed in place). */
   refreshNode(path: string): void {
+    const node = this.tree?.getNodeByPath(path);
+    if (node) node._rev++;
     this.tree?.refreshNode(path);
+  }
+
+  /** Whether the node at `path` accepts drops (`getIsDropAllowedCallback` → `isDropAllowedMember`
+   *  → the node flag). `false` for an unknown path. */
+  isNodeDropAllowed(path: string): boolean {
+    const node = this.tree?.getNodeByPath(path);
+    return node ? this.tree.getNodeIsDropAllowed(node) : false;
+  }
+
+  /** The Shift-range anchor (Shift+click / Shift+Arrow extend from it); `null` = none.
+   *  Writable so an alternative renderer can keep its own range selection in sync. */
+  get selectionAnchor(): string | null {
+    return this._lastSelectedPath;
+  }
+
+  set selectionAnchor(path: string | null) {
+    this._lastSelectedPath = path ?? null;
+  }
+
+  /** Toggle the focused node in/out of the selection (Ctrl+click semantics; the anchor
+   *  moves to it). Multiple selection mode only; no-op without a selectable focused node. */
+  toggleFocusedSelect(): void {
+    if (this._selectionMode !== 'multiple') return;
+    const node = this._focusedNode;
+    if (!node || !node.isSelectable) return;
+    this._applySelection(node.path, { ctrl: true, shift: false });
   }
 
   getNodeByPath(path: string): LTreeNode<T> | null {
@@ -3731,6 +3769,21 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // ── updateProps (batch property updates) ────────────────────────────
 
+  /** Apply `shouldUseInternalSearchIndex` (null → default true) / `initializeIndexCallback`
+   *  (null clears; undefined = unchanged). True when either changed — the LTree is rebuilt. */
+  private _applyIndexProps(updates: Partial<TreeEngineConfig<T>>): boolean {
+    let isChanged = false;
+    if (updates.shouldUseInternalSearchIndex !== undefined) {
+      const next = updates.shouldUseInternalSearchIndex ?? true;
+      if (next !== this._shouldUseInternalSearchIndex) { this._shouldUseInternalSearchIndex = next; isChanged = true; }
+    }
+    if (updates.initializeIndexCallback !== undefined) {
+      const next = updates.initializeIndexCallback ?? undefined;
+      if (next !== this._initializeIndexCallback) { this._initializeIndexCallback = next; isChanged = true; }
+    }
+    return isChanged;
+  }
+
   updateProps(updates: Partial<TreeEngineConfig<T>>) {
     {
       const has = (k: string) => k in updates;
@@ -3764,6 +3817,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const t = this.tree;
     const changed = <V>(next: V | undefined, current: V): boolean =>
       next !== undefined && next !== current;
+    const indexChanged = this._applyIndexProps(updates);
     const needsTreeRecreation =
       changed(updates.idMember, t.idMember) ||
       changed(updates.pathMember, t.pathMember) ||
@@ -3788,7 +3842,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       changed(updates.getIsDropAllowedCallback, t.getIsDropAllowedCallback) ||
       changed(updates.getIsCollapsibleCallback, t.getIsCollapsibleCallback) ||
       changed(updates.getAllowedDropPositionsCallback, t.getAllowedDropPositionsCallback) ||
-      changed(updates.sortCallback, t.sortCallback);
+      changed(updates.sortCallback, t.sortCallback) ||
+      indexChanged;
 
     // expandLevel is baked into the LTree's construction closure, so a real
     // change can only take effect by recreating the tree. Unlike a member
@@ -3931,6 +3986,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this.flatRenderQueue = [];
       this.flatRenderedIds = new Set((this.tree?.visibleFlatNodes ?? []).map((n) => n.path));
       this.lastFlatNodesTracker = this.tree?.changeTracker;
+      this._finishRenderPass();
     }
 
     // Display-value fallback — mutable on the tree (member → callback → fallback).
@@ -4044,8 +4100,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         this._treeId,
         this._treePathSeparator,
         updates.expandLevel ?? null,
-        updates.shouldUseInternalSearchIndex,
-        undefined,
+        this._shouldUseInternalSearchIndex,
+        this._initializeIndexCallback,
         updates.indexerBatchSize,
         updates.indexerTimeout,
         {
@@ -4178,6 +4234,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       cancelAnimationFrame(this.flatRenderAnimationFrame);
       this.flatRenderAnimationFrame = null;
     }
+    this._isRendering = false;
     this.renderCoordinator?.reset();
     this.tree.onChange = null;
     unregisterClipboardTree(this._treeId, this);
@@ -4362,6 +4419,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
     if (pending.length === 0) {
       this.flatRenderQueue = [];
+      if (!this.flatRenderAnimationFrame) this._finishRenderPass();
       return;
     }
 
@@ -4380,7 +4438,25 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this.currentBatchSize = Math.min(this.currentBatchSize * 2, this._maxBatchSize);
     }
     this.flatRenderQueue = rest;
-    if (rest.length > 0) this.scheduleFlatRenderBatch();
+    if (rest.length > 0) {
+      this._beginRenderPass(pending.length - rest.length);
+      this.scheduleFlatRenderBatch();
+    }
+  }
+
+  /** A progressive (rAF-batched) render pass began: `isRendering` + `render-start`. */
+  private _beginRenderPass(processed: number): void {
+    if (this._isRendering) return;
+    this._isRendering = true;
+    this._renderProcessed = processed;
+    this.renderStartCb?.();
+  }
+
+  /** The progressive pass ended (queue drained or cancelled): `render-complete`. */
+  private _finishRenderPass(): void {
+    if (!this._isRendering) return;
+    this._isRendering = false;
+    this.renderCompleteCb?.({ pending: 0, processed: this._renderProcessed });
   }
 
   scheduleFlatRenderBatch() {
@@ -4388,7 +4464,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this.flatRenderAnimationFrame = requestAnimationFrame(() => {
       this.flatRenderAnimationFrame = null;
-      if (this.flatRenderQueue.length === 0) return;
+      if (this.flatRenderQueue.length === 0) {
+        this._finishRenderPass();
+        return;
+      }
 
       const batchSize = this.currentBatchSize || this._initialBatchSize;
       const batch = this.flatRenderQueue.slice(0, batchSize);
@@ -4403,6 +4482,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
 
       this._scheduleNotify();
+      if (this._isRendering) {
+        this._renderProcessed += batch.length;
+        // After the state-change microtask queued above, so the batch is in the DOM.
+        const pendingCount = remaining.length;
+        const processed = this._renderProcessed;
+        queueMicrotask(() => {
+          if (!this._isRendering) return;
+          this.renderProgressCb?.({ pending: pendingCount, processed });
+          if (pendingCount === 0 && this.flatRenderQueue.length === 0) this._finishRenderPass();
+        });
+      }
     });
   }
 

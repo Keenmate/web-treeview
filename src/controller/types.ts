@@ -445,7 +445,7 @@ export interface TreeEngineConfig<T> {
   /** Make the whole populated tree ONE drop target (drop lands target=null
    *  regardless of per-node getIsDropAllowed). Default false. */
   isTreeDropZoneEnabled?: boolean | null | undefined;
-  initializeIndexCallback?: () => Index;
+  initializeIndexCallback?: (() => Index) | null;
   searchTerm?: string | null | undefined;
   shouldUseInternalSearchIndex?: boolean | null | undefined;
   indexerBatchSize?: number | null | undefined;

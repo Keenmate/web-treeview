@@ -66,7 +66,7 @@
             [...items].sort((a, b) => (a.data?.name || '').localeCompare(b.data?.name || ''));
 
         const setText = (id, t) => { document.getElementById(id).textContent = t; };
-        const pathsText = (set) => (set && set.size > 0 ? [...set].join(', ') : '(none)');
+        const pathsText = (set) => (set && set.length > 0 ? [...set].join(', ') : '(none)');
 
         customElements.whenDefined('web-treeview').then(() => {
             const tree = document.getElementById('tree');
@@ -74,7 +74,7 @@
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
-            tree.data = sampleData;
+            tree.nodes = sampleData;
 
             const selectedClassSelect = document.getElementById('selected-class');
             const focusSelect = document.getElementById('focus-class');

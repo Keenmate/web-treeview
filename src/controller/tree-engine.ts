@@ -2784,6 +2784,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * a few frames while progressive rendering hasn't reached the row yet. Mouse
    * clicks don't go through here.
    */
+  /** The scroll behaviour of scrollToPath / keyboard scrolling when the caller passes none:
+   *  the `--wtv-scroll-behavior` token (→ `--base-scroll-behavior`; `auto` under reduced motion). */
+  private resolveScrollBehavior(): ScrollBehavior {
+    const el = this.containerElement;
+    if (!el || typeof getComputedStyle === 'undefined') return 'smooth';
+    return (getComputedStyle(el).getPropertyValue('--wtv-scroll-behavior').trim() || 'smooth') as ScrollBehavior;
+  }
+
   revealNode(path: string): void {
     const root = this.containerElement;
     if (!root || typeof requestAnimationFrame === 'undefined') return;
@@ -2817,7 +2825,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (token !== this._revealToken) return; // superseded by a newer move
       const row = findRow();
       if (row) {
-        row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        row.scrollIntoView({ behavior: this.resolveScrollBehavior(), block: 'nearest', inline: 'nearest' });
         return;
       }
       if (framesLeft-- > 0) requestAnimationFrame(attempt);
@@ -3655,8 +3663,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /**
    * Scroll the node at `path` into view. `shouldExpandAncestors` (default true) expands its
    * ancestors first; `shouldHighlight` (default false) flashes the scroll-highlight class;
-   * `behavior` / `block` / `inline` are the native ScrollIntoViewOptions (default smooth /
-   * center / nearest). Resolves false when the node or its row isn't found.
+   * `behavior` / `block` / `inline` are the native ScrollIntoViewOptions (default
+   * `--wtv-scroll-behavior` (smooth; auto under reduced motion) / center / nearest). Resolves false when the node or its row isn't found.
    */
   async scrollToPath(
     path: string,
@@ -3672,7 +3680,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const {
       shouldExpandAncestors = true,
       shouldHighlight = false,
-      behavior = 'smooth',
+      behavior = this.resolveScrollBehavior(),
       block = 'center',
       inline = 'nearest'
     } = options || {};

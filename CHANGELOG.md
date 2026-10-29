@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (loader sizes + base scroll / indent tokens, 2026-10-29)
+
+- **`--wtv-node-loader-size` → `--wtv-loader-inline-size`** (`calc(var(--wtv-loader-size) * 0.75)`, was a
+  fixed `0.9em`); new **`--wtv-loader-overlay-size`** (`× 2`) sizes the `isLoading` overlay loader (was the
+  1.25em `--wtv-loader-size`). Same names as svelte-treeview.
+- **`--wtv-scroll-behavior`** (`var(--base-scroll-behavior, smooth)`; `auto` under reduced motion): the default
+  `behavior` of `scrollToPath` (was a hard-coded `'smooth'`) and of keyboard moves (were instant; virtual-scroll
+  keyboard moves stay instant).
+- **`--wtv-indent-size`** reads the contract's unitless multiplier: `calc(var(--base-tree-indent, 1.6) *
+  var(--wtv-rem))` — still 16px by default.
+- Dev dependency `@keenmate/base-css-variables` (`file:`) now at the build with `--base-scroll-behavior` /
+  `--base-tree-indent`.
+
 ### Changed — BREAKING (shared loader, core SPEC §12.14, 2026-10-29)
 
 - **`renderLoadingCallback` ctx is core's `LoaderRenderContext`**: `{ component, context, containerElement,
@@ -18,8 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `role="status"` / `aria-label` are present while loading only; a hook's nodes are removed when loading ends.
 - **CSS tokens**: `--wtv-spinner-duration` / `-size` / `-track` / `-color` and `--wtv-expand-spinner-size` /
   `-width` / `-track` / `-color` removed → `--wtv-loader-icon` / `-rotate` / `-duration` / `-size` (→
-  `--base-loader-*`), `--wtv-loader-color` (= accent), `--wtv-node-loader-size` (per-node lazy-load loader,
-  0.9em). The overlay and the per-node toggle draw the shared loader shape (a `currentColor` mask) instead of
+  `--base-loader-*`), `--wtv-loader-color` (= accent) (per-node / overlay sizes: see the entry above). The overlay and the per-node toggle draw the shared loader shape (a `currentColor` mask) instead of
   the border ring; `.wtv__loading-spinner` is gone (`.wtv-loader`). Under reduced motion the loader slows
   (the contract's `--base-loader-duration: 1.5s`), never stops.
 - **Dev dependency**: `@keenmate/base-css-variables` points to `file:../base-css-variables` (2.0.0-rc06 with

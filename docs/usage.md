@@ -490,7 +490,7 @@ All methods are available on the element **and** on `el.controller`.
 
 `SortOptions`: `{ compareCallback?: ({ a, b }) => number; direction?: 'asc' | 'desc'; isSilent?: boolean }` — see [Sorting](#sorting).
 
-`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `'smooth'` / `'center'` / `'nearest'`); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
+`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `--wtv-scroll-behavior` — `smooth`, `auto` under reduced motion — / `'center'` / `'nearest'`; keyboard moves scroll with the same token); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
@@ -614,7 +614,7 @@ The context-menu built-ins `sort`, `sort-subtree` and `sort-all` call these (lab
 Flag the unloaded nodes with `has-children-member` (so they get an expand toggle), then load
 their children in `beforeExpandCallback`: return a Promise, `addBranch` the children
 and resolve. While it is pending the node's toggle shows the loader
-(`.wtv__toggle-icon--loading`, the shared loader shape — `--wtv-loader-*`, `--wtv-node-loader-size`), the row carries
+(`.wtv__toggle-icon--loading`, the shared loader shape — `--wtv-loader-*`, sized by `--wtv-loader-inline-size`), the row carries
 `aria-busy="true"` + `data-loading`, and repeat toggles of that node are ignored. The hook
 runs for the toggle, the keyboard (`ArrowRight` waits for the load, then moves into the first
 child) and `expandNodes()`; resolve `false` (or reject — it's warned) to keep the node

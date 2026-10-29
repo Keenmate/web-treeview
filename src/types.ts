@@ -676,7 +676,7 @@ export interface ScrollToPathOptions {
   shouldExpandAncestors?: boolean;
   /** Flash the scroll-highlight class (`scrollHighlightClass`, `scrollHighlightTimeout`) on the row. Default `false`. */
   shouldHighlight?: boolean;
-  /** Native ScrollIntoViewOptions. Defaults `'smooth'` / `'center'` / `'nearest'`. */
+  /** Native ScrollIntoViewOptions. Defaults `--wtv-scroll-behavior` (smooth; auto under reduced motion) / `'center'` / `'nearest'`. */
   behavior?: ScrollBehavior;
   block?: ScrollLogicalPosition;
   inline?: ScrollLogicalPosition;

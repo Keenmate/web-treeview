@@ -1096,6 +1096,9 @@
   background: currentColor;
   animation: wtv-loader-spin var(--wtv-loader-duration) linear infinite;
 }
+.wtv__loading-overlay .wtv-loader {
+  inline-size: var(--wtv-loader-overlay-size); block-size: var(--wtv-loader-overlay-size);
+}
 @keyframes wtv-loader-spin { to { transform: rotate(var(--wtv-loader-rotate)); } }
 
 /* Per-node loading state: an async beforeExpandCallback is pending (lazy load). The
@@ -1105,8 +1108,8 @@
 }
 .wtv__node .wtv__toggle-icon.wtv__toggle-icon--loading::before {
   content: '';
-  width: var(--wtv-node-loader-size);
-  height: var(--wtv-node-loader-size);
+  width: var(--wtv-loader-inline-size);
+  height: var(--wtv-loader-inline-size);
   -webkit-mask: var(--wtv-loader-icon) center / contain no-repeat;
           mask: var(--wtv-loader-icon) center / contain no-repeat;
   background: var(--wtv-loader-color);

@@ -100,6 +100,17 @@ test.describe('loading', () => {
     expect(anim).toBe('wtv-loader-spin');
   });
 
+  test('overlay loader = --wtv-loader-overlay-size (2 × --wtv-loader-size)', async ({ page }) => {
+    const t = tree(page, 'loading');
+    await t.evaluate((el) => (el as HTMLElement).style.setProperty('--wtv-loader-size', '10px'));
+    // computed size, not boundingBox (the loader is rotating)
+    const size = await t.locator('.wtv__loading-overlay .wtv-loader').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return [cs.width, cs.height];
+    });
+    expect(size).toEqual(['20px', '20px']);
+  });
+
   test('page hook window.components.renderLoaderCallback replaces the default; the instance hook beats it', async ({ page }) => {
     await page.evaluate(() => {
       (window as any).components.renderLoaderCallback = ({ component, containerElement }: any) => {

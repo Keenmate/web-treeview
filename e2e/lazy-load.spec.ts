@@ -158,3 +158,15 @@ test('expandAll / collapseAll skip the hook and fire no per-node events (expande
   await expect(label(page, 'Folder child')).toHaveCount(0);
   expect(await log(page)).toEqual([]);
 });
+
+test('the per-node loader is --wtv-loader-inline-size (0.75 × --wtv-loader-size)', async ({ page }) => {
+  await load(page, 'manual');
+  await page.evaluate(() => (window as any).tree.style.setProperty('--wtv-loader-size', '20px'));
+  await toggleOf(page, '1').click();
+  await expect(toggleOf(page, '1')).toHaveClass(/wtv__toggle-icon--loading/);
+  const size = await toggleOf(page, '1').evaluate((el) => {
+    const cs = getComputedStyle(el, '::before');
+    return [cs.width, cs.height];
+  });
+  expect(size).toEqual(['15px', '15px']);
+});

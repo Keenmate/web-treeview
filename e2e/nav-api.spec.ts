@@ -100,3 +100,35 @@ test.describe('scroll highlight', () => {
     await expect(nodeContent(nodeByPath(page, '1.1'))).not.toHaveClass(/wtv__node-content--scroll-highlight/);
   });
 });
+
+test.describe('--wtv-scroll-behavior (→ --base-scroll-behavior)', () => {
+  const spy = (page: Page) => page.evaluate(() => {
+    const calls: (string | undefined)[] = ((window as any).scrollCalls = []);
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
+      calls.push(typeof o === 'object' ? o.behavior : undefined);
+      return orig.call(this, o as ScrollIntoViewOptions);
+    };
+  });
+  const calls = (page: Page) => page.evaluate(() => (window as any).scrollCalls as (string | undefined)[]);
+
+  test('scrollToPath defaults to smooth; the token and --base-scroll-behavior override; an explicit behavior wins', async ({ page }) => {
+    await load(page);
+    await spy(page);
+    await nav(page, 'scrollToPath', '2.1');
+    await page.evaluate(() => document.documentElement.style.setProperty('--base-scroll-behavior', 'auto'));
+    await nav(page, 'scrollToPath', '2.1');
+    await page.evaluate(() => (window as any).tree.style.setProperty('--wtv-scroll-behavior', 'instant'));
+    await nav(page, 'scrollToPath', '2.1');
+    await nav(page, 'scrollToPath', '2.1', { behavior: 'smooth' });
+    expect(await calls(page)).toEqual(['smooth', 'auto', 'instant', 'smooth']);
+  });
+
+  test('reduced motion: the contract fallback is auto', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await load(page);
+    await spy(page);
+    await nav(page, 'scrollToPath', '2.1');
+    expect(await calls(page)).toEqual(['auto']);
+  });
+});

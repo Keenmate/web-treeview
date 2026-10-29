@@ -121,7 +121,7 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-spacing-lg` | `12px` | Large spacing |
 | `--wtv-spacing-xl` | `16px` | Extra large spacing |
 | `--wtv-toggle-icon-width` | `calc(--wtv-rem * 2.4)` | Toggle / icon column width (24px) |
-| `--wtv-indent-size` | `calc(--wtv-rem * 1.6)` | Indent per level (16px) — its own knob |
+| `--wtv-indent-size` | `calc(--base-tree-indent` \| `1.6` `* --wtv-rem)` | Indent per level (16px) — its own knob; `--base-tree-indent` is a unitless page-wide multiplier |
 | `--wtv-node-padding` | `--wtv-spacing-sm --wtv-spacing-md` | Node content padding (4px 8px) |
 | `--wtv-node-height` | `calc(--wtv-rem * 2.4)` | Minimum row height (24px) |
 | `--wtv-toggle-icon-size` | `= --wtv-font-size-xs` | Toggle glyph size (font-size of the column) |
@@ -152,6 +152,7 @@ Only the contract's four speeds and its easings; there is no attribute for anima
 | `--wtv-transition-medium` | `--base-duration-medium` \| `0.25s` | Medium |
 | `--wtv-transition-slow` | `--base-duration-slow` \| `0.3s` | Drag-denied row tint |
 | `--wtv-ease-standard` / `-out` / `-in` | `--base-ease-*` | Easings |
+| `--wtv-scroll-behavior` | `--base-scroll-behavior` \| `smooth` (`auto` under reduced motion) | `scrollToPath` / keyboard scrolling when the caller passes no `behavior` |
 | `--wtv-toggle-icon-transition` | `transform --wtv-transition-normal --wtv-ease-standard` | Expand / collapse turn of the glyph |
 
 ### Drag & drop — glow indicators
@@ -256,11 +257,12 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-loader-icon` | `--base-loader-icon` \| the contract's arc | Loader shape (a `currentColor` mask) |
 | `--wtv-loader-rotate` | `--base-loader-rotate` \| `1turn` | Rotation per loop (`0` = the SVG animates itself) |
 | `--wtv-loader-duration` | `--base-loader-duration` \| `0.8s` | Loop period (a loop, not on the duration scale; the contract slows it to 1.5s under reduced motion — it never stops) |
-| `--wtv-loader-size` | `--base-loader-size` \| `1.25em` | Overlay loader size |
+| `--wtv-loader-size` | `--base-loader-size` \| `1.25em` | Loader size — the per-context sizes derive from it |
+| `--wtv-loader-overlay-size` | `--wtv-loader-size * 2` | `isLoading` overlay loader |
+| `--wtv-loader-inline-size` | `--wtv-loader-size * 0.75` | Per-node loader (async `beforeExpandCallback`) — the loader shape in place of the toggle glyph |
 | `--wtv-loader-color` | `= --wtv-accent-color` | Loader colour (overlay + per-node) |
 | `--wtv-loading-bg` | `--wtv-main-bg` at 80% | Loading overlay veil |
 | `--wtv-loading-color` | `= --wtv-text-color-3` | "Loading more…" text |
-| `--wtv-node-loader-size` | `0.9em` | Per-node loader (async `beforeExpandCallback`) — the loader shape in place of the toggle glyph |
 
 The `isLoading` overlay draws through web-components-core's shared loader (`renderLoader`):
 the instance `renderLoadingCallback`, else the page-wide `window.components.renderLoaderCallback`,

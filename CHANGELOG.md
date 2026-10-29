@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (shared loader, core SPEC §12.14, 2026-10-29)
+
+- **`renderLoadingCallback` ctx is core's `LoaderRenderContext`**: `{ component, context, containerElement,
+  element, label }` (`context: 'overlay'`, `label` = `labels.loading`; no `controller` — was
+  `ContainerRenderContext`). The hook may return a cleanup, run when the loader is removed. It beats the new
+  page-wide **`window.components.renderLoaderCallback`** (one hook for every KeenMate component); neither set →
+  the default `<span class="wtv-loader">`. Types `LoaderRenderContext` / `RenderLoaderCallback` re-exported.
+- The overlay loader is drawn only while `isLoading` (core `renderLoader`) and removed after — the overlay's
+  `role="status"` / `aria-label` are present while loading only; a hook's nodes are removed when loading ends.
+- **CSS tokens**: `--wtv-spinner-duration` / `-size` / `-track` / `-color` and `--wtv-expand-spinner-size` /
+  `-width` / `-track` / `-color` removed → `--wtv-loader-icon` / `-rotate` / `-duration` / `-size` (→
+  `--base-loader-*`), `--wtv-loader-color` (= accent), `--wtv-node-loader-size` (per-node lazy-load loader,
+  0.9em). The overlay and the per-node toggle draw the shared loader shape (a `currentColor` mask) instead of
+  the border ring; `.wtv__loading-spinner` is gone (`.wtv-loader`). Under reduced motion the loader slows
+  (the contract's `--base-loader-duration: 1.5s`), never stops.
+- **Dev dependency**: `@keenmate/base-css-variables` points to `file:../base-css-variables` (2.0.0-rc06 with
+  the `--base-loader-*` contract, unpublished) — **switch back to `^2.0.0-rc06` before publishing**.
+
 ### Added (custom menu renderer, 2026-10-29)
 
 - **`activateMenuItem(item, ctx, trigger?, event?)`** on the element and `el.controller` (was

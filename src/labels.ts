@@ -16,7 +16,7 @@ export interface TreeViewLabels {
   noResults: string;
   /** Text of a node with no resolvable display value (`displayValueMember` / `getDisplayValueCallback`). */
   noDisplayValue: string;
-  /** Accessible label (`aria-label`) of the `isLoading` spinner overlay (no `renderLoadingCallback`). */
+  /** Accessible label (`aria-label`) of the `isLoading` overlay — core `renderLoader` sets it on the container (also passed as the loader hook's `ctx.label`). */
   loading: string;
   /** Text of the empty-tree drop zone (no `renderEmptyZoneCallback`). */
   dropHere: string;

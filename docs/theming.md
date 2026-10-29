@@ -143,7 +143,7 @@ Only the contract's four speeds and its easings; there is no attribute for anima
 
 - **Motion off, this tree:** `web-treeview { --wtv-transition-fast: 0s; --wtv-transition-normal: 0s; --wtv-transition-medium: 0s; --wtv-transition-slow: 0s; }`
 - **Motion off, page-wide (every Keenmate component):** `:root { --base-duration-fast: 0s; --base-duration-normal: 0s; --base-duration-medium: 0s; --base-duration-slow: 0s; }`
-- **`prefers-reduced-motion: reduce`** sets the four `--wtv-transition-*` to `0s` (the contract does the same for `--base-duration-*`). The loading spinners keep turning — they show state.
+- **`prefers-reduced-motion: reduce`** sets the four `--wtv-transition-*` to `0s` (the contract does the same for `--base-duration-*`). The loader keeps turning, slower (the contract sets `--base-loader-duration: 1.5s`) — it shows state.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -153,7 +153,6 @@ Only the contract's four speeds and its easings; there is no attribute for anima
 | `--wtv-transition-slow` | `--base-duration-slow` \| `0.3s` | Drag-denied row tint |
 | `--wtv-ease-standard` / `-out` / `-in` | `--base-ease-*` | Easings |
 | `--wtv-toggle-icon-transition` | `transform --wtv-transition-normal --wtv-ease-standard` | Expand / collapse turn of the glyph |
-| `--wtv-spinner-duration` | `0.8s` | One turn of the loading spinners (a loop period, not on the duration scale) |
 
 ### Drag & drop — glow indicators
 
@@ -254,12 +253,19 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `--wtv-tree-min-height` | `calc(6 * --wtv-rem)` | Min height for empty / loading states (60px) |
-| `--wtv-spinner-size` | `calc(--wtv-rem * 3.2)` | Spinner size (32px) |
-| `--wtv-spinner-track` | `= --wtv-border-color` | Spinner track color |
-| `--wtv-spinner-color` | `= --wtv-accent-color` | Spinner accent color |
+| `--wtv-loader-icon` | `--base-loader-icon` \| the contract's arc | Loader shape (a `currentColor` mask) |
+| `--wtv-loader-rotate` | `--base-loader-rotate` \| `1turn` | Rotation per loop (`0` = the SVG animates itself) |
+| `--wtv-loader-duration` | `--base-loader-duration` \| `0.8s` | Loop period (a loop, not on the duration scale; the contract slows it to 1.5s under reduced motion — it never stops) |
+| `--wtv-loader-size` | `--base-loader-size` \| `1.25em` | Overlay loader size |
+| `--wtv-loader-color` | `= --wtv-accent-color` | Loader colour (overlay + per-node) |
 | `--wtv-loading-bg` | `--wtv-main-bg` at 80% | Loading overlay veil |
 | `--wtv-loading-color` | `= --wtv-text-color-3` | "Loading more…" text |
-| `--wtv-expand-spinner-size` / `-width` / `-track` / `-color` | `0.9em` / `2px` / spinner track / spinner color | Per-node loading spinner (async `beforeExpandCallback`) |
+| `--wtv-node-loader-size` | `0.9em` | Per-node loader (async `beforeExpandCallback`) — the loader shape in place of the toggle glyph |
+
+The `isLoading` overlay draws through web-components-core's shared loader (`renderLoader`):
+the instance `renderLoadingCallback`, else the page-wide `window.components.renderLoaderCallback`,
+else the default `<span class="wtv-loader">` drawn from the tokens above. One page-wide change
+(`--base-loader-*` or the page hook) restyles the loader of every KeenMate component.
 
 ### Tooltip
 

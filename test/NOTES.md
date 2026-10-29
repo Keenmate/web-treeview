@@ -513,7 +513,7 @@ re-insert (or re-apply the active filter after `insertArray`).
 
 ## 19. ~~`renderLoadingCallback` is never called~~ — fixed
 
-**Fixed 2026-10-25:** the renderer fills the loading overlay through `_renderLoadingContent()`: `renderLoadingCallback(container)` when set, else the built-in spinner; re-run when the callback changes. The `test.fail` passes.
+**Fixed 2026-10-25:** the renderer fills the loading overlay through `_renderLoadingContent()`: `renderLoadingCallback(container)` when set, else the built-in spinner; re-run when the callback changes. The `test.fail` passes. **2026-10-29:** the overlay now draws through core `renderLoader` (SPEC §12.14) — instance `renderLoadingCallback` (ctx = core `LoaderRenderContext`) → page `window.components.renderLoaderCallback` → default `.wtv-loader`; drawn while `isLoading`, removed after (`_syncLoader`).
 
 Original report:
 

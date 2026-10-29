@@ -23,7 +23,7 @@ import type {
   ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { withComponentContext, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { withComponentContext, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
@@ -214,6 +214,16 @@ export class WebTreeView<T = any> {
     let wrapped = byKind.get(kind);
     if (!wrapped) { wrapped = make(src); byKind.set(kind, wrapped); }
     return wrapped;
+  }
+
+  /** The overlay loader drawer: core `renderLoader` with the instance hook (else the page
+   *  hook, else the default `.wtv-loader`). Stable identity per hook (the renderer redraws on change). */
+  private defaultLoaderDrawer: ((container: HTMLElement, label: string) => () => void) | null = null;
+  private loaderDrawer(src: RenderLoaderCallback | null | undefined): (container: HTMLElement, label: string) => () => void {
+    const make = (hook: RenderLoaderCallback | null) => (container: HTMLElement, label: string) =>
+      renderLoader(this.hostElement(), container, 'overlay', { prefix: 'wtv', label, renderLoadingCallback: hook });
+    if (typeof src !== 'function') return (this.defaultLoaderDrawer ??= make(null));
+    return this.wrap(src, 'loader', make);
   }
 
   /** A per-node `get*Callback(ctx)` → the engine's `(node) => value`. */
@@ -925,7 +935,7 @@ export class WebTreeView<T = any> {
       labels: o.labels,
       renderEmptyZoneCallback: region(o.renderEmptyZoneCallback),
       isEmptyDropPlaceholderShown: o.isEmptyDropPlaceholderShown,
-      renderLoadingCallback: region(o.renderLoadingCallback),
+      renderLoadingCallback: this.loaderDrawer(o.renderLoadingCallback),
       renderHeaderCallback: region(o.renderHeaderCallback),
       renderFooterCallback: region(o.renderFooterCallback),
       renderContextMenuCallback: this.wrap(o.renderContextMenuCallback, 'renderMenu', (f) =>

@@ -1,4 +1,5 @@
 import type { TreeViewLabels } from './labels';
+import type { RenderLoaderCallback } from '@keenmate/web-components-core';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
@@ -513,7 +514,10 @@ export interface TreeViewConfig<T = any> {
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */
   isEmptyDropPlaceholderShown?: boolean | null;
-  renderLoadingCallback?: (ctx: ContainerRenderContext<T>) => void;
+  /** Draw the loading state (`isLoading` overlay) into `ctx.containerElement` — core's shared
+   *  loader hook (SPEC §12.14): beats the page-wide `window.components.renderLoaderCallback`;
+   *  `ctx.context` is `'overlay'`; may return a cleanup. */
+  renderLoadingCallback?: RenderLoaderCallback | null;
   renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => void;
   renderFooterCallback?: (ctx: ContainerRenderContext<T>) => void;
   /** Take over the whole context menu: fill `ctx.containerElement` (close it via `ctx.controller.closeContextMenu()`). */

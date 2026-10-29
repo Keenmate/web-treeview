@@ -155,7 +155,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.loadingEl = document.createElement('div');
     this.loadingEl.className = 'wtv__loading-overlay';
     this.loadingEl.style.display = 'none';
-    this._renderLoadingContent();
     this.container.appendChild(this.loadingEl);
 
     // Set controller container for scrollToPath
@@ -180,30 +179,29 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._onStateChange(controller.getSnapshot());
   }
 
-  /** The loading overlay's content: `renderLoadingCallback` when set, else the
-   *  built-in spinner (NOTES #19). Re-run when the callback changes. */
-  private _loadingContentCb: unknown = undefined;
-  private _renderLoadingContent(): void {
-    if (!this.loadingEl) return;
-    const cb = this.config.renderLoadingCallback;
-    this._loadingContentCb = cb;
-    this.loadingEl.innerHTML = '';
-    if (cb) cb(this.loadingEl);
-    else this.loadingEl.innerHTML = '<div class="wtv__loading-spinner"></div>';
-    this._applyLoadingLabel();
+  /** The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while
+   *  `isLoading`, removed after; redrawn when the drawer (instance `renderLoadingCallback`)
+   *  or the `labels.loading` text changes. */
+  private _removeLoader: (() => void) | null = null;
+  private _loaderDrawer: unknown = undefined;
+  private _loaderLabel = '';
+  private _syncLoader(isLoading: boolean): void {
+    const draw = this.config.renderLoadingCallback;
+    const label = resolveLabel(this.config.labels, 'loading');
+    const isStale = draw !== this._loaderDrawer || label !== this._loaderLabel;
+    if (this._removeLoader && (!isLoading || isStale)) {
+      this._removeLoader();
+      this._removeLoader = null;
+    }
+    if (isLoading && !this._removeLoader && this.loadingEl && draw) {
+      this._loaderDrawer = draw;
+      this._loaderLabel = label;
+      this._removeLoader = draw(this.loadingEl, label);
+    }
   }
 
   /** Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing). */
   private _emptyLabelKey: 'noData' | 'noResults' = 'noData';
-
-  /** Accessible name of the loading overlay: `role="status"` + `aria-label` = `labels.loading`. */
-  private _applyLoadingLabel(): void {
-    if (!this.loadingEl) return;
-    this.loadingEl.setAttribute('role', 'status');
-    const text = resolveLabel(this.config.labels, 'loading');
-    if (text) this.loadingEl.setAttribute('aria-label', text);
-    else this.loadingEl.removeAttribute('aria-label');
-  }
 
   /** The callback the current `.wtv__empty-zone` was built with (NOTES #20). */
   private _emptyZoneCb: unknown = undefined;
@@ -216,7 +214,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const emptyState = target.querySelector('.wtv__empty-state');
       if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
     }
-    this._applyLoadingLabel();
     const showFull = resolveLabel(this.config.labels, 'showFullLabel');
     for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
     if (!this.config.renderEmptyZoneCallback) {
@@ -228,7 +225,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   updateConfig(config: Partial<RendererConfig<T>>): void {
     Object.assign(this.config, config);
     if ('labels' in config) this._refreshLabels();
-    if (this.config.renderLoadingCallback !== this._loadingContentCb) this._renderLoadingContent();
+    if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
       const zone = this._renderTarget?.querySelector('.wtv__empty-zone');
       if (zone && this.controller) {
@@ -268,6 +265,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._stopSizeObserve = null;
     this._destroyAllTooltips();
     this._closeReveal();
+    this._removeLoader?.();
+    this._removeLoader = null;
     this._labelObserver?.disconnect();
     this._labelObserver = null;
     this.nodeElements.clear();
@@ -1157,6 +1156,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.loadingEl) {
       this.loadingEl.style.display = snapshot.isLoading ? 'flex' : 'none';
     }
+    this._syncLoader(!!snapshot.isLoading);
 
     // Body class
     if (this.bodyEl) {

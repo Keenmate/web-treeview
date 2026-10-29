@@ -55,8 +55,10 @@
         });
         setupTree($('loading'), []);
         setupTree($('loading-cb'), [], {
-            renderLoadingCallback: ({ containerElement }) => {
-                containerElement.innerHTML = '<span class="custom-loading">Loading…</span>';
+            renderLoadingCallback: ({ component, context, containerElement, element, label }) => {
+                window.loaderCtx = { component, context, label, isHost: element === $('loading-cb'), role: containerElement.getAttribute('role') };
+                containerElement.insertAdjacentHTML('beforeend', '<span class="custom-loading">Loading…</span>');
+                return () => { window.loaderCleanups = (window.loaderCleanups || 0) + 1; };
             }
         });
         setupTree($('icons'), data);

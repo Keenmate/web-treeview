@@ -63,8 +63,9 @@ export interface RendererConfig<T> {
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and make it focusable + focus-on-hover so a Ctrl/Cmd+V pastes into it. */
   isEmptyDropPlaceholderShown?: boolean | null;
-  /** Rendered when isLoading is true. */
-  renderLoadingCallback?: (container: HTMLElement) => void;
+  /** Draws the loader into the overlay while isLoading is true; returns its remove().
+   *  WebTreeView binds it to core `renderLoader` (instance hook → page hook → default). */
+  renderLoadingCallback?: ((container: HTMLElement, label: string) => () => void) | null;
   /** Rendered above the tree body. */
   renderHeaderCallback?: (container: HTMLElement) => void;
   /** Rendered below the tree body. */

@@ -1085,38 +1085,32 @@
   align-items: center;
   justify-content: center;
   z-index: var(--wtv-z-index-overlay);
+  color: var(--wtv-loader-color);
 }
 
-.wtv__loading-spinner {
-  width: var(--wtv-spinner-size);
-  height: var(--wtv-spinner-size);
-  border: 3px solid var(--wtv-spinner-track);
-  border-top-color: var(--wtv-spinner-color);
-  border-radius: 50%;
-  animation: wtv__spin var(--wtv-spinner-duration) linear infinite;
+/* The shared loader (core renderLoader default element, base-css-variables drawing contract). */
+.wtv-loader {
+  display: inline-block;
+  inline-size: var(--wtv-loader-size); block-size: var(--wtv-loader-size);
+  mask: var(--wtv-loader-icon) center / contain no-repeat;
+  background: currentColor;
+  animation: wtv-loader-spin var(--wtv-loader-duration) linear infinite;
 }
-
-@keyframes wtv__spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes wtv-loader-spin { to { transform: rotate(var(--wtv-loader-rotate)); } }
 
 /* Per-node loading state: an async beforeExpandCallback is pending (lazy load). The
-   toggle glyph becomes a small spinning ring; the row carries aria-busy + data-loading. */
+   toggle glyph becomes the shared loader shape; the row carries aria-busy + data-loading. */
 .wtv__node .wtv__toggle-icon.wtv__toggle-icon--loading {
   transform: none;
 }
 .wtv__node .wtv__toggle-icon.wtv__toggle-icon--loading::before {
   content: '';
-  -webkit-mask-image: none;
-          mask-image: none;
-  background: none;
-  box-sizing: border-box;
-  width: var(--wtv-expand-spinner-size);
-  height: var(--wtv-expand-spinner-size);
-  border: var(--wtv-expand-spinner-width) solid var(--wtv-expand-spinner-track);
-  border-top-color: var(--wtv-expand-spinner-color);
-  border-radius: 50%;
-  animation: wtv__spin var(--wtv-spinner-duration) linear infinite;
+  width: var(--wtv-node-loader-size);
+  height: var(--wtv-node-loader-size);
+  -webkit-mask: var(--wtv-loader-icon) center / contain no-repeat;
+          mask: var(--wtv-loader-icon) center / contain no-repeat;
+  background: var(--wtv-loader-color);
+  animation: wtv-loader-spin var(--wtv-loader-duration) linear infinite;
 }
 
 .wtv__loading-more {

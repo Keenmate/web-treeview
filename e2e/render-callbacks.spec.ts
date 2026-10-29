@@ -84,8 +84,60 @@ test.describe('loading', () => {
     await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
   });
 
-  test('renderLoadingCallback renders the loading content', async ({ page }) => {
+  test('renderLoadingCallback renders the loading content with the core LoaderRenderContext', async ({ page }) => {
     await expect(tree(page, 'loading-cb').locator('.custom-loading')).toHaveText('Loading…', { timeout: 2000 });
+    expect(await page.evaluate(() => (window as any).loaderCtx)).toEqual({
+      component: 'web-treeview', context: 'overlay', label: 'Loading…', isHost: true, role: 'status',
+    });
+    await expect(tree(page, 'loading-cb').locator('.wtv-loader')).toHaveCount(0);
+  });
+
+  test('default loader: core renderLoader draws .wtv-loader (aria-hidden) from the --wtv-loader-* tokens', async ({ page }) => {
+    const loader = tree(page, 'loading').locator('.wtv__loading-overlay .wtv-loader');
+    await expect(loader).toHaveCount(1);
+    await expect(loader).toHaveAttribute('aria-hidden', 'true');
+    const anim = await loader.evaluate((el) => getComputedStyle(el).animationName);
+    expect(anim).toBe('wtv-loader-spin');
+  });
+
+  test('page hook window.components.renderLoaderCallback replaces the default; the instance hook beats it', async ({ page }) => {
+    await page.evaluate(() => {
+      (window as any).components.renderLoaderCallback = ({ component, containerElement }: any) => {
+        containerElement.insertAdjacentHTML('beforeend', `<i class="page-loader">${component}</i>`);
+      };
+    });
+    const t = tree(page, 'loading');
+    // Redraw: loading off → on.
+    await t.evaluate(async (el: any) => { el.removeAttribute('loading'); await el.whenSettled(); el.setAttribute('loading', 'true'); });
+    await expect(t.locator('.wtv__loading-overlay .page-loader')).toHaveText('web-treeview');
+    await expect(t.locator('.wtv-loader')).toHaveCount(0);
+    const cb = tree(page, 'loading-cb');
+    await cb.evaluate(async (el: any) => { el.removeAttribute('loading'); await el.whenSettled(); el.setAttribute('loading', 'true'); });
+    await expect(cb.locator('.custom-loading')).toHaveCount(1);
+    await expect(cb.locator('.page-loader')).toHaveCount(0);
+    await page.evaluate(() => { (window as any).components.renderLoaderCallback = null; });
+  });
+
+  test('loading off removes the loader: its nodes, role / aria-label, and runs the hook cleanup', async ({ page }) => {
+    const t = tree(page, 'loading-cb');
+    await expect(t.locator('.custom-loading')).toHaveCount(1);
+    await t.evaluate((el) => el.removeAttribute('loading'));
+    const overlay = t.locator('.wtv__loading-overlay');
+    await expect(overlay.locator('.custom-loading')).toHaveCount(0);
+    await expect(overlay).not.toHaveAttribute('role', /./);
+    await expect(overlay).not.toHaveAttribute('aria-label', /./);
+    expect(await page.evaluate(() => (window as any).loaderCleanups)).toBe(1);
+  });
+
+  test('replacing renderLoadingCallback while loading redraws (old cleanup runs)', async ({ page }) => {
+    const t = tree(page, 'loading-cb');
+    await expect(t.locator('.custom-loading')).toHaveCount(1);
+    await t.evaluate((el: any) => { el.renderLoadingCallback = ({ containerElement }: any) => { containerElement.insertAdjacentHTML('beforeend', '<b class="next-loading"></b>'); }; });
+    await expect(t.locator('.next-loading')).toHaveCount(1);
+    await expect(t.locator('.custom-loading')).toHaveCount(0);
+    expect(await page.evaluate(() => (window as any).loaderCleanups)).toBe(1);
+    await t.evaluate((el: any) => { el.renderLoadingCallback = null; });
+    await expect(t.locator('.wtv__loading-overlay .wtv-loader')).toHaveCount(1);
   });
 });
 

@@ -498,7 +498,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
                 <tr><td><code>renderHeaderCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome above the tree</td></tr>
                 <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
                 <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
-                <tr><td><code>renderLoadingCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the loading state (<code>isLoading=true</code>)</td></tr>
+                <tr><td><code>renderLoadingCallback</code></td><td><code>({ component, context, containerElement, element, label }) =&gt; void | (() =&gt; void)</code></td><td>the loading state (<code>isLoading=true</code>) — core's shared loader hook (beats the page-wide <code>window.components.renderLoaderCallback</code>); may return a cleanup</td></tr>
                 <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
             </tbody>
         </table>

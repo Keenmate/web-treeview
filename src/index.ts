@@ -109,6 +109,8 @@ export type * from './interaction';
 // renderContextMenuCallback (`getMenuChildren(item, ctx)`).
 export { menuDivider, getMenuChildren } from '@keenmate/web-components-core/actions';
 export type { ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
+// The shared loader hook (renderLoadingCallback / window.components.renderLoaderCallback, core SPEC §12.14).
+export type { LoaderRenderContext, RenderLoaderCallback } from '@keenmate/web-components-core';
 
 // Logging — now a thin shim over @keenmate/web-components-core (SPEC §12.1).
 export {

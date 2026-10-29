@@ -181,15 +181,15 @@ so retinting a glow colour retints its arrow too.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--wtv-drag-over-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Drag-over node background |
-| `--wtv-drag-over-border` | `2px dashed accent` | Drag-over node border |
-| `--wtv-drag-over-box-shadow` | `0 0 8px accent 40%` | Drag-over glow shadow |
+| `--wtv-drag-over-bg` | `--base-drop-target-bg` \| `= --wtv-drop-valid-bg` | Drag-over node background (a valid drop target) |
+| `--wtv-drag-over-border` | `2px dashed` `--base-drop-target-border-color` \| success | Drag-over node border |
+| `--wtv-drag-over-box-shadow` | `0 0 8px` drop-target border color 40% | Drag-over glow shadow |
 | `--wtv-drop-valid-bg` | `--base-success-bg-subtle` \| `success 10%` | Valid drop background |
 | `--wtv-drop-valid-border-color` | `= --wtv-success-color` | Valid drop border color |
 | `--wtv-drop-invalid-bg` | `--base-danger-bg-subtle` \| `danger 10%` | Invalid drop background |
 | `--wtv-drop-invalid-border-color` | `= --wtv-danger-color` | Invalid drop border color |
-| `--wtv-drag-over-highlight-bg` | `--base-success-bg-subtle-hover` \| `success 15%` | Dragover highlight background |
-| `--wtv-drag-over-highlight-border` | `2px dashed success` | Dragover highlight border |
+| `--wtv-drag-over-highlight-bg` | `--base-drop-target-bg-active` \| `--base-success-bg-subtle-hover` \| `success 15%` | Dragover highlight background (the target under the pointer) |
+| `--wtv-drag-over-highlight-border` | `2px dashed` `--base-drop-target-border-color` \| success | Dragover highlight border |
 | `--wtv-touch-ghost-bg` | `accent 90%` | Touch drag ghost background |
 | `--wtv-touch-ghost-text-color` | `= --wtv-text-color-on-accent` | Touch drag ghost text |
 | `--wtv-touch-ghost-box-shadow` | `--base-shadow-lg` \| `0 4px 12px rgba(0,0,0,0.3)` | Touch ghost shadow |
@@ -198,12 +198,12 @@ so retinting a glow colour retints its arrow too.
 | `--wtv-dragged-opacity` | `0.5` | Dragged node opacity |
 | `--wtv-drag-denied-flash-bg` | `--base-danger-bg-subtle-hover` \| `danger 15%` (30% dark) | Row tint of the "can't move / drop here" feedback (fades in, held) |
 | `--wtv-cut-opacity` | `0.4` | Cut node opacity (clipboard) |
-| `--wtv-drop-placeholder-border` | `2px dashed accent` | Empty zone border (during drag) |
-| `--wtv-drop-placeholder-bg` | `--base-primary-bg-subtle` \| `accent 10%` | Empty zone background |
+| `--wtv-drop-placeholder-border` | `2px dashed` `--base-drop-target-border-color` \| success | Empty zone border (during drag) |
+| `--wtv-drop-placeholder-bg` | `= --wtv-drag-over-bg` | Empty zone background |
 | `--wtv-drop-placeholder-border-radius` | `= --wtv-border-radius-lg` | Empty zone border radius |
-| `--wtv-drop-placeholder-color` | `= --wtv-accent-color` | Empty zone text |
+| `--wtv-drop-placeholder-color` | `--base-drop-target-border-color` \| success | Empty zone text |
 | `--wtv-drop-placeholder-min-height` | `= --wtv-tree-min-height` | Empty zone min height |
-| `--wtv-drop-placeholder-bg-hover` / `-border-color-hover` / `-box-shadow-hover` / `-scale-hover` | accent 28% / accent / 4px glow / `1` | Engaged zone (hover or a drag over it) |
+| `--wtv-drop-placeholder-bg-hover` / `-border-color-hover` / `-box-shadow-hover` / `-scale-hover` | `= --wtv-drag-over-highlight-bg` / drop-target border color / 4px glow / `1` | Engaged zone (hover or a drag over it) |
 
 ### Context menu
 

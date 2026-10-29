@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed (visual) — drop-target tokens (base-css-variables 2.0.0-rc06, 2026-10-29)
+
+- **Drop targets are green (the contract's drop-target tokens), no longer the primary tint**: the drag-over row
+  `--wtv-drag-over-bg` → `var(--base-drop-target-bg, var(--wtv-drop-valid-bg))` (was `--base-primary-bg-subtle`);
+  the row accepting the drop `--wtv-drag-over-highlight-bg` → `--base-drop-target-bg-active` (then
+  `--base-success-bg-subtle-hover`); `--wtv-drag-over-border`, `--wtv-drag-over-highlight-border` and
+  `--wtv-drop-placeholder-border` / `-color` / `-border-color-hover` → `--base-drop-target-border-color` (then
+  `--wtv-success-color`; were accent); the empty-tree drop placeholder idle = `--wtv-drag-over-bg`, engaged
+  `--wtv-drop-placeholder-bg-hover` = `--wtv-drag-over-highlight-bg` (was accent 28%); the drag-over glow / placeholder
+  glow follow the border colour. A refused drop keeps the danger tint (`--wtv-drop-invalid-*`). Token names unchanged;
+  `component-variables.manifest.json` lists the three `--base-drop-target-*` reads.
+
 ### Changed — BREAKING (loader sizes + base scroll / indent tokens, 2026-10-29)
 
 - **`--wtv-node-loader-size` → `--wtv-loader-inline-size`** (`calc(var(--wtv-loader-size) * 0.75)`, was a

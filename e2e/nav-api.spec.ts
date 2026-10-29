@@ -132,3 +132,12 @@ test.describe('--wtv-scroll-behavior (→ --base-scroll-behavior)', () => {
     expect(await calls(page)).toEqual(['auto']);
   });
 });
+
+test('--wtv-indent-size (→ --base-tree-indent × --wtv-rem): a 16px visual step per level', async ({ page }) => {
+  await load(page);
+  const left = (path: string) =>
+    nodeContent(nodeByPath(page, path)).evaluate((el) => el.getBoundingClientRect().left);
+  expect(Math.round((await left('1.1')) - (await left('1')))).toBe(16);
+  await page.evaluate(() => document.documentElement.style.setProperty('--base-tree-indent', '2.4'));
+  expect(Math.round((await left('1.1')) - (await left('1')))).toBe(24);
+});

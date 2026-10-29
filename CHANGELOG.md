@@ -19,8 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   rule, 2026-10-29).
 - **`--wtv-indent-size`** reads the contract's unitless multiplier: `calc(var(--base-tree-indent, 1.6) *
   var(--wtv-rem))` — still 16px by default.
-- Dev dependency `@keenmate/base-css-variables` (`file:`) now at the build with `--base-scroll-behavior` /
-  `--base-tree-indent`.
+- Requires `@keenmate/base-css-variables` ^2.0.0-rc06 (`--base-scroll-behavior` / `--base-tree-indent`).
 
 ### Changed — BREAKING (shared loader, core SPEC §12.14, 2026-10-29)
 
@@ -36,8 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `--base-loader-*`), `--wtv-loader-color` (= accent) (per-node / overlay sizes: see the entry above). The overlay and the per-node toggle draw the shared loader shape (a `currentColor` mask) instead of
   the border ring; `.wtv__loading-spinner` is gone (`.wtv-loader`). Under reduced motion the loader slows
   (the contract's `--base-loader-duration: 1.5s`), never stops.
-- **Dev dependency**: `@keenmate/base-css-variables` points to `file:../base-css-variables` (2.0.0-rc06 with
-  the `--base-loader-*` contract, unpublished) — **switch back to `^2.0.0-rc06` before publishing**.
+- Requires `@keenmate/base-css-variables` ^2.0.0-rc06 (the `--base-loader-*` contract).
 
 ### Added (custom menu renderer, 2026-10-29)
 

@@ -1,12 +1,12 @@
 # web-treeview ↔ svelte-treeview API parity
 
 Living checklist of the public API of `@keenmate/web-treeview` (`<web-treeview>`) against its
-sibling `@keenmate/svelte-treeview` (`<Tree>`). **Any public API change must update this file and
+sibling `@keenmate/svelte-treeview` (`<Tree>`) — the same content as svelte-treeview's `docs/parity.md`. **Any public API change must update this file and
 be mirrored in the sibling library (or recorded here as intentional).**
 
 Status: **same** = identical name, type, default and semantics · **intentional** = a deliberate
 difference (the reason is given). Web names are element properties / `TreeViewConfig` keys (HTML
-attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 2026-10-28
+attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 2026-10-28, synced against both codebases 2026-10-29
 (parity pass: `_agent-progress/parity-brief.md`, audit `_agent-progress/treeview-parity.md`).
 
 ## 1. Data / config inputs
@@ -106,7 +106,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `checkNode(s)`, `checkAll`, `uncheckNode(s)`, `uncheckAll`, `getCheckedNodes`, `isNodeChecked` | same | same |
 | `focusNode`, `clearFocus` (honour `isSilent`) | same | same |
 | `openContextMenu(path, x, y)`, `closeContextMenu()` | same | same |
-| `activateMenuItem(item, ctx, trigger?, event?)` (element + controller) — for `renderContextMenuCallback`, whose ctx carries the resolved `entries` | `controller.activateMenuItem(item, ctx, trigger?, event?)` (+ `menuContext(node)` / `menuItemDefaults(item, ctx)` + `resolveMenuEntries` for headless renderers) | same activator — the built-in menu's path (`beforeActionCallback` veto → `onClick` → built-in → `action` / `onAction`), a custom renderer can't bypass the veto; web hands the renderer pre-resolved `ctx.entries` instead of exposing `menuContext` / `menuItemDefaults` (intentional) |
+| `activateMenuItem(item, ctx, trigger?, event?)` (element + controller) — for `renderContextMenuCallback`, whose ctx carries the resolved `entries` | `controller.activateMenuItem(item, ctx, trigger?, event?)` + `controller.menuContext(node \| null)`, `controller.menuItemDefaults(item, ctx)` — activation = the built-in menu's path (`beforeActionCallback` veto → `onClick` → built-in → `onAction`); a node-less ctx (`menuContext(null)`, menus over empty space) runs only the node-free built-ins | same activator. Intentional svelte-only: `menuContext` / `menuItemDefaults` and node-less menus (headless controller + custom renderers, e.g. svelte-treeview-canvas); web hands its renderer pre-resolved `ctx.entries` |
 | `navTo`, `navNext`, `navPrev`, `navNextSibling`, `navPrevSibling`, `navInto`, `navOut`, `navBackOut`, `navToggle`, `navFirst`, `navLast`, `navPageDown`, `navPageUp`, `navSelectNext`, `navSelectPrev`, `navSelectFirst`, `navSelectLast`, `navSelectPageDown`, `navSelectPageUp` | same | same |
 | `copyNodes`, `cutNodes`, `pasteNodes`, `cancelCut`, `hasClipboardContent`, `getClipboardOperation` | same | same |
 | `update(props)` (element) / `WebTreeView.update` | `<Tree>` `update(partial)` | same |
@@ -125,20 +125,27 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 | web | svelte | status |
 |---|---|---|
-| `menuDivider`, `getMenuChildren`, `ResolvedMenuEntry`, `DEFAULT_LABELS`, `resolveLabel`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats` | same where applicable | same |
+| `menuDivider`, `DEFAULT_LABELS`, `resolveLabel`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats`, `ScrollToPathOptions` | same | same |
+| menu types `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`, `TreeViewActionEventDetail` | `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeAction`, `TreeActionEventDetail` | intentional — named after each library's component (like `TreeViewLabels` / `TreeLabels`) |
+| ctx `controller` + `element` (core component context, non-enumerable) | ctx `controller` (non-enumerable) | intentional — no host element in svelte |
 | `createLTree`, `TreeEngine`, `EventEmitter`, `DomRenderer`, `createRenderCoordinator`, clipboard / drag-set registry helpers, per-category loggers | — | intentional — web is renderer-pluggable / headless-capable |
+| `getMenuChildren`, `ResolvedMenuEntry` (re-exported from core `/actions`) | `resolveMenuEntries`, `getMenuChildren`, `ResolvedMenuEntry` (vendored core `/actions` resolvers) | `getMenuChildren` / `ResolvedMenuEntry` same; `resolveMenuEntries` svelte-only (web resolves for its renderer — `ctx.entries`; or import it from `@keenmate/web-components-core/actions`) |
 | — | `TreeProvider`, `createTreeController`, `TreeController`, `ContextMenuItem` / divider components, `tooltip` action, environment helpers | intentional — Svelte framework exports |
 
 ## 9. Behaviour notes
 
-- Keyboard (WAI-ARIA, both): `Enter` = the node's default action (expand / collapse); `Space` = toggle selection — the checkbox when checkboxes are shown, the focused node in the selection in `multiple` mode — same. Single mode without checkboxes: web `Space` selects the focused node (decided 2026-10-29); svelte falls back to expand / collapse — svelte to align.
+- Keyboard (WAI-ARIA, both): `Enter` = the node's default action (expand / collapse); `Space` = toggle selection — the checkbox when checkboxes are shown, the focused node in the selection in `multiple` mode, selects the focused node in `single` mode; `Space` never expands / collapses — same.
 - Assigning the expanded / selected / checked set (`expandedPaths` / `selectedPaths` / `checkedPaths`; web: also the values held before the first build) is silent in both — no `expanded-change` / `selection-change` / `checked-change` / `focus-change` / `tree-change`. The methods (`expandNodes`, `selectNodes`, `checkNodes`, …) and user interaction announce (unless `{ isSilent: true }`) — same.
 - `expanded-change` / `onExpandedChange` from the expand / collapse methods (and toggle / keyboard) fires synchronously, after that call's `node-expand` / `node-collapse`; after a data change it follows on the next microtask — same.
 - `tree-change` / `onTreeChange`: only after data / structure mutations (add / insert / update / move / remove / `applyChanges` / branch ops / paste / drop / duplicate / sort), one per change (coalesced on a microtask), never for expand / select / check / focus nor for loading `nodes` — same.
+- An `isSilent` expand still runs `beforeExpandCallback` (a gate, not a notification); `expandAll` flags leaves `isExpanded`, so they are in `expandedPaths` — same.
+- svelte only: callbacks invoked while rendering (`getContextMenuItemsCallback`, per-node `get*Callback`s) must not write `$state` synchronously (Svelte's `state_unsafe_mutation`) — defer with `queueMicrotask` if needed. Intentional (framework rule).
 - Class prefixes `wtv__` vs `stv__`, CSS custom properties `--wtv-*` vs `--stv-*` — intentional prefix.
 - Neither exposes `::part()` / `<slot>` (render callbacks vs snippets) — intentional.
 - Loader (`isLoading` overlay, per-node lazy-load toggle): web draws the shared KeenMate loader — a `currentColor` mask from `--wtv-loader-*` → `--base-loader-*` (one look across components, slows under reduced motion, never stops); the overlay is `role="status"` + `aria-label` = `labels.loading` while loading, removed after — same in svelte (`--stv-loader-*`). Sizes: `loader-size` (→ `--base-loader-size`), the overlay `loader-overlay-size` (2×) and the per-node `loader-inline-size` (0.75×, CSS-only, `aria-busy` on the row) — same.
-- Scrolling: `scrollToPath` (no `behavior` passed) and keyboard moves read `--*-scroll-behavior` (→ `--base-scroll-behavior`: `smooth`, `auto` under reduced motion) — same.
+- Scrolling — keyboard moves (`navTo`: arrows, PageUp / PageDown, Home / End, Shift range moves; virtual scroll included) **always scroll instantly** (`behavior: 'auto'`), never with the token, so a held key never lags behind an animation — same (KeenMate rule, 2026-10-29). Programmatic jumps — `scrollToPath` with no `behavior` passed — read `--*-scroll-behavior` (→ `--base-scroll-behavior`: `smooth`, `auto` under reduced motion); an explicit `behavior` always wins — same.
+- Keyboard scroll position: web brings the row in with `block: 'nearest'` (no scroll while it is visible); svelte centres it in the tree's scroll container (`block: 'center'`) — differs; open.
+- Paste into a node: web expands it and reveals the first pasted node (a programmatic jump — the token); svelte neither expands nor scrolls — differs; open.
 - Indent: `--*-indent-size` = `calc(var(--base-tree-indent, 1.6) * var(--*-rem))` — a 16px visual step per level in both (web: flat rows padded (level − 1) × it; svelte: flat rows the same, recursive mode nests each child with a margin of it — the toggle column sits inside every row, so the margin is the whole step, measured by an e2e test in each repo).
 
 ## 10. CSS custom properties

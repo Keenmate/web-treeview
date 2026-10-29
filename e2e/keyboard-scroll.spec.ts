@@ -113,3 +113,61 @@ test.describe('virtual scroll', () => {
     await expect(page.locator('.wtv__node[data-focused="true"]').first()).toBeInViewport();
   });
 });
+
+test.describe('keyboard moves always scroll instantly (--wtv-scroll-behavior is for programmatic jumps only)', () => {
+  const spy = (page: Page) => page.evaluate(() => {
+    const calls: (string | undefined)[] = ((window as any).scrollCalls = []);
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
+      calls.push(typeof o === 'object' ? o.behavior : undefined);
+      return orig.call(this, o as ScrollIntoViewOptions);
+    };
+  });
+  const calls = (page: Page) => page.evaluate(() => (window as any).scrollCalls as (string | undefined)[]);
+
+  test('ArrowDown / PageDown / End / Home / Shift+End scroll with behavior auto despite a smooth token', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => {
+      (window as any).tree.style.setProperty('--wtv-scroll-behavior', 'smooth');
+      (window as any).tree.setAttribute('selection-mode', 'multiple');
+    });
+    await spy(page);
+    for (const key of ['ArrowDown', 'PageDown', 'End', 'Home', 'Shift+End']) {
+      await page.keyboard.press(key);
+    }
+    await expect(focused(page)).toHaveAttribute('data-tree-path', '200');
+    await expect.poll(async () => (await calls(page)).length).toBeGreaterThanOrEqual(5);
+    expect(new Set(await calls(page))).toEqual(new Set(['auto']));
+    // scrollToPath keeps the token
+    await page.evaluate(() => (window as any).tree.scrollToPath('100'));
+    expect((await calls(page)).at(-1)).toBe('smooth');
+  });
+
+  test('holding ArrowDown: every repeat lands the focused row in view synchronously (no animation to lag behind)', async ({ page }) => {
+    await load(page);
+    // Every scrollIntoView of the hold asks for behavior 'auto', and the row is in the box right
+    // after the call returns. (Headless Chromium doesn't animate smooth scrolls, so the
+    // behavior argument is what tells instant from smooth here.)
+    await page.evaluate(() => {
+      (window as any).tree.style.setProperty('--wtv-scroll-behavior', 'smooth');
+      const out: number[] = ((window as any).scrollOut = []);
+      const behaviors: (string | undefined)[] = ((window as any).scrollCalls = []);
+      const orig = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
+        behaviors.push(typeof o === 'object' ? o.behavior : undefined);
+        orig.call(this, o as ScrollIntoViewOptions);
+        const r = this.getBoundingClientRect();
+        const b = (window as any).box.getBoundingClientRect();
+        out.push(Math.max(0, r.bottom - b.bottom, b.top - r.top));
+      };
+    });
+    for (let i = 0; i < 25; i++) await page.keyboard.down('ArrowDown'); // repeat = true after the first: a held key
+    await page.keyboard.up('ArrowDown');
+    await expect(focused(page)).toHaveAttribute('data-tree-path', '26');
+    const out: number[] = await page.evaluate(() => (window as any).scrollOut);
+    expect(out.length).toBeGreaterThan(10); // the rows past the first screen scrolled
+    expect(Math.max(...out)).toBeLessThan(1);
+    expect(new Set(await page.evaluate(() => (window as any).scrollCalls))).toEqual(new Set(['auto']));
+    expect(await boxScrollTop(page)).toBeGreaterThan(0);
+  });
+});

@@ -490,7 +490,7 @@ All methods are available on the element **and** on `el.controller`.
 
 `SortOptions`: `{ compareCallback?: ({ a, b }) => number; direction?: 'asc' | 'desc'; isSilent?: boolean }` — see [Sorting](#sorting).
 
-`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `--wtv-scroll-behavior` — `smooth`, `auto` under reduced motion — / `'center'` / `'nearest'`; keyboard moves scroll with the same token); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
+`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `--wtv-scroll-behavior` — `smooth`, `auto` under reduced motion — / `'center'` / `'nearest'`; keyboard moves always scroll instantly, never with the token); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 

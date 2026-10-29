@@ -141,7 +141,7 @@
     { "name": "wtv-focused-outline-offset", "category": "tree", "usage": "Outline offset for the focus ring / selected ring (default calc(-1 * var(--base-outline-width, 1px)) = inset)" },
     { "name": "wtv-toggle-icon-width", "category": "tree", "usage": "Width of the toggle column" },
     { "name": "wtv-indent-size", "category": "tree", "usage": "Per-level indent step (reads --base-tree-indent, 1.6 × --wtv-rem = 16px)" },
-    { "name": "wtv-scroll-behavior", "category": "animation", "usage": "scrollToPath / keyboard scrolling behaviour when the caller passes none (reads --base-scroll-behavior, smooth; auto under reduced motion)" },
+    { "name": "wtv-scroll-behavior", "category": "animation", "usage": "scrollToPath / paste-reveal scrolling behaviour when the caller passes none; keyboard moves always scroll instantly (reads --base-scroll-behavior, smooth; auto under reduced motion)" },
     { "name": "wtv-node-padding", "category": "tree", "usage": "Row pill padding" },
     { "name": "wtv-node-border-radius", "category": "tree", "usage": "Corner radius of the row pill" },
     { "name": "wtv-node-height", "category": "tree", "usage": "Node row height (32px)" },

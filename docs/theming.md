@@ -152,7 +152,7 @@ Only the contract's four speeds and its easings; there is no attribute for anima
 | `--wtv-transition-medium` | `--base-duration-medium` \| `0.25s` | Medium |
 | `--wtv-transition-slow` | `--base-duration-slow` \| `0.3s` | Drag-denied row tint |
 | `--wtv-ease-standard` / `-out` / `-in` | `--base-ease-*` | Easings |
-| `--wtv-scroll-behavior` | `--base-scroll-behavior` \| `smooth` (`auto` under reduced motion) | `scrollToPath` / keyboard scrolling when the caller passes no `behavior` |
+| `--wtv-scroll-behavior` | `--base-scroll-behavior` \| `smooth` (`auto` under reduced motion) | Programmatic jumps (`scrollToPath`, the paste reveal) when the caller passes no `behavior`; keyboard moves always scroll instantly |
 | `--wtv-toggle-icon-transition` | `transform --wtv-transition-normal --wtv-ease-standard` | Expand / collapse turn of the glyph |
 
 ### Drag & drop — glow indicators

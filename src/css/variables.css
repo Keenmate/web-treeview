@@ -215,7 +215,8 @@
      place of the toggle glyph (0.75×). */
   --wtv-loader-overlay-size: calc(var(--wtv-loader-size) * 2);
   --wtv-loader-inline-size: calc(var(--wtv-loader-size) * 0.75);
-  /* scrollToPath / keyboard scrolling (JS reads it unless the caller passes `behavior`);
+  /* Programmatic jumps — scrollToPath, the paste reveal (JS reads it unless the caller passes
+     `behavior`). Keyboard moves never read it: they always scroll instantly;
      the contract's --base-scroll-behavior is `auto` under reduced motion. */
   --wtv-scroll-behavior: var(--base-scroll-behavior, smooth);
 

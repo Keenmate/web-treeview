@@ -2782,17 +2782,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * row FIRST (nearest edge), so the pending render slices a window that contains
    * it. The DOM step runs after the scheduled render (microtask) and retries over
    * a few frames while progressive rendering hasn't reached the row yet. Mouse
-   * clicks don't go through here.
+   * clicks don't go through here. Keyboard moves scroll instantly (`'auto'`) —
+   * the scroll keeps up with a held key; only a programmatic jump (the paste
+   * reveal) passes the `--wtv-scroll-behavior` token.
    */
-  /** The scroll behaviour of scrollToPath / keyboard scrolling when the caller passes none:
-   *  the `--wtv-scroll-behavior` token (→ `--base-scroll-behavior`; `auto` under reduced motion). */
+  /** The scroll behaviour of programmatic jumps (scrollToPath, paste reveal) when the caller passes none:
+   *  the `--wtv-scroll-behavior` token (→ `--base-scroll-behavior`; `auto` under reduced motion).
+   *  Keyboard moves never read it — they always scroll instantly. */
   private resolveScrollBehavior(): ScrollBehavior {
     const el = this.containerElement;
     if (!el || typeof getComputedStyle === 'undefined') return 'smooth';
     return (getComputedStyle(el).getPropertyValue('--wtv-scroll-behavior').trim() || 'smooth') as ScrollBehavior;
   }
 
-  revealNode(path: string): void {
+  revealNode(path: string, behavior: ScrollBehavior = 'auto'): void {
     const root = this.containerElement;
     if (!root || typeof requestAnimationFrame === 'undefined') return;
     const token = ++this._revealToken;
@@ -2825,7 +2828,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (token !== this._revealToken) return; // superseded by a newer move
       const row = findRow();
       if (row) {
-        row.scrollIntoView({ behavior: this.resolveScrollBehavior(), block: 'nearest', inline: 'nearest' });
+        row.scrollIntoView({ behavior, block: 'nearest', inline: 'nearest' });
         return;
       }
       if (framesLeft-- > 0) requestAnimationFrame(attempt);
@@ -3142,7 +3145,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // beside a visible node — nothing to open.
     if (position === 'child' && !isRootPaste && firstPasted) {
       if (!targetNodeAfter!.isExpanded) this.expandNodes(targetPath);
-      this.revealNode(firstPasted.path);
+      this.revealNode(firstPasted.path, this.resolveScrollBehavior());
     }
 
     const result: PasteResult<T> = {

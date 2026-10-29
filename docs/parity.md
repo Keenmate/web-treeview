@@ -104,6 +104,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `checkNode(s)`, `checkAll`, `uncheckNode(s)`, `uncheckAll`, `getCheckedNodes`, `isNodeChecked` | same | same |
 | `focusNode`, `clearFocus` (honour `isSilent`) | same | same |
 | `openContextMenu(path, x, y)`, `closeContextMenu()` | same | same |
+| `activateMenuItem(item, ctx, trigger?, event?)` (element + controller) — for `renderContextMenuCallback`, whose ctx carries the resolved `entries` | `controller.activateMenuItem(item, ctx, trigger?, event?)` (+ `menuContext(node)` / `menuItemDefaults(item, ctx)` + `resolveMenuEntries` for headless renderers) | same activator — the built-in menu's path (`beforeActionCallback` veto → `onClick` → built-in → `action` / `onAction`), a custom renderer can't bypass the veto; web hands the renderer pre-resolved `ctx.entries` instead of exposing `menuContext` / `menuItemDefaults` (intentional) |
 | `navTo`, `navNext`, `navPrev`, `navNextSibling`, `navPrevSibling`, `navInto`, `navOut`, `navBackOut`, `navToggle`, `navFirst`, `navLast`, `navPageDown`, `navPageUp`, `navSelectNext`, `navSelectPrev`, `navSelectFirst`, `navSelectLast`, `navSelectPageDown`, `navSelectPageUp` | same | same |
 | `copyNodes`, `cutNodes`, `pasteNodes`, `cancelCut`, `hasClipboardContent`, `getClipboardOperation` | same | same |
 | `update(props)` (element) / `WebTreeView.update` | `<Tree>` `update(partial)` | same |
@@ -122,7 +123,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 | web | svelte | status |
 |---|---|---|
-| `menuDivider`, `DEFAULT_LABELS`, `resolveLabel`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats` | same where applicable | same |
+| `menuDivider`, `getMenuChildren`, `ResolvedMenuEntry`, `DEFAULT_LABELS`, `resolveLabel`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats` | same where applicable | same |
 | `createLTree`, `TreeEngine`, `EventEmitter`, `DomRenderer`, `createRenderCoordinator`, clipboard / drag-set registry helpers, per-category loggers | — | intentional — web is renderer-pluggable / headless-capable |
 | — | `TreeProvider`, `createTreeController`, `TreeController`, `ContextMenuItem` / divider components, `tooltip` action, environment helpers | intentional — Svelte framework exports |
 

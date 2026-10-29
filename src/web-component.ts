@@ -46,6 +46,8 @@ import type { PasteResult } from './clipboard';
 import type {
   TreeViewController,
   TreeViewContext,
+  TreeMenuContext,
+  TreeMenuItem,
   NodeTransformCallback,
   NodeEventDetail,
   NodeDragEventDetail,
@@ -709,6 +711,16 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   closeContextMenu(): void {
     this.#live?.closeContextMenu();
+  }
+
+  /**
+   * Run a menu item exactly like the built-in menu: `beforeActionCallback` (`false` cancels) →
+   * item `onClick(detail)` → built-in action → `action` event. For `renderContextMenuCallback`:
+   * `ctx.controller.activateMenuItem(entry.item, ctx, button, event)`. Resolves `false` when
+   * cancelled; closing the menu is the caller's job.
+   */
+  activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger?: HTMLElement, event?: Event): Promise<boolean> {
+    return this.#live?.activateMenuItem(item, ctx, trigger, event) ?? Promise.resolve(false);
   }
 
   /** The expanded set. Assigning replaces it (branches not listed collapse) silently — no

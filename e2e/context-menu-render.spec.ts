@@ -52,6 +52,46 @@ test('renderContextMenuCallback renders the whole menu and can close it via the 
   await expect(menu(page)).toBeHidden();
 });
 
+test.describe('renderContextMenuCallback + controller.activateMenuItem', () => {
+  test('ctx.entries = the resolved items (built-in texts, hidden dropped)', async ({ page }) => {
+    await load(page, '?mode=run');
+    await nodeContent(nodeByPath(page, '1')).click({ button: 'right' });
+    await expect(menu(page).locator('.run-item')).toHaveText(['Open', 'Collapse']);
+  });
+
+  test('runs the built-in path: beforeActionCallback → onClick → built-in → action event', async ({ page }) => {
+    await load(page, '?mode=run');
+    await nodeContent(nodeByPath(page, '1')).click({ button: 'right' });
+    await menu(page).locator('.run-item', { hasText: 'Open' }).click();
+    await expect.poll(() => logLines(page, LOG)).toEqual(['before:custom:open', 'click:open:1', 'action:custom:1', 'ran:true']);
+    await expect(menu(page)).toBeHidden();
+
+    await nodeContent(nodeByPath(page, '1')).click({ button: 'right' });
+    await menu(page).locator('.run-item', { hasText: 'Collapse' }).click();
+    await expect(nodeByPath(page, '1.1')).toBeHidden();
+    await expect.poll(() => logLines(page, LOG)).toEqual([
+      'before:custom:open', 'click:open:1', 'action:custom:1', 'ran:true',
+      'before:collapse:', 'action:collapse:1', 'ran:true',
+    ]);
+  });
+
+  test('beforeActionCallback returning false vetoes it: no built-in, no action event', async ({ page }) => {
+    await load(page, '?mode=run&veto');
+    await nodeContent(nodeByPath(page, '1')).click({ button: 'right' });
+    await menu(page).locator('.run-item', { hasText: 'Collapse' }).click();
+    await expect.poll(() => logLines(page, LOG)).toEqual(['before:collapse:', 'ran:false']);
+    await expect(nodeByPath(page, '1.1')).toBeVisible();
+  });
+
+  test('el.activateMenuItem / el.controller.activateMenuItem are public', async ({ page }) => {
+    await load(page, '?mode=run');
+    expect(await page.evaluate(() => {
+      const t = (window as any).tree;
+      return [typeof t.activateMenuItem, typeof t.controller.activateMenuItem];
+    })).toEqual(['function', 'function']);
+  });
+});
+
 test.describe('openContextMenu(path, x, y)', () => {
   test('opens for that node at the given viewport point (+ the default 8px x-offset)', async ({ page }) => {
     await load(page);

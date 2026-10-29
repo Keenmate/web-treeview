@@ -8,7 +8,7 @@
  * both non-enumerable, so `JSON.stringify` / logs see only the data.
  */
 import type { ComponentContext, DeviceClass } from '@keenmate/web-components-core';
-import type { MenuItem, MenuEntry, ActionEventDetail } from '@keenmate/web-components-core/actions';
+import type { MenuItem, MenuEntry, ActionEventDetail, ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type {
@@ -154,6 +154,15 @@ export interface TreeViewController<T = any> {
   /** Open the context menu for the node at `path` at viewport coordinates. */
   openContextMenu(path: string, x: number, y: number): void;
   closeContextMenu(): void;
+  /**
+   * Run a menu item exactly like the built-in menu: `beforeActionCallback` (`false` cancels —
+   * no `onClick`, built-in or `action` event) → item `onClick(detail)` → built-in action (on the
+   * selection when `ctx.node` is in it, else on `ctx.node`) → `action` event. `ctx` = the menu
+   * ctx (e.g. the `renderContextMenuCallback` ctx); `trigger` gets `aria-busy` while it runs.
+   * Resolves `false` when cancelled. Closing the menu is the caller's job (honour
+   * `item.shouldCloseOnClick !== false`).
+   */
+  activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger?: HTMLElement, event?: Event): Promise<boolean>;
 }
 
 /** Base of every callback ctx and event detail. */
@@ -214,6 +223,10 @@ export type TreeMenuEntry<T = any> = MenuEntry<TreeMenuContext<T>, TreeViewActio
 /** ctx of `renderContextMenuCallback` — take over the whole menu. */
 export interface ContextMenuRenderContext<T = any> extends TreeMenuContext<T> {
   containerElement: HTMLElement;
+  /** The resolved top level of `getContextMenuItemsCallback(ctx)` (built-in names → items with
+   *  their texts / state, hidden items dropped, dividers collapsed) — run one with
+   *  `ctx.controller.activateMenuItem(entry.item, ctx)`; submenus via `getMenuChildren`. */
+  entries: ResolvedMenuEntry<TreeMenuContext<T>, TreeViewAction>[];
 }
 
 /** ctx of `renderContextMenuItemCallback` — fill one item's button (leave it empty for the default). */

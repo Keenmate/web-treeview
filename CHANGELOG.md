@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added (custom menu renderer, 2026-10-29)
+
+- **`activateMenuItem(item, ctx, trigger?, event?)`** on the element and `el.controller` (was
+  private): a `renderContextMenuCallback` runs an item through the built-in menu's path —
+  `beforeActionCallback` (`false` vetoes) → item `onClick` → built-in action → `action` event.
+  Resolves `false` when cancelled. Same signature as svelte-treeview's.
+- **`renderContextMenuCallback` ctx `entries`**: the resolved top level of
+  `getContextMenuItemsCallback` (built-in names → items with their texts / state, hidden items
+  dropped, dividers collapsed — `ResolvedMenuEntry[]`).
+- Exports `getMenuChildren` and the `ResolvedMenuEntry` type (submenus in a custom renderer).
+
 ### Changed — BREAKING (event semantics + keyboard = svelte-treeview, 2026-10-29)
 
 - **Assigning a state set is silent.** `el.expandedPaths = …` / `el.selectedPaths = …` /

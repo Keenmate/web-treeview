@@ -279,7 +279,7 @@ applied right after it. For a silent replace use `clearSelection(undefined, { is
 | `renderLoadingCallback` | `({ containerElement }) => void` | Loading-state rendering |
 | `renderHeaderCallback` | `({ containerElement }) => void` | Tree header rendering |
 | `renderFooterCallback` | `({ containerElement }) => void` | Tree footer rendering |
-| `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, controller }) => void` | Take over the whole context menu; close via `controller.closeContextMenu()` |
+| `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, entries, controller }) => void` | Take over the whole context menu (see [Custom menu renderer](#custom-menu-renderer)); close via `controller.closeContextMenu()` |
 | `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item (`buttonElement` is the item `<div role="menuitem">`); leave it empty for the default |
 
 ### Context menu
@@ -300,6 +300,33 @@ Activation order: `beforeActionCallback` → item `onClick` → built-in → `ac
 An item's `icon` string is inserted as **HTML** (an `<i class="…">`, an inline `<svg>`, or plain text/emoji) — the same as action buttons.
 
 The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll outside the menu, window blur, Escape / Tab, or when another KeenMate overlay opens (outside interactions are ignored while debug mode pins the menu).
+
+#### Custom menu renderer
+
+`renderContextMenuCallback(ctx)` takes over the whole menu (the built-in markup is not rendered). It uses the same pieces as the built-in menu, so built-in texts / state and the activation order stay identical:
+
+| API | Description |
+|-----|-------------|
+| `ctx.entries` | The resolved top level of `getContextMenuItemsCallback(ctx)`: built-in names → items with their texts / `isDisabled` / `isDanger`, `get*Callback`s evaluated, hidden items dropped, dividers collapsed. `{ kind: 'item', item, resolved, hasChildren } \| { kind: 'divider', text? }` (`ResolvedMenuEntry`). `[]` without `getContextMenuItemsCallback`. |
+| `getMenuChildren(item, ctx)` | A submenu's entries (`getChildrenCallback(ctx)`, may be async, wins over `children`) — exported from the package; resolve them with core's `resolveMenuEntries` (`@keenmate/web-components-core/actions`). |
+| `controller.activateMenuItem(item, ctx, trigger?, event?)` (also `el.activateMenuItem`) | Runs the item exactly like the built-in menu: `beforeActionCallback` (`false` cancels — no `onClick`, built-in or `action` event) → `onClick(detail)` → built-in action → `action` event. `trigger` gets `aria-busy` while it runs. Resolves `false` when cancelled. A custom renderer cannot bypass the veto. Closing the menu is yours (respect `item.shouldCloseOnClick !== false`). |
+
+```js
+tree.renderContextMenuCallback = (ctx) => {
+  const { containerElement, entries, controller } = ctx;
+  for (const entry of entries) {
+    if (entry.kind === 'divider') { containerElement.append(document.createElement('hr')); continue; }
+    const button = document.createElement('button');
+    button.textContent = entry.resolved.text;
+    button.disabled = !!entry.resolved.isDisabled;
+    button.onclick = async (e) => {
+      await controller.activateMenuItem(entry.item, ctx, button, e);
+      if (entry.item.shouldCloseOnClick !== false) controller.closeContextMenu();
+    };
+    containerElement.append(button);
+  }
+};
+```
 
 #### Keyboard (WAI-ARIA menu)
 
@@ -410,6 +437,7 @@ All methods are available on the element **and** on `el.controller`.
 | `controller.nodes` | `T[]` | Same as `el.nodes`: the current state (every node's data in tree order, mutations included) |
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
+| `activateMenuItem` | `(item, ctx, trigger?, event?) => Promise<boolean>` | Run a menu item like the built-in menu (`beforeActionCallback` veto → `onClick` → built-in → `action`) — for a [custom menu renderer](#custom-menu-renderer) |
 | `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |
 | `insertNode` | `(targetPath, data, position)` | Insert one node `'before' \| 'after'` the target (as its sibling) or as its `'child'`; positioned like `moveNode` (with `orderMember`: an order value between the neighbours) |
 | `moveNode` / `moveNodes` | `(path \| paths[], targetPath, position)` | Move node(s) `'before' \| 'after' \| 'child'` |

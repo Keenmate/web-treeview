@@ -105,8 +105,10 @@ export type {
 
 // The interaction model: controller facade, callback contexts, menu items, event details.
 export type * from './interaction';
-// Menu dividers for getContextMenuItemsCallback: `menuDivider('Group')`.
-export { menuDivider } from '@keenmate/web-components-core/actions';
+// Menu dividers for getContextMenuItemsCallback: `menuDivider('Group')`; submenu entries for a
+// renderContextMenuCallback (`getMenuChildren(item, ctx)`).
+export { menuDivider, getMenuChildren } from '@keenmate/web-components-core/actions';
+export type { ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
 
 // Logging — now a thin shim over @keenmate/web-components-core (SPEC §12.1).
 export {

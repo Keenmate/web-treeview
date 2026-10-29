@@ -19,10 +19,12 @@ import type {
   TreeViewAction,
   TreeViewActionEventDetail,
   NodeTransformCallback,
+  ContextMenuRenderContext,
+  ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
 import { withComponentContext, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
-import { runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
 const CONTROLLER_METHODS = [
@@ -37,7 +39,7 @@ const CONTROLLER_METHODS = [
   'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
   'navSelectNext', 'navSelectPrev', 'navSelectFirst', 'navSelectLast', 'navSelectPageDown', 'navSelectPageUp', 'copyNodes', 'cutNodes',
   'pasteNodes', 'cancelCut', 'removeNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
-  'closeContextMenu',
+  'closeContextMenu', 'activateMenuItem',
 ] as const satisfies readonly (keyof TreeViewController)[];
 
 /** What a read returns while there is no tree yet (before the first build). */
@@ -50,6 +52,7 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
   pasteNodes: () => ({ success: false, count: 0, skipped: 0, error: 'Not initialized' }),
   removeNodes: () => ({ removed: 0, failed: 0 }),
+  activateMenuItem: () => Promise.resolve(false),
 };
 
 /**
@@ -257,10 +260,21 @@ export class WebTreeView<T = any> {
     }
   }
 
-  /** core runAction: beforeActionCallback → onClick → built-in → `action` event (listeners see the result). */
-  private activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger: HTMLElement, event: Event): Promise<boolean> {
+  /**
+   * Activate a menu item exactly like the built-in menu (core `runAction`):
+   * `beforeActionCallback` (`false` cancels — nothing else runs) → item `onClick(detail)` →
+   * the built-in action (on the selection when `ctx.node` is in it, else on `ctx.node`) →
+   * `action` event / `onAction(detail)`. `detail.source` is `'context-menu'`; `trigger` gets
+   * `aria-busy` while it runs (a second activation of the same item meanwhile is ignored).
+   * Resolves `false` when cancelled or ignored. Public for `renderContextMenuCallback` —
+   * closing the menu is the caller's job (honour `item.shouldCloseOnClick !== false`).
+   */
+  activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger?: HTMLElement, event?: Event): Promise<boolean> {
+    // The render ctx's own members are not part of the action detail.
+    const { containerElement: _c, entries: _e, menuItem: _m, buttonElement: _b, ...menuCtx } =
+      ctx as TreeMenuContext<T> & Partial<ContextMenuRenderContext<T> & ContextMenuItemRenderContext<T>>;
     const detail = this.ctx({
-      ...ctx,
+      ...menuCtx,
       action: item.action ?? 'custom',
       ...(item.id !== undefined ? { id: item.id } : {}),
       item,
@@ -915,8 +929,13 @@ export class WebTreeView<T = any> {
       renderHeaderCallback: region(o.renderHeaderCallback),
       renderFooterCallback: region(o.renderFooterCallback),
       renderContextMenuCallback: this.wrap(o.renderContextMenuCallback, 'renderMenu', (f) =>
-        (node: LTreeNode<T>, _close: () => void, containerElement: HTMLElement) =>
-          f(Object.assign(this.menuCtx(node), { containerElement }))),
+        (node: LTreeNode<T>, _close: () => void, containerElement: HTMLElement) => {
+          // The resolved top level of getContextMenuItemsCallback — what the built-in menu would show.
+          const ctx = this.menuCtx(node);
+          const entries = resolveMenuEntries<TreeMenuContext<T>, TreeViewAction>(
+            this.options.getContextMenuItemsCallback?.(ctx) ?? [], ctx, (item) => this.menuItemDefaults(item, ctx));
+          f(Object.assign(ctx, { containerElement, entries }));
+        }),
       renderContextMenuItemCallback: this.wrap(o.renderContextMenuItemCallback, 'renderMenuItem', (f) =>
         (menuItem: TreeMenuItem<T>, node: LTreeNode<T>, buttonElement: HTMLElement) =>
           f(Object.assign(this.menuCtx(node), { menuItem, buttonElement }))),

@@ -97,7 +97,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| Arrow Up/Down/Left/Right, Backspace, Space, Home/End | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
+| Arrow Up/Down/Left/Right, Backspace, Enter (expand / collapse), Home/End | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | PageUp/PageDown + Shift+Arrow/Home/End/PageUp/PageDown extend (multi; no-op in single) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | `navigationOverrides` (single-key override, `navTo` override, controller routing, runtime swap / `null`, `beforeKeydownCallback` first) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | Keyboard moves scroll the focused node into view (`block: 'nearest'`): PageDown ×3, End/Home, Shift+End, no scroll inside the viewport / on click, `navTo` override; virtual End/Home + PageDown | ✓ | `keyboard-scroll.spec.ts` | `keyboard-scroll.html`, `virtual-scroll.html` |
@@ -170,6 +170,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Core action items, built-ins (incl. expand / collapse -subtree / -all, selection targeting), `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | Sorting: numeric display sort, sortCallback > orderMember, `isSortingEnabled` / `enable-sorting` (input order, addNode appends, exact insert / move positions, re-enable re-sorts), `sortNodes` / `sortAll` + `SortOptions`, `nodes-reorder` (orderMember rewrite), `sort*` menu built-ins | ✓ | `sorting.spec.ts` | `sorting.html` |
 | svelte parity: search-index default on, `initializeIndexCallback`, `filterNodes` / `searchNodes` `searchOptions`, `refreshNode` / `refreshSiblings`, `isNodeDropAllowed`, `render-start/progress/complete` + `isRendering`, `containerSize` + `container-resize`, `selectionAnchor`, `toggleFocusedSelect`, `auto-handle-move`, `node-title-overflow` (wrap / ellipsis / info reveal), `scrollToPath` options | ✓ | `parity.spec.ts` | `parity.html` |
+| event semantics: silent `expandedPaths` / `selectedPaths` / `checkedPaths` assignment (incl. pre-build replay), synchronous `expanded-change` from methods, `tree-change` = structure only (one per mutation), WAI-ARIA `Space` (checkbox / multiple toggle / single select) | ✓ | `events.spec.ts` | `events.html` |
 | `el.nodes` = input before the build, live state after (core `getLiveValue`) | ✓ | `lifecycle.spec.ts` | (inline) |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |

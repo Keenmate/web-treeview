@@ -27,7 +27,7 @@ export interface TreeNavigation<T> {
   navOut(): void;
   /** Backspace — collapse the parent and move to it */
   navBackOut(): void;
-  /** Enter / Space — toggle expand/collapse of the current node */
+  /** Enter — toggle expand/collapse of the current node */
   navToggle(): void;
   /** Home — move to the first visible node */
   navFirst(): void;

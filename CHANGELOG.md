@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — BREAKING (event semantics + keyboard = svelte-treeview, 2026-10-29)
+
+- **Assigning a state set is silent.** `el.expandedPaths = …` / `el.selectedPaths = …` /
+  `el.checkedPaths = …` (also the values held before the first build and replayed after it)
+  fire no `expanded-change` / `selection-change` / `checked-change` / `focus-change` /
+  `tree-change` — a restore, not a user change (svelte's bound sets are silent too). The methods
+  (`expandNodes`, `selectNodes`, `checkNodes`, `clearSelection`, …) and user interaction keep
+  firing unless `{ isSilent: true }`. `selectedPaths` without checkboxes still mirrors into
+  `checkedPaths` (silently).
+- **`tree-change` = data / structure changes only**: add / insert / update / move / remove,
+  `applyChanges`, add / insert / replace / `removeBranch`, paste, drop, duplicate, sort — one event
+  per change (a compound op such as a multi-node drop fires once), on the microtask after it. It no
+  longer fires for expand / collapse / select / check / focus, nor for loading `nodes`. Listen to
+  `expanded-change` / `selection-change` / `checked-change` / `focus-change` for those.
+- **`expanded-change` from the expand / collapse methods is synchronous** (toggle, keyboard,
+  `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll`): it fires right after the change,
+  after that call's `node-expand` / `node-collapse` (was: the next microtask). Changes caused by
+  data mutations still follow on the next microtask.
+- **Keyboard (WAI-ARIA)**: `Enter` expands / collapses the focused node; **`Space` no longer
+  expands** — it toggles the focused node's checkbox when checkboxes are shown, otherwise toggles
+  it in the selection (`multiple` mode) / selects it (`single` mode).
+
 ### Changed — BREAKING (theming: one token list with svelte-treeview, motion, 2026-10-29)
 
 - **CSS variables renamed** so web-treeview and svelte-treeview share ONE token list (only the

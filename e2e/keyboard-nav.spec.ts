@@ -106,7 +106,7 @@ test.describe('ArrowRight / ArrowLeft — descend and ascend', () => {
 
   test('ArrowRight on a collapsed parent first expands, then moves into the first child', async ({ page }) => {
     await clickToFocus(page, '1');
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(11);
 
     await page.keyboard.press('ArrowRight');
@@ -164,34 +164,41 @@ test.describe('Backspace — collapse parent and focus it', () => {
   });
 });
 
-// ── Space: navToggle ───────────────────────────────────────────────────────
+// ── Enter: navToggle (Space toggles selection — e2e/events.spec.ts) ───────
 
-test.describe('Space — toggle expand state of focused node', () => {
-  test('Space collapses an expanded parent', async ({ page }) => {
+test.describe('Enter — toggle expand state of focused node', () => {
+  test('Enter collapses an expanded parent', async ({ page }) => {
     await clickToFocus(page, '1');
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(11);
   });
 
-  test('Space re-expands a collapsed parent', async ({ page }) => {
+  test('Enter re-expands a collapsed parent', async ({ page }) => {
     await clickToFocus(page, '1');
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(11);
 
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(18);
   });
 
-  test('Space on a different expanded node also collapses', async ({ page }) => {
+  test('Enter on a different expanded node also collapses', async ({ page }) => {
     await clickToFocus(page, '2');
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(14);
   });
 
-  test('Space on a leaf is a no-op', async ({ page }) => {
+  test('Enter on a leaf is a no-op', async ({ page }) => {
     await clickToFocus(page, '1.3');
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
     await expect.poll(() => visibleCount(page)).toBe(18);
+  });
+
+  test('Space does not expand / collapse', async ({ page }) => {
+    await clickToFocus(page, '1');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(50);
+    expect(await visibleCount(page)).toBe(18);
   });
 });
 

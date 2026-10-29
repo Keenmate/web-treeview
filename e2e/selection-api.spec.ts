@@ -34,7 +34,7 @@ test('selectAll selects every visible selectable row and emits selection-change'
   expect(await settledLog(page)).toContain('selection-change:1,1.1,1.2,2');
 });
 
-test('assigning selectedPaths replaces the set (hidden paths included) and emits once', async ({ page }) => {
+test('assigning selectedPaths replaces the set (hidden paths included) silently', async ({ page }) => {
   await load(page);
   await call(page, 'selectNode', '2');
   await page.evaluate(() => (window as any).clearLog());
@@ -42,7 +42,7 @@ test('assigning selectedPaths replaces the set (hidden paths included) and emits
   expect(await selected(page)).toEqual(['1.1.1', '1.2']);
   await expect(isSelectedRow(page, '2')).not.toHaveClass(/wtv__node-content--selected/);
   const lines = (await settledLog(page)).filter((l) => l.startsWith('selection-change'));
-  expect(lines).toEqual(['selection-change:1.1.1,1.2']);
+  expect(lines).toEqual([]);
 });
 
 test('silent replace (clearSelection + selectNodes with { isSilent }): state + DOM update, no selection-change', async ({ page }) => {

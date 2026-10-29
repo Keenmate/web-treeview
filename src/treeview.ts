@@ -141,13 +141,21 @@ export class WebTreeView<T = any> {
     this.renderer = renderer ?? new DomRenderer<T>();
     this.renderer.mount(element, this.engine, this.mapToRendererConfig(options));
 
-    // Every state change → `tree-change`; a changed focused node → `focus-change`.
-    this.engine.on('state-change', (snapshot: any) => {
+    // Expand / collapse methods announce `expanded-change` synchronously.
+    this.engine.on('expanded-change', (paths: string[]) => {
+      this.options.onExpandedChange?.(this.ctx({ paths }));
+    });
+    // Data / structure mutations → `tree-change` (one per change; not expand / select / focus).
+    this.engine.on('tree-change', () => {
       this.options.onTreeChange?.(this.ctx({}));
+    });
+    // A changed focused node → `focus-change`.
+    this.engine.on('state-change', (snapshot: any) => {
       const focusedNode: LTreeNode<T> | null = snapshot.focusedNode ?? null;
       const path = focusedNode?.path ?? null;
       // A focus produced by a `{ isSilent: true }` operation is not echoed (NOTES #11).
       const silentPath = this.engine.takeSilentFocus();
+      // Expanded-set changes no method announced synchronously (data loads, mutations).
       const expanded = this.engine.takeExpandedChange();
       if (expanded) this.options.onExpandedChange?.(this.ctx({ paths: expanded }));
       if (path !== this.lastFocusedPath) {
@@ -523,13 +531,14 @@ export class WebTreeView<T = any> {
     return this.engine.removeBranch(path, keepParent);
   }
 
-  /** The expanded set; assigning replaces it (branches not listed collapse). */
+  /** The expanded set; assigning replaces it (branches not listed collapse) silently — no
+   *  `expanded-change` (use `expandNodes` / `collapseNodes` for an announced change). */
   get expandedPaths(): string[] {
     return this.engine.getExpandedPaths();
   }
 
   set expandedPaths(paths: Iterable<string>) {
-    this.engine.setExpandedPaths([...paths]);
+    this.engine.setExpandedPaths([...paths], { isSilent: true });
   }
 
   /** The node objects: assigning replaces the tree (input); reading returns every node's
@@ -568,13 +577,14 @@ export class WebTreeView<T = any> {
     return this.engine.getSelectedNodes();
   }
 
-  /** The selected set (snapshot); assigning replaces it and fires `selection-change`. */
+  /** The selected set (snapshot); assigning replaces it silently — no `selection-change` /
+   *  `checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce). */
   get selectedPaths(): string[] {
     return [...this.engine.getSelectedPaths()];
   }
 
   set selectedPaths(paths: Iterable<string>) {
-    this.engine.setSelectedPaths([...paths]);
+    this.engine.setSelectedPaths([...paths], { isSilent: true });
   }
 
   isNodeSelected(path: string): boolean {
@@ -611,13 +621,14 @@ export class WebTreeView<T = any> {
     return this.engine.getCheckedNodes();
   }
 
-  /** The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it and fires `checked-change`. */
+  /** The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it
+   *  silently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce). */
   get checkedPaths(): string[] {
     return [...this.engine.getCheckedPaths()];
   }
 
   set checkedPaths(paths: Iterable<string>) {
-    this.engine.setCheckedPaths([...paths]);
+    this.engine.setCheckedPaths([...paths], { isSilent: true });
   }
 
   isNodeChecked(path: string): boolean {

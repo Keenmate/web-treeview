@@ -649,6 +649,12 @@ export interface TreeEngineSnapshot<T> {
 
 export interface TreeEngineEvents<T> {
   'state-change': TreeEngineSnapshot<T>;
+  /** The expanded set changed through an expand / collapse method — emitted synchronously
+   *  (after that call's node-expand / node-collapse); the whole new set. */
+  'expanded-change': string[];
+  /** The data / structure changed (add / insert / update / move / remove, applyChanges,
+   *  branch ops, paste, duplicate, sort) — one per change, on the microtask after it. */
+  'tree-change': void;
   'config-change': NodeConfig;
   'data-change': { nodes: LTreeNode<T>[] };
 }

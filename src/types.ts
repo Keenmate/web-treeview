@@ -477,7 +477,7 @@ export interface TreeViewConfig<T = any> {
   beforeKeydownCallback?: (ctx: KeydownContext<T>) => void | false;
   /** Twin of `action` (a context-menu item was activated). */
   onAction?: (detail: TreeViewActionEventDetail<T>) => void;
-  /** Twin of `tree-change` (bulk notification after any state change). */
+  /** Twin of `tree-change` (the data / structure changed — one per mutation; not expand / select / check / focus). */
   onTreeChange?: (detail: TreeEventDetail<T>) => void;
   /** Twin of `focus-change`. */
   onFocusChange?: (detail: FocusChangeEventDetail<T>) => void;

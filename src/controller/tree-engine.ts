@@ -366,6 +366,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     });
   }
 
+  /** A data / structure mutation ran (add / insert / update / move / remove, applyChanges,
+   *  branch ops, paste, duplicate, sort): `tree-change` once, on the microtask after it —
+   *  coalesced, so a compound op (drop of many nodes, paste, duplicate) fires one event.
+   *  Never for expand / select / check / focus or loading `nodes` (svelte onTreeChange). */
+  private _treeChangePending = false;
+  private _markStructureChanged(): void {
+    if (this._treeChangePending) return;
+    this._treeChangePending = true;
+    queueMicrotask(() => {
+      this._treeChangePending = false;
+      this.emit('tree-change', undefined);
+    });
+  }
+
   /** Synchronously emit state-change snapshot, bypassing microtask batching.
    *  Used when the DOM must be updated before the caller continues (e.g. scrollToPath). */
   private _flushNotify() {
@@ -991,9 +1005,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       .map((p) => this.tree?.getNodeByPath(p))
       .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
     this.tree.collapseNodes(nodePath, options);
+    if (!options?.isSilent)
+      for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
     this._markExpanded(options?.isSilent);
-    if (options?.isSilent) return;
-    for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
   }
 
   /** Whether `path` has an async `beforeExpandCallback` in flight (renders the loading state). */
@@ -1016,9 +1030,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(paths, options);
+    if (!options?.isSilent)
+      for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
     this._markExpanded(options?.isSilent);
-    if (options?.isSilent) return;
-    for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
   }
 
   /**
@@ -1114,12 +1128,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
     this.tree.expandNodes(path, options);
-    if (options?.isSilent) {
-      this._markExpanded(true);
-      return;
+    if (!options?.isSilent) {
+      for (const s of collapsedSiblings) this.nodeCollapseCb?.(this.nodeRef(s));
+      if (node.isExpanded) this.nodeExpandCb?.(this.nodeRef(node));
     }
-    for (const s of collapsedSiblings) this.nodeCollapseCb?.(this.nodeRef(s));
-    if (node.isExpanded) this.nodeExpandCb?.(this.nodeRef(node));
+    this._markExpanded(options?.isSilent);
   }
 
   expandAll(
@@ -1141,12 +1154,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites
    *  (the facade fires `nodes-reorder` for them). */
   sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
-    return this.tree?.sortNodes(paths, options) ?? [];
+    const reorders = this.tree?.sortNodes(paths, options) ?? [];
+    this._markStructureChanged();
+    return reorders;
   }
 
   /** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
   sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
-    return this.tree?.sortAll(paths, options) ?? [];
+    const reorders = this.tree?.sortAll(paths, options) ?? [];
+    this._markStructureChanged();
+    return reorders;
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -1373,6 +1390,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1386,6 +1404,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       error: 'Tree not initialized'
     };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1400,6 +1419,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       error: 'Tree not initialized'
     };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1414,6 +1434,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       error: 'Tree not initialized'
     };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1427,6 +1448,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       error: 'Tree not initialized'
     };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1434,6 +1456,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._skipInsertArray = true;
     const result = this.tree?.applyChanges(changes) || { successful: 0, failed: [] };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1449,6 +1472,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       sourceNode, targetParentPath, transformData, siblingPath, position
     ) || { success: false, count: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1656,6 +1680,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
 
     return {
       success: copiedNodes.length > 0,
@@ -1714,6 +1739,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._skipInsertArray = true;
     const result = this.tree?.addBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1721,6 +1747,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._skipInsertArray = true;
     const result = this.tree?.insertBranch(targetPath, data, position) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1728,6 +1755,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._skipInsertArray = true;
     const result = this.tree?.replaceBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1735,6 +1763,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._skipInsertArray = true;
     const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
     return result;
   }
 
@@ -1742,9 +1771,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return this.tree?.getExpandedPaths() || [];
   }
 
-  setExpandedPaths(paths: string[]): void {
+  /** Replace the expanded set. `{ isSilent: true }` (property assignment) re-baselines
+   *  without announcing `expanded-change`. */
+  setExpandedPaths(paths: string[], options?: TreeMutationOptions): void {
     this.tree?.setExpandedPaths(paths);
-    this._markExpanded();
+    this._markExpanded(options?.isSilent);
   }
 
   getAllData(): T[] {
@@ -1833,10 +1864,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._selectedPaths.clear();
     this._lastSelectedPath = null;
     this.selectNodes(paths, { isSilent: true });
-    if (!options?.isSilent) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
-    }
+    if (!options?.isSilent) this._emitSelectionChange();
+    this._mirrorSelectedToChecked(options?.isSilent);
     this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
@@ -2088,10 +2117,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  mirror it onto `_checkedPaths` so consumers reading the bindable
    *  checkbox state see what the user picked via the mouse. With checkboxes
    *  visible the two sets stay independent. Mirrors svelte-treeview rc09. */
-  private _mirrorSelectedToChecked(): void {
+  private _mirrorSelectedToChecked(isSilent = false): void {
     if (this._shouldShowCheckboxes) return;
     this._checkedPaths = new Set(this._selectedPaths);
-    this._emitCheckedChange();
+    if (!isSilent) this._emitCheckedChange();
   }
 
   // ── Checked API (checkbox / data state) ────────────────────────────
@@ -2500,7 +2529,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   navOut(): void { this._navigation.navOut(); }
   /** Backspace — collapse the parent and move to it. */
   navBackOut(): void { this._navigation.navBackOut(); }
-  /** Enter / Space — toggle expand/collapse on the current node. */
+  /** Enter — toggle expand/collapse on the current node. */
   navToggle(): void { this._navigation.navToggle(); }
   /** Home — first visible node. */
   navFirst(): void { this._navigation.navFirst(); }
@@ -3091,6 +3120,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     queueMicrotask(() => { this._skipInsertArray = false; });
+    this._markStructureChanged();
 
     // A CUT is one-shot — clear the clipboard; a COPY stays for repeat pastes.
     this._cutPaths.clear();
@@ -4236,13 +4266,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _expandedDirty = false;
   private _lastExpandedKey: string | undefined = undefined;
 
-  /** After an expansion op: `isSilent` re-baselines without announcing. */
+  /** After an expansion op: `isSilent` re-baselines without announcing; otherwise a
+   *  changed set is announced synchronously (`expanded-change`, like svelte-treeview). */
   private _markExpanded(isSilent?: boolean): void {
     if (isSilent) {
       this._lastExpandedKey = this.getExpandedPaths().join('\u0000');
       this._expandedDirty = false;
     } else {
       this._expandedDirty = true;
+      const paths = this.takeExpandedChange();
+      if (paths) this.emit('expanded-change', paths);
     }
   }
 

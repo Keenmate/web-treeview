@@ -337,7 +337,7 @@ type TreeViewEvents = {
 const EVENTS: readonly EventDef[] = [
   { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
   { name: 'node-double-click', description: 'A node was double-clicked. `detail`: the node context. Twin: `onNodeDoubleClick(detail)`.' },
-  { name: 'node-expand', description: 'A node expanded (toggle, keyboard, `expandNodes`, after any `beforeExpandCallback` load; NOT `expandAll` / expand-level seeding — those only fire `tree-change`). `detail`: the node context. Twin: `onNodeExpand(detail)`.' },
+  { name: 'node-expand', description: 'A node expanded (toggle, keyboard, `expandNodes`, after any `beforeExpandCallback` load; NOT `expandAll` / expand-level seeding — those only fire `expanded-change`). `detail`: the node context. Twin: `onNodeExpand(detail)`.' },
   { name: 'node-collapse', description: 'A node collapsed (toggle, keyboard, `collapseNodes`, an accordion sibling; NOT `collapseAll`). `detail`: the node context. Twin: `onNodeCollapse(detail)`.' },
   { name: 'node-copy', description: 'Nodes were copied. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCopy(detail)`.' },
   { name: 'node-cut', description: 'Nodes were cut. `detail`: `{ operation, paths, nodes }`. Twin: `onNodeCut(detail)`.' },
@@ -351,9 +351,9 @@ const EVENTS: readonly EventDef[] = [
   { name: 'selection-change', description: 'The selected set changed. `detail`: `{ paths, nodes }`. Twin: `onSelectionChange(detail)`.' },
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
-  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, assigning `expandedPaths`, data changes) — one event per change, after the state settled. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ isSilent: true }` operations. Twin: `onExpandedChange(detail)`.' },
+  { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, data changes) — one event per change: synchronously right after an expand / collapse (after its `node-expand` / `node-collapse`), on the next microtask after a data change. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ isSilent: true }` operations nor for assigning `expandedPaths`. Twin: `onExpandedChange(detail)`.' },
   { name: 'nodes-reorder', description: 'A sort (`sortNodes` / `sortAll` / the `sort*` menu items) with a `compareCallback` or `direction: "desc"` rewrote the `orderMember` values (10, 20, 30…) of the children of one parent — one event per parent; never without `orderMember`. `detail`: `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`. Twin: `onNodesReorder(detail)`.' },
-  { name: 'tree-change', description: 'The tree state changed (bulk notification). `detail`: the context only. Twin: `onTreeChange(detail)`.' },
+  { name: 'tree-change', description: 'The data / structure changed — add / insert / update / move / remove, `applyChanges`, add / insert / replace / removeBranch, paste, drop, duplicate, sort. One event per change (a compound op such as a multi-node drop fires once), on the microtask after it. Not for expand / select / check / focus nor for loading `nodes`; read the new state from `controller.nodes`. `detail`: the context only. Twin: `onTreeChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
   { name: 'render-start', description: 'A progressive render began (`isRendering` turns true). `detail`: the context only. Twin: `onRenderStart(detail)`.' },
   { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
@@ -711,8 +711,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.closeContextMenu();
   }
 
-  /** The expanded set. Assigning replaces it (branches not listed collapse); before the
-   *  first build the value is held and applied once the tree exists. */
+  /** The expanded set. Assigning replaces it (branches not listed collapse) silently — no
+   *  `expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce); before
+   *  the first build the value is held and applied once the tree exists. */
   get expandedPaths(): string[] {
     return this.#live?.expandedPaths ?? [...(this.#pendingState.expandedPaths ?? [])];
   }
@@ -874,8 +875,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getSelectedNodes() ?? [];
   }
 
-  /** The selected set (a snapshot). Assigning replaces it and fires `selection-change`
-   *  (use `clearSelection` / `selectNodes` with `{ isSilent: true }` for a silent restore). */
+  /** The selected set (a snapshot). Assigning replaces it silently — no `selection-change` /
+   *  `checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce). */
   get selectedPaths(): string[] {
     return this.#live?.selectedPaths ?? [...(this.#pendingState.selectedPaths ?? [])];
   }
@@ -935,7 +936,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /** The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning
-   *  replaces it and fires `checked-change`. */
+   *  replaces it silently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce). */
   get checkedPaths(): string[] {
     return this.#live?.checkedPaths ?? [...(this.#pendingState.checkedPaths ?? [])];
   }

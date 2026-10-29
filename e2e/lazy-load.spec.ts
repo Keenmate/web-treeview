@@ -107,7 +107,7 @@ test('repeated toggles of a pending node are ignored (one hook call, ends expand
   expect(await log(page)).toEqual(['before:1', 'inserted:1:2', 'expand:1']);
 });
 
-test('keyboard: ArrowRight / Backspace / Space fire node-expand / node-collapse (through the hook)', async ({ page }) => {
+test('keyboard: ArrowRight / Backspace / Enter fire node-expand / node-collapse (through the hook)', async ({ page }) => {
   await load(page);
   await nodeContent(nodeByPath(page, '2')).click(); // leaf: just focuses
   await page.keyboard.press('ArrowDown'); // → 3
@@ -118,7 +118,7 @@ test('keyboard: ArrowRight / Backspace / Space fire node-expand / node-collapse 
   await expect.poll(() => focused(page)).toBe('4.1');
   await page.keyboard.press('Backspace'); // collapse 4, focus 4
   await expect.poll(() => focused(page)).toBe('4');
-  await page.keyboard.press('Space'); // toggle → expand 4
+  await page.keyboard.press('Enter'); // toggle → expand 4
   await expect(label(page, 'Folder child')).toBeVisible();
   expect(await log(page)).toEqual(['before:4', 'expand:4', 'collapse:4', 'before:4', 'expand:4']);
 });
@@ -143,17 +143,17 @@ test('API: expandNodes runs the hook (async load) and fires node-expand; collaps
   expect(await log(page)).toEqual(['before:3', 'inserted:3:1', 'expand:3', 'collapse:3']);
 });
 
-test('expandAll / collapseAll skip the hook and fire no per-node events (tree-change only)', async ({ page }) => {
+test('expandAll / collapseAll skip the hook and fire no per-node events (expanded-change only)', async ({ page }) => {
   await load(page);
   const changes = await page.evaluate(() => {
     const t = (window as any).tree;
     let n = 0;
-    t.addEventListener('tree-change', () => n++);
+    t.addEventListener('expanded-change', () => n++);
     t.expandAll();
     return new Promise<number>((r) => setTimeout(() => r(n), 50));
   });
   await expect(label(page, 'Folder child')).toBeVisible();
-  expect(changes).toBeGreaterThan(0);
+  expect(changes).toBe(1);
   await page.evaluate(() => (window as any).tree.collapseAll());
   await expect(label(page, 'Folder child')).toHaveCount(0);
   expect(await log(page)).toEqual([]);

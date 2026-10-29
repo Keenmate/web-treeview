@@ -26,7 +26,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `iconSet`, `leafIconClass`, `toggleIconMode` | same | same |
 | — (`expandIconClass` / `collapseIconClass` removed) | — (removed) | same |
 | `scrollHighlightClass` (null → built-in `wtv__…`), `scrollHighlightTimeout` | `scrollHighlightClass` (`'stv__…'`), same | intentional — class prefix |
-| `nodeTitleOverflow` (`node-title-overflow`: `wrap` \| `ellipsis` \| `info`, default **`ellipsis`**) | `nodeTitleOverflow` (default **`wrap`**) | intentional — default: web is virtual-scroll-first (fixed row height), a wrapping label would desync the scroll math |
+| `nodeTitleOverflow` (`node-title-overflow`: `wrap` \| `ellipsis` \| `info`, default `ellipsis`) | `nodeTitleOverflow` (default `ellipsis`) | same |
 | `flatIndentSize` | `flatIndentSize` | same |
 | `contextMenuXOffset`, `contextMenuYOffset`, `isLoading` | same | same |
 | `dragDropMode`, `dropZoneMode`, `dropZoneLayout`, `dropZoneStart`, `dropZoneMaxWidth`, `isCopyAllowed`, `touchDragDelay`, `shouldIndicateUndraggable`, `isTreeDropZoneEnabled` | same | same |
@@ -115,7 +115,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 |---|---|---|---|
 | `noData`, `noResults`, `noDisplayValue`, `loading`, `dropHere` | ✓ | ✓ | same |
 | `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
-| `showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | to add (svelte hardcodes the string) | same once mirrored |
+| `showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |
 
 ## 8. Exports
@@ -128,7 +128,10 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 ## 9. Behaviour notes
 
-- Keyboard: web `Enter` / `Space` toggle expand (`navToggle`); svelte (multiple mode) `Enter` = `toggleFocusedSelect`, `Space` = checkbox toggle when checkboxes are shown. Not aligned yet — open.
+- Keyboard (WAI-ARIA, both): `Enter` = the node's default action (expand / collapse); `Space` = toggle selection — the checkbox when checkboxes are shown, the focused node in the selection in `multiple` mode — same. Single mode without checkboxes: web `Space` selects the focused node (decided 2026-10-29); svelte falls back to expand / collapse — svelte to align.
+- Assigning the expanded / selected / checked set (`expandedPaths` / `selectedPaths` / `checkedPaths`; web: also the values held before the first build) is silent in both — no `expanded-change` / `selection-change` / `checked-change` / `focus-change` / `tree-change`. The methods (`expandNodes`, `selectNodes`, `checkNodes`, …) and user interaction announce (unless `{ isSilent: true }`) — same.
+- `expanded-change` / `onExpandedChange` from the expand / collapse methods (and toggle / keyboard) fires synchronously, after that call's `node-expand` / `node-collapse`; after a data change it follows on the next microtask — same.
+- `tree-change` / `onTreeChange`: only after data / structure mutations (add / insert / update / move / remove / `applyChanges` / branch ops / paste / drop / duplicate / sort), one per change (coalesced on a microtask), never for expand / select / check / focus nor for loading `nodes` — same.
 - Class prefixes `wtv__` vs `stv__`, CSS custom properties `--wtv-*` vs `--stv-*` — intentional prefix.
 - Neither exposes `::part()` / `<slot>` (render callbacks vs snippets) — intentional.
 

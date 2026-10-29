@@ -232,9 +232,9 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `expandedPaths` | `string[]` | The expanded set. Assigning replaces it (branches not listed collapse) — save / restore a view |
-| `selectedPaths` | `string[]` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it and fires `selection-change` |
-| `checkedPaths` | `string[]` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it and fires `checked-change` |
+| `expandedPaths` | `string[]` | The expanded set. Assigning replaces it (branches not listed collapse) **silently** (no `expanded-change`) — save / restore a view |
+| `selectedPaths` | `string[]` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it **silently** (no `selection-change` / `checked-change` / `focus-change`; use `selectNodes` / `clearSelection` to announce) |
+| `checkedPaths` | `string[]` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it **silently** (no `checked-change`; use `checkNodes` / `uncheckAll` to announce) |
 | `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
 | `selectionAnchor` | `string \| null` | The Shift-range anchor (Shift+click / Shift+Arrow extend from it). Writable on the element and the controller — e.g. an alternative renderer keeping its own range selection in sync |
 | `isRendering` | `boolean` | Read-only: `true` while a progressive (batched) render is in flight (`render-start` … `render-complete`) |
@@ -504,7 +504,8 @@ tree.navigationOverrides = null; // back to the defaults
 | `Home` / `End` | `navFirst` / `navLast` | `navSelectFirst` / `navSelectLast` |
 | `PageDown` / `PageUp` | `navPageDown` / `navPageUp` | `navSelectPageDown` / `navSelectPageUp` |
 | `ArrowRight` / `ArrowLeft` / `Backspace` | `navInto` / `navOut` / `navBackOut` | — |
-| `Enter` / `Space` | `navToggle` | — |
+| `Enter` | `navToggle` (the node's default action: expand / collapse) | — |
+| `Space` | toggle selection: the focused node's checkbox when checkboxes are shown; else `toggleFocusedSelect` (multiple mode) / `selectNode` (single mode) | — |
 
 ## Events
 
@@ -528,18 +529,18 @@ tree.navigationOverrides = null; // back to the defaults
 | `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed (`paths`: `string[]`) |
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed (`paths`: `string[]`) |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
-| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / assigning `expandedPaths` / data changes; not for `{ isSilent: true }` |
+| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / data changes. Synchronous right after an expand / collapse (after its `node-expand` / `node-collapse`); on the next microtask after a data change. Not for `{ isSilent: true }` nor for assigning `expandedPaths` |
 | `nodes-reorder` | `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }` | A sort with `compareCallback` or `direction: 'desc'` rewrote one parent's `order-member` values (one event per parent; `nodes` = all its children in the new order, `changes` = only those whose value changed). Never without `order-member`; not with `isSilent` |
-| `tree-change` | context only | Tree state changed (expand, collapse, data) — fired once |
+| `tree-change` | context only | The data / structure changed: add / insert / update / move / remove, `applyChanges`, add / insert / replace / `removeBranch`, paste, drop, duplicate, sort — one event per change (a multi-node drop fires once), on the microtask after it. **Not** for expand / select / check / focus, nor for loading `nodes`; read the new data from `controller.nodes` |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |
 | `render-start` | context only | A progressive (batched) render began — `isRendering` is `true` |
 | `render-progress` | `{ pending, processed }` | A render batch finished (`pending` rows still queued) |
 | `render-complete` | `{ pending, processed }` | The progressive render finished — `isRendering` is `false` |
 | `container-resize` | `{ size: { width, height }, deviceClass }` | The tree container was resized (also once when observing starts); `size` = `containerSize` |
 
-Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set) and the usual single `tree-change`. `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
+Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set). `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 
-`isSilent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
+Assigning `expandedPaths` / `selectedPaths` / `checkedPaths` (element, before or after the first build) is a silent state restore — no event; the methods (`expandNodes`, `selectNodes`, `checkNodes`, …) and user interaction announce. `isSilent: true` (the `TreeMutationOptions` flag on every select/check/focus mutator) suppresses both the `on*` twin AND the DOM event. The verbs are partitioned: `select*` drives the UI multi-select set, `check*` / `uncheck*` drive the checkbox/data set, `focus*` drives the single cursor.
 
 ## Sorting
 

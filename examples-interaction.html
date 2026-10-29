@@ -220,7 +220,8 @@
                             <li><span class="kbd">&rarr;</span> &mdash; Expand and move to first child</li>
                             <li><span class="kbd">&larr;</span> &mdash; Collapse / move to parent</li>
                             <li><span class="kbd">Backspace</span> &mdash; Collapse parent and move to it</li>
-                            <li><span class="kbd">Enter</span> / <span class="kbd">Space</span> &mdash; Toggle expand/collapse</li>
+                            <li><span class="kbd">Enter</span> &mdash; Toggle expand/collapse</li>
+                            <li><span class="kbd">Space</span> &mdash; Toggle the checkbox (checkboxes shown) / the selection</li>
                             <li><span class="kbd">Home</span> / <span class="kbd">End</span> &mdash; First / last visible node</li>
                             <li><span class="kbd">Escape</span> &mdash; Deselect all</li>
                         </ul>
@@ -681,6 +682,10 @@ function restoreFromUrl(nodePath) {
             in6src.addEventListener('selection-change', updateClipboardStatus);
             in6src.addEventListener('tree-change', updateClipboardStatus);
             in6tgt.addEventListener('tree-change', updateClipboardStatus);
+            for (const ev of ["node-copy", "node-cut", "node-paste"]) {
+                in6src.addEventListener(ev, updateClipboardStatus);
+                in6tgt.addEventListener(ev, updateClipboardStatus);
+            }
 
             document.getElementById('in6-copy').addEventListener('click', () => {
                 in6src.copyNodes(); updateClipboardStatus();

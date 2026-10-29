@@ -10,7 +10,8 @@ When the tree body has focus (click any node first), keyboard navigation is acti
 | `ArrowRight` | Expand and focus first child |
 | `ArrowLeft` | Focus parent node |
 | `Backspace` | Collapse parent and focus it |
-| `Enter` / `Space` | Toggle expand / collapse on focused node |
+| `Enter` | Toggle expand / collapse on focused node (the node's default action) |
+| `Space` | Toggle selection: the focused node's checkbox when checkboxes are shown; otherwise toggle it in the selection (`multiple` mode) / select it (`single` mode) |
 | `Home` / `End` | Focus first / last visible node |
 | `PageDown` / `PageUp` | Focus the node ~10 visible rows down / up (clamped to the ends) |
 | `Shift+ArrowDown` / `Shift+ArrowUp` | Extend the selected range to the next / previous sibling (multi selection mode; no-op in single) |

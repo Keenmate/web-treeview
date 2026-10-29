@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — event semantics + keyboard fixture</title>
+    <style>
+        main { padding: 1rem; font-family: sans-serif; }
+        .tree-container { border: 1px solid #e2e8f0; padding: 0.5rem; width: 520px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Events Fixture</h1>
+        <p>Silent state assignment, structure-only <code>tree-change</code>, synchronous
+            <code>expanded-change</code>, WAI-ARIA Enter / Space. <code>window.make({ attrs, props, state })</code>
+            builds a fresh tree (<code>state</code> is assigned before the first build); <code>window.__log</code>
+            records every event name in order.</p>
+        <div class="tree-container" id="host"></div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        window.baseNodes = () => [
+            { id: 1, path: '1', name: 'Alpha' },
+            { id: 11, path: '1.1', name: 'Alpha child' },
+            { id: 12, path: '1.2', name: 'Alpha other' },
+            { id: 2, path: '2', name: 'Beta' },
+            { id: 21, path: '2.1', name: 'Beta child' },
+            { id: 3, path: '3', name: 'Gamma' },
+        ];
+
+        const EVENTS = ['selection-change', 'checked-change', 'expanded-change', 'focus-change', 'tree-change',
+            'node-expand', 'node-collapse'];
+
+        window.make = async ({ attrs = {}, props = {}, state = {} } = {}) => {
+            await customElements.whenDefined('web-treeview');
+            const host = document.getElementById('host');
+            host.innerHTML = '';
+            const tree = document.createElement('web-treeview');
+            tree.id = 'tree';
+            for (const [k, v] of Object.entries(attrs)) tree.setAttribute(k, v);
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            Object.assign(tree, props);
+            tree.nodes = window.baseNodes();
+            Object.assign(tree, state); // pre-build: held, replayed after the build
+            window.__log = [];
+            for (const name of EVENTS) tree.addEventListener(name, () => window.__log.push(name));
+            host.appendChild(tree);
+            await tree.whenReady();
+            await new Promise((r) => setTimeout(r, 50));
+            window.tree = tree;
+            return true;
+        };
+
+        /** Run `code` (body of `(t) => …`, t = the tree) and return the event names logged synchronously / after the microtask. */
+        window.track = async (code) => {
+            window.__log = [];
+            new Function("t", code)(window.tree);
+            const sync = [...window.__log];
+            await new Promise((r) => setTimeout(r, 50));
+            return { sync, all: [...window.__log] };
+        };
+    </script>
+</body>
+</html>

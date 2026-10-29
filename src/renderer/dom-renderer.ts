@@ -641,10 +641,26 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this.controller.navBackOut();
         break;
       case 'Enter':
-      case ' ':
+        // WAI-ARIA tree: Enter = the node's default action (expand / collapse).
         event.preventDefault();
         this.controller.navToggle();
         break;
+      case ' ': {
+        // WAI-ARIA tree: Space toggles selection — the focused node's checkbox when
+        // checkboxes are shown; otherwise the focused node in the selection
+        // (multiple mode) / selects it (single mode).
+        event.preventDefault();
+        const focused = this.controller.focusedNode;
+        if (!focused || !focused.isSelectable) break;
+        if (this.controller.isCheckboxesShown) {
+          this.controller.nodeCallbacks.onCheckboxToggle(focused);
+        } else if (this.controller.selectionMode === 'multiple') {
+          this.controller.toggleFocusedSelect();
+        } else {
+          this.controller.selectNode(focused.path);
+        }
+        break;
+      }
       case 'Home':
         event.preventDefault();
         if (shift) this.controller.navSelectFirst();

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test — Responsive rules (core SPEC §6.7)</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; max-width: 480px; border: 1px solid #ccc; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const data = [
+            { id: 1, path: '1', name: 'A' },
+            { id: 11, path: '1.1', name: 'A1' },
+            { id: 111, path: '1.1.1', name: 'A1a' },
+            { id: 2, path: '2', name: 'B' }
+        ];
+
+        await customElements.whenDefined('web-treeview');
+
+        // Per-tag page rule: on phones expand just the roots.
+        window.components['web-treeview'].responsive = { mobile: { expandLevel: 1 } };
+
+        const host = document.getElementById('host');
+        host.innerHTML = `
+            <web-treeview id="plain"></web-treeview>
+            <web-treeview id="explicit" expand-level="2"></web-treeview>`;
+        for (const tree of host.querySelectorAll('web-treeview')) setupTree(tree, data);
+        window.plain = document.getElementById('plain');
+        window.explicit = document.getElementById('explicit');
+    </script>
+</body>
+</html>

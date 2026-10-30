@@ -1,5 +1,5 @@
 import type { TreeViewLabels } from './labels';
-import type { RenderLoaderCallback } from '@keenmate/web-components-core';
+import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback } from '@keenmate/web-components-core';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
@@ -681,3 +681,14 @@ export interface ScrollToPathOptions {
   block?: ScrollLogicalPosition;
   inline?: ScrollLogicalPosition;
 }
+
+/**
+ * Responsive rules for `<web-treeview>` (core SPEC §6.7): a partial config per device class
+ * (`mobile` / `tablet` / `desktop`), applied by core at page (`window.components.responsive`),
+ * tag (`window.components['web-treeview'].responsive`) or instance (`el.responsive`, JSON
+ * `responsive` attribute) level. Example: `{ mobile: { expandLevel: 1 } }`.
+ */
+export type TreeViewResponsiveMap<T = any> = ResponsiveMap<TreeViewConfig<T>>;
+
+/** Callback form of {@link TreeViewResponsiveMap}: `(ctx) => partial config | null | undefined`. */
+export type TreeViewResponsiveCallback<T = any> = ResponsiveCallback<TreeViewConfig<T>>;

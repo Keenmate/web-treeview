@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added (responsive rules, core SPEC §6.7, 2026-10-30)
+
+- **Responsive rules** (from core rc15): `window.components.responsive` / `responsiveCallback`,
+  `window.components['web-treeview'].responsive` / `responsiveCallback` and the instance `responsive`
+  (JSON attribute) / `responsiveCallback` set a partial config per device class, e.g.
+  `{ mobile: { expandLevel: 1 } }`. Instance attributes / properties beat page rules; instance rules beat
+  everything. New typed aliases **`TreeViewResponsiveMap<T>`** / **`TreeViewResponsiveCallback<T>`**
+  (core `ResponsiveMap` / `ResponsiveCallback` over `TreeViewConfig<T>`). README "Responsive rules";
+  e2e `responsive-rules.spec.ts`.
+
 ### Changed (visual) — drop-target tokens (base-css-variables 2.0.0-rc06, 2026-10-29)
 
 - **Drop targets are green (the contract's drop-target tokens), no longer the primary tint**: the drag-over row

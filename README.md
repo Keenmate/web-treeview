@@ -85,6 +85,31 @@ npm install @keenmate/web-treeview
 
 See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./docs/examples.md) for end-to-end recipes.
 
+## Responsive rules
+
+Tune any input per device class (`mobile` / `tablet` / `desktop`) without app-side viewport code — the
+generic core mechanism ([core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/main/docs/SPEC.md)).
+A rule is a partial config (`TreeViewResponsiveMap`) or a function of the environment
+(`TreeViewResponsiveCallback`, `(ctx) => partial | null | undefined`), set at three levels:
+
+```js
+// page-wide (every KeenMate component; unknown keys are skipped silently)
+window.components.responsive = { mobile: { expandLevel: 1 } };
+// per tag
+window.components['web-treeview'].responsive = { mobile: { expandLevel: 1, isNodeTooltipsShown: false } };
+window.components['web-treeview'].responsiveCallback = ({ deviceClass, env }) =>
+  env.orientation === 'landscape' ? { expandLevel: 2 } : undefined;
+// one instance (property, or the JSON attribute responsive='{"tablet":{"expandLevel":2}}')
+tree.responsive = { tablet: { expandLevel: 2 } };
+```
+
+Precedence, later wins key by key: global map → global callback → per-tag map → per-tag callback →
+**attributes / properties set on the instance** → instance map → instance callback. So
+`<web-treeview expand-level="3">` keeps `3` whatever the page rules say; an instance rule returning `null`
+ignores all page rules. Responsive values never reflect to attributes; `el.expandLevel` / `el.config` read
+the effective value. `mobile` means a touch-primary device with a short side under 600 px (core
+`classifyDevice`).
+
 ## Features
 
 - **Two rendering modes** — flat (default, up to ~10k nodes) and virtual scroll (~50 DOM nodes for trees of 100k+).

@@ -25,16 +25,18 @@
 
         await customElements.whenDefined('web-treeview');
 
-        // Per-tag page rule: on phones expand just the roots.
-        window.components['web-treeview'].responsive = { mobile: { expandLevel: 1 } };
+        // Per-tag page rule: on phones (device axis, by capability) expand just the roots.
+        window.components['web-treeview'].responsive = { device: { mobile: { expandLevel: 1 } } };
 
         const host = document.getElementById('host');
         host.innerHTML = `
             <web-treeview id="plain"></web-treeview>
-            <web-treeview id="explicit" expand-level="2"></web-treeview>`;
+            <web-treeview id="explicit" expand-level="2"></web-treeview>
+            <web-treeview id="narrow" responsive='{"breakpoint":{"mobile":{"expandLevel":2}}}'></web-treeview>`;
         for (const tree of host.querySelectorAll('web-treeview')) setupTree(tree, data);
         window.plain = document.getElementById('plain');
         window.explicit = document.getElementById('explicit');
+        window.narrow = document.getElementById('narrow');
     </script>
 </body>
 </html>

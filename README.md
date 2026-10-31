@@ -87,28 +87,40 @@ See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./d
 
 ## Responsive rules
 
-Tune any input per device class (`mobile` / `tablet` / `desktop`) without app-side viewport code — the
-generic core mechanism ([core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/main/docs/SPEC.md)).
-A rule is a partial config (`TreeViewResponsiveMap`) or a function of the environment
-(`TreeViewResponsiveCallback`, `(ctx) => partial | null | undefined`), set at three levels:
+Tune any input per device class or window width without app-side viewport code — the generic core
+mechanism ([core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/main/docs/SPEC.md)).
+A rule is a map of partial configs (`TreeViewResponsiveMap`) or a function of the environment
+(`TreeViewResponsiveCallback`, `(ctx) => partial | null | undefined`), set at three levels. A map has two
+axes, each keyed `mobile` / `tablet` / `desktop`:
+
+- **`device`** — the kind of device, by capability: `mobile` = a touch-primary phone (short side under
+  600 px), `tablet` = a larger touch device; a mouse / trackpad device is `desktop` at any width.
+- **`breakpoint`** — the window width (768 / 1024 px lines): a desktop window narrowed below 768 px is
+  `mobile`.
+
+The breakpoint entry applies first, the device entry over it (device wins on the same key). Your own
+widths or combinations (e.g. "desktop AND narrower than 600 px") go in a `responsiveCallback`.
 
 ```js
 // page-wide (every KeenMate component; unknown keys are skipped silently)
-window.components.responsive = { mobile: { expandLevel: 1 } };
-// per tag
-window.components['web-treeview'].responsive = { mobile: { expandLevel: 1, isNodeTooltipsShown: false } };
+window.components.responsive = { device: { mobile: { expandLevel: 1 } } };
+// per tag: phones by capability, plus any narrow window
+window.components['web-treeview'].responsive = {
+  device: { mobile: { expandLevel: 1, isNodeTooltipsShown: false } },
+  breakpoint: { mobile: { expandLevel: 1 } },
+};
+// own widths / combinations → callback (re-runs as the window width changes)
 window.components['web-treeview'].responsiveCallback = ({ deviceClass, env }) =>
-  env.orientation === 'landscape' ? { expandLevel: 2 } : undefined;
-// one instance (property, or the JSON attribute responsive='{"tablet":{"expandLevel":2}}')
-tree.responsive = { tablet: { expandLevel: 2 } };
+  deviceClass === 'desktop' && env.viewportWidth < 600 ? { isNodeTooltipsShown: false } : undefined;
+// one instance (property, or the JSON attribute responsive='{"device":{"tablet":{"expandLevel":2}}}')
+tree.responsive = { device: { tablet: { expandLevel: 2 } } };
 ```
 
 Precedence, later wins key by key: global map → global callback → per-tag map → per-tag callback →
 **attributes / properties set on the instance** → instance map → instance callback. So
 `<web-treeview expand-level="3">` keeps `3` whatever the page rules say; an instance rule returning `null`
 ignores all page rules. Responsive values never reflect to attributes; `el.expandLevel` / `el.config` read
-the effective value. `mobile` means a touch-primary device with a short side under 600 px (core
-`classifyDevice`).
+the effective value. Any other top-level map key (the pre-rc15 `{ mobile: … }` shape) warns and is ignored.
 
 ## Features
 

@@ -683,10 +683,12 @@ export interface ScrollToPathOptions {
 }
 
 /**
- * Responsive rules for `<web-treeview>` (core SPEC §6.7): a partial config per device class
- * (`mobile` / `tablet` / `desktop`), applied by core at page (`window.components.responsive`),
- * tag (`window.components['web-treeview'].responsive`) or instance (`el.responsive`, JSON
- * `responsive` attribute) level. Example: `{ mobile: { expandLevel: 1 } }`.
+ * Responsive rules for `<web-treeview>` (core SPEC §6.7): partial configs on two axes, each keyed
+ * `mobile` / `tablet` / `desktop` — `device` (capability: touch phone / tablet; mouse = desktop at any
+ * width) and `breakpoint` (window width, 768 / 1024 px lines; device wins on the same key). Applied by
+ * core at page (`window.components.responsive`), tag (`window.components['web-treeview'].responsive`)
+ * or instance (`el.responsive`, JSON `responsive` attribute) level.
+ * Example: `{ device: { mobile: { expandLevel: 1 } }, breakpoint: { mobile: { expandLevel: 1 } } }`.
  */
 export type TreeViewResponsiveMap<T = any> = ResponsiveMap<TreeViewConfig<T>>;
 

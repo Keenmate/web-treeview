@@ -39,7 +39,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `getCustomStylesCallback` | — | intentional — shadow-DOM style injection; svelte styles are global CSS |
 | `renderer` (pluggable `TreeViewRenderer`) | — | intentional — web-only DOM renderer swap |
 | core element plumbing: `defer` / `release()` / `whenReady()` / `whenSettled()` / `flush()` / `destroy()` / `isDisabled` | — | intentional — `BlissElement` lifecycle |
-| responsive rules (core SPEC §6.7): `responsive` (JSON attribute `responsive`) / `responsiveCallback` per instance + page-wide / per-tag `window.components` rules — a partial config per device class | — | **OPEN** — web = yes, svelte = not decided (don't build until decided) |
+| responsive rules (core SPEC §6.7): `responsive` (JSON attribute `responsive`) / `responsiveCallback` per instance + page-wide / per-tag `window.components` rules — a partial config per `device` class / window-width `breakpoint` | — | **OPEN** — web = yes, svelte = not decided (don't build until decided) |
 
 ## 2. State
 

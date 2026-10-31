@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Responsive rules** (from core rc15): `window.components.responsive` / `responsiveCallback`,
   `window.components['web-treeview'].responsive` / `responsiveCallback` and the instance `responsive`
-  (JSON attribute) / `responsiveCallback` set a partial config per device class, e.g.
-  `{ mobile: { expandLevel: 1 } }`. Instance attributes / properties beat page rules; instance rules beat
+  (JSON attribute) / `responsiveCallback` set a partial config per `device` class (capability) and / or
+  window-width `breakpoint`, e.g. `{ device: { mobile: { expandLevel: 1 } }, breakpoint: { mobile: { … } } }`
+  (core rc15 axes shape; own widths / combinations go in a `responsiveCallback`). Instance attributes / properties beat page rules; instance rules beat
   everything. New typed aliases **`TreeViewResponsiveMap<T>`** / **`TreeViewResponsiveCallback<T>`**
   (core `ResponsiveMap` / `ResponsiveCallback` over `TreeViewConfig<T>`). README "Responsive rules";
   e2e `responsive-rules.spec.ts`.

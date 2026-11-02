@@ -499,7 +499,7 @@
   --wtv-drop-placeholder-bg-hover: radial-gradient(ellipse 120% 180% at 50% 50%, var(--wtv-drag-over-highlight-bg) 0%, var(--wtv-drag-over-bg) 80%);
   --wtv-drop-placeholder-border-color-hover: var(--wtv-drop-placeholder-accent);
   --wtv-drop-placeholder-border-style-hover: solid;
-  --wtv-drop-placeholder-box-shadow-hover: var(--base-shadow-lg, 0 4px 12px rgba(0, 0, 0, 0.15)), inset 0 0 24px -8px color-mix(in srgb, var(--wtv-drop-placeholder-accent) 35%, transparent);
+  --wtv-drop-placeholder-box-shadow-hover: var(--base-shadow-lg, 0 4px 12px var(--wtv-shadow-color)), inset 0 0 24px -8px color-mix(in srgb, var(--wtv-drop-placeholder-accent) 35%, transparent);
   --wtv-drop-placeholder-scale-hover: 1;
 
   /* ==========================================================================

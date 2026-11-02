@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — offset root (subtree data)</title>
+    <style>
+        main { max-width: 1300px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .tree { border: 1px solid #ccc; height: 420px; overflow: auto; }
+        web-treeview { display: block; }
+        h2 { font-size: 1rem; margin: 0 0 .25rem; }
+        p.cfg { font-size: .8rem; color: #555; margin: 0 0 .5rem; min-height: 2.4em; }
+        pre { font-size: .72rem; background: #f6f6f6; padding: .5rem; max-height: 220px; overflow: auto; white-space: pre-wrap; }
+        .ok { color: #15803d; } .bad { color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>offset root — subtree cut from a bigger ltree</h1>
+        <p>The top node is <code>1.20.302</code> with <code>parentNodePath: null</code>; its ancestors
+           <code>1</code> / <code>1.20</code> are not in the data (38 rows, from documenthub's sales-org tree).</p>
+
+        <div class="grid">
+            <section>
+                <h2>A — path only (documenthub today)</h2>
+                <p class="cfg"><code>path-member="nodePath"</code>, no parent-path-member → parent derived from the path (<code>"1.20"</code>)</p>
+                <div class="tree"><web-treeview id="a" expand-level="2"></web-treeview></div>
+                <pre id="a-result"></pre>
+            </section>
+            <section>
+                <h2>B — + parent-path-member</h2>
+                <p class="cfg"><code>parentPathMember="parentNodePath"</code> (root's is <code>null</code>) — still fails: lookup walks <code>1 → 20 → 302</code> from the root</p>
+                <div class="tree"><web-treeview id="b" expand-level="2"></web-treeview></div>
+                <pre id="b-result"></pre>
+            </section>
+            <section>
+                <h2>C — re-rooted paths (app-side workaround)</h2>
+                <p class="cfg">path = last <code>depth + 1</code> segments (<code>1.20.302.2711</code> → <code>302.2711</code>)</p>
+                <div class="tree"><web-treeview id="c" expand-level="2"></web-treeview></div>
+                <pre id="c-result"></pre>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { offsetRootData } from './offset-root-data.js';
+
+        const label = (r) => `${r.title} (${r.roleCode}) · ${r.documentCount}`;
+        const rows = offsetRootData.map((r) => ({ ...r, label: label(r) }));
+        const common = { idMember: 'nodeId', pathMember: 'nodePath', displayValueMember: 'label' };
+
+        const configs = {
+            a: { ...common, nodes: rows },
+            b: { ...common, parentPathMember: 'parentNodePath', nodes: rows },
+            c: {
+                ...common,
+                nodes: rows.map((r) => ({ ...r, nodePath: r.nodePath.split('.').slice(-(r.depth + 1)).join('.') }))
+            }
+        };
+
+        const report = async (id) => {
+            const el = document.getElementById(id);
+            const out = document.getElementById(`${id}-result`);
+            // insertArray runs on the element's coalesced update — wait for the result to land.
+            for (let i = 0; i < 100 && !el.insertResult; i++) await new Promise((r) => setTimeout(r, 20));
+            const res = el.insertResult;
+            if (!res) { out.textContent = 'no insertResult'; return; }
+            const cls = res.failed.length ? 'bad' : 'ok';
+            out.innerHTML = `<b class="${cls}">inserted ${res.successful} / ${res.total}, failed ${res.failed.length}</b>\n` +
+                res.failed.map((f) => f.error).join('\n');
+            out.dataset.successful = res.successful;
+            out.dataset.failed = res.failed.length;
+        };
+
+        customElements.whenDefined('web-treeview').then(() => {
+            for (const [id, cfg] of Object.entries(configs)) {
+                Object.assign(document.getElementById(id), cfg);
+                report(id);
+            }
+        });
+    </script>
+</body>
+</html>

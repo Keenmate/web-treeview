@@ -15,7 +15,8 @@ export interface LTreeNode<T> {
 	parentPath: string | null | undefined;
 	level: number | null | undefined;
 
-	children: Record<string, LTreeNode<T>>;
+	/** Direct children in display order. */
+	children: LTreeNode<T>[];
 	hasChildren: boolean;
 	data: T | null | undefined;
 
@@ -52,7 +53,7 @@ export function createLTreeNode<T>(data?: Partial<LTreeNode<T>>): LTreeNode<T> {
 		level: undefined,
 		id: -1,
 
-		children: {},
+		children: [],
 		hasChildren: false,
 		data: undefined,
 

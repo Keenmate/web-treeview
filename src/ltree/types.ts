@@ -196,7 +196,6 @@ export interface Ltree<T> {
 		options?: ExpandOptions
 	): void;
 
-	insert(path: string, data: T, noEmitChanges?: boolean): void;
 
 	getNodeByPath(path: string, _root?: LTreeNode<T> | null | undefined): LTreeNode<T> | null;
 

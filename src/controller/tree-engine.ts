@@ -1629,7 +1629,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           path: srcNode.path,
           node: srcNode,
           parent: srcParent,
-          siblings: srcParent ? (Object.values(srcParent.children) as LTreeNode<T>[]) : []
+          siblings: srcParent ? (srcParent.children as LTreeNode<T>[]) : []
         },
         target: {
           path: landTargetPath,
@@ -1962,7 +1962,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const out: LTreeNode<T>[] = [];
     const walk = (node: LTreeNode<T>) => {
       out.push(node);
-      for (const child of Object.values(node.children) as LTreeNode<T>[]) walk(child);
+      for (const child of node.children as LTreeNode<T>[]) walk(child);
     };
     for (const root of this.tree?.tree ?? []) walk(root);
     return out;
@@ -2095,7 +2095,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const walk = (node: LTreeNode<T>) => {
       const vs = this._computeVisualState(node);
       if (vs === VisualState.unchecked) return;
-      const children = Object.values(node.children);
+      const children = node.children;
       const selectable = node.isSelectable !== false;
       if (policy === 'leaves') {
         if (children.length === 0 && node.isChecked && selectable) out.add(node.path);
@@ -2246,7 +2246,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         node._rev++;
         newPaths.add(node.path);
       }
-      for (const child of Object.values(node.children)) traverse(child);
+      for (const child of node.children) traverse(child);
     };
     for (const root of this.tree?.tree ?? []) traverse(root);
     this._checkedPaths = newPaths;
@@ -2430,9 +2430,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         anyChanged = true;
         if (checkedTouched) checkedChanged = true;
       }
-      for (const key in node.children) visit(node.children[key]!);
+      for (const child of node.children) visit(child);
     };
-    for (const key in this.tree.root.children) visit(this.tree.root.children[key]!);
+    for (const child of this.tree.root.children) visit(child);
     if (checkedChanged) this._checkedPaths = newPaths;
     if (anyChanged) {
       this.tree.refresh();
@@ -2445,7 +2445,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _getDescendantPaths(node: LTreeNode<T>): string[] {
     const result: string[] = [];
     const traverse = (n: LTreeNode<T>) => {
-      for (const child of Object.values(n.children)) {
+      for (const child of n.children) {
         result.push(child.path);
         traverse(child);
       }
@@ -2482,7 +2482,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  node based on its descendants' `isChecked`. Leaves use the node's own
    *  `isChecked`. */
   private _computeVisualState(node: LTreeNode<T>): VisualState {
-    const children = Object.values(node.children);
+    const children = node.children;
     if (children.length === 0) {
       return node.isChecked ? VisualState.checked : VisualState.unchecked;
     }
@@ -2492,7 +2492,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (!allChecked && !noneChecked) return;
       if (n.isChecked) noneChecked = false;
       else allChecked = false;
-      for (const child of Object.values(n.children)) {
+      for (const child of n.children) {
         if (!allChecked && !noneChecked) return;
         check(child);
       }
@@ -3379,7 +3379,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** Walk all descendants of a node. */
   private _walkDescendants(node: LTreeNode<T>, callback: (node: LTreeNode<T>) => void): void {
     if (!node.children) return;
-    for (const child of Object.values(node.children)) {
+    for (const child of node.children) {
       callback(child);
       this._walkDescendants(child, callback);
     }
@@ -4156,9 +4156,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** The tree holds at least one node (independent of the search filter). */
   private _hasAnyNode(): boolean {
-    const children = this.tree?.root?.children;
-    if (children) for (const _ in children) return true;
-    return false;
+    return (this.tree?.root?.children.length ?? 0) > 0;
   }
 
   /** Get a snapshot of the current state for the renderer. */
@@ -4332,17 +4330,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // Pass 1: primary state — isChecked from the surviving set.
     const applyChecked = (node: LTreeNode<T>) => {
       node.isChecked = this._checkedPaths.has(node.path);
-      for (const child of Object.values(node.children)) applyChecked(child);
+      for (const child of node.children) applyChecked(child);
     };
-    for (const child of Object.values(this.tree.root.children)) applyChecked(child);
+    for (const child of this.tree.root.children) applyChecked(child);
     // Pass 2: derived visualState — needs pass 1's isChecked on all descendants.
     const applyVisual = (node: LTreeNode<T>) => {
       node.visualState = cascade
         ? this._computeVisualState(node)
         : (node.isChecked ? VisualState.checked : VisualState.unchecked);
-      for (const child of Object.values(node.children)) applyVisual(child);
+      for (const child of node.children) applyVisual(child);
     };
-    for (const child of Object.values(this.tree.root.children)) applyVisual(child);
+    for (const child of this.tree.root.children) applyVisual(child);
   }
 
   /** Snapshot which nodes are currently expanded — call BEFORE a data re-insert
@@ -4353,12 +4351,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  means "the user had everything collapsed" and is restored as such (NOTES #17). */
   private _collectExpandedPaths(): Set<string> | null {
     const out = new Set<string>();
-    if (!this.tree?.root || Object.keys(this.tree.root.children).length === 0) return null;
+    if (!this.tree?.root || this.tree.root.children.length === 0) return null;
     const visit = (node: LTreeNode<T>) => {
       if (node.isExpanded) out.add(node.path);
-      for (const child of Object.values(node.children)) visit(child);
+      for (const child of node.children) visit(child);
     };
-    for (const child of Object.values(this.tree.root.children)) visit(child);
+    for (const child of this.tree.root.children) visit(child);
     return out;
   }
 
@@ -4371,9 +4369,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (!this.tree?.root || expanded === null) return;
     const visit = (node: LTreeNode<T>) => {
       if (node.hasChildren) node.isExpanded = expanded.has(node.path);
-      for (const child of Object.values(node.children)) visit(child);
+      for (const child of node.children) visit(child);
     };
-    for (const child of Object.values(this.tree.root.children)) visit(child);
+    for (const child of this.tree.root.children) visit(child);
     // isExpanded changed outside the LTree's own API — invalidate its cached
     // visibleFlatNodes (else the rows of a re-collapsed branch stay listed).
     this.tree.refresh();
@@ -4387,11 +4385,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // user later expands them.
     const visit = (node: LTreeNode<T>) => {
       if (node.isChecked) this._checkedPaths.add(node.path);
-      for (const child of Object.values(node.children)) visit(child);
+      for (const child of node.children) visit(child);
     };
     const root = this.tree.root;
     if (root?.children) {
-      for (const child of Object.values(root.children)) visit(child);
+      for (const child of root.children) visit(child);
     }
   }
 

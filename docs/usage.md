@@ -390,6 +390,7 @@ web-treeview.files { --wtv-context-menu-bg: #eef; } /* just this tree's menu */
 | `beforeDragStartCallback` | `({ lead, dragged, … }) => string[] \| false \| void` | Prune / augment / veto the dragged set at drag start |
 | `beforeDropCallback` | `(ctx: BeforeDropContext) => false \| { position?, operation? } \| DropGroup[] \| void \| Promise<…>` | Drop validation / redirect / fan-out (async OK) |
 | `beforeKeydownCallback` | `({ event, focusedNode, selectedNodes, controller }) => void \| false` | Runs before built-in keyboard handling; return `false` to suppress default navigation + shortcuts for this key |
+| `beforeScrollCallback` | `({ node, path, source, container, options, controller }) => void \| false \| Partial<TreeViewScrollOptions>` | Runs before the tree scrolls a node into view on its own — see [Scrolling](#scrolling). `false` skips the scroll; options replace the defaults. Synchronous; no matching event |
 | `beforeExpandCallback` | `({ node, path, parent, siblings, controller }) => boolean \| void \| Promise<boolean \| void>` | Runs before a node expands via the toggle, the keyboard or `expandNodes()` (not `expandAll()`, expand-level seeding or accordion side-effects). `false` keeps it collapsed; a Promise defers the expand (loading state, repeat toggles ignored); resolving `false` or rejecting (warned) keeps it collapsed. See [Lazy loading](#lazy-loading) |
 
 A throwing before-hook cancels the operation (the error is logged).
@@ -491,7 +492,40 @@ All methods are available on the element **and** on `el.controller`.
 
 `SortOptions`: `{ compareCallback?: ({ a, b }) => number; direction?: 'asc' | 'desc'; isSilent?: boolean }` — see [Sorting](#sorting).
 
-`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline? }` — `behavior` / `block` / `inline` are the native `ScrollIntoViewOptions` (defaults `--wtv-scroll-behavior` — `smooth`, `auto` under reduced motion — / `'center'` / `'nearest'`; keyboard moves always scroll instantly, never with the token); `scrollIntoView` scrolls every scrollable ancestor, light-DOM wrappers included. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms.
+`ScrollToPathOptions`: `{ shouldExpandAncestors?: boolean = true; shouldHighlight?: boolean = false; behavior?; block?; inline?; shouldRevealContainer?: boolean = true }` — `behavior` / `block` / `inline` as in `ScrollIntoViewOptions` (defaults `--wtv-scroll-behavior` — `smooth`, `auto` under reduced motion — / `'center'` / `'nearest'`; keyboard moves always scroll instantly, never with the token). `shouldRevealContainer` first scrolls the page to the tree's scroll container when it isn't fully visible. `shouldHighlight` flashes `scroll-highlight-class` for `scroll-highlight-timeout` ms. See [Scrolling](#scrolling).
+
+### Scrolling
+
+The tree scrolls a node into view on its own in three places. Each moves **only the row's scroll
+container** — the tree's own (virtual scroll) or the nearest scrollable wrapper around the element —
+never the page (core `scrollIntoContainer`). A tree with no scroll container scrolls the page with the
+same `block`, so a `center` jump centres the row in the window.
+
+| `source` | When | Defaults (`options`) |
+|---|---|---|
+| `'keyboard'` | Arrow keys, PageUp / PageDown, Home / End, Shift range moves (`navTo`) | `block: 'nearest'`, `inline: 'nearest'`, `behavior: 'auto'` (keys never animate), `shouldRevealContainer: false` |
+| `'scroll-to-path'` | `scrollToPath(path, options)` | the call's `block` (`'center'`) / `inline` (`'nearest'`) / `behavior` (the `--wtv-scroll-behavior` token) / `shouldRevealContainer` (`true`) |
+| `'paste'` | The reveal after a paste into a node (`position: 'child'`) | `block: 'nearest'`, `inline: 'nearest'`, the token behavior, `shouldRevealContainer: false` |
+
+`beforeScrollCallback(ctx)` runs first, once per scroll. `ctx` = `{ node, path, source, container,
+options, controller, element }` — `container` is the scroll container found around the row (`null` =
+only the page scrolls; in virtual scroll the tree's own `.wtv__tree`), `options` is what the tree is
+about to use (`TreeViewScrollOptions = { block, inline, behavior, shouldRevealContainer }`). Return:
+
+- `false` — skip the scroll (`scrollToPath` still resolves `true`: the node was found; the highlight
+  still flashes when the row is rendered);
+- a partial `TreeViewScrollOptions` — merged over the defaults (e.g. `{ block: 'start' }`);
+- nothing — the defaults.
+
+```js
+tree.beforeScrollCallback = ({ source }) => {
+  if (source === 'keyboard' && isEditing) return false;   // keep the list still
+  if (source === 'scroll-to-path') return { block: 'start' };
+};
+```
+
+A throwing callback skips the scroll (logged). Virtual scroll runs the callback before its own
+index-based scroll. There is no scroll event. Demo: `examples-search.html` SF04.
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 

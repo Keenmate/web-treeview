@@ -115,12 +115,19 @@ test.describe('virtual scroll', () => {
 });
 
 test.describe('keyboard moves always scroll instantly (--wtv-scroll-behavior is for programmatic jumps only)', () => {
+  // Rows scroll via the container's scrollTo (container scroll) or scrollIntoView (no
+  // container) — record the behavior of either.
   const spy = (page: Page) => page.evaluate(() => {
     const calls: (string | undefined)[] = ((window as any).scrollCalls = []);
-    const orig = Element.prototype.scrollIntoView;
+    const origIntoView = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
       calls.push(typeof o === 'object' ? o.behavior : undefined);
-      return orig.call(this, o as ScrollIntoViewOptions);
+      return origIntoView.call(this, o as ScrollIntoViewOptions);
+    };
+    const origScrollTo = Element.prototype.scrollTo;
+    Element.prototype.scrollTo = function (this: Element, ...args: any[]) {
+      calls.push(typeof args[0] === 'object' ? args[0].behavior : undefined);
+      return (origScrollTo as any).apply(this, args);
     };
   });
   const calls = (page: Page) => page.evaluate(() => (window as any).scrollCalls as (string | undefined)[]);
@@ -136,7 +143,9 @@ test.describe('keyboard moves always scroll instantly (--wtv-scroll-behavior is 
       await page.keyboard.press(key);
     }
     await expect(focused(page)).toHaveAttribute('data-tree-path', '200');
-    await expect.poll(async () => (await calls(page)).length).toBeGreaterThanOrEqual(5);
+    // Core's container scroll skips the call when the row is already in view (ArrowDown on a
+    // visible row), so not every key scrolls — PageDown / End / Home / Shift+End do.
+    await expect.poll(async () => (await calls(page)).length).toBeGreaterThanOrEqual(3);
     expect(new Set(await calls(page))).toEqual(new Set(['auto']));
     // scrollToPath keeps the token
     await page.evaluate(() => (window as any).tree.scrollToPath('100'));
@@ -145,18 +154,21 @@ test.describe('keyboard moves always scroll instantly (--wtv-scroll-behavior is 
 
   test('holding ArrowDown: every repeat lands the focused row in view synchronously (no animation to lag behind)', async ({ page }) => {
     await load(page);
-    // Every scrollIntoView of the hold asks for behavior 'auto', and the row is in the box right
-    // after the call returns. (Headless Chromium doesn't animate smooth scrolls, so the
-    // behavior argument is what tells instant from smooth here.)
+    // Every scroll of the hold (the box's scrollTo — container scroll) asks for behavior 'auto',
+    // and the focused row is in the box right after the call returns. (Headless Chromium doesn't
+    // animate smooth scrolls, so the behavior argument is what tells instant from smooth here.)
     await page.evaluate(() => {
       (window as any).tree.style.setProperty('--wtv-scroll-behavior', 'smooth');
       const out: number[] = ((window as any).scrollOut = []);
       const behaviors: (string | undefined)[] = ((window as any).scrollCalls = []);
-      const orig = Element.prototype.scrollIntoView;
-      Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
-        behaviors.push(typeof o === 'object' ? o.behavior : undefined);
-        orig.call(this, o as ScrollIntoViewOptions);
-        const r = this.getBoundingClientRect();
+      const tree = (window as any).tree as HTMLElement;
+      const orig = Element.prototype.scrollTo;
+      Element.prototype.scrollTo = function (this: Element, ...args: any[]) {
+        behaviors.push(typeof args[0] === 'object' ? args[0].behavior : undefined);
+        (orig as any).apply(this, args);
+        const row = tree.shadowRoot!.querySelector('.wtv__node[data-focused="true"] .wtv__node-content');
+        if (!row) return;
+        const r = row.getBoundingClientRect();
         const b = (window as any).box.getBoundingClientRect();
         out.push(Math.max(0, r.bottom - b.bottom, b.top - r.top));
       };

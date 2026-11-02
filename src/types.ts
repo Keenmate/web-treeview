@@ -34,6 +34,7 @@ export type {
   TreeViewActionEventDetail,
   BeforeCheckboxToggleContext,
   KeydownContext,
+  TreeViewBeforeScrollContext,
   BeforeExpandContext,
   NodeTransformCallbackContext,
   NodeTransformCallback,
@@ -110,6 +111,7 @@ import type {
   SelectMode,
   TreeMutationOptions,
   DropGroup,
+  TreeViewScrollOptions,
 } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeNavigationOverrides } from './navigation';
@@ -129,6 +131,7 @@ import type {
   TreeViewActionEventDetail,
   BeforeCheckboxToggleContext,
   KeydownContext,
+  TreeViewBeforeScrollContext,
   BeforeExpandContext,
   NodeTransformCallbackContext,
   NodeTransformCallback,
@@ -476,6 +479,11 @@ export interface TreeViewConfig<T = any> {
   /** Runs before the built-in keyboard handling (synchronous). Return `false` to
    *  suppress the default + built-in shortcuts for this key. */
   beforeKeydownCallback?: (ctx: KeydownContext<T>) => void | false;
+  /** Runs before the tree scrolls a node into view on its own — a keyboard move (`source:
+   *  'keyboard'`), `scrollToPath` (`'scroll-to-path'`), the reveal after a paste into a node
+   *  (`'paste'`). Return `false` to skip the scroll, or a partial {@link TreeViewScrollOptions} to
+   *  replace the defaults. Synchronous. No matching event. */
+  beforeScrollCallback?: (ctx: TreeViewBeforeScrollContext<T>) => void | false | Partial<TreeViewScrollOptions>;
   /** Twin of `action` (a context-menu item was activated). */
   onAction?: (detail: TreeViewActionEventDetail<T>) => void;
   /** Twin of `tree-change` (the data / structure changed — one per mutation; not expand / select / check / focus). */
@@ -684,6 +692,9 @@ export interface ScrollToPathOptions {
   behavior?: ScrollBehavior;
   block?: ScrollLogicalPosition;
   inline?: ScrollLogicalPosition;
+  /** Also bring the tree's scroll container into the viewport when it isn't fully visible (a jump
+   *  to a tree further down the page). Default `true`. */
+  shouldRevealContainer?: boolean;
 }
 
 /**

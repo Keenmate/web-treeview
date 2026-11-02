@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — beforeScrollCallback + shouldRevealContainer</title>
+    <style>
+        main { max-width: 900px; margin: 0 auto; padding: 1rem; font-family: system-ui, sans-serif; }
+        #box { height: 200px; overflow: auto; border: 1px solid #ccc; }
+        #spacer { height: 1600px; background: #f6f6f6; }
+        web-treeview { display: block; --wtv-scroll-behavior: auto; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>beforeScrollCallback</h1>
+        <p>Targeted by <code>e2e/before-scroll.spec.ts</code>. The tree sits in a 200px scroll box below a
+           tall spacer, so it starts off-screen (<code>shouldRevealContainer</code>).
+           <code>window.scrollCtx</code> records every ctx; <code>window.scrollAnswer</code> is returned.</p>
+        <div id="spacer">spacer</div>
+        <div id="box"><web-treeview id="tree" expand-level="1"></web-treeview></div>
+    </main>
+    <script type="module">
+        import '/src/index.ts';
+        const nodes = [{ id: 'r', path: '1', name: 'Root' }];
+        for (let i = 1; i <= 60; i++) nodes.push({ id: `n${i}`, path: `1.${i}`, name: `Node ${i}` });
+        nodes.push({ id: 'p', path: '2', name: 'Paste target' });
+        nodes.push({ id: 'p1', path: '2.1', name: 'Paste child' });
+        window.scrollCtx = [];
+        window.scrollAnswer = undefined;
+        await customElements.whenDefined('web-treeview');
+        const tree = document.getElementById('tree');
+        window.tree = tree;
+        window.box = document.getElementById('box');
+        tree.displayValueMember = 'name';
+        tree.beforeScrollCallback = (ctx) => {
+            window.scrollCtx.push({
+                source: ctx.source, path: ctx.path, nodePath: ctx.node.path,
+                container: ctx.container ? ctx.container.id || ctx.container.className : null,
+                options: { ...ctx.options },
+                hasController: !!ctx.controller, hasElement: ctx.element === tree,
+            });
+            return window.scrollAnswer;
+        };
+        tree.nodes = nodes;
+    </script>
+</body>
+</html>

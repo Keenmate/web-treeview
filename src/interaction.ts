@@ -26,6 +26,8 @@ import type {
   DragStartContext,
   SelectMode,
   TreeMutationOptions,
+  TreeViewScrollSource,
+  TreeViewScrollOptions,
 } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { ScrollToPathOptions } from './types';
@@ -258,6 +260,20 @@ export interface KeydownContext<T = any> extends TreeViewContext<T> {
   event: KeyboardEvent;
   focusedNode: LTreeNode<T> | null;
   selectedNodes: LTreeNode<T>[];
+}
+
+/**
+ * ctx of `beforeScrollCallback` — the tree is about to scroll `node` into view on its own.
+ * Return `false` to skip the scroll, or a partial `options` to replace the defaults. Synchronous.
+ */
+export interface TreeViewBeforeScrollContext<T = any> extends NodeContext<T> {
+  path: string;
+  /** `'keyboard'` (a keyboard move), `'scroll-to-path'` (`scrollToPath`), `'paste'` (the reveal after a paste into a node). */
+  source: TreeViewScrollSource;
+  /** The scroll container around the row (the tree's own, or a wrapper) — `null` = only the page scrolls. */
+  container: HTMLElement | null;
+  /** What the tree is about to use (its defaults for this `source`). */
+  options: TreeViewScrollOptions;
 }
 
 /** ctx of the node transforms (`nodeOutputTransformationCallback` / `nodeInputTransformationCallback`, the paste / duplicate transform argument). */

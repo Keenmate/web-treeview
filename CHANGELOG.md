@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — `beforeScrollCallback`, `shouldRevealContainer` (2026-11-02)
+
+- **`beforeScrollCallback(ctx)`** — runs before the tree scrolls a node into view on its own:
+  `ctx = { node, path, source: 'keyboard' | 'scroll-to-path' | 'paste', container, options, controller,
+  element }` (`container` = the scroll container around the row, `null` = the page; `options` =
+  `TreeViewScrollOptions { block, inline, behavior, shouldRevealContainer }`). Return `false` to skip
+  the scroll (`scrollToPath` still resolves `true`), a partial to replace the defaults. Synchronous
+  (core `runBeforeCallbackSync`), runs before virtual scroll's index scroll too. No event. New types
+  `TreeViewBeforeScrollContext`, `TreeViewScrollOptions`, `TreeViewScrollSource`. Demo SF04; e2e
+  `before-scroll.spec.ts`.
+- **`scrollToPath` option `shouldRevealContainer`** (default `true`): first scrolls the page to the
+  tree's scroll container when it isn't fully visible.
+
+### Changed — scrolling goes through core (2026-11-02)
+
+- **Requires `@keenmate/web-components-core` ^1.0.0-rc16** (was a local `file:` link). Keyboard moves,
+  `scrollToPath` and the paste reveal scroll with core's `scrollIntoContainer`: only the row's scroll
+  container moves (the tree's own or a wrapper around the element — never the page), honouring
+  `scroll-padding` / `scroll-margin`; nothing moves → no `scrollTo()` call. Defaults per source:
+  keyboard `nearest` + instant; `scrollToPath` `center` + `--wtv-scroll-behavior`; paste `nearest` +
+  the token.
+- **With no scroll container the page gets the requested `block`**: a `center` jump (`scrollToPath`)
+  now centres the row in the window, where before the page only moved as far as needed.
+
 ### Added — `highlight-on-page-drag` (2026-11-02)
 
 - **`shouldHighlightOnPageDrag`** (`highlight-on-page-drag`) — same option, names and states as

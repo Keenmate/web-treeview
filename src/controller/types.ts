@@ -292,6 +292,31 @@ export interface TreeKeydownContext<T> {
   selectedNodes: LTreeNode<T>[];
 }
 
+/** What made the tree scroll a node into view on its own — `beforeScrollCallback`'s `source`. */
+export type TreeViewScrollSource = 'keyboard' | 'scroll-to-path' | 'paste';
+
+/** The scroll the tree is about to do (`beforeScrollCallback`'s `options`; a returned partial is merged over it). */
+export interface TreeViewScrollOptions {
+  /** Vertical alignment: `'nearest'` scrolls only as far as needed; `'start'` / `'center'` / `'end'` align. */
+  block: ScrollLogicalPosition;
+  /** Horizontal alignment (same values). */
+  inline: ScrollLogicalPosition;
+  /** `'auto'` (instant) or `'smooth'`. */
+  behavior: ScrollBehavior;
+  /** Also bring the scroll container itself into the viewport when it isn't fully visible. */
+  shouldRevealContainer: boolean;
+}
+
+/** Engine ctx of `beforeScrollCallback` (WebTreeView adds `controller` / `element`). */
+export interface BeforeScrollContext<T> {
+  node: LTreeNode<T>;
+  path: string;
+  source: TreeViewScrollSource;
+  /** The scroll container core found around the row — `null` = only the page scrolls. */
+  container: HTMLElement | null;
+  options: TreeViewScrollOptions;
+}
+
 /**
  * Context passed to BOTH nodeOutputTransformationCallback and
  * nodeInputTransformationCallback, one per node. Keyed on DIRECTION, not
@@ -561,6 +586,9 @@ export interface TreeEngineConfig<T> {
   beforeDragStartCallback?: (ctx: DragStartContext<T>) => string[] | false | void;
   /** Interceptor — return true to suppress default + built-in shortcuts. Runs first. */
   onTreeKeydown?: (ctx: TreeKeydownContext<T>) => boolean | void;
+  /** Runs before every self-initiated scroll (keyboard, scrollToPath, paste reveal): `false` skips
+   *  it, a partial replaces the defaults (the adapted public beforeScrollCallback). */
+  beforeScrollCallback?: (ctx: BeforeScrollContext<T>) => false | Partial<TreeViewScrollOptions> | void;
   /** The context-menu entries for `node` (the public getContextMenuItemsCallback, adapted by WebTreeView). */
   contextMenuCallback?: (node: LTreeNode<T>) => TreeMenuEntry<T>[];
 

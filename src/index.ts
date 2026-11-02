@@ -53,7 +53,9 @@ export type {
   CascadeCheckPolicy,
   TooltipPlacement,
   TooltipDelay,
-  NodeRenderContext
+  NodeRenderContext,
+  TreeViewScrollSource,
+  TreeViewScrollOptions
 } from './controller/types';
 
 // Clipboard

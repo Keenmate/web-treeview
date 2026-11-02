@@ -250,6 +250,52 @@ tree.getSearchValueCallback = ({ node }) =>
   `${node.data?.name} ${node.data?.description ?? ''}`;</code></pre>
             </div>
         </div>
+
+        <!-- SF04 · Scroll control (beforeScrollCallback) -->
+        <div class="card">
+            <h2>SF04 · Scroll control (beforeScrollCallback)</h2>
+            <p>The tree scrolls a node into view on its own in three places: a keyboard move (<code>source: 'keyboard'</code> &mdash; <code>nearest</code>, always instant), <code>scrollToPath</code> (<code>'scroll-to-path'</code> &mdash; <code>center</code>, the <code>--wtv-scroll-behavior</code> token, and it first scrolls the page to the tree when the tree is off-screen) and the reveal after a paste into a node (<code>'paste'</code>). Each scroll moves only the tree's scroll container, never the page; a tree without one scrolls the page with the same alignment. <code>beforeScrollCallback</code> runs first: return <code>false</code> to skip the scroll, or options to replace the defaults. Type to jump with <code>scrollToPath</code>, or click a node and use the arrow keys / <kbd>PageDown</kbd> / <kbd>End</kbd>. Scroll the page so the tree is out of sight, then search with &ldquo;Reveal the tree&rdquo; on and off.</p>
+
+            <div class="controls">
+                <input type="search" id="sf04-input" placeholder="Search (e.g. 'Item 27.5')..." oninput="onScrollDemo(this.value)">
+                <label><input type="checkbox" id="sf04-cancel-keyboard"> Cancel keyboard scrolls</label>
+                <label><input type="checkbox" id="sf04-start"> Align to start (not center)</label>
+                <label><input type="checkbox" id="sf04-reveal" checked> Reveal the tree</label>
+            </div>
+
+            <table class="reference-table">
+                <thead>
+                    <tr><th>ctx field</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>node</code> / <code>path</code></td><td><code>TreeNode</code> / <code>string</code></td><td>The node being revealed</td></tr>
+                    <tr class="is-highlight"><td><code>source</code></td><td><code>'keyboard' | 'scroll-to-path' | 'paste'</code></td><td>What made the tree scroll</td></tr>
+                    <tr><td><code>container</code></td><td><code>HTMLElement | null</code></td><td>The scroll container found around the row (the tree's own, or a wrapper); <code>null</code> = only the page scrolls</td></tr>
+                    <tr><td><code>options</code></td><td><code>{ block, inline, behavior, shouldRevealContainer }</code></td><td>What the tree is about to use; return a partial to replace it</td></tr>
+                    <tr><td><code>controller</code> / <code>element</code></td><td></td><td>The usual component context</td></tr>
+                </tbody>
+            </table>
+
+            <div class="tree-container tree-container-sm mt-1" id="sf04-container">
+                <web-treeview id="sf04-tree" expand-level="1"></web-treeview>
+            </div>
+
+            <div class="output">
+                <p class="output-label">beforeScrollCallback ctx:</p>
+                <div class="log-panel" id="sf04-log"></div>
+            </div>
+
+            <div class="code-block">
+<pre><code>tree.beforeScrollCallback = ({ source, path, container, options }) =&gt; {
+  if (source === 'keyboard' &amp;&amp; cancelKeyboard) return false;    // skip it
+  if (source === 'scroll-to-path') return { block: 'start' };    // replace a default
+  // nothing → the defaults in `options`
+};
+
+// scrollToPath brings an off-screen tree into view first — opt out per call:
+tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -485,6 +531,43 @@ tree.getSearchValueCallback = ({ node }) =>
             window.clearIndexDemo = () => {
                 sf03input.value = '';
                 sf03out.textContent = 'Type to search';
+            };
+
+            // ── SF04: beforeScrollCallback ─────────────────────────────────
+            const sf04 = document.getElementById('sf04-tree');
+            const sf04log = document.getElementById('sf04-log');
+            const sf04cancel = document.getElementById('sf04-cancel-keyboard');
+            const sf04start = document.getElementById('sf04-start');
+            const sf04reveal = document.getElementById('sf04-reveal');
+            const sf04nodes = [];
+            for (let g = 1; g <= 40; g++) {
+                sf04nodes.push({ id: `g${g}`, path: `${g}`, name: `Group ${g}` });
+                for (let i = 1; i <= 8; i++) sf04nodes.push({ id: `g${g}-${i}`, path: `${g}.${i}`, name: `Item ${g}.${i}` });
+            }
+            sf04.idMember = 'id';
+            sf04.pathMember = 'path';
+            sf04.displayValueMember = 'name';
+            sf04.searchValueMember = 'name';
+            sf04.shouldUseInternalSearchIndex = true;
+            sf04.beforeScrollCallback = ({ source, path, container, options }) => {
+                const where = container ? (container.id || container.className) : 'page';
+                let verdict = 'defaults';
+                let result;
+                if (source === 'keyboard' && sf04cancel.checked) { result = false; verdict = 'skipped'; }
+                else if (source === 'scroll-to-path' && sf04start.checked) { result = { block: 'start' }; verdict = '→ block start'; }
+                const line = document.createElement('div');
+                line.textContent = `${source}  ${path}  container=${where}  ${JSON.stringify(options)}  ${verdict}`;
+                sf04log.prepend(line);
+                while (sf04log.childElementCount > 30) sf04log.lastElementChild.remove();
+                return result;
+            };
+            sf04.nodes = sf04nodes;
+
+            window.onScrollDemo = (text) => {
+                const q = text.trim();
+                if (!q) return;
+                const [hit] = sf04.searchNodes(q) || [];
+                if (hit) sf04.scrollToPath(hit.path, { shouldHighlight: true, shouldRevealContainer: sf04reveal.checked });
             };
 
             // Persist .controls across reloads (shared helper — parity with web-multiselect).

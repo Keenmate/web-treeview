@@ -881,6 +881,8 @@ export class WebTreeView<T = any> {
       // Keydown: the public hook vetoes with `false`; the engine's internal one suppresses with `true`.
       onTreeKeydown: this.wrap(o.beforeKeydownCallback, 'keydown', (f) => (engineCtx: object) =>
         runBeforeCallbackSync(f, this.ctx(engineCtx), 'beforeKeydownCallback').isRejected ? true : undefined),
+      // Scroll gate: `false` skips the scroll, an object replaces the defaults (merged by the engine).
+      beforeScrollCallback: this.syncGate(o.beforeScrollCallback, 'beforeScrollCallback'),
       contextMenuCallback: this.wrap(o.getContextMenuItemsCallback, 'menu', (f) => (node: LTreeNode<T>) => f(this.menuCtx(node)) ?? []),
       hasContextMenuRenderer: !!(o.getContextMenuItemsCallback || o.renderContextMenuCallback),
 

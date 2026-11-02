@@ -34,6 +34,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
+import { findScrollContainer, scrollIntoContainer } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -54,7 +55,10 @@ import type {
   BeforePasteContext,
   BeforeDropContext,
   DragStartContext,
-  DropGroup
+  DropGroup,
+  BeforeScrollContext,
+  TreeViewScrollSource,
+  TreeViewScrollOptions
 } from './types';
 import {
   setClipboard,
@@ -220,6 +224,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private nodeDragDeniedCb: TreeEngineConfig<T>['onNodeDragDenied'];
   private nodeDropDeniedCb: TreeEngineConfig<T>['onNodeDropDenied'];
   private onTreeKeydownCb: TreeEngineConfig<T>['onTreeKeydown'];
+  private beforeScrollCb: TreeEngineConfig<T>['beforeScrollCallback'];
   /** @internal Used by renderers to check if a callback is available */
   contextMenuCallbackCb: TreeEngineConfig<T>['contextMenuCallback'];
   private renderStartCb: (() => void) | undefined;
@@ -852,6 +857,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.nodeDragDeniedCb = props.onNodeDragDenied;
     this.nodeDropDeniedCb = props.onNodeDropDenied;
     this.onTreeKeydownCb = props.onTreeKeydown;
+    this.beforeScrollCb = props.beforeScrollCallback;
     this.contextMenuCallbackCb = props.contextMenuCallback;
     this.renderStartCb = props.renderStartCallback;
     this.renderProgressCb = props.renderProgressCallback;
@@ -2802,22 +2808,77 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return (getComputedStyle(el).getPropertyValue('--wtv-scroll-behavior').trim() || 'smooth') as ScrollBehavior;
   }
 
-  revealNode(path: string, behavior: ScrollBehavior = 'auto'): void {
+  /**
+   * The one gate of every self-initiated scroll (keyboard move, scrollToPath, paste reveal):
+   * runs `beforeScrollCallback` with the node, the `source`, the container core finds around
+   * the row (null = the page) and the `defaults`. Returns the options to use, or null when the
+   * callback skipped the scroll. Virtual scroll passes its `.wtv__tree` (the row may not be
+   * rendered yet).
+   */
+  private _resolveScroll(
+    node: LTreeNode<T>,
+    source: TreeViewScrollSource,
+    container: HTMLElement | null,
+    defaults: TreeViewScrollOptions
+  ): TreeViewScrollOptions | null {
+    if (!this.beforeScrollCb) return defaults;
+    const ctx: BeforeScrollContext<T> = { node, path: node.path, source, container, options: { ...defaults } };
+    const result = this.beforeScrollCb(ctx);
+    if (result === false) {
+      this.log.UI.debug('beforeScrollCallback skipped the scroll', { path: node.path, source });
+      return null;
+    }
+    return result && typeof result === 'object' ? { ...defaults, ...result } : defaults;
+  }
+
+  /** Bring a rendered row into view through core's container scroll (the row's scroll
+   *  container only; with none, the page gets the same request). */
+  private _scrollRow(row: HTMLElement, options: TreeViewScrollOptions, container?: HTMLElement | null): void {
+    scrollIntoContainer(row, {
+      block: options.block,
+      inline: options.inline,
+      behavior: options.behavior,
+      container: container ?? undefined,
+      revealContainer: options.shouldRevealContainer,
+    });
+  }
+
+  /** Virtual scroll: the `.wtv__tree` scrollTop that shows the row at `index` per `block`
+   *  (the row isn't rendered yet, so this is index math, not core's helper). */
+  private _virtualScrollTopFor(index: number, block: ScrollLogicalPosition, scrollEl: HTMLElement): number {
+    const rowHeight = this.resolvedRowHeight;
+    const top = index * rowHeight;
+    const bottom = top + rowHeight;
+    const viewHeight = scrollEl.clientHeight || parseFloat(this.resolvedContainerHeight) || 400;
+    const current = scrollEl.scrollTop;
+    switch (block) {
+      case 'start': return Math.max(0, top);
+      case 'end': return Math.max(0, bottom - viewHeight);
+      case 'center': return Math.max(0, top - viewHeight / 2 + rowHeight / 2);
+      default:
+        if (top < current) return top;
+        if (bottom > current + viewHeight) return bottom - viewHeight;
+        return current;
+    }
+  }
+
+  revealNode(path: string, behavior: ScrollBehavior = 'auto', source: TreeViewScrollSource = 'keyboard'): void {
     const root = this.containerElement;
     if (!root || typeof requestAnimationFrame === 'undefined') return;
     const token = ++this._revealToken;
     const scrollEl = root.querySelector('.wtv__tree') as HTMLElement | null;
+    const defaults: TreeViewScrollOptions = { block: 'nearest', inline: 'nearest', behavior, shouldRevealContainer: false };
+    // beforeScrollCallback runs once per reveal: up front in virtual scroll (the index scroll
+    // comes first), else when the row is found (with the container core finds around it).
+    let options: TreeViewScrollOptions | null | undefined;
 
     if (this._isVirtualScrollEnabled && scrollEl) {
-      const idx = this.allVisibleFlatNodes.findIndex((n) => n.path === path);
+      const flat = this.allVisibleFlatNodes;
+      const idx = flat.findIndex((n) => n.path === path);
       if (idx >= 0) {
-        const rowHeight = this.resolvedRowHeight;
-        const top = idx * rowHeight;
-        const bottom = top + rowHeight;
-        const viewHeight = scrollEl.clientHeight || parseFloat(this.resolvedContainerHeight) || 400;
-        let scrollTop = scrollEl.scrollTop;
-        if (top < scrollTop) scrollTop = top;
-        else if (bottom > scrollTop + viewHeight) scrollTop = bottom - viewHeight;
+        options = this._resolveScroll(flat[idx], source, scrollEl, defaults);
+        if (!options) return;
+        const scrollTop = this._virtualScrollTopFor(idx, options.block, scrollEl);
         if (scrollTop !== scrollEl.scrollTop) {
           scrollEl.scrollTop = scrollTop;
           this._vsScrollTop = scrollEl.scrollTop;
@@ -2835,7 +2896,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (token !== this._revealToken) return; // superseded by a newer move
       const row = findRow();
       if (row) {
-        row.scrollIntoView({ behavior, block: 'nearest', inline: 'nearest' });
+        if (options === undefined) {
+          const node = this.tree.getNodeByPath(path);
+          if (!node) return;
+          options = this._resolveScroll(node, source, findScrollContainer(row), defaults);
+        }
+        if (options) this._scrollRow(row, options);
         return;
       }
       if (framesLeft-- > 0) requestAnimationFrame(attempt);
@@ -3152,7 +3218,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // beside a visible node — nothing to open.
     if (position === 'child' && !isRootPaste && firstPasted) {
       if (!targetNodeAfter!.isExpanded) this.expandNodes(targetPath);
-      this.revealNode(firstPasted.path, this.resolveScrollBehavior());
+      this.revealNode(firstPasted.path, this.resolveScrollBehavior(), 'paste');
     }
 
     const result: PasteResult<T> = {
@@ -3674,7 +3740,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * Scroll the node at `path` into view. `shouldExpandAncestors` (default true) expands its
    * ancestors first; `shouldHighlight` (default false) flashes the scroll-highlight class;
    * `behavior` / `block` / `inline` are the native ScrollIntoViewOptions (default
-   * `--wtv-scroll-behavior` (smooth; auto under reduced motion) / center / nearest). Resolves false when the node or its row isn't found.
+   * `--wtv-scroll-behavior` (smooth; auto under reduced motion) / center / nearest). Scrolls the
+   * row's scroll container only (core `scrollIntoContainer`); with none, the page gets the same
+   * `block`. `shouldRevealContainer` (default true) first brings an off-screen container into the
+   * viewport. `beforeScrollCallback` (source `'scroll-to-path'`) can skip or re-align it — a
+   * skipped scroll still resolves true. Resolves false when the node or its row isn't found.
    */
   async scrollToPath(
     path: string,
@@ -3684,6 +3754,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       behavior?: ScrollBehavior;
       block?: ScrollLogicalPosition;
       inline?: ScrollLogicalPosition;
+      shouldRevealContainer?: boolean;
     }
   ): Promise<boolean> {
     perfStart(`[${this._treeId}] scrollToPath`);
@@ -3692,8 +3763,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       shouldHighlight = false,
       behavior = this.resolveScrollBehavior(),
       block = 'center',
-      inline = 'nearest'
+      inline = 'nearest',
+      shouldRevealContainer = true
     } = options || {};
+    const defaults: TreeViewScrollOptions = { block, inline, behavior, shouldRevealContainer };
+    // Resolved once: before the index scroll in virtual scroll, else once the row is found.
+    let scroll: TreeViewScrollOptions | null | undefined;
 
     const node = this.tree.getNodeByPath(path);
     if (!node || !node.id) {
@@ -3707,24 +3782,23 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       await new Promise<void>(resolve => queueMicrotask(resolve));
     }
 
-    // Virtual scroll: programmatically scroll the container to bring the node into view
-    if (this._isVirtualScrollEnabled) {
-      const allNodes = this.allVisibleFlatNodes;
-      const nodeIndex = allNodes.findIndex(n => n.path === path);
+    // Virtual scroll: scroll the container by index first, so the rendered window holds the row.
+    const vsScrollEl = this._isVirtualScrollEnabled
+      ? (this.containerElement?.querySelector('.wtv__tree') as HTMLElement | null)
+      : null;
+    if (vsScrollEl) {
+      const nodeIndex = this.allVisibleFlatNodes.findIndex(n => n.path === path);
       if (nodeIndex >= 0) {
-        const rowHeight = this.resolvedRowHeight;
-        const containerPx = parseFloat(this.resolvedContainerHeight) || 400;
-        const targetScrollTop = Math.max(0, nodeIndex * rowHeight - containerPx / 2 + rowHeight / 2);
-        this._vsScrollTop = targetScrollTop;
-        // Set the actual DOM scroll position
-        const scrollEl = this.containerElement?.querySelector('.wtv__tree') as HTMLElement;
-        if (scrollEl) {
-          scrollEl.scrollTop = targetScrollTop;
+        scroll = this._resolveScroll(node, 'scroll-to-path', vsScrollEl, defaults);
+        if (scroll) {
+          const targetScrollTop = this._virtualScrollTopFor(nodeIndex, scroll.block, vsScrollEl);
+          this._vsScrollTop = targetScrollTop;
+          vsScrollEl.scrollTop = targetScrollTop;
+          // Synchronous flush — renderer reconciles the visible window immediately,
+          // so the target node element is in the DOM before we query for it below.
+          // This also prevents race conditions when scrollToPath is called rapidly.
+          this._flushNotify();
         }
-        // Synchronous flush — renderer reconciles the visible window immediately,
-        // so the target node element is in the DOM before we query for it below.
-        // This also prevents race conditions when scrollToPath is called rapidly.
-        this._flushNotify();
       }
     }
 
@@ -3753,12 +3827,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     if (!contentDiv) {
-      this.log.UI.warn(`scrollToPath: no rendered row for ${path} (${elementId})`);
       perfEnd(`[${this._treeId}] scrollToPath`);
+      // Skipped by beforeScrollCallback in virtual scroll: the node exists, its row just isn't
+      // in the rendered window — found, nothing to highlight.
+      if (scroll === null) return true;
+      this.log.UI.warn(`scrollToPath: no rendered row for ${path} (${elementId})`);
       return false;
     }
 
-    contentDiv.scrollIntoView({ behavior, block, inline });
+    if (scroll === undefined) scroll = this._resolveScroll(node, 'scroll-to-path', findScrollContainer(contentDiv), defaults);
+    if (scroll) this._scrollRow(contentDiv, scroll, vsScrollEl);
 
     if (shouldHighlight && this._scrollHighlightClass) {
       if (this.currentSelection) {
@@ -4056,6 +4134,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.onNodeDragDenied !== undefined) this.nodeDragDeniedCb = updates.onNodeDragDenied;
     if (updates.onNodeDropDenied !== undefined) this.nodeDropDeniedCb = updates.onNodeDropDenied;
     if (updates.onTreeKeydown !== undefined) this.onTreeKeydownCb = updates.onTreeKeydown;
+    if (updates.beforeScrollCallback !== undefined) this.beforeScrollCb = updates.beforeScrollCallback;
     if (updates.contextMenuCallback !== undefined) this.contextMenuCallbackCb = updates.contextMenuCallback;
     if (updates.hasContextMenuRenderer !== undefined) this._hasContextMenuRenderer = updates.hasContextMenuRenderer;
     if (updates.renderStartCallback !== undefined) this.renderStartCb = updates.renderStartCallback;

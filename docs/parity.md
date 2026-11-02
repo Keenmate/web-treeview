@@ -80,6 +80,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | web | svelte | status |
 |---|---|---|
 | `beforeCopyCallback`, `beforeCutCallback`, `beforePasteCallback`, `beforeDeleteCallback`, `beforeDropCallback`, `beforeDragStartCallback`, `beforeCheckboxToggleCallback`, `beforeKeydownCallback`, `beforeExpandCallback`, `beforeActionCallback` | same | same |
+| `beforeScrollCallback({ node, path, source: 'keyboard' \| 'scroll-to-path' \| 'paste', container, options: { block, inline, behavior, shouldRevealContainer } })` → `false` skips / partial replaces the defaults; sync, no event (web 2026-11-02, core §12.15) | — | **to mirror** (2026-11-02): same prop + ctx; svelte has no core dependency, so its copy must follow core's `scrollIntoContainer` algorithm exactly |
 
 ## 5. get* callbacks / render hooks
 
@@ -100,6 +101,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `expandAll`, `collapseAll`, `sortNodes`, `sortAll` | same | same |
 | `filterNodes(term, searchOptions?)`, `searchNodes(term, searchOptions?)` | same | same |
 | `scrollToPath(path, { shouldExpandAncestors = true, shouldHighlight = false, behavior?, block?, inline? }): Promise<boolean>` | same | same |
+| `scrollToPath` option `shouldRevealContainer` (default `true`): first scroll the page to an off-screen tree (web 2026-11-02) | — | **to mirror** (2026-11-02) |
 | `getNodeByPath`, `getChildren`, `getSiblings`, `getNodeRef(path)`, `getVisibleFlatNodes()`, `getTree()` | same | same |
 | `refreshNode(path)`, `refreshSiblings(parentPath)` | same | same |
 | `isNodeDropAllowed(path): boolean` | same | same |
@@ -147,6 +149,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 - Neither exposes `::part()` / `<slot>` (render callbacks vs snippets) — intentional.
 - Loader (`isLoading` overlay, per-node lazy-load toggle): web draws the shared KeenMate loader — a `currentColor` mask from `--wtv-loader-*` → `--base-loader-*` (one look across components, slows under reduced motion, never stops); the overlay is `role="status"` + `aria-label` = `labels.loading` while loading, removed after — same in svelte (`--stv-loader-*`). Sizes: `loader-size` (→ `--base-loader-size`), the overlay `loader-overlay-size` (2×) and the per-node `loader-inline-size` (0.75×, CSS-only, `aria-busy` on the row) — same.
 - Scrolling — keyboard moves (`navTo`: arrows, PageUp / PageDown, Home / End, Shift range moves; virtual scroll included) **always scroll instantly** (`behavior: 'auto'`), never with the token, so a held key never lags behind an animation — same (KeenMate rule, 2026-10-29). Programmatic jumps — `scrollToPath` with no `behavior` passed — read `--*-scroll-behavior` (→ `--base-scroll-behavior`: `smooth`, `auto` under reduced motion); an explicit `behavior` always wins — same.
+- Scroll target — **web**: keyboard moves, `scrollToPath` and the paste reveal all go through core's `scrollIntoContainer` (2026-11-02, core rc16): only the row's scroll container moves (the tree's own or a wrapper around the element — slots walked, `scroll-padding` / `scroll-margin` honoured, RTL-aware `inline`, no `scrollTo()` when nothing moves); with no container the page gets the caller's `block` (a `center` jump centres the row in the window). **svelte**: keyboard moves use its own container scroll, but the public `scrollToPath` still calls `scrollIntoView` (scrolls the page too) — **to mirror** (2026-11-02): port core's algorithm (no core dependency).
 - Keyboard scroll position: `block: 'nearest'` — a visible row doesn't scroll, an off-screen one is brought in to the nearest edge (svelte: inside the tree's scroll container only, never the page; virtual scroll included) — same.
 - Paste into a node (`position: 'child'`): expands it (announced, like `expandNodes`) and brings the first pasted node into view with `block: 'nearest'` — a programmatic jump, so `--*-scroll-behavior`; `before` / `after` land beside a visible node — nothing to open — same.
 - Indent: `--*-indent-size` = `calc(var(--base-tree-indent, 1.6) * var(--*-rem))` — a 16px visual step per level in both (web: flat rows padded (level − 1) × it; svelte: flat rows the same, recursive mode nests each child with a margin of it — the toggle column sits inside every row, so the margin is the whole step, measured by an e2e test in each repo).

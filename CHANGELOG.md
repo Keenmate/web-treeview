@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — empty drop zone look (2026-11-02)
+
+- Icon above "Drop here" (`--wtv-drop-placeholder-icon` / `-icon-size`, a mask in the accent; it
+  bobs while a drag is over the zone, off under reduced motion), thinner dashed border
+  (`--wtv-drop-placeholder-accent` drives it), calmer resting tint; the engaged state drops the 4px
+  halo ring for a spotlight background (`--base-drop-target-bg-active` → `-bg`), the standard
+  elevation (`--base-shadow-lg`) + an inner glow in the accent, and a thin solid border
+  (`--wtv-drop-placeholder-border-style-hover`).
+
+### Fixed (2026-11-02)
+
+- **Empty drop zone stuck engaged** after leaving it downwards then sideways: the leave was decided
+  by a rect check on whole-pixel event coordinates, so a fractional bottom edge measured "inside".
+  Now decided by the dragleave `relatedTarget` (rect only as the fallback), measured on the zone.
+- `examples-performance.html`: `nodes` input (was the pre-rename `data` → empty tree), the
+  Expand / Collapse All buttons, the `Generate: undefinedms` log.
+
+### Changed — LTree path index (2026-11-01, BREAKING)
+
+- `LTreeNode.children` is an ordered array (was a `Record` keyed by path segment); paths resolve
+  through an internal path → node index. A node whose `parentPath` is null / '' / its own path is
+  top-level whatever its path, so a window cut from a bigger ltree (`1.20.302` without `1` /
+  `1.20`) renders with its real paths — map `parentPathMember`. Levels count from the parent, so
+  `expandLevel` works in a window. `test/offset-root.html`.
+
 ### Added (responsive rules, core SPEC §6.7, 2026-10-30)
 
 - **Responsive rules** (from core rc15): `window.components.responsive` / `responsiveCallback`,

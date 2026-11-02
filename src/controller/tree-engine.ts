@@ -5521,12 +5521,21 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
   };
 
-  handleEmptyTreeDragLeave = (event: DragEvent) => {
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  /** `zone` = the empty-state / empty-zone element being left (default: the listener's element). */
+  handleEmptyTreeDragLeave = (event: DragEvent, zone?: HTMLElement) => {
+    const el = zone ?? (event.currentTarget as HTMLElement);
+    // Where the pointer went decides: outside the zone = left. The rect is only the fallback
+    // for engines without a dragleave relatedTarget — and it can't be trusted alone: drag
+    // events carry whole-pixel coordinates, so leaving across a fractional edge (bottom at
+    // 845.4, event at y=845) still measured "inside" and the zone stuck engaged.
+    const related = event.relatedTarget as Node | null;
+    const rect = el.getBoundingClientRect();
     const x = event.clientX;
     const y = event.clientY;
-    const outside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-    this.log.DRAG.debug('empty-tree dragleave', { outside, x, y, rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } });
+    const outside = related
+      ? !el.contains(related)
+      : x <= rect.left || x >= rect.right - 1 || y <= rect.top || y >= rect.bottom - 1;
+    this.log.DRAG.debug('empty-tree dragleave', { outside, related: !!related, x, y, rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } });
     if (outside) {
       this._isDragInProgress = false;
       this._isDropPlaceholderActive = false;

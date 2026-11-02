@@ -580,11 +580,29 @@
 }
 
 .wtv__empty-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wtv-spacing-sm);
   color: var(--wtv-drop-placeholder-color);
   font-size: var(--wtv-font-size-sm);
   font-weight: var(--wtv-font-weight-medium);
+  letter-spacing: 0.01em;
   padding: var(--wtv-spacing-xl);
   text-align: center;
+  opacity: 0.8;
+  transition: opacity var(--wtv-transition-normal) var(--wtv-ease-standard);
+}
+
+/* The icon above the label — a mask filled with the accent (theme retints it). */
+.wtv__empty-zone-content::before {
+  content: '';
+  width: var(--wtv-drop-placeholder-icon-size);
+  height: var(--wtv-drop-placeholder-icon-size);
+  background-color: var(--wtv-drop-placeholder-color);
+  -webkit-mask: var(--wtv-drop-placeholder-icon) no-repeat center / contain;
+  mask: var(--wtv-drop-placeholder-icon) no-repeat center / contain;
+  transition: transform var(--wtv-transition-normal) var(--wtv-ease-standard);
 }
 
 /* Engaged feedback — signals the empty drop zone is interactive. `:hover` covers
@@ -601,11 +619,36 @@
    and control their own overflow can opt in via --wtv-drop-placeholder-scale-hover. */
 .wtv__empty-zone:hover,
 .wtv__empty-zone--active {
-  border-style: solid !important;
+  border-style: var(--wtv-drop-placeholder-border-style-hover) !important;
   border-color: var(--wtv-drop-placeholder-border-color-hover) !important;
   background: var(--wtv-drop-placeholder-bg-hover) !important;
   box-shadow: var(--wtv-drop-placeholder-box-shadow-hover);
   transform: scale(var(--wtv-drop-placeholder-scale-hover, 1));
+}
+/* Armed (highlight-on-page-drag): a node is dragged somewhere over the page — the zone
+   tints; the one under the pointer keeps the engaged look (web-dropzone's armed card). */
+:host([armed]) .wtv__empty-zone:not(.wtv__empty-zone--active) {
+  background: var(--wtv-drop-placeholder-bg-armed) !important;
+  border-color: var(--wtv-drop-placeholder-border-color-armed) !important;
+}
+:host([armed]) .wtv__empty-zone-content {
+  opacity: 1;
+}
+
+.wtv__empty-zone:hover .wtv__empty-zone-content,
+.wtv__empty-zone--active .wtv__empty-zone-content {
+  opacity: 1;
+}
+/* A drag over the zone: the icon bobs toward the drop (paint-only; off under reduced motion). */
+.wtv__empty-zone--active .wtv__empty-zone-content::before {
+  animation: wtv-drop-placeholder-bob 1.1s var(--wtv-ease-standard) infinite;
+}
+@keyframes wtv-drop-placeholder-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
 }
 
 /* Whole-tree drop zone (isTreeDropZoneEnabled): while a drag hovers the tree the

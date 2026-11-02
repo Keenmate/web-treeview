@@ -476,19 +476,30 @@
      DROP PLACEHOLDER (empty tree)
      ========================================================================== */
   --wtv-tree-min-height: calc(6 * var(--wtv-rem));                   /* 60px — min height for empty/loading states */
-  --wtv-drop-placeholder-border: 2px dashed var(--base-drop-target-border-color, var(--wtv-success-color));
-  --wtv-drop-placeholder-color: var(--base-drop-target-border-color, var(--wtv-success-color));
+  /* One accent drives the zone; the surfaces come from the theme's drop-target tokens. */
+  --wtv-drop-placeholder-accent: var(--base-drop-target-border-color, var(--wtv-success-color));
+  --wtv-drop-placeholder-border: 1.5px dashed color-mix(in srgb, var(--wtv-drop-placeholder-accent) 45%, transparent);
+  --wtv-drop-placeholder-color: var(--wtv-drop-placeholder-accent);
   --wtv-drop-placeholder-min-height: var(--wtv-tree-min-height);
-  --wtv-drop-placeholder-bg: var(--wtv-drag-over-bg);
+  --wtv-drop-placeholder-bg: color-mix(in srgb, var(--wtv-drag-over-bg) 45%, transparent);
+  /* Armed (highlight-on-page-drag): a node is dragged somewhere over the page — same
+     role as web-dropzone's --dz-dropzone-bg-armed. */
+  --wtv-drop-placeholder-bg-armed: var(--wtv-drag-over-bg);
+  --wtv-drop-placeholder-border-color-armed: color-mix(in srgb, var(--wtv-drop-placeholder-accent) 75%, transparent);
   --wtv-drop-placeholder-border-radius: var(--wtv-border-radius-lg);               /* 8px — matches svelte-treeview's 0.8rem */
+  /* Icon above the label (a mask filled with the accent); set to none to drop it. */
+  --wtv-drop-placeholder-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3Cpath d='M5 21h14'/%3E%3C/svg%3E");
+  --wtv-drop-placeholder-icon-size: calc(2 * var(--wtv-rem));
   /* Engaged state (:hover + --active), token-for-token with svelte-treeview's
      --stv-drop-placeholder-hover-* family so one theme drives both packages.
+     A soft spotlight (bg-active in the middle fading to bg) + a lift shadow — no halo ring.
      hover-scale defaults to 1 on purpose — a scale() on a container-width zone
      spills past both edges and surfaces as a horizontal scrollbar; opt in only if
      you control the surrounding overflow. */
-  --wtv-drop-placeholder-bg-hover: var(--wtv-drag-over-highlight-bg);
-  --wtv-drop-placeholder-border-color-hover: var(--base-drop-target-border-color, var(--wtv-success-color));
-  --wtv-drop-placeholder-box-shadow-hover: 0 0 0 4px color-mix(in srgb, var(--base-drop-target-border-color, var(--wtv-success-color)) 30%, transparent);
+  --wtv-drop-placeholder-bg-hover: radial-gradient(ellipse 120% 180% at 50% 50%, var(--wtv-drag-over-highlight-bg) 0%, var(--wtv-drag-over-bg) 80%);
+  --wtv-drop-placeholder-border-color-hover: var(--wtv-drop-placeholder-accent);
+  --wtv-drop-placeholder-border-style-hover: solid;
+  --wtv-drop-placeholder-box-shadow-hover: var(--base-shadow-lg, 0 4px 12px rgba(0, 0, 0, 0.15)), inset 0 0 24px -8px color-mix(in srgb, var(--wtv-drop-placeholder-accent) 35%, transparent);
   --wtv-drop-placeholder-scale-hover: 1;
 
   /* ==========================================================================

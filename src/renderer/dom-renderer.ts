@@ -818,9 +818,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
 
+    // Measure the zone itself (not the body the listener sits on) — the body is taller, so
+    // leaving the zone downwards stayed "inside" and the zone stuck engaged.
     const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
     if (emptyOrPlaceholder) {
-      this.controller.handleEmptyTreeDragLeave(event);
+      this.controller.handleEmptyTreeDragLeave(event, emptyOrPlaceholder);
     }
   };
 

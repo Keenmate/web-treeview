@@ -78,7 +78,7 @@ src/
 All CSS variables use the `--wtv-` prefix and fall back to `--base-*` variables from the design system:
 ```css
 --wtv-accent-color: var(--base-primary-color, #3b82f6);
---wtv-text-color-1: var(--base-text-color-1, #1e293b);
+--wtv-text-color-1: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
 --wtv-indent-size: calc(var(--wtv-rem) * 2);
 ```
 

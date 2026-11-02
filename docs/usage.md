@@ -529,6 +529,15 @@ index-based scroll. There is no scroll event. Demo: `examples-search.html` SF04.
 
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
+**Motion level (core).** `motion="auto | none | snappy | smooth"` (attribute / property; core
+declares it on every KeenMate element), the page-wide `window.components.motion`, or a
+`data-motion` attribute on any ancestor (`<html>`, a section) sets the tree's speeds: core maps the
+level onto `--base-duration-*` / `--base-scroll-behavior`, which every `--wtv-transition-*` and
+`--wtv-scroll-behavior` reads. `none` = no transitions + instant `scrollToPath` (the drop-zone icon
+stops bobbing too); `snappy` / `smooth` = faster / slower presets; `auto` (default) follows the
+page / section / OS. The OS reduced-motion setting always wins, even over `motion="smooth"`.
+Keyboard moves scroll instantly at every level. The loader keeps its own speed.
+
 **Ready / defer (core).** Add the `defer` attribute to hold the first build (set data and
 callbacks first), then call `el.release()` (or remove `defer`). After the first build the host
 gets the `ready` attribute and `:state(ready)` and fires `ready` (`onReady`); `el.whenReady()`

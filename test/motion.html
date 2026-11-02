@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — motion level (core SPEC §12.16)</title>
+</head>
+<body>
+    <main>
+        <h1>motion</h1>
+        <p>Targeted by <code>e2e/motion.spec.ts</code>. <b>#tree</b> takes the <code>motion</code> attribute;
+           <b>#inSection</b> sits in a <code>data-motion="none"</code> section.</p>
+        <web-treeview id="tree" expand-level="1"></web-treeview>
+        <section data-motion="none">
+            <web-treeview id="inSection" expand-level="1"></web-treeview>
+        </section>
+    </main>
+    <script type="module">
+        import '/src/index.ts';
+        await customElements.whenDefined('web-treeview');
+        const nodes = [{ id: 'a', path: '1', name: 'A' }, { id: 'b', path: '1.1', name: 'B' }];
+        for (const el of document.querySelectorAll('web-treeview')) {
+            el.displayValueMember = 'name';
+            el.nodes = nodes;
+        }
+        /** The tree's resolved motion tokens, read inside its shadow root. */
+        window.tokens = (id) => {
+            const box = document.getElementById(id).shadowRoot.querySelector('.wtv__tree') ?? document.getElementById(id);
+            const cs = getComputedStyle(box);
+            return {
+                normal: cs.getPropertyValue('--wtv-transition-normal').trim(),
+                slow: cs.getPropertyValue('--wtv-transition-slow').trim(),
+                scroll: cs.getPropertyValue('--wtv-scroll-behavior').trim(),
+            };
+        };
+    </script>
+</body>
+</html>

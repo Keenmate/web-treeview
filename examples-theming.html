@@ -313,12 +313,20 @@
         }
 
         .tc-panel {
+            /* Page tokens: the contract's values, its defaults / formulas as the fallback
+               (base-contract-check C2 / C3) — the page doesn't load base-css-variables. */
+            --tc-bg: var(--base-main-bg, light-dark(#ffffff, #1e293b));
+            --tc-border: var(--base-border-color, light-dark(oklch(from var(--tc-bg) calc(l - 0.096) c h), oklch(from var(--tc-bg) calc(l + 0.192) c h)));
+            --tc-head-bg: var(--base-elevated-bg, light-dark(oklch(from var(--tc-bg) calc(l - 0.03) c h), oklch(from var(--tc-bg) calc(l + 0.06) c h)));
+            --tc-text: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
+            --tc-primary: var(--base-primary-color, #3b82f6);
+            --tc-on-primary: var(--base-on-primary-text-color, color(from color(from var(--tc-primary) srgb calc(0.21 * r * r * (0.4 + r * (0.82 - 0.22 * r)) + 0.72 * g * g * (0.4 + g * (0.82 - 0.22 * g)) + 0.07 * b * b * (0.4 + b * (0.82 - 0.22 * b))) 0 0) srgb clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1)));
             display: flex;
             flex-direction: column;
-            border: 1px solid var(--base-border-color, #e2e8f0);
+            border: 1px solid var(--tc-border);
             border-radius: 8px;
             overflow: hidden;
-            background: var(--base-main-bg, #ffffff);
+            background: var(--tc-bg);
         }
 
         .tc-panel-head {
@@ -329,9 +337,9 @@
             padding: 0.6rem 0.9rem;
             font-weight: 600;
             font-size: 0.85rem;
-            color: var(--base-text-color-1, #111827);
-            border-bottom: 1px solid var(--base-border-color, #e2e8f0);
-            background: var(--base-elevated-bg, #f8f9fa);
+            color: var(--tc-text);
+            border-bottom: 1px solid var(--tc-border);
+            background: var(--tc-head-bg);
         }
 
         .tc-panel-badge {
@@ -339,8 +347,8 @@
             font-size: 0.7rem;
             padding: 0.1rem 0.5rem;
             border-radius: 999px;
-            color: var(--base-on-primary-text-color, #fff);
-            background: var(--base-primary-color, #3b82f6);
+            color: var(--tc-on-primary);
+            background: var(--tc-primary);
         }
 
         .tc-panel-body {

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — motion level (core rc17, 2026-11-03)
+
+- **`motion="auto | none | snappy | smooth"`** (core-declared on every KeenMate element), the
+  page-wide `window.components.motion` and `data-motion` ancestors reach the tree: every
+  `--wtv-transition-*` / `--wtv-scroll-behavior` already reads `--base-duration-*` /
+  `--base-scroll-behavior`, which core's presets set. `none` also stops the drop-zone icon bob. The
+  OS reduced-motion setting wins over every level. e2e `motion.spec.ts`.
+
+### Changed — core ^1.0.0-rc17, base-css-variables ^2.0.0-rc08 (2026-11-03)
+
+- Requires `@keenmate/web-components-core` ^1.0.0-rc17 (its `scrollIntoContainer` option is now
+  `shouldRevealContainer`; the tree's public option already had that name) and
+  `@keenmate/base-css-variables` ^2.0.0-rc08 (motion presets). `check:contract` also scans `docs`,
+  `test` and the README; the theming page's demo panels fall back to the contract's defaults /
+  formulas (C2 / C3).
+
 ### Added — `beforeScrollCallback`, `shouldRevealContainer` (2026-11-02)
 
 - **`beforeScrollCallback(ctx)`** — runs before the tree scrolls a node into view on its own:

@@ -639,7 +639,8 @@
 .wtv__empty-zone--active .wtv__empty-zone-content {
   opacity: 1;
 }
-/* A drag over the zone: the icon bobs toward the drop (paint-only; off under reduced motion). */
+/* A drag over the zone: the icon bobs toward the drop (paint-only; off under reduced motion and
+   motion="none" — a loop, so not driven by the duration tokens). */
 .wtv__empty-zone--active .wtv__empty-zone-content::before {
   animation: wtv-drop-placeholder-bob 1.1s var(--wtv-ease-standard) infinite;
 }
@@ -647,6 +648,7 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
+:host([data-motion="none"]) .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
 }

@@ -102,6 +102,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `navigationOverrides` (single-key override, `navTo` override, controller routing, runtime swap / `null`, `beforeKeydownCallback` first) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | Keyboard moves scroll the focused node into view (`block: 'nearest'`): PageDown ×3, End/Home, Shift+End, no scroll inside the viewport / on click, `navTo` override; virtual End/Home + PageDown | ✓ | `keyboard-scroll.spec.ts` | `keyboard-scroll.html`, `virtual-scroll.html` |
 | `beforeScrollCallback`: ctx per source (`scroll-to-path` / `keyboard` / `paste`, container, default options), `false` skips (container + page still, `scrollToPath` resolves true), `{ block: 'start' }` re-aligns, keyboard instant; `scrollToPath` `shouldRevealContainer` reveals an off-screen tree / page stays put without it | ✓ | `before-scroll.spec.ts` | `before-scroll.html` |
+| Motion level (core rc17): default speeds, `motion` none / snappy / smooth on the element, `window.components.motion`, a `data-motion` section, `none` stops the drop-zone bob, OS reduced motion beats `motion="smooth"` | ✓ | `motion.spec.ts` | `motion.html` |
 | Delete key + `beforeDeleteCallback` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `beforeKeydownCallback` returning false suppresses | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |

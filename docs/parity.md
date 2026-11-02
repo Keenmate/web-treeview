@@ -41,6 +41,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `getCustomStylesCallback` | — | intentional — shadow-DOM style injection; svelte styles are global CSS |
 | `renderer` (pluggable `TreeViewRenderer`) | — | intentional — web-only DOM renderer swap |
 | core element plumbing: `defer` / `release()` / `whenReady()` / `whenSettled()` / `flush()` / `destroy()` / `isDisabled` | — | intentional — `BlissElement` lifecycle |
+| `motion="auto \| none \| snappy \| smooth"` (core rc17, SPEC §12.16) + `window.components.motion` + `data-motion` ancestors | `data-motion` ancestors only, through base-css-variables ≥ 2.0.0-rc08 presets (its `--stv-transition-*` read `--base-duration-*`) | **to mirror** (2026-11-03): a `motion` prop setting `data-motion` on `.stv__container` (no core dependency — copy core's `MOTION_PRESETS`), drop-zone bob off under `none` |
 | responsive rules (core SPEC §6.7): `responsive` (JSON attribute `responsive`) / `responsiveCallback` per instance + page-wide / per-tag `window.components` rules — a partial config per `device` class / window-width `breakpoint` | — | **OPEN** — web = yes, svelte = not decided (don't build until decided) |
 
 ## 2. State

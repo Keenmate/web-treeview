@@ -2839,7 +2839,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       inline: options.inline,
       behavior: options.behavior,
       container: container ?? undefined,
-      revealContainer: options.shouldRevealContainer,
+      shouldRevealContainer: options.shouldRevealContainer,
     });
   }
 

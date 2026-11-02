@@ -238,8 +238,8 @@
                 <span class="control-divider">|</span>
                 <button class="secondary" onclick="timedExpandAll()">Expand All (timed)</button>
                 <button class="secondary" onclick="timedCollapseAll()">Collapse All (timed)</button>
-                <button class="secondary" onclick="tree.expandAll()">Expand All</button>
-                <button class="secondary" onclick="tree.collapseAll()">Collapse All</button>
+                <button class="secondary" onclick="document.getElementById('perf-tree').expandAll()">Expand All</button>
+                <button class="secondary" onclick="document.getElementById('perf-tree').collapseAll()">Collapse All</button>
             </div>
 
             <div class="tree-controls">
@@ -429,7 +429,7 @@
         function buildTreeConfig() {
             const isVirtual = renderMode === 'virtual';
             const cfg = {
-                data: treeData,
+                nodes: treeData,
                 idMember: 'id',
                 pathMember: 'path',
                 parentPathMember: 'parentPath',
@@ -477,7 +477,9 @@
                 if (metrics.renderStart && metrics.renderTime === null) {
                     metrics.renderTime = performance.now() - metrics.renderStart;
                     updateMetricsUI();
-                    console.log(`[Perf] Mode: ${renderMode.toUpperCase()} | Nodes: ${metrics.nodeCount} | Generate: ${metrics.generateTime?.toFixed(2)}ms | Render: ${metrics.renderTime.toFixed(2)}ms`);
+                    // generateTime is null after Redraw / a mode switch (nothing was generated)
+                    const generatePart = metrics.generateTime !== null ? ` | Generate: ${metrics.generateTime.toFixed(2)}ms` : '';
+                    console.log(`[Perf] Mode: ${renderMode.toUpperCase()} | Nodes: ${metrics.nodeCount}${generatePart} | Render: ${metrics.renderTime.toFixed(2)}ms`);
                 }
             }));
             updateMetricsUI();
@@ -568,7 +570,7 @@
 
         window.clearData = function() {
             treeData = [];
-            tree?.update({ data: [] });
+            tree?.update({ nodes: [] });
             $('tree-card').style.display = 'none';
             $('btn-redraw').disabled = true;
             $('btn-clear').disabled = true;

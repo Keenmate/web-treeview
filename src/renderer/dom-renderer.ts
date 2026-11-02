@@ -1305,15 +1305,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // No nodes at all → `noData`; nodes exist but the search filter hid them all → `noResults`.
     this._emptyLabelKey = snapshot.hasNodes ? 'noResults' : 'noData';
     // Show empty zone (drop target during drag) or empty state (informational)
-    const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}`;
+    const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}|${snapshot.isArmed}`;
     if (this._lastEmptyState !== emptyState) {
       this.log.RENDER.debug('render empty', { isDragInProgress: snapshot.isDragInProgress, isDropPlaceholderActive: snapshot.isDropPlaceholderActive, isLoading: snapshot.isLoading });
       this._lastEmptyState = emptyState;
     }
-    // Show the empty drop zone when a drag is over an empty tree, OR permanently
+    // Show the empty drop zone when a drag is over an empty tree, while armed
+    // (highlight-on-page-drag: a node drag anywhere on the page), OR permanently
     // when isEmptyDropPlaceholderShown keeps it up so a Ctrl/Cmd+V can land.
     const showZone =
       (snapshot.isDragInProgress && snapshot.isDropPlaceholderActive) ||
+      snapshot.isArmed ||
       !!this.config.isEmptyDropPlaceholderShown;
 
     if (showZone && !snapshot.isLoading) {

@@ -197,7 +197,7 @@ tree.pasteNodes('1.2', ({ data }) => ({ ...data, id: crypto.randomUUID() }));
 
 ### Empty-tree paste
 
-Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `labels` (`labels='{"noData":"Nothing here"}'`).
+Set `highlight-on-page-drag` to arm a tree as soon as a node is dragged anywhere on the page — an empty tree shows its drop zone right away (DD01 "Highlight on page drag"). Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `labels` (`labels='{"noData":"Nothing here"}'`).
 
 ## Per-node icons
 

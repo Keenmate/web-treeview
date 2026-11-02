@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — highlight-on-page-drag + empty drop zone</title>
+    <style>
+        main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
+        .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .tree { border: 1px solid #ccc; padding: .5rem; min-height: 160px; }
+        web-treeview { display: block; }
+        #gutter { height: 120px; margin-top: 1rem; background: #f6f6f6; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>highlight-on-page-drag</h1>
+        <p>Targeted by <code>e2e/highlight-on-page-drag.spec.ts</code>. <b>armed</b> arms on any node drag;
+           <b>plain</b> does not (no attribute); <b>placeholder</b> keeps its zone up (regression: leaving it downwards).</p>
+        <div class="row">
+            <div class="tree"><web-treeview id="source" drag-drop-mode="both" expand-level="2"></web-treeview></div>
+            <div class="tree"><web-treeview id="armed" drag-drop-mode="both" highlight-on-page-drag></web-treeview></div>
+            <div class="tree"><web-treeview id="plain" drag-drop-mode="both"></web-treeview></div>
+        </div>
+        <div class="row" style="margin-top:1rem">
+            <div></div>
+            <div class="tree"><web-treeview id="placeholder" drag-drop-mode="both" show-empty-drop-placeholder style="--wtv-drop-placeholder-min-height: 80.6px"></web-treeview></div>
+            <div class="tree"><web-treeview id="locked" drag-drop-mode="none" highlight-on-page-drag></web-treeview></div>
+        </div>
+        <div id="gutter">page area (inside the window, outside every tree)</div>
+    </main>
+    <script type="module">
+        import '/src/index.ts';
+        const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
+        customElements.whenDefined('web-treeview').then(() => {
+            Object.assign(document.getElementById('source'), common, {
+                nodes: [{ id: 1, path: '1', name: 'Folder' }, { id: 2, path: '1.1', name: 'File' }, { id: 3, path: '2', name: 'Leaf' }]
+            });
+            for (const id of ['armed', 'plain', 'placeholder', 'locked']) Object.assign(document.getElementById(id), common, { nodes: [] });
+        });
+    </script>
+</body>
+</html>

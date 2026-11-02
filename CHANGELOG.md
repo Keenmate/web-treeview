@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — `highlight-on-page-drag` (2026-11-02)
+
+- **`shouldHighlightOnPageDrag`** (`highlight-on-page-drag`) — same option, names and states as
+  web-dropzone: while a tree NODE is dragged anywhere over the page, the host gets the `armed`
+  attribute + `:state(armed)` (read-only `el.isArmed`) and an empty tree shows its drop zone at
+  once (`--wtv-drop-placeholder-bg-armed` / `--wtv-drop-placeholder-border-color-armed`); the zone
+  under the pointer keeps the engaged look. Ends on drop anywhere, leaving the window, Escape /
+  `dragend`, a stalled `dragover` heartbeat, or disconnect. Never armed with
+  `drag-drop-mode="none"`. One shared page listener (`src/page-node-drag.ts`). DD01 toggle; e2e
+  `highlight-on-page-drag.spec.ts`.
+
 ### Changed — empty drop zone look (2026-11-02)
 
 - Icon above "Drop here" (`--wtv-drop-placeholder-icon` / `-icon-size`, a mask in the accent; it

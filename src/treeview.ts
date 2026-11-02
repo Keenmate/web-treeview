@@ -747,6 +747,11 @@ export class WebTreeView<T = any> {
     this.renderer.deactivate?.();
   }
 
+  /** `highlight-on-page-drag` armed state — an armed empty tree shows its drop zone. */
+  setArmed(isArmed: boolean): void {
+    this.engine.setArmed(isArmed);
+  }
+
   /** The host was re-attached: restart what {@link deactivate} stopped. Idempotent. */
   activate(): void {
     if (this.isActive) return;

@@ -514,6 +514,10 @@ export interface TreeViewConfig<T = any> {
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */
   isEmptyDropPlaceholderShown?: boolean | null;
+  /** Arm the drop target while a tree node is dragged anywhere over the page (`highlight-on-page-drag`):
+   *  `armed` attribute + `:state(armed)` on the host; an empty tree shows its drop zone at once.
+   *  Element-level (same option as web-dropzone). */
+  shouldHighlightOnPageDrag?: boolean | null;
   /** Draw the loading state (`isLoading` overlay) into `ctx.containerElement` — core's shared
    *  loader hook (SPEC §12.14): beats the page-wide `window.components.renderLoaderCallback`;
    *  `ctx.context` is `'overlay'`; may return a cleanup. */

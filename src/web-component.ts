@@ -67,6 +67,7 @@ import type {
 import type { ContainerSize } from './renderer/types';
 import type { SearchOptions } from 'flexsearch';
 import styles from './css/main.css?inline';
+import { subscribePageNodeDrag, isPageNodeDragActive, applyArmedState } from './page-node-drag';
 
 /** Any callback input. */
 const cb = (): ReturnType<typeof toFunction> => toFunction();
@@ -219,6 +220,7 @@ const INPUTS: readonly InputDef[] = [
   // ── Rendering ──────────────────────────────────────────────────────────────
   { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
+  { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
   { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
@@ -364,7 +366,7 @@ const EVENTS: readonly EventDef[] = [
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. */
-const NON_ENGINE_KEYS = new Set(['getCustomStylesCallback']);
+const NON_ENGINE_KEYS = new Set(['getCustomStylesCallback', 'shouldHighlightOnPageDrag']);
 
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
@@ -477,6 +479,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   override update(partial: Partial<TreeViewConfig<T>> = {}): void {
     if ('getCustomStylesCallback' in partial) this.#applyCustomStyles();
+    if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
     const cfg = this.#assembleConfig() as Record<string, unknown>;
     for (const [key, value] of Object.entries(partial)) {
@@ -497,6 +500,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   protected override connect(): void {
     if (!this.#treeview) this.#buildEngine();
     else this.#treeview.activate();
+    this.#syncPageDrag();
   }
 
   /**
@@ -507,6 +511,48 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   protected override disconnect(): void {
     this.#treeview?.deactivate();
+    this.#syncPageDrag();
+  }
+
+  // ── armed (highlight-on-page-drag) ───────────────────────────────────────
+
+  /** Unsubscribe from the shared page-drag tracker (set while `highlight-on-page-drag` is live). */
+  #unsubscribePageDrag?: () => void;
+  #isArmed = false;
+
+  /**
+   * True while the tree is armed (`highlight-on-page-drag` + a node is dragged over
+   * the page + it accepts drops). Mirrors the `armed` attribute / `:state(armed)`.
+   */
+  get isArmed(): boolean {
+    return this.#isArmed;
+  }
+
+  /**
+   * Join / leave the shared page-drag tracker per `highlight-on-page-drag` and the
+   * connection state (one page listener set for every instance), then re-derive
+   * the armed state.
+   */
+  #syncPageDrag(): void {
+    const shouldTrack = this.isConnected && !!(this.config as { shouldHighlightOnPageDrag?: boolean }).shouldHighlightOnPageDrag;
+    if (shouldTrack && !this.#unsubscribePageDrag) {
+      this.#unsubscribePageDrag = subscribePageNodeDrag(() => this.#syncArmed());
+    } else if (!shouldTrack && this.#unsubscribePageDrag) {
+      this.#unsubscribePageDrag();
+      this.#unsubscribePageDrag = undefined;
+    }
+    this.#syncArmed();
+  }
+
+  /** Armed = tracking + a node drag over the page + the tree accepts drops. */
+  #syncArmed(): void {
+    const isArmed = !!this.#unsubscribePageDrag
+      && isPageNodeDragActive()
+      && (this.config as { dragDropMode?: string | null }).dragDropMode !== 'none';
+    if (isArmed === this.#isArmed) return;
+    this.#isArmed = isArmed;
+    applyArmedState(this, this.internals, isArmed);
+    this.#treeview?.setArmed(isArmed);
   }
 
   /**

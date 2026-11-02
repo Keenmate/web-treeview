@@ -334,6 +334,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // Drop placeholder
   private _isDropPlaceholderActive: boolean = false;
+  private _isArmed: boolean = false;
 
   // Virtual scroll
   private _isVirtualScrollEnabled: boolean = false;
@@ -479,6 +480,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   get isRendering() { return this._isRendering; }
   get isLoading() { return this._isLoading; }
+  /** `highlight-on-page-drag` armed state (set by the element from the page drag tracker). */
+  setArmed(isArmed: boolean): void {
+    if (this._isArmed === isArmed) return;
+    this._isArmed = isArmed;
+    this._scheduleNotify();
+  }
   set isLoading(v: boolean) { this._isLoading = v; this._scheduleNotify(); }
 
   get isFlatRenderingEnabled() { return this._isFlatRenderingEnabled; }
@@ -4176,6 +4183,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       contextMenuYOffset: this._contextMenuYOffset,
       contextMenuNode: this._contextMenuNode,
       isDropPlaceholderActive: this._isDropPlaceholderActive,
+      isArmed: this._isArmed,
       isLoading: this._isLoading,
       hasNodes: this._hasAnyNode(),
       isRendering: this._isRendering,

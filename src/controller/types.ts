@@ -624,6 +624,8 @@ export interface TreeEngineSnapshot<T> {
   contextMenuYOffset: number;
   contextMenuNode: LTreeNode<T> | null;
   isDropPlaceholderActive: boolean;
+  /** `highlight-on-page-drag`: a node is dragged somewhere over the page and this tree accepts drops. */
+  isArmed: boolean;
   isLoading: boolean;
   /** The tree holds at least one node (an empty `flatNodesToRender` with `hasNodes` = the filter hid everything). */
   hasNodes: boolean;

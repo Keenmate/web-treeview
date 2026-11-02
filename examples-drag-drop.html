@@ -86,6 +86,10 @@
                     <input type="checkbox" id="ctrl-show-empty-placeholder" checked onchange="applySettings()">
                     Show drop zone when target empty
                 </label>
+                <label title="highlight-on-page-drag: the target arms (drop zone shown + tinted) as soon as a node is dragged anywhere on the page">
+                    <input type="checkbox" id="ctrl-highlight-on-page-drag" checked onchange="applySettings()">
+                    Highlight on page drag
+                </label>
                 <label title="Ctrl/Cmd+C/X/V, Delete, Esc + Ctrl+Insert / Shift+Insert / Shift+Delete">
                     <input type="checkbox" id="ctrl-keyboard-shortcuts" checked onchange="applySettings()">
                     Built-in keyboard shortcuts
@@ -357,6 +361,7 @@
                 if (config.maxWidth !== undefined) document.getElementById('ctrl-max-width').value = config.maxWidth;
                 if (config.isCopyAllowed !== undefined) document.getElementById('ctrl-allow-copy').checked = config.isCopyAllowed;
                 if (config.showDropZoneWhenEmpty !== undefined) document.getElementById('ctrl-show-empty-placeholder').checked = config.showDropZoneWhenEmpty;
+                if (config.highlightOnPageDrag !== undefined) document.getElementById('ctrl-highlight-on-page-drag').checked = config.highlightOnPageDrag;
                 if (config.handleKeyboardShortcuts !== undefined) document.getElementById('ctrl-keyboard-shortcuts').checked = config.handleKeyboardShortcuts;
                 if (config.selectionMode) document.getElementById('ctrl-selection-mode').value = config.selectionMode;
             } catch (e) {
@@ -373,6 +378,7 @@
                 maxWidth: parseInt(document.getElementById('ctrl-max-width').value, 10),
                 isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
                 showDropZoneWhenEmpty: document.getElementById('ctrl-show-empty-placeholder').checked,
+                highlightOnPageDrag: document.getElementById('ctrl-highlight-on-page-drag').checked,
                 handleKeyboardShortcuts: document.getElementById('ctrl-keyboard-shortcuts').checked,
                 selectionMode: document.getElementById('ctrl-selection-mode').value
             };
@@ -389,6 +395,7 @@
             const maxWidth = parseInt(document.getElementById('ctrl-max-width').value, 10);
             const isCopyAllowed = document.getElementById('ctrl-allow-copy').checked;
             const showEmptyPlaceholder = document.getElementById('ctrl-show-empty-placeholder').checked;
+            const highlightOnPageDrag = document.getElementById('ctrl-highlight-on-page-drag').checked;
             const keyboardShortcuts = document.getElementById('ctrl-keyboard-shortcuts').checked;
             const selectionMode = document.getElementById('ctrl-selection-mode').value;
 
@@ -417,6 +424,7 @@
                 targetTreeEl.isCopyAllowed = isCopyAllowed;
                 targetTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
                 targetTreeEl.isEmptyDropPlaceholderShown = showEmptyPlaceholder;
+                targetTreeEl.shouldHighlightOnPageDrag = highlightOnPageDrag;
                 targetTreeEl.setAttribute('selection-mode', selectionMode);
             }
 

@@ -33,6 +33,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `shouldAutoHandleCopy`, `shouldAutoHandleMove` (`auto-handle-move`), `shouldAutoHandlePaste` | same | same |
 | `labels` | `labels` | same (keys: §7) |
 | `isEmptyDropPlaceholderShown`, `isFlatRenderingEnabled`, `isProgressiveRenderEnabled`, `initialBatchSize`, `maxBatchSize` | same | same |
+| `shouldHighlightOnPageDrag` (`highlight-on-page-drag`): node drag anywhere → `armed` attr + `:state(armed)` + `isArmed`, empty tree shows its zone (`--wtv-drop-placeholder-bg-armed` / `-border-color-armed`); names = web-dropzone's | — | **to mirror** (2026-11-02): svelte prop `shouldHighlightOnPageDrag` + `armed` (class / data attr) + `--stv-drop-placeholder-bg-armed` |
 | Empty drop zone look: icon above the label (`--wtv-drop-placeholder-icon` / `-icon-size`), thin dashed border, engaged = spotlight bg + lift shadow (no halo ring), `-border-style-hover`, `-accent` | old look | **to mirror** (2026-11-02) |
 | `isVirtualScrollEnabled`, `virtualScrollItemHeight`, `virtualScrollOverscan`, `virtualScrollContainerHeight` | same | same |
 | `selectionMode`, `rangeSelectionMode`, `navigationOverrides`, `isCheckboxesShown`, `checkboxMode`, `cascadeCheckPolicy`, `shouldClickToggleCheckbox` | same | same |

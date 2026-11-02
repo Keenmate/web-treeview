@@ -44,13 +44,21 @@ test('a drag-over row reads --base-drop-target-bg / -border-color', async ({ pag
   await expect(p).toHaveCSS('border-top-color', BORDER);
 });
 
-test('the empty-tree drop placeholder: idle = --base-drop-target-bg, engaged = -bg-active', async ({ page }) => {
+test('the empty-tree drop placeholder: idle = --base-drop-target-bg at 45%, engaged = a -bg-active → -bg spotlight', async ({ page }) => {
+  // 2026-11-02 look: a calmer resting tint + a 45% dashed accent border; engaged = a radial
+  // spotlight from -bg-active to -bg and a solid accent border.
   const idle = await probe(page, 'wtv__empty-zone');
-  await expect(idle).toHaveCSS('background-color', BG);
-  await expect(idle).toHaveCSS('border-top-color', BORDER);
+  const idleCss = await idle.evaluate((el) => { const cs = getComputedStyle(el); return { bg: cs.backgroundColor, border: cs.borderTopColor }; });
+  // rgb(10, 20, 30) / rgb(70, 80, 90) mixed 45% with transparent
+  expect(idleCss.bg).toMatch(/^color\(srgb 0\.039\d* 0\.078\d* 0\.117\d* \/ 0\.45\)$/);
+  expect(idleCss.border).toMatch(/^color\(srgb 0\.274\d* 0\.313\d* 0\.352\d* \/ 0\.45\)$/);
   const engaged = await probe(page, 'wtv__empty-zone wtv__empty-zone--active');
-  await expect(engaged).toHaveCSS('background-color', BG_ACTIVE);
+  const image = await engaged.evaluate((el) => getComputedStyle(el).backgroundImage);
+  expect(image).toContain('radial-gradient');
+  expect(image).toContain(BG_ACTIVE);
+  expect(image).toContain(BG);
   await expect(engaged).toHaveCSS('border-top-color', BORDER);
+  await expect(engaged).toHaveCSS('border-top-style', 'solid');
 });
 
 test('a refused drop keeps the danger tint (not the drop-target tokens)', async ({ page }) => {

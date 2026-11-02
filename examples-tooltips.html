@@ -116,14 +116,14 @@
 
             // TT01 — plain text (empty desc → no tooltip)
             Object.assign(tree1, common, {
-                data,
+                nodes: data,
                 tooltipDelay: 150,
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
 
             // TT02 — rich HTML element
             Object.assign(tree2, common, {
-                data,
+                nodes: data,
                 getNodeTooltipCallback: ({ node }) => {
                     const d = node.data;
                     if (!d) return null;
@@ -141,7 +141,7 @@
 
             // TT03 — theme reaction
             Object.assign(tree3, common, {
-                data,
+                nodes: data,
                 getNodeTooltipCallback: ({ node }) => node.data?.desc || node.data?.name || null
             });
 

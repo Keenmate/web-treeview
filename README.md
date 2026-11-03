@@ -3,13 +3,34 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![npm version](https://img.shields.io/npm/v/@keenmate/web-treeview.svg)](https://www.npmjs.com/package/@keenmate/web-treeview)
 
-A lightweight, framework-agnostic treeview web component built with vanilla TypeScript. Drop `<web-treeview>` into any framework or plain HTML.
+> A lightweight, framework-agnostic treeview web component — virtual scroll, drag and drop, multi-select, search, context menus — built with vanilla TypeScript.
+
+## Demos & docs
+
+- 🚀 [Showcase](https://web-treeview.keenmate.dev)
+- 🧪 [Live demo](https://examples.web-treeview.keenmate.dev)
+- 📘 [Usage / API reference](./docs/usage.md) — every attribute, property, method, event.
+- 🎨 [Theming](./docs/theming.md) — `--wtv-*` variables, dark mode, `@layer` cascade.
+- 📚 [Examples / cookbook](./docs/examples.md) — drag-drop, multi-select, clipboard, render callbacks, context menus.
+- ♿ [Accessibility](./docs/accessibility.md) — keyboard navigation, focus model, ARIA status.
+- 📜 [Release history](./CHANGELOG.md)
 
 ## What is it
 
-`@keenmate/web-treeview` is a custom element that renders a hierarchical data list with full keyboard navigation, drag-and-drop, multi-select, search, context menus, and pluggable rendering. Works in any framework or plain HTML — assign `nodes`, and the tree renders.
+`@keenmate/web-treeview` is a custom element (`<web-treeview>`) that renders a hierarchical data list with full keyboard navigation, drag-and-drop, multi-select, search, context menus, and pluggable rendering. Framework-agnostic — works in React, Vue, Svelte, Blazor, plain HTML: assign `nodes`, and the tree renders.
 
 Built on the same LTree path-based engine as [`@keenmate/svelte-treeview`](https://github.com/KeenMate/svelte-treeview) and ported to vanilla TypeScript with zero framework dependencies. If you know svelte-treeview, you already know the API surface.
+
+**Headline features:**
+
+- Flat rendering (up to ~10k nodes) and built-in virtual scroll (~50 DOM nodes for trees of 100k+).
+- LTree path model (`'1'`, `'1.1'`, `'1.2.3'`) — including window trees cut from a big database ltree.
+- Three node states — the focused row, the selected set (Ctrl / Shift+click, Shift+arrows) and the checked set (checkboxes, cascade policies).
+- Drag and drop — reorder, cross-tree, multi-drag, touch, glow / floating drop zones, page-wide arming.
+- Multi-level context menus on core `/menu`, clipboard (`copyNodes` / `cutNodes` / `pasteNodes`, cross-tree), bulk branch operations.
+- FlexSearch full-text search with filter and highlight modes.
+- Theming via `--wtv-*` variables on the `--base-*` contract — one theme drives svelte-treeview and every KeenMate component.
+- Render callbacks for rows, icons, tooltips, menus and empty / loading states; a pluggable `TreeViewRenderer<T>`; fully typed generic `<T>` API; SSR safe.
 
 ### How it differs from `@keenmate/svelte-treeview`
 
@@ -22,7 +43,6 @@ Same logical tree, different DOM strategy — neither is "more mature", they tar
 | Indent math | `level × indent` | `(level − 1) × indent` (root at zero offset) |
 | Virtual scroll | Flat mode only | Built-in (three-div spacer / `translateY`) |
 | Label markup | `<span class="stv__node-label">` by default — replace via `nodeTemplate` snippet | `<span class="wtv__node-label">` by default — replace via `renderNodeCallback` |
-| Checkbox | `<label>` + custom `.stv__checkbox-box` span | Bare native `<input type="checkbox">` |
 | Update mechanism | Svelte 5 runes + per-node `_rev` keyed `{#each}` | Imperative reconciler diffing `data-rev` / `data-expanded` attributes |
 
 svelte-treeview is broader (two rendering modes, easier vertical guide lines via `.stv__children`); web-treeview is purpose-built for virtual scrolling over large datasets with a flatter DOM.
@@ -40,33 +60,28 @@ svelte-treeview is broader (two rendering modes, easier vertical guide lines via
 
 ## What's New in v2.0.0-rc05
 
-This release lands the BlissFramework `/validate-web-component` punch-list and bumps the API surface to current naming conventions. Since the RC cycle is still active, breaking changes are direct renames without deprecation aliases.
-
-- **Strategy B theming.** `_dark-mode.css` collapses from ~100 lines of variable redeclarations to ~50 lines of conditional `color-scheme: dark` / `color-scheme: light` flips. Every color fallback in `variables.css` now uses `light-dark(<light>, <dark>)` and the variables flip automatically based on the inherited `color-scheme`. The rc09 subtree-theming bug is fixed (`:root` co-selector dropped from `variables.css`). Hover / active / selected switched to `color-mix` chains so highlights stay visible at any base luminance. `:host([data-theme])` selectors added alongside `.wtv__container[data-theme]`.
-- **API rename per BlissFramework `naming-conventions.md`.** Callback props that were `on*` (Svelte idiom) are now `*Callback` (`nodeClickedCallback`, `nodeDropCallback`, `selectionChangeCallback`, `highlightChangeCallback`, `renderStartCallback`, etc.). Boolean Config props gained `is*` / `should*` prefixes (`isAccordionExpand`, `isCopyAllowed`, `shouldShowCheckboxes`, `shouldClickToggleCheckbox`, `isVirtualScrollEnabled`, etc.). HTML attribute names are **unchanged** (`show-checkboxes`, `allow-copy`, `accordion-expand`, `virtual-scroll` are still kebab-case as written) — only the JS surface follows the new convention. The `ATTRIBUTE_TABLE` in `src/web-component.ts` is now the single source of truth for the attribute ⇄ config wiring.
-- **Selection / highlight / focus API normalized.** The imperative method surface is now three symmetric verb-families mirroring `@keenmate/svelte-treeview`: **highlight** (`highlightNode` / `highlightNodes` / `setHighlightedPaths` / `highlightAll` / `clearHighlight`), **selection / checkboxes** (`selectNode` / `selectNodes` / `setSelectedPaths` / `selectAll` / `deselectNode` / `clearSelection`), and **focus** (`focusNode` / `clearFocus`). Breaking within the RC: `deselectAll` → `clearSelection`; `selectAll` now checks every box (highlight-all moved to `highlightAll`); `selectNode` / `selectNodes` are now real checkbox setters; `highlightNodes` is additive (use `setHighlightedPaths` to replace). Two shared types — `HighlightMode` and `TreeMutationOptions` — replace the inline literals. `Ctrl+A` now highlights every node, and `Escape` clears the highlight set rather than the checkboxes.
-- **CSS structure cleanup.** `@layer variables, component, overrides;` added to `main.css` so consumers can override component rules without specificity wars. The duplicate non-BEM `.web-treeview` class is gone (`.wtv__container` does the layout job). CSS files dropped their SASS-partial `_` prefix.
-- **New `--highlight-glow` flavor + smarter highlight marker.** A fifth opt-in `highlightedNodeClass` value (`wtv__node-content--highlight-glow`) joins bold / border / brackets — a tinted background plus an accent-colored soft glow ring, parity with svelte-treeview. The always-on `.wtv__node-content--highlighted` default marker is now a *fallback*: it only paints when no `highlightedNodeClass` is configured, so a configured highlight style no longer fights the built-in tint underneath it.
-- **Manifest repaired.** `component-variables.manifest.json` prefix is now `wtv` (was the stale `tv` from rc02). All 108 entries renamed; stale `glow-above` / `glow-below` → `glow-before` / `glow-after`; added missing `wtv-cut-opacity` and `wtv-font-family`.
-- **README split.** Most of the prose moved into `docs/`; this file is the landing page.
+- **Theming — Strategy B dark mode** — `dark-mode.css` collapses from ~100 lines of variable redeclarations to ~50 lines of conditional `color-scheme: dark` / `color-scheme: light` flips. Every colour fallback in `variables.css` uses `light-dark(<light>, <dark>)`, so the variables follow the inherited `color-scheme`. The subtree-theming bug is fixed (the `:root` co-selector is gone from `variables.css`), hover / active / selected moved to `color-mix` chains so they stay visible at any base luminance, and `:host([data-theme])` joins `.wtv__container[data-theme]`.
+- **API — renames per BlissFramework `naming-conventions.md`** (breaking within the RC) — Callback props that were `on*` (the Svelte idiom) became `*Callback`, and boolean config props gained `is*` / `should*` prefixes. HTML attribute names stayed kebab-case as written; only the JS surface moved. The attribute table in `src/web-component.ts` became the single source of truth for the attribute ⇄ config wiring. (rc06 renames several of these again — see its section above.)
+- **Node states — three symmetric method families** — The imperative surface became three verb families mirroring svelte-treeview: highlight, selection / checkboxes and focus, sharing the `TreeMutationOptions` type. `Ctrl+A` highlights every node and `Escape` clears the highlight set rather than the checkboxes. (rc06 renames highlight → *selected* and selection → *checked*.)
+- **CSS — `@layer` cascade, BEM cleanup, a glow marker** — `main.css` declares `@layer variables, component, overrides;` so consumer overrides need no specificity tricks, the duplicate non-BEM `.web-treeview` class is gone, and the CSS files dropped their SASS-partial `_` prefix. A `--highlight-glow` row style (tinted background plus an accent glow ring) joins bold / border / brackets, and the built-in marker now paints only when no custom class is configured.
+- **Docs — repaired manifest and a split README** — `component-variables.manifest.json` uses the `wtv` prefix (it still said `tv`), with stale entries renamed and the missing `wtv-cut-opacity` / `wtv-font-family` added. Most README prose moved into `docs/`, leaving this file as the landing page.
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
-## Quick start
+## Install
 
-> **Breaking change in the next release — interaction model.** Every callback takes ONE context
-> object (`getIconCallback({ node })`, `getContextMenuItemsCallback({ node, path, parent, siblings })`, …),
-> context-menu entries are core action items (`{ id, text, isDanger, onClick(detail) }`), events are
-> renamed to present tense (`node-click`, `node-copy` / `node-paste`, `tree-change`, `focus-change`, new
-> `action`), and `el.getController()` is replaced by the public `el.controller` facade. See the
-> [`[Unreleased]` section of the CHANGELOG](./CHANGELOG.md#unreleased) for the full old → new table.
+```bash
+npm install @keenmate/web-treeview
+```
+
+## Quick start
 
 ```html
 <script type="module" src="./node_modules/@keenmate/web-treeview/dist/web-treeview.js"></script>
 
 <web-treeview id="my-tree" expand-level="2"></web-treeview>
 
-<script>
+<script type="module">
   const tree = document.getElementById('my-tree');
   tree.nodes = [
     { id: 1, path: '1',     displayValue: 'Documents' },
@@ -76,14 +91,11 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
     { id: 5, path: '1.2',   displayValue: 'Photos' },
     { id: 6, path: '2',     displayValue: 'Downloads' },
   ];
+  tree.addEventListener('node-click', (e) => console.log(e.detail.path));
 </script>
 ```
 
-```bash
-npm install @keenmate/web-treeview
-```
-
-See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./docs/examples.md) for end-to-end recipes.
+Map your own data shape with `idMember` / `pathMember` / `displayValueMember` (or `parentPathMember` for window trees). See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./docs/examples.md) for end-to-end recipes.
 
 ## Responsive rules
 
@@ -122,40 +134,72 @@ Precedence, later wins key by key: global map → global callback → per-tag ma
 ignores all page rules. Responsive values never reflect to attributes; `el.expandLevel` / `el.config` read
 the effective value. Any other top-level map key (the pre-rc15 `{ mobile: … }` shape) warns and is ignored.
 
-## Features
+## Editor IntelliSense
 
-- **Two rendering modes** — flat (default, up to ~10k nodes) and virtual scroll (~50 DOM nodes for trees of 100k+).
-- **LTree path model** — materialized path hierarchy (`'1'`, `'1.1'`, `'1.2.3'`) with configurable separator.
-- **Three node states** — single focus (arrow keys, Home/End, PageUp/PageDown), selected set (Ctrl / Shift+click, Shift+Arrow/Home/End/PageUp/PageDown), checked set (checkboxes). Navigation methods are replaceable via `navigationOverrides`.
-- **Full drag and drop** — internal reorder, cross-tree drag, glow / floating drop zones, touch support, copy operations.
-- **Multi-level context menus** — viewport-aware positioning via Floating UI, keyboard shortcuts, named dividers, custom item rendering; entries are core action items (built-ins `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`, lazy submenus, an `action` event).
-- **Bulk operations** — `addBranch`, positioned `insertBranch`, `replaceBranch`, `removeBranch` for efficient batch mutations.
-- **Clipboard** — `copyNodes` / `cutNodes` / `pasteNodes`, cross-tree paste, cut nodes dimmed via `--wtv-cut-opacity`.
-- **Full-text search** — FlexSearch-powered indexing with filter and highlight modes.
-- **Theming** — ~110 CSS variables, Strategy B dark mode (auto-flip via `color-scheme` + `light-dark()`), `--base-*` design-system tokens, `@layer` cascade contract.
-- **Pluggable renderers** — `TreeViewRenderer<T>` interface for building custom (Canvas, WebGL, framework-specific) renderers.
-- **TypeScript** — fully typed API with generic `<T>` data support.
-- **SSR safe** — compatible with server-side rendering environments.
+The package ships editor metadata so you get autocomplete and hover docs for the
+element's attributes, events, and all `--wtv-*` CSS custom properties. All of it is
+generated from the component's source on every build, so it never drifts.
 
-## Demos & docs
+- **JetBrains** (WebStorm / IntelliJ) — works automatically. The IDE discovers
+  `web-types.json` via the `web-types` field in `package.json`; no setup needed.
+- **VS Code** — the data files ship but VS Code doesn't auto-discover them from a
+  dependency, so point your workspace at them once in `.vscode/settings.json`:
 
-- [Usage / API reference](./docs/usage.md) — every attribute, property, method, event.
-- [Theming contract](./docs/theming.md) — CSS variables, Strategy B dark mode, `@layer` cascade.
-- [Examples / cookbook](./docs/examples.md) — drag-drop, multi-select, clipboard, render callbacks, context menus.
-- [Accessibility](./docs/accessibility.md) — keyboard navigation, focus model, ARIA status.
-- [Release history](./CHANGELOG.md)
+  ```json
+  {
+    "html.customData": [
+      "./node_modules/@keenmate/web-treeview/vscode.html-custom-data.json"
+    ],
+    "css.customData": [
+      "./node_modules/@keenmate/web-treeview/vscode.css-custom-data.json"
+    ]
+  }
+  ```
 
-Live HTML demos sit at the repo root — one page per topic, each a stack of coded sections with live control panels and a floating chapter-nav: `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html` (start from `index.html`). `npm run dev` serves them on port 12300 (`make dev`); `npm run build:examples` builds the static site into `dist-examples/`. The page chrome — header, chapter nav, copy-links, theme switch, Ctrl+K chapter search — comes from [@keenmate/web-components-devkit](https://github.com/keenmate/web-components).
+  `html.customData` powers tag/attribute completion on `<web-treeview>`;
+  `css.customData` powers completion for the `--wtv-*` theming variables. Reload
+  the window after adding them.
+
+## HTML Injection (XSS) Notice
+
+The tree inserts node data as **plain text**: display values, `labels`, tooltip strings
+(`getNodeTooltipCallback` returning a string) and context-menu item `text` / `tooltip` are all
+written with `textContent`, so untrusted node names are safe by default.
+
+These inputs are **raw markup** — intentionally not XSS-safe, so you control the output.
+Sanitize any untrusted text before passing it in:
+
+| Input | Output used in |
+|---|---|
+| Context-menu item `icon` | The menu item's icon slot (innerHTML — meant for an `<svg>` / `<i class>` / glyph) |
+| `getCustomStylesCallback` | CSS injected into the shadow root |
+
+The render callbacks (`renderNodeCallback`, `renderIconCallback`, `renderContextMenuCallback`,
+`renderContextMenuItemCallback`, `render{EmptyState,EmptyZone,Loading,Header,Footer}Callback`) and a
+tooltip callback returning an `HTMLElement` hand you a DOM element — whatever you write into it
+(`innerHTML` included) is on you.
+
+## Browser support
+
+Modern evergreen browsers — the standalone colour fallbacks use CSS relative-colour syntax (`oklch(from …)`), the same floor as `@keenmate/base-css-variables` 2.x:
+
+- Chrome / Edge 119+
+- Firefox 128+
+- Safari 18+
+
+No polyfills are shipped. SSR-safe: the module imports without crashing in Node, but renders only after hydration in the browser.
 
 ## Development
 
 ```bash
 npm install
-npm run dev          # Dev server on port 12300
+npm run dev          # Dev server on port 12300 (make dev)
 npm run build        # Production build
 npm run package      # Build + npm pack
 npm run test:e2e     # Playwright e2e (Chromium)
 ```
+
+Live HTML demos sit at the repo root, one page per topic (start from `index.html`): `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html`. `npm run build:examples` builds the static site into `dist-examples/`; the page chrome comes from [@keenmate/web-components-devkit](https://github.com/keenmate/web-components).
 
 ## About
 

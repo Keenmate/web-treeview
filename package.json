@@ -1,6 +1,6 @@
 {
   "name": "@keenmate/web-treeview",
-  "version": "2.0.0-rc06",
+  "version": "2.0.0-rc07",
   "description": "Lightweight treeview web component with hierarchical data display, search, expand/collapse, drag-drop, and keyboard navigation",
   "type": "module",
   "main": "./dist/web-treeview.umd.js",

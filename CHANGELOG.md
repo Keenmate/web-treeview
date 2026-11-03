@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.0.0-rc06] - 2026-11-03 [PUBLISHED]
+
+_The first rc06 (2026-10-08) never reached npm; its changes are folded in below._
 
 ### Added — motion level (core rc17, 2026-11-03)
 
@@ -916,8 +918,6 @@ camelCase `on*` twin (core) that receives the **detail**.
 - **Example pages: control state now persists across reloads via a shared helper.** New `examples-controls-store.js` (ported from `@keenmate/web-multiselect`, namespaced `web-treeview:examples:controls:<page>`) restores every `.controls` input/select from localStorage, replays each control's `change`/`input` so the page's own listeners re-apply the config, and saves on subsequent changes; buttons are ignored so action buttons never auto-replay. Wired into 10 pages (interaction, basic, data, search, tooltips, context-menu, theming, plus custom-layout/responsive/logging where it no-ops until an input/select is added); `drag-drop` and `performance` keep their existing bespoke persistence.
 - **Example pages: IN01 consolidated into a single "click behavior" picker + new interaction demos.** IN01 now drives one tree with all eight controls (click-behavior, selection-mode, highlighted/focused style, show-checkboxes, checkbox-mode, `click-toggles-checkbox`, clear-all) and a focused/highlighted/selected readout trio — one-to-one with svelte-treeview's interaction demo; its initial state matches the component defaults (checkboxes off, independent) except for the unavoidable demo conveniences (multi-select, a visible highlight/focus class). BU01 gained live `--wtv-indent-size` / `--wtv-column-width` / `--wtv-node-padding` sliders + a derived root-gap readout, and BU02 a live `expand-level` field. The shared `examples-shared.css` absorbed the `.display-sliders` and `.css-readout` utilities so pages carry no bespoke layout CSS.
 - **Example pages: IN01 + IN02 merged into one "Click Behavior & Multi-Select" card.** The former standalone Multi-Select card (range-selection-mode, highlight-specific-paths) folded into IN01 so a highlight style and a multi-select set can be exercised on the same tree; following cards renumbered (Keyboard Nav → IN02, Cascade → IN03, Silent Restore → IN04, Clipboard → IN05). Mirrored in `@keenmate/svelte-treeview`, where it also surfaced a latent demo bug: the Clear-All / highlight-specific buttons assigned the output-only `highlightedPaths` bind (updated the readout but never drove the controller) — rewired to the `setHighlightedPaths()` / `clearHighlight()` / `clearSelection()` / `clearFocus()` methods.
-
-## [2.0.0-rc06] - 2026-10-08 [PUBLISHED]
 
 First published prerelease since rc05 — consolidates the entire unpublished
 development window (the former rc06–rc09 drafts) into one release. It spans the

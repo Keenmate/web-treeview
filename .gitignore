@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Per-developer Make configuration (container runner, image name, port)
 .makefile.env
+# kmwc
+dist-examples/

@@ -241,6 +241,12 @@
     { "name": "wtv-drop-placeholder-border-color-hover", "category": "empty", "usage": "Engaged placeholder border color; reads --base-drop-target-border-color" },
     { "name": "wtv-drop-placeholder-box-shadow-hover", "category": "empty", "usage": "Engaged placeholder glow" },
     { "name": "wtv-drop-placeholder-scale-hover", "category": "empty", "usage": "Engaged placeholder scale (default 1)" },
+    { "name": "wtv-drop-placeholder-border-style-hover", "category": "empty", "usage": "Engaged placeholder border style (default solid)" },
+    { "name": "wtv-drop-placeholder-accent", "category": "empty", "usage": "One accent driving the empty zone's border, text and icon; reads --base-drop-target-border-color" },
+    { "name": "wtv-drop-placeholder-bg-armed", "category": "empty", "usage": "Armed placeholder background (a node is dragged anywhere on the page); = drag-over-bg" },
+    { "name": "wtv-drop-placeholder-border-color-armed", "category": "empty", "usage": "Armed placeholder border color" },
+    { "name": "wtv-drop-placeholder-icon", "category": "empty", "usage": "Icon above the label (a mask filled with the accent); none drops it" },
+    { "name": "wtv-drop-placeholder-icon-size", "category": "empty", "usage": "Placeholder icon size" },
 
     { "name": "wtv-tooltip-bg", "category": "tooltip", "usage": "Node tooltip background (→ --base-tooltip-bg)" },
     { "name": "wtv-tooltip-text-color", "category": "tooltip", "usage": "Tooltip text color (reads --base-tooltip-text-color)" },

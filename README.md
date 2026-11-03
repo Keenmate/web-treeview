@@ -145,13 +145,13 @@ the effective value. Any other top-level map key (the pre-rc15 `{ mobile: … }`
 - [Accessibility](./docs/accessibility.md) — keyboard navigation, focus model, ARIA status.
 - [Release history](./CHANGELOG.md)
 
-Live HTML demos sit at the repo root — one page per topic, each a stack of coded sections with live control panels and a floating chapter-nav: `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html` (start from `index.html`). `npm run dev` serves them on port 21111.
+Live HTML demos sit at the repo root — one page per topic, each a stack of coded sections with live control panels and a floating chapter-nav: `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html` (start from `index.html`). `npm run dev` serves them on port 12300 (`make dev`); `npm run build:examples` builds the static site into `dist-examples/`. The page chrome — header, chapter nav, copy-links, theme switch, Ctrl+K chapter search — comes from [@keenmate/web-components-devkit](https://github.com/keenmate/web-components).
 
 ## Development
 
 ```bash
 npm install
-npm run dev          # Dev server on port 21111
+npm run dev          # Dev server on port 12300
 npm run build        # Production build
 npm run package      # Build + npm pack
 npm run test:e2e     # Playwright e2e (Chromium)

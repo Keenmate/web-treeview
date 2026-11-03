@@ -1,199 +1,187 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Logging & Debugging</title>
+<meta name="kmwc:title" content="Logging &amp; Debugging">
+<meta name="kmwc:subtitle" content="The global <code>window.components</code> registry, category logging controls, performance timings, and the in-tree debug overlay">
 
-    <link rel="stylesheet" href="examples-shared.css">
+<link rel="stylesheet" href="examples-local.css">
 
-    <style>
-        /* Page-specific: live registry inspector (dark console dump of the
-           window.components entry) + its pills/badges. */
-        .registry {
-            display: grid;
-            grid-template-columns: max-content 1fr;
-            gap: 0.4rem 1rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.85rem;
-            background: #0f172a;
-            color: #e2e8f0;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            overflow-x: auto;
-        }
-        .registry dt { color: #7dd3fc; white-space: nowrap; }
-        .registry dd { margin: 0; color: #e2e8f0; word-break: break-word; }
-        .registry .muted { color: #94a3b8; }
-        .pill {
-            display: inline-block;
-            background: #1e293b;
-            color: #7dd3fc;
-            border: 1px solid #334155;
-            border-radius: 999px;
-            padding: 0.05rem 0.5rem;
-            margin: 0 0.2rem 0.2rem 0;
-            font-size: 0.78rem;
-        }
-        .pill.on { color: #86efac; border-color: #166534; background: #052e16; }
-        .count-badge {
-            display: inline-block;
-            min-width: 1.4rem;
-            text-align: center;
-            background: #2563eb;
-            color: #fff;
-            border-radius: 999px;
-            padding: 0.05rem 0.5rem;
-            font-weight: 700;
-        }
-        #dynamic-hosts { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
-        #dynamic-hosts:empty::after {
-            content: "No dynamic instances yet — click \"Add a tree\".";
-            color: #6b7280; font-style: italic;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Logging &amp; Debugging</h1>
-            <p class="subtitle">The global <code>window.components</code> registry, category logging controls, performance timings, and the in-tree debug overlay</p>
-        </header>
+<style>
+    /* Page-specific: live registry inspector (dark console dump of the
+       window.components entry) + its pills/badges. */
+    .registry {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.4rem 1rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85rem;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+    .registry dt { color: #7dd3fc; white-space: nowrap; }
+    .registry dd { margin: 0; color: #e2e8f0; word-break: break-word; }
+    .registry .muted { color: #94a3b8; }
+    .pill {
+        display: inline-block;
+        background: #1e293b;
+        color: #7dd3fc;
+        border: 1px solid #334155;
+        border-radius: 999px;
+        padding: 0.05rem 0.5rem;
+        margin: 0 0.2rem 0.2rem 0;
+        font-size: 0.78rem;
+    }
+    .pill.on { color: #86efac; border-color: #166534; background: #052e16; }
+    .count-badge {
+        display: inline-block;
+        min-width: 1.4rem;
+        text-align: center;
+        background: #2563eb;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.05rem 0.5rem;
+        font-weight: 700;
+    }
+    #dynamic-hosts { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+    #dynamic-hosts:empty::after {
+        content: "No dynamic instances yet — click \"Add a tree\".";
+        color: #6b7280; font-style: italic;
+    }
+</style>
 
-        <div class="note warning">
-            <strong>Open the DevTools Console (F12).</strong> On load the component
-            registers itself on <code>window.components['web-treeview']</code>. Try
-            <code>window.components['web-treeview']</code> in the console, then use the
-            buttons below — the logging story here goes through that global, nothing else.
-        </div>
+<div class="note warning">
+    <strong>Open the DevTools Console (F12).</strong> On load the component
+    registers itself on <code>window.components['web-treeview']</code>. Try
+    <code>window.components['web-treeview']</code> in the console, then use the
+    buttons below — the logging story here goes through that global, nothing else.
+</div>
 
-        <!-- ── 1. The registry ─────────────────────────────────────────────── -->
-        <div class="card">
-            <h2>LG01 · The registry entry</h2>
-            <p>
-                Every Keenmate component publishes one entry via core's
-                <code>registerComponent()</code>. Below is a live view of
-                <code>window.components['web-treeview']</code>, refreshed automatically
-                as instances connect and disconnect.
-            </p>
+<!-- ── 1. The registry ─────────────────────────────────────────────── -->
+<div class="card">
+    <h2>LG01 · The registry entry</h2>
+    <p>
+        Every Keenmate component publishes one entry via core's
+        <code>registerComponent()</code>. Below is a live view of
+        <code>window.components['web-treeview']</code>, refreshed automatically
+        as instances connect and disconnect.
+    </p>
 
-            <div class="output">
-                <div class="output-label">window.components['web-treeview']</div>
-                <dl class="registry" id="registry-view"></dl>
-            </div>
+    <div class="output">
+        <div class="output-label">window.components['web-treeview']</div>
+        <dl class="registry" id="registry-view"></dl>
+    </div>
 
-            <div class="controls">
-                <button onclick="refreshRegistry()">Refresh</button>
-                <button class="btn-outline" onclick="dumpToConsole()">console.log the entry</button>
-            </div>
-        </div>
+    <div class="controls">
+        <button onclick="refreshRegistry()">Refresh</button>
+        <button class="btn-outline" onclick="dumpToConsole()">console.log the entry</button>
+    </div>
+</div>
 
-        <!-- ── 2. Logging through the registry ─────────────────────────────── -->
-        <div class="card">
-            <h2>LG02 · Logging controls — via <code>.logging</code></h2>
-            <p>
-                The <code>.logging</code> object is the flattened logger bundle. These
-                buttons call it directly (e.g.
-                <code>window.components['web-treeview'].logging.setCategoryLevel('DATA','debug')</code>).
-                The active category level is reflected in the registry panel above. Interact
-                with the trees — click, expand/collapse, or right-click a node (UI), or drag
-                a node in the second tree (DRAG) — to produce logs.
-            </p>
+<!-- ── 2. Logging through the registry ─────────────────────────────── -->
+<div class="card">
+    <h2>LG02 · Logging controls — via <code>.logging</code></h2>
+    <p>
+        The <code>.logging</code> object is the flattened logger bundle. These
+        buttons call it directly (e.g.
+        <code>window.components['web-treeview'].logging.setCategoryLevel('DATA','debug')</code>).
+        The active category level is reflected in the registry panel above. Interact
+        with the trees — click, expand/collapse, or right-click a node (UI), or drag
+        a node in the second tree (DRAG) — to produce logs.
+    </p>
 
-            <div class="controls">
-                <button onclick="reg().logging.enableLogging()">Enable all (debug)</button>
-                <button class="secondary" onclick="reg().logging.disableLogging()">Disable all</button>
-                <button class="btn-outline" onclick="reg().logging.setLogLevel('info')">All → info</button>
-            </div>
-            <div class="controls">
-                <button onclick="onlyCategory('INIT')">Only INIT</button>
-                <button onclick="onlyCategory('DATA')">Only DATA</button>
-                <button onclick="onlyCategory('INDEX')">Only INDEX</button>
-                <button onclick="onlyCategory('UI')">Only UI</button>
-                <button onclick="onlyCategory('DRAG')">Only DRAG</button>
-                <button onclick="onlyCategory('RENDER')">Only RENDER</button>
-            </div>
+    <div class="controls">
+        <button onclick="reg().logging.enableLogging()">Enable all (debug)</button>
+        <button class="secondary" onclick="reg().logging.disableLogging()">Disable all</button>
+        <button class="btn-outline" onclick="reg().logging.setLogLevel('info')">All → info</button>
+    </div>
+    <div class="controls">
+        <button onclick="onlyCategory('INIT')">Only INIT</button>
+        <button onclick="onlyCategory('DATA')">Only DATA</button>
+        <button onclick="onlyCategory('INDEX')">Only INDEX</button>
+        <button onclick="onlyCategory('UI')">Only UI</button>
+        <button onclick="onlyCategory('DRAG')">Only DRAG</button>
+        <button onclick="onlyCategory('RENDER')">Only RENDER</button>
+    </div>
 
-            <div class="grid grid-2 mt-1">
-                <div class="form-group">
-                    <label>Files (click / expand / collapse → UI logs)</label>
-                    <div class="tree-container">
-                        <web-treeview id="tree-a"></web-treeview>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Draggable (drag nodes → DRAG logs)</label>
-                    <div class="tree-container">
-                        <web-treeview id="tree-b"></web-treeview>
-                    </div>
-                </div>
+    <div class="grid grid-2 mt-1">
+        <div class="form-group">
+            <label>Files (click / expand / collapse → UI logs)</label>
+            <div class="tree-container">
+                <web-treeview id="tree-a"></web-treeview>
             </div>
         </div>
-
-        <!-- ── 3. Live instances ───────────────────────────────────────────── -->
-        <div class="card">
-            <h2>LG03 · Live instances — <code>.getInstances()</code></h2>
-            <p>
-                <code>getInstances()</code> returns the connected elements of this tag —
-                maintained automatically (added on connect, removed on disconnect). Add and
-                remove trees below and watch the count in the registry panel change; then
-                fan a call out across every live instance.
-            </p>
-
-            <div class="controls">
-                <button onclick="addTree()">Add a tree</button>
-                <button class="secondary" onclick="removeTree()">Remove last</button>
-                <button class="btn-outline" onclick="logAllExpanded()">Log every instance's expanded/selected/checked state</button>
-            </div>
-
-            <div id="dynamic-hosts"></div>
-        </div>
-
-        <!-- ── 4. Performance logging (separate module) ────────────────────── -->
-        <div class="card">
-            <h2>LG04 · Performance logging</h2>
-            <p>
-                Perf logging lives in its own module (<code>enablePerfLogging</code> /
-                <code>setPerfThreshold</code>, imported from
-                <code>@keenmate/web-treeview</code>) — it is <em>not</em> part of the
-                <code>.logging</code> category bundle above. Enable it, then load a large
-                dataset to see render timings in the console.
-            </p>
-
-            <div class="controls">
-                <button onclick="enablePerfLogs()">Enable Perf Logging</button>
-                <button class="secondary" onclick="disablePerfLogs()">Disable Perf Logging</button>
-                <button class="btn-outline" onclick="setPerfThresholdMs(5)">Threshold: 5ms</button>
-                <button class="btn-outline" onclick="setPerfThresholdMs(0)">Threshold: 0ms (all)</button>
-            </div>
-            <div class="controls">
-                <button onclick="loadTree(50)">Load 50 nodes</button>
-                <button onclick="loadTree(500)">Load 500 nodes</button>
-                <button onclick="loadTree(2000)">Load 2000 nodes</button>
-            </div>
-
-            <div class="tree-container tree-container-lg">
-                <web-treeview id="tree-perf" enable-progressive-render="true"></web-treeview>
+        <div class="form-group">
+            <label>Draggable (drag nodes → DRAG logs)</label>
+            <div class="tree-container">
+                <web-treeview id="tree-b"></web-treeview>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- ── Reference ───────────────────────────────────────────────────── -->
-        <div class="card">
-            <h2>LG05 · Log categories</h2>
-            <ul>
-                <li><strong>INIT</strong> — component initialization, configuration parsing, destruction</li>
-                <li><strong>DATA</strong> — data insertion, tree building, node updates</li>
-                <li><strong>INDEX</strong> — search indexing operations</li>
-                <li><strong>UI</strong> — DOM rendering, node reconciliation, context menu</li>
-                <li><strong>DRAG</strong> — drag start/over/leave/drop, cross-tree detection, touch drag</li>
-                <li><strong>RENDER</strong> — progressive rendering batches, render-coordinator timing</li>
-            </ul>
-        </div>
+<!-- ── 3. Live instances ───────────────────────────────────────────── -->
+<div class="card">
+    <h2>LG03 · Live instances — <code>.getInstances()</code></h2>
+    <p>
+        <code>getInstances()</code> returns the connected elements of this tag —
+        maintained automatically (added on connect, removed on disconnect). Add and
+        remove trees below and watch the count in the registry panel change; then
+        fan a call out across every live instance.
+    </p>
 
-        <div class="card">
-            <h2>LG06 · Usage</h2>
-            <div class="code-block">
+    <div class="controls">
+        <button onclick="addTree()">Add a tree</button>
+        <button class="secondary" onclick="removeTree()">Remove last</button>
+        <button class="btn-outline" onclick="logAllExpanded()">Log every instance's expanded/selected/checked state</button>
+    </div>
+
+    <div id="dynamic-hosts"></div>
+</div>
+
+<!-- ── 4. Performance logging (separate module) ────────────────────── -->
+<div class="card">
+    <h2>LG04 · Performance logging</h2>
+    <p>
+        Perf logging lives in its own module (<code>enablePerfLogging</code> /
+        <code>setPerfThreshold</code>, imported from
+        <code>@keenmate/web-treeview</code>) — it is <em>not</em> part of the
+        <code>.logging</code> category bundle above. Enable it, then load a large
+        dataset to see render timings in the console.
+    </p>
+
+    <div class="controls">
+        <button onclick="enablePerfLogs()">Enable Perf Logging</button>
+        <button class="secondary" onclick="disablePerfLogs()">Disable Perf Logging</button>
+        <button class="btn-outline" onclick="setPerfThresholdMs(5)">Threshold: 5ms</button>
+        <button class="btn-outline" onclick="setPerfThresholdMs(0)">Threshold: 0ms (all)</button>
+    </div>
+    <div class="controls">
+        <button onclick="loadTree(50)">Load 50 nodes</button>
+        <button onclick="loadTree(500)">Load 500 nodes</button>
+        <button onclick="loadTree(2000)">Load 2000 nodes</button>
+    </div>
+
+    <div class="tree-container tree-container-lg">
+        <web-treeview id="tree-perf" enable-progressive-render="true"></web-treeview>
+    </div>
+</div>
+
+<!-- ── Reference ───────────────────────────────────────────────────── -->
+<div class="card">
+    <h2>LG05 · Log categories</h2>
+    <ul>
+        <li><strong>INIT</strong> — component initialization, configuration parsing, destruction</li>
+        <li><strong>DATA</strong> — data insertion, tree building, node updates</li>
+        <li><strong>INDEX</strong> — search indexing operations</li>
+        <li><strong>UI</strong> — DOM rendering, node reconciliation, context menu</li>
+        <li><strong>DRAG</strong> — drag start/over/leave/drop, cross-tree detection, touch drag</li>
+        <li><strong>RENDER</strong> — progressive rendering batches, render-coordinator timing</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h2>LG06 · Usage</h2>
+    <div class="code-block">
 <pre><code>// No import needed at call sites — the registry is a global, populated the
 // moment the component module is loaded anywhere on the page.
 const tv = window.components['web-treeview'];
@@ -216,211 +204,204 @@ for (const el of tv.getInstances()) console.log(el.id, [...el.expandedPaths]);
 import { enablePerfLogging, setPerfThreshold } from '@keenmate/web-treeview';
 enablePerfLogging();
 setPerfThreshold(5);                // only log operations taking &gt; 5ms</code></pre>
-            </div>
-        </div>
     </div>
+</div>
 
-    <script type="module">
-        // Importing the module runs registerComponent() → window.components is populated.
-        import '/src/index.ts';
-        import { persistControls } from './examples-controls-store.js';
-        // Perf logging is a separate free-function API (not part of .logging).
-        import { enablePerfLogging, disablePerfLogging, setPerfThreshold } from '/src/index.ts';
+<script type="module">
+    // Importing the module runs registerComponent() → window.components is populated.
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    // Perf logging is a separate free-function API (not part of .logging).
+    import { enablePerfLogging, disablePerfLogging, setPerfThreshold } from '/src/index.ts';
 
-        const TAG = 'web-treeview';
-        const reg = () => window.components?.[TAG];
-        window.reg = reg;
+    const TAG = 'web-treeview';
+    const reg = () => window.components?.[TAG];
+    window.reg = reg;
 
-        // ── sample data ──────────────────────────────────────────────────────
-        const sampleData = [
-            { id: 1, path: '1', name: 'Project' },
-            { id: 2, path: '1.1', name: 'Source Code' },
-            { id: 3, path: '1.1.1', name: 'Components' },
-            { id: 4, path: '1.1.1.1', name: 'Button.tsx' },
-            { id: 5, path: '1.1.1.2', name: 'Input.tsx' },
-            { id: 6, path: '1.1.2', name: 'Pages' },
-            { id: 7, path: '1.1.2.1', name: 'Home.tsx' },
-            { id: 8, path: '1.1.2.2', name: 'Settings.tsx' },
-            { id: 9, path: '1.2', name: 'Configuration' },
-            { id: 10, path: '1.2.1', name: 'webpack.config.js' },
-            { id: 11, path: '1.2.2', name: 'tsconfig.json' },
-            { id: 12, path: '1.3', name: 'Documentation' },
-            { id: 13, path: '1.3.1', name: 'API.md' },
-            { id: 14, path: '1.3.2', name: 'Guide.md' },
-            { id: 15, path: '2', name: 'Dependencies' },
-            { id: 16, path: '2.1', name: 'Runtime' },
-            { id: 17, path: '2.2', name: 'Development' }
-        ];
+    // ── sample data ──────────────────────────────────────────────────────
+    const sampleData = [
+        { id: 1, path: '1', name: 'Project' },
+        { id: 2, path: '1.1', name: 'Source Code' },
+        { id: 3, path: '1.1.1', name: 'Components' },
+        { id: 4, path: '1.1.1.1', name: 'Button.tsx' },
+        { id: 5, path: '1.1.1.2', name: 'Input.tsx' },
+        { id: 6, path: '1.1.2', name: 'Pages' },
+        { id: 7, path: '1.1.2.1', name: 'Home.tsx' },
+        { id: 8, path: '1.1.2.2', name: 'Settings.tsx' },
+        { id: 9, path: '1.2', name: 'Configuration' },
+        { id: 10, path: '1.2.1', name: 'webpack.config.js' },
+        { id: 11, path: '1.2.2', name: 'tsconfig.json' },
+        { id: 12, path: '1.3', name: 'Documentation' },
+        { id: 13, path: '1.3.1', name: 'API.md' },
+        { id: 14, path: '1.3.2', name: 'Guide.md' },
+        { id: 15, path: '2', name: 'Dependencies' },
+        { id: 16, path: '2.1', name: 'Runtime' },
+        { id: 17, path: '2.2', name: 'Development' }
+    ];
 
-        function generateTree(count) {
-            const data = [];
-            let id = 1;
-            const branches = Math.min(count, 20);
-            for (let i = 1; i <= branches; i++) {
-                data.push({ id: id++, path: `${i}`, name: `Branch ${i}` });
-                const perBranch = Math.floor(count / branches);
-                for (let j = 1; j <= perBranch && id <= count; j++) {
-                    data.push({ id: id++, path: `${i}.${j}`, name: `Item ${i}.${j}` });
-                }
+    function generateTree(count) {
+        const data = [];
+        let id = 1;
+        const branches = Math.min(count, 20);
+        for (let i = 1; i <= branches; i++) {
+            data.push({ id: id++, path: `${i}`, name: `Branch ${i}` });
+            const perBranch = Math.floor(count / branches);
+            for (let j = 1; j <= perBranch && id <= count; j++) {
+                data.push({ id: id++, path: `${i}.${j}`, name: `Item ${i}.${j}` });
             }
-            return data;
         }
+        return data;
+    }
 
-        // Set members + expandLevel BEFORE data so the whole config lands in one
-        // batch (expandLevel must accompany data for expansion to seed).
-        const treeCfg = (el, data = sampleData, opts = {}) => {
-            el.idMember = 'id';
-            el.pathMember = 'path';
-            el.displayValueMember = 'name';
-            el.expandLevel = opts.expandLevel ?? 2;
-            if (opts.dragDropMode) el.dragDropMode = opts.dragDropMode;
-            el.nodes = data;
-        };
+    // Set members + expandLevel BEFORE data so the whole config lands in one
+    // batch (expandLevel must accompany data for expansion to seed).
+    const treeCfg = (el, data = sampleData, opts = {}) => {
+        el.idMember = 'id';
+        el.pathMember = 'path';
+        el.displayValueMember = 'name';
+        el.expandLevel = opts.expandLevel ?? 2;
+        if (opts.dragDropMode) el.dragDropMode = opts.dragDropMode;
+        el.nodes = data;
+    };
 
-        // ── 1. registry inspector ────────────────────────────────────────────
-        const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    // ── 1. registry inspector ────────────────────────────────────────────
+    const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
-        window.refreshRegistry = () => {
-            const view = document.getElementById('registry-view');
-            const r = reg();
-            if (!r) { view.innerHTML = '<dt>status</dt><dd class="muted">not registered</dd>'; return; }
+    window.refreshRegistry = () => {
+        const view = document.getElementById('registry-view');
+        const r = reg();
+        if (!r) { view.innerHTML = '<dt>status</dt><dd class="muted">not registered</dd>'; return; }
 
-            const cfg = r.config || {};
-            const cats = r.logging?.getCategories() ?? [];
-            const instances = r.getInstances();
-            const catPills = cats.map((c) => {
-                // Reflect each category's effective level from what we last set.
-                const lvl = window.__catLevel?.[c];
-                const on = lvl && lvl !== 'silent';
-                return `<span class="pill ${on ? 'on' : ''}">${esc(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
-            }).join('');
-            const instPills = instances.length
-                ? instances.map((el, i) => `<span class="pill">${esc(el.id || `#${i}`)}</span>`).join('')
-                : '<span class="muted">none connected</span>';
+        const cfg = r.config || {};
+        const cats = r.logging?.getCategories() ?? [];
+        const instances = r.getInstances();
+        const catPills = cats.map((c) => {
+            // Reflect each category's effective level from what we last set.
+            const lvl = window.__catLevel?.[c];
+            const on = lvl && lvl !== 'silent';
+            return `<span class="pill ${on ? 'on' : ''}">${esc(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
+        }).join('');
+        const instPills = instances.length
+            ? instances.map((el, i) => `<span class="pill">${esc(el.id || `#${i}`)}</span>`).join('')
+            : '<span class="muted">none connected</span>';
 
-            view.innerHTML = `
-                <dt>version()</dt><dd>${esc(r.version())}</dd>
-                <dt>config.name</dt><dd>${esc(cfg.name ?? '—')}</dd>
-                <dt>config.author</dt><dd>${esc(cfg.author ?? '—')}</dd>
-                <dt>config.license</dt><dd>${esc(cfg.license ?? '—')}</dd>
-                <dt>logging</dt><dd>${cats.length ? catPills : '<span class="muted">no bundle</span>'}</dd>
-                <dt>getInstances()</dt><dd><span class="count-badge">${instances.length}</span> &nbsp; ${instPills}</dd>
-            `;
-        };
+        view.innerHTML = `
+            <dt>version()</dt><dd>${esc(r.version())}</dd>
+            <dt>config.name</dt><dd>${esc(cfg.name ?? '—')}</dd>
+            <dt>config.author</dt><dd>${esc(cfg.author ?? '—')}</dd>
+            <dt>config.license</dt><dd>${esc(cfg.license ?? '—')}</dd>
+            <dt>logging</dt><dd>${cats.length ? catPills : '<span class="muted">no bundle</span>'}</dd>
+            <dt>getInstances()</dt><dd><span class="count-badge">${instances.length}</span> &nbsp; ${instPills}</dd>
+        `;
+    };
 
-        window.dumpToConsole = () => {
-            const r = reg();
-            console.log('%cwindow.components[\'web-treeview\']', 'color:#059669;font-weight:bold;font-size:1.1rem;', r);
-            console.log('config:', r?.config);
-            console.log('getInstances():', r?.getInstances());
-        };
+    window.dumpToConsole = () => {
+        const r = reg();
+        console.log('%cwindow.components[\'web-treeview\']', 'color:#059669;font-weight:bold;font-size:1.1rem;', r);
+        console.log('config:', r?.config);
+        console.log('getInstances():', r?.getInstances());
+    };
 
-        // Track category levels we set so the panel can reflect them (the bundle
-        // has no getter for effective level, so we mirror what we set here).
+    // Track category levels we set so the panel can reflect them (the bundle
+    // has no getter for effective level, so we mirror what we set here).
+    window.__catLevel = {};
+    window.onlyCategory = (cat) => {
+        const r = reg();
+        r.logging.disableLogging();
+        r.logging.setCategoryLevel(cat, 'debug');
+        const cats = r.logging.getCategories();
         window.__catLevel = {};
-        window.onlyCategory = (cat) => {
-            const r = reg();
-            r.logging.disableLogging();
-            r.logging.setCategoryLevel(cat, 'debug');
-            const cats = r.logging.getCategories();
-            window.__catLevel = {};
-            for (const c of cats) window.__catLevel[c] = 'silent';
-            const full = cats.find((c) => c === cat || c.endsWith(':' + cat)) ?? cat;
-            window.__catLevel[full] = 'debug';
-            console.log(`%c▶ only ${cat} → debug`, 'color:#8b5cf6;font-weight:bold;');
-            refreshRegistry();
-        };
-        // Mirror the bulk controls too, so the panel stays honest.
-        const wrapLevels = () => {
-            const r = reg(); if (!r?.logging) return;
-            const l = r.logging;
-            const cats = l.getCategories();
-            const _enable = l.enableLogging.bind(l), _disable = l.disableLogging.bind(l), _set = l.setLogLevel.bind(l);
-            l.enableLogging = (lvl = 'debug') => { _enable(lvl); cats.forEach((c) => (window.__catLevel[c] = lvl)); refreshRegistry(); };
-            l.disableLogging = () => { _disable(); cats.forEach((c) => (window.__catLevel[c] = 'silent')); refreshRegistry(); };
-            l.setLogLevel = (lvl) => { _set(lvl); cats.forEach((c) => (window.__catLevel[c] = lvl)); refreshRegistry(); };
-        };
+        for (const c of cats) window.__catLevel[c] = 'silent';
+        const full = cats.find((c) => c === cat || c.endsWith(':' + cat)) ?? cat;
+        window.__catLevel[full] = 'debug';
+        console.log(`%c▶ only ${cat} → debug`, 'color:#8b5cf6;font-weight:bold;');
+        refreshRegistry();
+    };
+    // Mirror the bulk controls too, so the panel stays honest.
+    const wrapLevels = () => {
+        const r = reg(); if (!r?.logging) return;
+        const l = r.logging;
+        const cats = l.getCategories();
+        const _enable = l.enableLogging.bind(l), _disable = l.disableLogging.bind(l), _set = l.setLogLevel.bind(l);
+        l.enableLogging = (lvl = 'debug') => { _enable(lvl); cats.forEach((c) => (window.__catLevel[c] = lvl)); refreshRegistry(); };
+        l.disableLogging = () => { _disable(); cats.forEach((c) => (window.__catLevel[c] = 'silent')); refreshRegistry(); };
+        l.setLogLevel = (lvl) => { _set(lvl); cats.forEach((c) => (window.__catLevel[c] = lvl)); refreshRegistry(); };
+    };
 
-        // ── 3. live instances ────────────────────────────────────────────────
-        let dynN = 0;
-        window.addTree = () => {
-            const host = document.getElementById('dynamic-hosts');
-            const wrap = document.createElement('div');
-            wrap.className = 'form-group';
-            const label = document.createElement('label');
-            label.textContent = `Dynamic tree #${++dynN}`;
-            const box = document.createElement('div');
-            box.className = 'tree-container';
-            const el = document.createElement('web-treeview');
-            el.id = `dyn-${dynN}`;
-            box.appendChild(el);
-            wrap.append(label, box);
-            host.appendChild(wrap);
-            treeCfg(el); // connectedCallback already fired on append
-            console.log(`%c＋ connected ${el.id} — getInstances(): ${reg().getInstances().length}`, 'color:#10b981;font-weight:bold;');
-            refreshRegistry();
-        };
-        window.removeTree = () => {
-            const host = document.getElementById('dynamic-hosts');
-            const last = host.lastElementChild;
-            if (!last) return;
-            const id = last.querySelector('web-treeview')?.id;
-            host.removeChild(last);
-            console.log(`%c－ disconnected ${id} — getInstances(): ${reg().getInstances().length}`, 'color:#ef4444;font-weight:bold;');
-            refreshRegistry();
-        };
-        window.logAllExpanded = () => {
-            const rows = reg().getInstances().map((el) => ({
-                id: el.id,
-                expanded: [...el.expandedPaths].length,
-                selected: [...el.selectedPaths].length,
-                checked: [...el.checkedPaths].length,
-            }));
-            console.log('%c🌲 expanded/selected/checked across all live instances', 'color:#059669;font-weight:bold;');
-            console.table(rows);
-        };
+    // ── 3. live instances ────────────────────────────────────────────────
+    let dynN = 0;
+    window.addTree = () => {
+        const host = document.getElementById('dynamic-hosts');
+        const wrap = document.createElement('div');
+        wrap.className = 'form-group';
+        const label = document.createElement('label');
+        label.textContent = `Dynamic tree #${++dynN}`;
+        const box = document.createElement('div');
+        box.className = 'tree-container';
+        const el = document.createElement('web-treeview');
+        el.id = `dyn-${dynN}`;
+        box.appendChild(el);
+        wrap.append(label, box);
+        host.appendChild(wrap);
+        treeCfg(el); // connectedCallback already fired on append
+        console.log(`%c＋ connected ${el.id} — getInstances(): ${reg().getInstances().length}`, 'color:#10b981;font-weight:bold;');
+        refreshRegistry();
+    };
+    window.removeTree = () => {
+        const host = document.getElementById('dynamic-hosts');
+        const last = host.lastElementChild;
+        if (!last) return;
+        const id = last.querySelector('web-treeview')?.id;
+        host.removeChild(last);
+        console.log(`%c－ disconnected ${id} — getInstances(): ${reg().getInstances().length}`, 'color:#ef4444;font-weight:bold;');
+        refreshRegistry();
+    };
+    window.logAllExpanded = () => {
+        const rows = reg().getInstances().map((el) => ({
+            id: el.id,
+            expanded: [...el.expandedPaths].length,
+            selected: [...el.selectedPaths].length,
+            checked: [...el.checkedPaths].length,
+        }));
+        console.log('%c🌲 expanded/selected/checked across all live instances', 'color:#059669;font-weight:bold;');
+        console.table(rows);
+    };
 
-        // ── 4. perf logging (separate module) ────────────────────────────────
-        window.enablePerfLogs = () => {
-            enablePerfLogging();
-            console.log('%c Performance logging enabled', 'color:#10b981;font-weight:bold;');
-        };
-        window.disablePerfLogs = () => {
-            disablePerfLogging();
-            console.log('%c Performance logging disabled', 'color:#ef4444;font-weight:bold;');
-        };
-        window.setPerfThresholdMs = (ms) => {
-            setPerfThreshold(ms);
-            console.log(`%c Perf threshold set to ${ms}ms`, 'color:#3b82f6;font-weight:bold;');
-        };
-        window.loadTree = (n) => {
-            document.getElementById('tree-perf').nodes = generateTree(n);
-        };
+    // ── 4. perf logging (separate module) ────────────────────────────────
+    window.enablePerfLogs = () => {
+        enablePerfLogging();
+        console.log('%c Performance logging enabled', 'color:#10b981;font-weight:bold;');
+    };
+    window.disablePerfLogs = () => {
+        disablePerfLogging();
+        console.log('%c Performance logging disabled', 'color:#ef4444;font-weight:bold;');
+    };
+    window.setPerfThresholdMs = (ms) => {
+        setPerfThreshold(ms);
+        console.log(`%c Perf threshold set to ${ms}ms`, 'color:#3b82f6;font-weight:bold;');
+    };
+    window.loadTree = (n) => {
+        document.getElementById('tree-perf').nodes = generateTree(n);
+    };
 
-        // ── boot ─────────────────────────────────────────────────────────────
-        customElements.whenDefined(TAG).then(() => {
-            wrapLevels();
+    // ── boot ─────────────────────────────────────────────────────────────
+    customElements.whenDefined(TAG).then(() => {
+        wrapLevels();
 
-            treeCfg(document.getElementById('tree-a'));
-            treeCfg(document.getElementById('tree-b'), sampleData, { dragDropMode: 'both' });
-            treeCfg(document.getElementById('tree-perf'), [], { expandLevel: 0 });
+        treeCfg(document.getElementById('tree-a'));
+        treeCfg(document.getElementById('tree-b'), sampleData, { dragDropMode: 'both' });
+        treeCfg(document.getElementById('tree-perf'), [], { expandLevel: 0 });
 
-            // Start silent (production default), then paint the panel.
-            reg().logging.disableLogging();
-            refreshRegistry();
+        // Start silent (production default), then paint the panel.
+        reg().logging.disableLogging();
+        refreshRegistry();
 
-            console.log('%c🌐 window.components demo ready', 'color:#059669;font-size:1.3rem;font-weight:bold;');
-            console.log('Try: %cwindow.components[\'web-treeview\']', 'font-family:monospace;background:#eef;padding:2px 4px;');
-        });
+        console.log('%c🌐 window.components demo ready', 'color:#059669;font-size:1.3rem;font-weight:bold;');
+        console.log('Try: %cwindow.components[\'web-treeview\']', 'font-family:monospace;background:#eef;padding:2px 4px;');
+    });
 
-        // Keep the instance list honest even if instances change outside our buttons.
-        setInterval(() => refreshRegistry(), 2000);
+    // Keep the instance list honest even if instances change outside our buttons.
+    setInterval(() => refreshRegistry(), 2000);
 
-        // Persist .controls across reloads (shared helper — parity with web-multiselect).
-        persistControls('logging');
+    // Persist .controls across reloads (shared helper — parity with web-multiselect).
+    attachControlsPersistence('logging');
 </script>
-
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>

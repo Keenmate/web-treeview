@@ -1,296 +1,275 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Tree Editor</title>
-    <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        /* Page-specific: compact live-status bar with an inline count badge. */
-        .status-bar {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            color: #475569;
-            margin-bottom: 1rem;
-        }
-        .status-bar .badge {
-            padding: 0.1rem 0.5rem;
-            border-radius: 10px;
-            background: #e0e7ff;
-            color: #3730a3;
-            font-size: 0.8em;
-        }
-        /* Page-specific: keycap chips for keyboard-shortcut docs. */
-        .kbd {
-            display: inline-block;
-            padding: 0.1rem 0.4rem;
-            font-size: 0.8em;
-            font-family: monospace;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-radius: 3px;
-            box-shadow: 0 1px 0 #94a3b8;
-        }
-        /* Page-specific: transient warning banner (shown/hidden via JS). */
-        .drop-warning {
-            margin-top: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: #991b1b;
-            display: none;
-        }
-        /* Editor layout: tree on the left, toolbar + state on the right. */
-        .editor-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 1rem;
-        }
-        @media (max-width: 760px) {
-            .editor-grid { grid-template-columns: 1fr; }
-        }
-        .editor-toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .control-group {
-            padding: 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            background: #fafafa;
-        }
-        .control-group h3 {
-            margin: 0 0 0.5rem;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: #64748b;
-        }
-        .control-group .help-text {
-            margin: 0 0 0.5rem;
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-        .input-row {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .input-row input[type="text"] { flex: 1; min-width: 120px; }
-        .button-row {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Tree Editor</h1>
-            <p class="subtitle">Add / remove / rename, multi-select + clipboard, drag &mdash; a full editing workbench</p>
-        </header>
+<meta name="kmwc:title" content="Tree Editor">
+<meta name="kmwc:subtitle" content="Add / remove / rename, multi-select + clipboard, drag &mdash; a full editing workbench">
 
-        <!-- TE01 · Interactive Tree Editor -->
-        <div class="card">
-            <h2>TE01 · Interactive Tree Editor</h2>
-            <p>
-                Click a node to select it (the toolbar acts on the focused node). Use the controls to
-                <strong>add a child</strong>, <strong>add a sibling</strong>, <strong>rename</strong>,
-                <strong>delete</strong>, or <strong>move up / down</strong>. You can also
-                <strong>drag</strong> nodes to reorder, or <strong>right-click</strong> a node for the same
-                actions in a context menu. The JSON panel on the right reflects the live tree data after
-                every mutation.
-            </p>
+<link rel="stylesheet" href="examples-local.css">
 
-            <div class="status-bar">
-                Focused: <strong id="te-focused">(none)</strong>
-                <span class="badge" id="te-count">0 nodes</span>
+<style>
+    /* Page-specific: compact live-status bar with an inline count badge. */
+    .status-bar {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #475569;
+        margin-bottom: 1rem;
+    }
+    .status-bar .badge {
+        padding: 0.1rem 0.5rem;
+        border-radius: 10px;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 0.8em;
+    }
+    /* Page-specific: transient warning banner (shown/hidden via JS). */
+    .drop-warning {
+        margin-top: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #991b1b;
+        display: none;
+    }
+    /* Editor layout: tree on the left, toolbar + state on the right. */
+    .editor-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 1rem;
+    }
+    @media (max-width: 760px) {
+        .editor-grid { grid-template-columns: 1fr; }
+    }
+    .editor-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .control-group {
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #fafafa;
+    }
+    .control-group h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #64748b;
+    }
+    .control-group .help-text {
+        margin: 0 0 0.5rem;
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+    .input-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .input-row input[type="text"] { flex: 1; min-width: 120px; }
+    .button-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+
+<!-- TE01 · Interactive Tree Editor -->
+<div class="card">
+    <h2>TE01 · Interactive Tree Editor</h2>
+    <p>
+        Click a node to select it (the toolbar acts on the focused node). Use the controls to
+        <strong>add a child</strong>, <strong>add a sibling</strong>, <strong>rename</strong>,
+        <strong>delete</strong>, or <strong>move up / down</strong>. You can also
+        <strong>drag</strong> nodes to reorder, or <strong>right-click</strong> a node for the same
+        actions in a context menu. The JSON panel on the right reflects the live tree data after
+        every mutation.
+    </p>
+
+    <div class="status-bar">
+        Focused: <strong id="te-focused">(none)</strong>
+        <span class="badge" id="te-count">0 nodes</span>
+    </div>
+
+    <div class="editor-grid">
+        <div>
+            <div class="tree-container" id="te-tree-container">
+                <web-treeview id="te-tree"
+                    selection-mode="multiple"
+                    click-behavior="select"
+                    expand-level="2"
+                    order-member="sortOrder"
+                    drag-drop-mode="both"
+                    selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-
-            <div class="editor-grid">
-                <div>
-                    <div class="tree-container" id="te-tree-container">
-                        <web-treeview id="te-tree"
-                            selection-mode="multiple"
-                            click-behavior="select"
-                            expand-level="2"
-                            order-member="sortOrder"
-                            drag-drop-mode="both"
-                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
-                    </div>
-                    <div class="drop-warning" id="te-warning"></div>
-
-                    <div class="output mt-1">
-                        <p class="output-label">Activity log:</p>
-                        <div class="log-panel" id="te-log"></div>
-                    </div>
-                </div>
-
-                <div class="editor-toolbar">
-                    <div class="control-group">
-                        <h3>Add Node</h3>
-                        <p class="help-text" id="te-add-help">Adding at root level</p>
-                        <div class="input-row">
-                            <input type="text" id="te-name" placeholder="Node name"
-                                   onkeydown="if(event.key==='Enter')addChild()">
-                            <select id="te-icon">
-                                <option value="&#128196;">&#128196; File</option>
-                                <option value="&#128193;">&#128193; Folder</option>
-                                <option value="&#128194;">&#128194; Open Folder</option>
-                                <option value="&#128444;&#65039;">&#128444;&#65039; Image</option>
-                                <option value="&#127925;">&#127925; Music</option>
-                                <option value="&#128221;">&#128221; Note</option>
-                            </select>
-                        </div>
-                        <div class="button-row">
-                            <button onclick="addChild()">Add child</button>
-                            <button class="secondary" onclick="addSibling()">Add sibling</button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <h3>Edit Node</h3>
-                        <p class="help-text">Acts on the focused node</p>
-                        <div class="button-row">
-                            <button onclick="renameNode()">Rename&hellip;</button>
-                            <button class="btn-danger" onclick="deleteFocused()">Delete</button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <h3>Reorder</h3>
-                        <p class="help-text">Move the focused node among its siblings</p>
-                        <div class="button-row">
-                            <button class="secondary" onclick="moveUp()">Move up</button>
-                            <button class="secondary" onclick="moveDown()">Move down</button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <h3>Tree</h3>
-                        <div class="button-row">
-                            <button class="btn-outline" onclick="exportConsole()">Export to console</button>
-                            <button class="btn-outline" onclick="resetEditor()">Reset tree</button>
-                        </div>
-                    </div>
-
-                    <div class="output">
-                        <p class="output-label">Tree data (live):</p>
-                        <pre id="te-json" style="max-height: 320px; overflow:auto;"></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TE02 · Multi-select & Clipboard -->
-        <div class="card">
-            <h2>TE02 · Multi-select &amp; Clipboard</h2>
-            <p>
-                Multi-select with <span class="kbd">Ctrl/Cmd+Click</span> and <span class="kbd">Shift+Click</span>,
-                then <span class="kbd">Ctrl/Cmd+C</span> to copy or <span class="kbd">Ctrl/Cmd+X</span> to cut.
-                Click a target node in the right tree and press <span class="kbd">Ctrl/Cmd+V</span> to paste
-                (fresh ids are assigned on paste). You can also drag the multi-selection across trees.
-                Cut nodes dim until pasted; <span class="kbd">Esc</span> cancels a pending cut.
-            </p>
-
-            <div class="status-bar">
-                Clipboard: <strong id="cb-op">empty</strong>
-                <span id="cb-info"></span>
-            </div>
-
-            <div class="grid" style="--grid-min: 280px">
-                <div>
-                    <div class="demo-label">Source editor</div>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="cb-source"
-                            selection-mode="multiple"
-                            click-behavior="select"
-                            expand-level="2"
-                            tree-id="te-source"
-                            drag-drop-mode="both"
-                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
-                    </div>
-                    <div class="button-row mt-1">
-                        <button onclick="document.getElementById('cb-source').copyNodes()">Copy</button>
-                        <button class="secondary" onclick="document.getElementById('cb-source').cutNodes()">Cut</button>
-                        <button class="btn-outline" onclick="document.getElementById('cb-source').cancelCut()">Cancel cut</button>
-                    </div>
-                </div>
-                <div>
-                    <div class="demo-label">Target</div>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="cb-target"
-                            selection-mode="multiple"
-                            click-behavior="select"
-                            expand-level="2"
-                            tree-id="te-target"
-                            drag-drop-mode="both"
-                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
-                    </div>
-                    <div class="button-row mt-1">
-                        <button onclick="pasteIntoTarget()">Paste here</button>
-                    </div>
-                </div>
-            </div>
+            <div class="drop-warning" id="te-warning"></div>
 
             <div class="output mt-1">
-                <p class="output-label">Clipboard activity:</p>
-                <div class="log-panel" id="cb-log"></div>
+                <p class="output-label">Activity log:</p>
+                <div class="log-panel" id="te-log"></div>
             </div>
         </div>
 
-        <!-- TE03 · Editor API -->
-        <div class="card">
-            <h2>TE03 · Editor API</h2>
-            <p>The mutation and clipboard methods used on this page. Call them on the
-               <code>&lt;web-treeview&gt;</code> element (the facade proxies them to the controller).</p>
-
-            <table class="reference-table">
-                <thead>
-                    <tr><th>Method</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><code>addNode(parentPath, data, pathSegment?)</code></td><td>Add a new node under a parent (<code>''</code> = root). Returns <code>{ success, node, error? }</code>.</td></tr>
-                    <tr><td><code>removeNode(path, includeDescendants?)</code></td><td>Remove a single node (and optionally its descendants).</td></tr>
-                    <tr><td><code>updateNode(path, dataUpdates)</code></td><td>Patch a node's data in place (e.g. rename).</td></tr>
-                    <tr><td><code>moveNode(sourcePath, targetPath, position)</code></td><td>Move a node. <code>position</code> is <code>'before' | 'after' | 'child'</code>.</td></tr>
-                    <tr><td><code>addBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
-                    <tr><td><code>replaceBranch(parentPath, data[])</code></td><td>Replace a parent's children with a new set.</td></tr>
-                    <tr><td><code>removeBranch(path, keepParent?)</code></td><td>Remove a whole subtree (optionally keep the parent).</td></tr>
-                    <tr><td><code>removeNodes(paths)</code></td><td>Remove the given paths programmatically (no <code>beforeDeleteCallback</code>, no <code>node-delete</code> — those belong to the Delete key / menu command). Returns <code>{ removed, failed }</code>.</td></tr>
-                    <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to the selected set).</td></tr>
-                    <tr><td><code>pasteNodes(targetPath, transform?, position?)</code></td><td>Insert clipboard content; returns a <code>PasteResult</code> (<code>{ success, count, skipped }</code>).</td></tr>
-                    <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
-                    <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>focusedNode</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
-                    <tr><td><code>selectedPaths</code> / <code>checkedPaths</code> / <code>expandedPaths</code> / <code>focusNode(path)</code></td><td>Selected, checked, expanded state (properties — assign to replace) &amp; focus.</td></tr>
-                    <tr><td><code>nodes</code> / <code>getNodeByPath(path)</code></td><td>Current node data (mutations included); look up one node.</td></tr>
-                    <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
-                </tbody>
-            </table>
-
-            <div class="note">
-                <p class="note-title">orderMember + move positions</p>
-                <p>
-                    Set <code>order-member="sortOrder"</code> so before/after moves keep siblings ordered. The
-                    move positions are <code>'before'</code>, <code>'after'</code>, and <code>'child'</code>
-                    (matching svelte-treeview's DropPosition).
-                </p>
+        <div class="editor-toolbar">
+            <div class="control-group">
+                <h3>Add Node</h3>
+                <p class="help-text" id="te-add-help">Adding at root level</p>
+                <div class="input-row">
+                    <input type="text" id="te-name" placeholder="Node name"
+                           onkeydown="if(event.key==='Enter')addChild()">
+                    <select id="te-icon">
+                        <option value="&#128196;">&#128196; File</option>
+                        <option value="&#128193;">&#128193; Folder</option>
+                        <option value="&#128194;">&#128194; Open Folder</option>
+                        <option value="&#128444;&#65039;">&#128444;&#65039; Image</option>
+                        <option value="&#127925;">&#127925; Music</option>
+                        <option value="&#128221;">&#128221; Note</option>
+                    </select>
+                </div>
+                <div class="button-row">
+                    <button onclick="addChild()">Add child</button>
+                    <button class="secondary" onclick="addSibling()">Add sibling</button>
+                </div>
             </div>
 
-            <div class="code-block">
+            <div class="control-group">
+                <h3>Edit Node</h3>
+                <p class="help-text">Acts on the focused node</p>
+                <div class="button-row">
+                    <button onclick="renameNode()">Rename&hellip;</button>
+                    <button class="btn-danger" onclick="deleteFocused()">Delete</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Reorder</h3>
+                <p class="help-text">Move the focused node among its siblings</p>
+                <div class="button-row">
+                    <button class="secondary" onclick="moveUp()">Move up</button>
+                    <button class="secondary" onclick="moveDown()">Move down</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Tree</h3>
+                <div class="button-row">
+                    <button class="btn-outline" onclick="exportConsole()">Export to console</button>
+                    <button class="btn-outline" onclick="resetEditor()">Reset tree</button>
+                </div>
+            </div>
+
+            <div class="output">
+                <p class="output-label">Tree data (live):</p>
+                <pre id="te-json" style="max-height: 320px; overflow:auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TE02 · Multi-select & Clipboard -->
+<div class="card">
+    <h2>TE02 · Multi-select &amp; Clipboard</h2>
+    <p>
+        Multi-select with <kbd>Ctrl/Cmd+Click</kbd> and <kbd>Shift+Click</kbd>,
+        then <kbd>Ctrl/Cmd+C</kbd> to copy or <kbd>Ctrl/Cmd+X</kbd> to cut.
+        Click a target node in the right tree and press <kbd>Ctrl/Cmd+V</kbd> to paste
+        (fresh ids are assigned on paste). You can also drag the multi-selection across trees.
+        Cut nodes dim until pasted; <kbd>Esc</kbd> cancels a pending cut.
+    </p>
+
+    <div class="status-bar">
+        Clipboard: <strong id="cb-op">empty</strong>
+        <span id="cb-info"></span>
+    </div>
+
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Source editor</div>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="cb-source"
+                    selection-mode="multiple"
+                    click-behavior="select"
+                    expand-level="2"
+                    tree-id="te-source"
+                    drag-drop-mode="both"
+                    selected-node-class="wtv__node-content--selected-border"></web-treeview>
+            </div>
+            <div class="button-row mt-1">
+                <button onclick="document.getElementById('cb-source').copyNodes()">Copy</button>
+                <button class="secondary" onclick="document.getElementById('cb-source').cutNodes()">Cut</button>
+                <button class="btn-outline" onclick="document.getElementById('cb-source').cancelCut()">Cancel cut</button>
+            </div>
+        </div>
+        <div>
+            <div class="demo-label">Target</div>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="cb-target"
+                    selection-mode="multiple"
+                    click-behavior="select"
+                    expand-level="2"
+                    tree-id="te-target"
+                    drag-drop-mode="both"
+                    selected-node-class="wtv__node-content--selected-border"></web-treeview>
+            </div>
+            <div class="button-row mt-1">
+                <button onclick="pasteIntoTarget()">Paste here</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="output mt-1">
+        <p class="output-label">Clipboard activity:</p>
+        <div class="log-panel" id="cb-log"></div>
+    </div>
+</div>
+
+<!-- TE03 · Editor API -->
+<div class="card">
+    <h2>TE03 · Editor API</h2>
+    <p>The mutation and clipboard methods used on this page. Call them on the
+       <code>&lt;web-treeview&gt;</code> element (the facade proxies them to the controller).</p>
+
+    <table class="reference-table">
+        <thead>
+            <tr><th>Method</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>addNode(parentPath, data, pathSegment?)</code></td><td>Add a new node under a parent (<code>''</code> = root). Returns <code>{ success, node, error? }</code>.</td></tr>
+            <tr><td><code>removeNode(path, includeDescendants?)</code></td><td>Remove a single node (and optionally its descendants).</td></tr>
+            <tr><td><code>updateNode(path, dataUpdates)</code></td><td>Patch a node's data in place (e.g. rename).</td></tr>
+            <tr><td><code>moveNode(sourcePath, targetPath, position)</code></td><td>Move a node. <code>position</code> is <code>'before' | 'after' | 'child'</code>.</td></tr>
+            <tr><td><code>addBranch(parentPath, data[])</code></td><td>Insert several nodes under a parent in one batch.</td></tr>
+            <tr><td><code>replaceBranch(parentPath, data[])</code></td><td>Replace a parent's children with a new set.</td></tr>
+            <tr><td><code>removeBranch(path, keepParent?)</code></td><td>Remove a whole subtree (optionally keep the parent).</td></tr>
+            <tr><td><code>removeNodes(paths)</code></td><td>Remove the given paths programmatically (no <code>beforeDeleteCallback</code>, no <code>node-delete</code> — those belong to the Delete key / menu command). Returns <code>{ removed, failed }</code>.</td></tr>
+            <tr><td><code>copyNodes(paths?)</code> / <code>cutNodes(paths?)</code></td><td>Snapshot onto the shared cross-tree clipboard (defaults to the selected set).</td></tr>
+            <tr><td><code>pasteNodes(targetPath, transform?, position?)</code></td><td>Insert clipboard content; returns a <code>PasteResult</code> (<code>{ success, count, skipped }</code>).</td></tr>
+            <tr><td><code>cancelCut()</code> / <code>hasClipboardContent()</code> / <code>getClipboardOperation()</code></td><td>Clear a pending cut; query the clipboard state.</td></tr>
+            <tr><td><code>getSiblings(path)</code> / <code>getChildren(parentPath)</code> / <code>focusedNode</code></td><td>Read the tree structure and focus (used by Move up / down). Also on <code>el.controller</code>.</td></tr>
+            <tr><td><code>selectedPaths</code> / <code>checkedPaths</code> / <code>expandedPaths</code> / <code>focusNode(path)</code></td><td>Selected, checked, expanded state (properties — assign to replace) &amp; focus.</td></tr>
+            <tr><td><code>nodes</code> / <code>getNodeByPath(path)</code></td><td>Current node data (mutations included); look up one node.</td></tr>
+            <tr><td><code>getContextMenuItemsCallback({ node, path, parent, siblings }) =&gt; TreeMenuEntry[]</code></td><td>Build the right-click menu entries for a node (core action items; a leaf closes the menu after its <code>onClick</code>).</td></tr>
+        </tbody>
+    </table>
+
+    <div class="note">
+        <p class="note-title">orderMember + move positions</p>
+        <p>
+            Set <code>order-member="sortOrder"</code> so before/after moves keep siblings ordered. The
+            move positions are <code>'before'</code>, <code>'after'</code>, and <code>'child'</code>
+            (matching svelte-treeview's DropPosition).
+        </p>
+    </div>
+
+    <div class="code-block">
 <pre><code>// Add a child under the focused node (or at root)
 const parent = tree.focusedNode;
 tree.addNode(parent?.path ?? '', {
@@ -319,383 +298,377 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
   { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true,
     onClick: () =&gt; tree.removeNode(node.path) },
 ];</code></pre>
+    </div>
+</div>
+
+<!-- TE04 · Business Scenarios -->
+<div class="card">
+    <h2>TE04 · Business Scenarios</h2>
+    <p>Three small editors tuned for common real-world shapes. Each is fully interactive &mdash;
+       click a node and use its toolbar.</p>
+
+    <div class="card-grid">
+        <!-- Org chart -->
+        <div class="demo-card">
+            <h3>&#128101; Org Chart</h3>
+            <p>Add a direct report under the selected person.</p>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="sc-org" expand-level="3" click-behavior="select"
+                    order-member="sortOrder" drag-drop-mode="self"></web-treeview>
+            </div>
+            <div class="button-row mt-1">
+                <button onclick="scAdd('sc-org', 'Report', '&#128100;')">Add report</button>
+                <button class="btn-danger" onclick="scRemove('sc-org')">Remove</button>
             </div>
         </div>
 
-        <!-- TE04 · Business Scenarios -->
-        <div class="card">
-            <h2>TE04 · Business Scenarios</h2>
-            <p>Three small editors tuned for common real-world shapes. Each is fully interactive &mdash;
-               click a node and use its toolbar.</p>
+        <!-- File manager -->
+        <div class="demo-card">
+            <h3>&#128193; File Manager</h3>
+            <p>New files/folders land inside the selected folder.</p>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="sc-files" expand-level="2" click-behavior="select"
+                    order-member="sortOrder" drag-drop-mode="both"></web-treeview>
+            </div>
+            <div class="button-row mt-1">
+                <button onclick="scAdd('sc-files', 'New File', '&#128196;')">New file</button>
+                <button class="secondary" onclick="scAdd('sc-files', 'New Folder', '&#128193;')">New folder</button>
+                <button class="btn-danger" onclick="scRemove('sc-files')">Delete</button>
+            </div>
+        </div>
 
-            <div class="card-grid">
-                <!-- Org chart -->
-                <div class="demo-card">
-                    <h3>&#128101; Org Chart</h3>
-                    <p>Add a direct report under the selected person.</p>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="sc-org" expand-level="3" click-behavior="select"
-                            order-member="sortOrder" drag-drop-mode="self"></web-treeview>
-                    </div>
-                    <div class="button-row mt-1">
-                        <button onclick="scAdd('sc-org', 'Report', '&#128100;')">Add report</button>
-                        <button class="btn-danger" onclick="scRemove('sc-org')">Remove</button>
-                    </div>
-                </div>
-
-                <!-- File manager -->
-                <div class="demo-card">
-                    <h3>&#128193; File Manager</h3>
-                    <p>New files/folders land inside the selected folder.</p>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="sc-files" expand-level="2" click-behavior="select"
-                            order-member="sortOrder" drag-drop-mode="both"></web-treeview>
-                    </div>
-                    <div class="button-row mt-1">
-                        <button onclick="scAdd('sc-files', 'New File', '&#128196;')">New file</button>
-                        <button class="secondary" onclick="scAdd('sc-files', 'New Folder', '&#128193;')">New folder</button>
-                        <button class="btn-danger" onclick="scRemove('sc-files')">Delete</button>
-                    </div>
-                </div>
-
-                <!-- Category manager -->
-                <div class="demo-card">
-                    <h3>&#127991;&#65039; Category Manager</h3>
-                    <p>Build a nested product taxonomy.</p>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="sc-cats" expand-level="2" click-behavior="select"
-                            order-member="sortOrder" drag-drop-mode="both"></web-treeview>
-                    </div>
-                    <div class="button-row mt-1">
-                        <button onclick="scAdd('sc-cats', 'Subcategory', '&#127991;&#65039;')">Add subcategory</button>
-                        <button class="secondary" onclick="scRename('sc-cats')">Rename</button>
-                        <button class="btn-danger" onclick="scRemove('sc-cats')">Remove</button>
-                    </div>
-                </div>
+        <!-- Category manager -->
+        <div class="demo-card">
+            <h3>&#127991;&#65039; Category Manager</h3>
+            <p>Build a nested product taxonomy.</p>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="sc-cats" expand-level="2" click-behavior="select"
+                    order-member="sortOrder" drag-drop-mode="both"></web-treeview>
+            </div>
+            <div class="button-row mt-1">
+                <button onclick="scAdd('sc-cats', 'Subcategory', '&#127991;&#65039;')">Add subcategory</button>
+                <button class="secondary" onclick="scRename('sc-cats')">Rename</button>
+                <button class="btn-danger" onclick="scRemove('sc-cats')">Remove</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script type="module">
-        import { menuDivider } from '/src/index.ts';
+<script type="module">
+    import { menuDivider } from '/src/index.ts';
 
-        // ── Sample data ──────────────────────────────────────────────────
+    // ── Sample data ──────────────────────────────────────────────────
 
-        function editorData() {
-            return [
-                { id: 1, path: '1', name: 'Root Folder', icon: '📁', sortOrder: 10 },
-                { id: 2, path: '1.1', name: 'Documents', icon: '📂', sortOrder: 10 },
-                { id: 8, path: '1.1.1', name: 'Report.pdf', icon: '📄', sortOrder: 10 },
-                { id: 9, path: '1.1.2', name: 'Notes.txt', icon: '📄', sortOrder: 20 },
-                { id: 10, path: '1.1.3', name: 'Budget.xlsx', icon: '📄', sortOrder: 30 },
-                { id: 3, path: '1.2', name: 'Images', icon: '📂', sortOrder: 20 },
-                { id: 11, path: '1.2.1', name: 'Vacation.jpg', icon: '🖼️', sortOrder: 10 },
-                { id: 12, path: '1.2.2', name: 'Logo.png', icon: '🖼️', sortOrder: 20 },
-                { id: 4, path: '1.3', name: 'Music', icon: '📂', sortOrder: 30 },
-                { id: 14, path: '1.3.1', name: 'Chill Mix.mp3', icon: '🎵', sortOrder: 10 },
-                { id: 5, path: '2', name: 'Projects', icon: '📁', sortOrder: 20 },
-                { id: 6, path: '2.1', name: 'Web App', icon: '📂', sortOrder: 10 },
-                { id: 16, path: '2.1.1', name: 'index.html', icon: '📄', sortOrder: 10 },
-                { id: 17, path: '2.1.2', name: 'styles.css', icon: '📄', sortOrder: 20 },
-                { id: 7, path: '2.2', name: 'Mobile App', icon: '📂', sortOrder: 20 },
-                { id: 19, path: '2.2.1', name: 'Main.swift', icon: '📄', sortOrder: 10 }
-            ];
+    function editorData() {
+        return [
+            { id: 1, path: '1', name: 'Root Folder', icon: '📁', sortOrder: 10 },
+            { id: 2, path: '1.1', name: 'Documents', icon: '📂', sortOrder: 10 },
+            { id: 8, path: '1.1.1', name: 'Report.pdf', icon: '📄', sortOrder: 10 },
+            { id: 9, path: '1.1.2', name: 'Notes.txt', icon: '📄', sortOrder: 20 },
+            { id: 10, path: '1.1.3', name: 'Budget.xlsx', icon: '📄', sortOrder: 30 },
+            { id: 3, path: '1.2', name: 'Images', icon: '📂', sortOrder: 20 },
+            { id: 11, path: '1.2.1', name: 'Vacation.jpg', icon: '🖼️', sortOrder: 10 },
+            { id: 12, path: '1.2.2', name: 'Logo.png', icon: '🖼️', sortOrder: 20 },
+            { id: 4, path: '1.3', name: 'Music', icon: '📂', sortOrder: 30 },
+            { id: 14, path: '1.3.1', name: 'Chill Mix.mp3', icon: '🎵', sortOrder: 10 },
+            { id: 5, path: '2', name: 'Projects', icon: '📁', sortOrder: 20 },
+            { id: 6, path: '2.1', name: 'Web App', icon: '📂', sortOrder: 10 },
+            { id: 16, path: '2.1.1', name: 'index.html', icon: '📄', sortOrder: 10 },
+            { id: 17, path: '2.1.2', name: 'styles.css', icon: '📄', sortOrder: 20 },
+            { id: 7, path: '2.2', name: 'Mobile App', icon: '📂', sortOrder: 20 },
+            { id: 19, path: '2.2.1', name: 'Main.swift', icon: '📄', sortOrder: 10 }
+        ];
+    }
+
+    const sourceData = [
+        { id: 101, path: '1', name: 'Documents', icon: '📁', sortOrder: 10 },
+        { id: 102, path: '1.1', name: 'Q1 Report.pdf', icon: '📄', sortOrder: 10 },
+        { id: 103, path: '1.2', name: 'Q2 Report.pdf', icon: '📄', sortOrder: 20 },
+        { id: 104, path: '2', name: 'Images', icon: '📁', sortOrder: 20 },
+        { id: 105, path: '2.1', name: 'logo.png', icon: '🖼️', sortOrder: 10 },
+        { id: 106, path: '2.2', name: 'banner.jpg', icon: '🖼️', sortOrder: 20 }
+    ];
+
+    const targetData = [
+        { id: 201, path: '1', name: 'Inbox', icon: '📁', sortOrder: 10 },
+        { id: 202, path: '1.1', name: 'Unread', icon: '📂', sortOrder: 10 },
+        { id: 203, path: '2', name: 'Archive', icon: '📁', sortOrder: 20 }
+    ];
+
+    const orgData = [
+        { id: 1, path: '1', name: 'CEO - Alice', icon: '👤', sortOrder: 10 },
+        { id: 2, path: '1.1', name: 'CTO - Bob', icon: '👤', sortOrder: 10 },
+        { id: 3, path: '1.1.1', name: 'Dev Lead - Charlie', icon: '👤', sortOrder: 10 },
+        { id: 4, path: '1.1.2', name: 'QA Lead - Grace', icon: '👤', sortOrder: 20 },
+        { id: 5, path: '1.2', name: 'CFO - Ivy', icon: '👤', sortOrder: 20 }
+    ];
+
+    const filesData = [
+        { id: 1, path: '1', name: 'src', icon: '📁', sortOrder: 10 },
+        { id: 2, path: '1.1', name: 'index.html', icon: '📄', sortOrder: 10 },
+        { id: 3, path: '1.2', name: 'app.js', icon: '📄', sortOrder: 20 },
+        { id: 4, path: '2', name: 'assets', icon: '📁', sortOrder: 20 },
+        { id: 5, path: '2.1', name: 'logo.png', icon: '🖼️', sortOrder: 10 }
+    ];
+
+    const catsData = [
+        { id: 1, path: '1', name: 'Electronics', icon: '🏷️', sortOrder: 10 },
+        { id: 2, path: '1.1', name: 'Phones', icon: '🏷️', sortOrder: 10 },
+        { id: 3, path: '1.2', name: 'Laptops', icon: '🏷️', sortOrder: 20 },
+        { id: 4, path: '2', name: 'Clothing', icon: '🏷️', sortOrder: 20 },
+        { id: 5, path: '2.1', name: 'Men', icon: '🏷️', sortOrder: 10 }
+    ];
+
+    const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
+
+    // Default render folds the per-node icon in front of the label.
+    function iconLabel(node) {
+        return `${node.data?.icon ?? ''} ${node.data?.name ?? ''}`.trim();
+    }
+
+    customElements.whenDefined('web-treeview').then(() => {
+        // ════════════════════════════════════════════════════════════
+        // TE01 · Interactive Tree Editor
+        // ════════════════════════════════════════════════════════════
+        const tree = document.getElementById('te-tree');
+        let data = editorData();
+        let nextId = 500;
+
+        Object.assign(tree, treeConfig);
+        tree.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        tree.nodes = data;
+
+        const logEl = document.getElementById('te-log');
+        const warnEl = document.getElementById('te-warning');
+        let warnTimer;
+
+        function addLog(msg) {
+            const entry = document.createElement('div');
+            entry.className = 'event-entry';
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
+            logEl.prepend(entry);
+        }
+        function showWarning(msg) {
+            warnEl.textContent = msg;
+            warnEl.style.display = 'block';
+            clearTimeout(warnTimer);
+            warnTimer = setTimeout(() => { warnEl.style.display = 'none'; }, 4000);
         }
 
-        const sourceData = [
-            { id: 101, path: '1', name: 'Documents', icon: '📁', sortOrder: 10 },
-            { id: 102, path: '1.1', name: 'Q1 Report.pdf', icon: '📄', sortOrder: 10 },
-            { id: 103, path: '1.2', name: 'Q2 Report.pdf', icon: '📄', sortOrder: 20 },
-            { id: 104, path: '2', name: 'Images', icon: '📁', sortOrder: 20 },
-            { id: 105, path: '2.1', name: 'logo.png', icon: '🖼️', sortOrder: 10 },
-            { id: 106, path: '2.2', name: 'banner.jpg', icon: '🖼️', sortOrder: 20 }
-        ];
+        function focused() { return tree.focusedNode; }
 
-        const targetData = [
-            { id: 201, path: '1', name: 'Inbox', icon: '📁', sortOrder: 10 },
-            { id: 202, path: '1.1', name: 'Unread', icon: '📂', sortOrder: 10 },
-            { id: 203, path: '2', name: 'Archive', icon: '📁', sortOrder: 20 }
-        ];
-
-        const orgData = [
-            { id: 1, path: '1', name: 'CEO - Alice', icon: '👤', sortOrder: 10 },
-            { id: 2, path: '1.1', name: 'CTO - Bob', icon: '👤', sortOrder: 10 },
-            { id: 3, path: '1.1.1', name: 'Dev Lead - Charlie', icon: '👤', sortOrder: 10 },
-            { id: 4, path: '1.1.2', name: 'QA Lead - Grace', icon: '👤', sortOrder: 20 },
-            { id: 5, path: '1.2', name: 'CFO - Ivy', icon: '👤', sortOrder: 20 }
-        ];
-
-        const filesData = [
-            { id: 1, path: '1', name: 'src', icon: '📁', sortOrder: 10 },
-            { id: 2, path: '1.1', name: 'index.html', icon: '📄', sortOrder: 10 },
-            { id: 3, path: '1.2', name: 'app.js', icon: '📄', sortOrder: 20 },
-            { id: 4, path: '2', name: 'assets', icon: '📁', sortOrder: 20 },
-            { id: 5, path: '2.1', name: 'logo.png', icon: '🖼️', sortOrder: 10 }
-        ];
-
-        const catsData = [
-            { id: 1, path: '1', name: 'Electronics', icon: '🏷️', sortOrder: 10 },
-            { id: 2, path: '1.1', name: 'Phones', icon: '🏷️', sortOrder: 10 },
-            { id: 3, path: '1.2', name: 'Laptops', icon: '🏷️', sortOrder: 20 },
-            { id: 4, path: '2', name: 'Clothing', icon: '🏷️', sortOrder: 20 },
-            { id: 5, path: '2.1', name: 'Men', icon: '🏷️', sortOrder: 10 }
-        ];
-
-        const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
-
-        // Default render folds the per-node icon in front of the label.
-        function iconLabel(node) {
-            return `${node.data?.icon ?? ''} ${node.data?.name ?? ''}`.trim();
+        function refreshState() {
+            const all = tree.nodes;
+            document.getElementById('te-json').textContent = JSON.stringify(
+                all.map(d => ({ path: d.path, name: d.name, sortOrder: d.sortOrder })), null, 2
+            );
+            document.getElementById('te-count').textContent = `${all.length} nodes`;
         }
 
-        customElements.whenDefined('web-treeview').then(() => {
-            // ════════════════════════════════════════════════════════════
-            // TE01 · Interactive Tree Editor
-            // ════════════════════════════════════════════════════════════
-            const tree = document.getElementById('te-tree');
-            let data = editorData();
-            let nextId = 500;
+        function refreshFocusLabel() {
+            const n = focused();
+            document.getElementById('te-focused').textContent = n ? `${n.data?.name} (${n.path})` : '(none)';
+            document.getElementById('te-add-help').textContent = n
+                ? `Adding under: ${n.data?.name}` : 'Adding at root level';
+        }
 
-            Object.assign(tree, treeConfig);
-            tree.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            tree.nodes = data;
+        tree.addEventListener('focus-change', refreshFocusLabel);
+        tree.addEventListener('tree-change', refreshState);
 
-            const logEl = document.getElementById('te-log');
-            const warnEl = document.getElementById('te-warning');
-            let warnTimer;
+        function newNode(name, icon) {
+            return { id: nextId++, path: '', name, icon, sortOrder: 100 };
+        }
 
-            function addLog(msg) {
-                const entry = document.createElement('div');
-                entry.className = 'event-entry';
-                entry.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
-                logEl.prepend(entry);
-            }
-            function showWarning(msg) {
-                warnEl.textContent = msg;
-                warnEl.style.display = 'block';
-                clearTimeout(warnTimer);
-                warnTimer = setTimeout(() => { warnEl.style.display = 'none'; }, 4000);
-            }
-
-            function focused() { return tree.focusedNode; }
-
-            function refreshState() {
-                const all = tree.nodes;
-                document.getElementById('te-json').textContent = JSON.stringify(
-                    all.map(d => ({ path: d.path, name: d.name, sortOrder: d.sortOrder })), null, 2
-                );
-                document.getElementById('te-count').textContent = `${all.length} nodes`;
-            }
-
-            function refreshFocusLabel() {
-                const n = focused();
-                document.getElementById('te-focused').textContent = n ? `${n.data?.name} (${n.path})` : '(none)';
-                document.getElementById('te-add-help').textContent = n
-                    ? `Adding under: ${n.data?.name}` : 'Adding at root level';
-            }
-
-            tree.addEventListener('focus-change', refreshFocusLabel);
-            tree.addEventListener('tree-change', refreshState);
-
-            function newNode(name, icon) {
-                return { id: nextId++, path: '', name, icon, sortOrder: 100 };
-            }
-
-            window.addChild = () => {
-                const name = (document.getElementById('te-name').value || '').trim();
-                const icon = document.getElementById('te-icon').value;
-                if (!name) { showWarning('Enter a node name first'); return; }
-                const parent = focused();
-                const res = tree.addNode(parent?.path ?? '', newNode(name, icon));
-                if (res.success) {
-                    addLog(`Added "${name}"${parent ? ` under "${parent.data?.name}"` : ' at root'}`);
-                    document.getElementById('te-name').value = '';
-                    refreshState();
-                } else {
-                    showWarning(res.error || 'Add failed');
-                }
-            };
-
-            window.addSibling = () => {
-                const name = (document.getElementById('te-name').value || '').trim();
-                const icon = document.getElementById('te-icon').value;
-                if (!name) { showWarning('Enter a node name first'); return; }
-                const node = focused();
-                const parentPath = node ? (node.parentPath ?? '') : '';
-                const res = tree.addNode(parentPath, newNode(name, icon));
-                if (res.success) {
-                    addLog(`Added sibling "${name}"`);
-                    document.getElementById('te-name').value = '';
-                    refreshState();
-                } else {
-                    showWarning(res.error || 'Add failed');
-                }
-            };
-
-            window.renameNode = (path) => {
-                const node = path ? tree.getNodeByPath(path) : focused();
-                if (!node) { showWarning('Select a node to rename'); return; }
-                const name = prompt('Rename node:', node.data?.name ?? '');
-                if (name == null || !name.trim()) return;
-                const res = tree.updateNode(node.path, { name: name.trim() });
-                if (res.success) { addLog(`Renamed to "${name.trim()}"`); refreshState(); }
-            };
-
-            window.deleteFocused = (path) => {
-                const node = path ? tree.getNodeByPath(path) : focused();
-                if (!node) { showWarning('Select a node to delete'); return; }
-                const name = node.data?.name;
-                const res = tree.removeNode(node.path);
-                if (res.success) { addLog(`Deleted "${name}"`); refreshState(); refreshFocusLabel(); }
-                else showWarning(res.error || 'Delete failed');
-            };
-
-            function move(dir) {
-                const node = focused();
-                if (!node) { showWarning('Select a node to move'); return; }
-                const siblings = tree.getSiblings(node.path);
-                const i = siblings.findIndex(s => s.path === node.path);
-                if (dir < 0 && i <= 0) { addLog('Already at top'); return; }
-                if (dir > 0 && i >= siblings.length - 1) { addLog('Already at bottom'); return; }
-                const target = siblings[i + dir];
-                const position = dir < 0 ? 'before' : 'after';
-                const res = tree.moveNode(node.path, target.path, position);
-                if (res.success) { addLog(`Moved "${node.data?.name}" ${position} "${target.data?.name}"`); refreshState(); }
-                else showWarning(res.error || 'Move failed');
-            }
-            window.moveUp = () => move(-1);
-            window.moveDown = () => move(1);
-
-            window.exportConsole = () => {
-                const all = tree.nodes;
-                console.log('Exported tree data:', all);
-                addLog(`Exported ${all.length} nodes to console`);
-            };
-
-            window.resetEditor = () => {
-                data = editorData();
-                nextId = 500;
-                tree.nodes = data;
-                logEl.innerHTML = '';
-                addLog('Tree reset to initial state');
+        window.addChild = () => {
+            const name = (document.getElementById('te-name').value || '').trim();
+            const icon = document.getElementById('te-icon').value;
+            if (!name) { showWarning('Enter a node name first'); return; }
+            const parent = focused();
+            const res = tree.addNode(parent?.path ?? '', newNode(name, icon));
+            if (res.success) {
+                addLog(`Added "${name}"${parent ? ` under "${parent.data?.name}"` : ' at root'}`);
+                document.getElementById('te-name').value = '';
                 refreshState();
-                refreshFocusLabel();
-            };
+            } else {
+                showWarning(res.error || 'Add failed');
+            }
+        };
 
-            // Right-click context menu — same actions as the toolbar.
-            tree.getContextMenuItemsCallback = ({ node }) => [
-                { id: 'add', icon: '➕', text: 'Add child…', onClick: () => {
-                    tree.focusNode(node.path);
-                    const name = prompt('Child name:', 'New Node');
-                    if (name && name.trim()) {
-                        tree.addNode(node.path, newNode(name.trim(), '📄'));
-                        addLog(`Added "${name.trim()}" under "${node.data?.name}"`);
-                        refreshState();
-                    }
-                } },
-                { id: 'rename', icon: '✏️', text: 'Rename…', shortcut: 'F2', onClick: () => window.renameNode(node.path) },
-                menuDivider(),
-                { id: 'up', icon: '⬆️', text: 'Move up', onClick: () => { tree.focusNode(node.path); move(-1); } },
-                { id: 'down', icon: '⬇️', text: 'Move down', onClick: () => { tree.focusNode(node.path); move(1); } },
-                menuDivider(),
-                { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, onClick: () => window.deleteFocused(node.path) },
-            ];
+        window.addSibling = () => {
+            const name = (document.getElementById('te-name').value || '').trim();
+            const icon = document.getElementById('te-icon').value;
+            if (!name) { showWarning('Enter a node name first'); return; }
+            const node = focused();
+            const parentPath = node ? (node.parentPath ?? '') : '';
+            const res = tree.addNode(parentPath, newNode(name, icon));
+            if (res.success) {
+                addLog(`Added sibling "${name}"`);
+                document.getElementById('te-name').value = '';
+                refreshState();
+            } else {
+                showWarning(res.error || 'Add failed');
+            }
+        };
 
+        window.renameNode = (path) => {
+            const node = path ? tree.getNodeByPath(path) : focused();
+            if (!node) { showWarning('Select a node to rename'); return; }
+            const name = prompt('Rename node:', node.data?.name ?? '');
+            if (name == null || !name.trim()) return;
+            const res = tree.updateNode(node.path, { name: name.trim() });
+            if (res.success) { addLog(`Renamed to "${name.trim()}"`); refreshState(); }
+        };
+
+        window.deleteFocused = (path) => {
+            const node = path ? tree.getNodeByPath(path) : focused();
+            if (!node) { showWarning('Select a node to delete'); return; }
+            const name = node.data?.name;
+            const res = tree.removeNode(node.path);
+            if (res.success) { addLog(`Deleted "${name}"`); refreshState(); refreshFocusLabel(); }
+            else showWarning(res.error || 'Delete failed');
+        };
+
+        function move(dir) {
+            const node = focused();
+            if (!node) { showWarning('Select a node to move'); return; }
+            const siblings = tree.getSiblings(node.path);
+            const i = siblings.findIndex(s => s.path === node.path);
+            if (dir < 0 && i <= 0) { addLog('Already at top'); return; }
+            if (dir > 0 && i >= siblings.length - 1) { addLog('Already at bottom'); return; }
+            const target = siblings[i + dir];
+            const position = dir < 0 ? 'before' : 'after';
+            const res = tree.moveNode(node.path, target.path, position);
+            if (res.success) { addLog(`Moved "${node.data?.name}" ${position} "${target.data?.name}"`); refreshState(); }
+            else showWarning(res.error || 'Move failed');
+        }
+        window.moveUp = () => move(-1);
+        window.moveDown = () => move(1);
+
+        window.exportConsole = () => {
+            const all = tree.nodes;
+            console.log('Exported tree data:', all);
+            addLog(`Exported ${all.length} nodes to console`);
+        };
+
+        window.resetEditor = () => {
+            data = editorData();
+            nextId = 500;
+            tree.nodes = data;
+            logEl.innerHTML = '';
+            addLog('Tree reset to initial state');
             refreshState();
             refreshFocusLabel();
+        };
 
-            // ════════════════════════════════════════════════════════════
-            // TE02 · Multi-select & Clipboard
-            // ════════════════════════════════════════════════════════════
-            const source = document.getElementById('cb-source');
-            const target = document.getElementById('cb-target');
-            let cbNextId = 9000;
-
-            Object.assign(source, treeConfig);
-            source.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            source.nodes = JSON.parse(JSON.stringify(sourceData));
-
-            Object.assign(target, treeConfig);
-            target.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-            target.nodes = JSON.parse(JSON.stringify(targetData));
-
-            const cbLog = document.getElementById('cb-log');
-            function addCbLog(msg) {
-                const entry = document.createElement('div');
-                entry.className = 'event-entry';
-                entry.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
-                cbLog.prepend(entry);
-            }
-            function updateClipboardStatus() {
-                const has = source.hasClipboardContent?.() || target.hasClipboardContent?.();
-                const op = source.getClipboardOperation?.() ?? target.getClipboardOperation?.();
-                document.getElementById('cb-op').textContent = has ? op : 'empty';
-                document.getElementById('cb-info').textContent = has
-                    ? `(${source.checkedPaths.length || source.selectedPaths.length || '?'} entries)` : '';
-            }
-
-            source.addEventListener('selection-change', updateClipboardStatus);
-            source.addEventListener('tree-change', updateClipboardStatus);
-            target.addEventListener('tree-change', updateClipboardStatus);
-
-            source.onNodeCopy = ({ paths }) => { addCbLog(`Copied ${paths.length} node(s)`); updateClipboardStatus(); };
-            source.onNodeCut = ({ paths }) => { addCbLog(`Cut ${paths.length} node(s) — paste to move`); updateClipboardStatus(); };
-
-            window.pasteIntoTarget = () => {
-                if (!(source.hasClipboardContent?.() || target.hasClipboardContent?.())) {
-                    addCbLog('Clipboard is empty — copy/cut in the source first');
-                    return;
+        // Right-click context menu — same actions as the toolbar.
+        tree.getContextMenuItemsCallback = ({ node }) => [
+            { id: 'add', icon: '➕', text: 'Add child…', onClick: () => {
+                tree.focusNode(node.path);
+                const name = prompt('Child name:', 'New Node');
+                if (name && name.trim()) {
+                    tree.addNode(node.path, newNode(name.trim(), '📄'));
+                    addLog(`Added "${name.trim()}" under "${node.data?.name}"`);
+                    refreshState();
                 }
-                const tgt = target.focusedNode;
-                const targetPath = tgt?.path ?? '';
-                const result = target.pasteNodes(targetPath, ({ data }) => ({ ...data, id: cbNextId++ }), 'child');
-                if (result.success) {
-                    addCbLog(`Pasted ${result.count} node(s)${tgt ? ` under "${tgt.data?.name}"` : ' at root'}`);
-                } else {
-                    addCbLog(`Paste failed: ${result.error ?? 'unknown error'}`);
-                }
-                updateClipboardStatus();
-            };
+            } },
+            { id: 'rename', icon: '✏️', text: 'Rename…', shortcut: 'F2', onClick: () => window.renameNode(node.path) },
+            menuDivider(),
+            { id: 'up', icon: '⬆️', text: 'Move up', onClick: () => { tree.focusNode(node.path); move(-1); } },
+            { id: 'down', icon: '⬇️', text: 'Move down', onClick: () => { tree.focusNode(node.path); move(1); } },
+            menuDivider(),
+            { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, onClick: () => window.deleteFocused(node.path) },
+        ];
 
+        refreshState();
+        refreshFocusLabel();
+
+        // ════════════════════════════════════════════════════════════
+        // TE02 · Multi-select & Clipboard
+        // ════════════════════════════════════════════════════════════
+        const source = document.getElementById('cb-source');
+        const target = document.getElementById('cb-target');
+        let cbNextId = 9000;
+
+        Object.assign(source, treeConfig);
+        source.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        source.nodes = JSON.parse(JSON.stringify(sourceData));
+
+        Object.assign(target, treeConfig);
+        target.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        target.nodes = JSON.parse(JSON.stringify(targetData));
+
+        const cbLog = document.getElementById('cb-log');
+        function addCbLog(msg) {
+            const entry = document.createElement('div');
+            entry.className = 'event-entry';
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
+            cbLog.prepend(entry);
+        }
+        function updateClipboardStatus() {
+            const has = source.hasClipboardContent?.() || target.hasClipboardContent?.();
+            const op = source.getClipboardOperation?.() ?? target.getClipboardOperation?.();
+            document.getElementById('cb-op').textContent = has ? op : 'empty';
+            document.getElementById('cb-info').textContent = has
+                ? `(${source.checkedPaths.length || source.selectedPaths.length || '?'} entries)` : '';
+        }
+
+        source.addEventListener('selection-change', updateClipboardStatus);
+        source.addEventListener('tree-change', updateClipboardStatus);
+        target.addEventListener('tree-change', updateClipboardStatus);
+
+        source.onNodeCopy = ({ paths }) => { addCbLog(`Copied ${paths.length} node(s)`); updateClipboardStatus(); };
+        source.onNodeCut = ({ paths }) => { addCbLog(`Cut ${paths.length} node(s) — paste to move`); updateClipboardStatus(); };
+
+        window.pasteIntoTarget = () => {
+            if (!(source.hasClipboardContent?.() || target.hasClipboardContent?.())) {
+                addCbLog('Clipboard is empty — copy/cut in the source first');
+                return;
+            }
+            const tgt = target.focusedNode;
+            const targetPath = tgt?.path ?? '';
+            const result = target.pasteNodes(targetPath, ({ data }) => ({ ...data, id: cbNextId++ }), 'child');
+            if (result.success) {
+                addCbLog(`Pasted ${result.count} node(s)${tgt ? ` under "${tgt.data?.name}"` : ' at root'}`);
+            } else {
+                addCbLog(`Paste failed: ${result.error ?? 'unknown error'}`);
+            }
             updateClipboardStatus();
+        };
 
-            // ════════════════════════════════════════════════════════════
-            // TE04 · Business Scenarios
-            // ════════════════════════════════════════════════════════════
-            function initScenario(id, seed) {
-                const el = document.getElementById(id);
-                Object.assign(el, treeConfig);
-                el.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
-                el.nodes = JSON.parse(JSON.stringify(seed));
-                el._nextId = 7000 + Math.floor(Math.random() * 1000);
-                return el;
-            }
-            initScenario('sc-org', orgData);
-            initScenario('sc-files', filesData);
-            initScenario('sc-cats', catsData);
+        updateClipboardStatus();
 
-            window.scAdd = (id, baseName, icon) => {
-                const el = document.getElementById(id);
-                const parent = el.focusedNode;
-                const data = { id: el._nextId++, path: '', name: `${baseName} ${el._nextId}`, icon, sortOrder: 100 };
-                el.addNode(parent?.path ?? '', data);
-            };
-            window.scRemove = (id) => {
-                const el = document.getElementById(id);
-                const node = el.focusedNode;
-                if (node) el.removeNode(node.path);
-            };
-            window.scRename = (id) => {
-                const el = document.getElementById(id);
-                const node = el.focusedNode;
-                if (!node) return;
-                const name = prompt('Rename:', node.data?.name ?? '');
-                if (name && name.trim()) el.updateNode(node.path, { name: name.trim() });
-            };
-        });
-    </script>
+        // ════════════════════════════════════════════════════════════
+        // TE04 · Business Scenarios
+        // ════════════════════════════════════════════════════════════
+        function initScenario(id, seed) {
+            const el = document.getElementById(id);
+            Object.assign(el, treeConfig);
+            el.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+            el.nodes = JSON.parse(JSON.stringify(seed));
+            el._nextId = 7000 + Math.floor(Math.random() * 1000);
+            return el;
+        }
+        initScenario('sc-org', orgData);
+        initScenario('sc-files', filesData);
+        initScenario('sc-cats', catsData);
 
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        window.scAdd = (id, baseName, icon) => {
+            const el = document.getElementById(id);
+            const parent = el.focusedNode;
+            const data = { id: el._nextId++, path: '', name: `${baseName} ${el._nextId}`, icon, sortOrder: 100 };
+            el.addNode(parent?.path ?? '', data);
+        };
+        window.scRemove = (id) => {
+            const el = document.getElementById(id);
+            const node = el.focusedNode;
+            if (node) el.removeNode(node.path);
+        };
+        window.scRename = (id) => {
+            const el = document.getElementById(id);
+            const node = el.focusedNode;
+            if (!node) return;
+            const name = prompt('Rename:', node.data?.name ?? '');
+            if (name && name.trim()) el.updateNode(node.path, { name: name.trim() });
+        };
+    });
+</script>

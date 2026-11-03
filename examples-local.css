@@ -1,0 +1,25 @@
+/* Component-only example rules (unlayered → always beat the devkit's @layer kmwc).
+   Page-specific rules stay in each page's own <style>. */
+
+/* A bordered, scrollable frame around a live <web-treeview>. The inner padding keeps a
+   full-width row's focus ring (a box-shadow painted outside the row) from being clipped at
+   the scroll edge — matches svelte-treeview's .tree-container (1rem). */
+.tree-container {
+    border: 1px solid var(--kmwc-border-color);
+    border-radius: var(--kmwc-radius-md);
+    min-height: 200px;
+    max-height: 500px;
+    overflow: auto;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tree-container-sm {
+    min-height: 100px;
+    max-height: 300px;
+}
+
+.tree-container-lg {
+    min-height: 300px;
+    max-height: 700px;
+}

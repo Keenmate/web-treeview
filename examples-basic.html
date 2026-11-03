@@ -1,122 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Basic Usage</title>
-    <link rel="stylesheet" href="examples-shared.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Basic Usage</h1>
-            <p class="subtitle">Simple tree rendering, expand/collapse, node selection, and hierarchical data</p>
-        </header>
+<meta name="kmwc:title" content="Basic Usage">
+<meta name="kmwc:subtitle" content="Simple tree rendering, expand/collapse, node selection, and hierarchical data">
 
-        <!-- Example 1: Simple Tree -->
-        <div class="card">
-            <h2>BU01 · Simple File Tree</h2>
-            <p>A basic tree with hierarchical data using path-based structure. Click nodes to select, click the toggle icon to expand/collapse.</p>
+<link rel="stylesheet" href="examples-local.css">
 
-            <div class="controls">
-                <span class="muted">Display:</span>
-                <button id="indent-condensed" onclick="applyPreset('condensed', this)">Condensed</button>
-                <button id="indent-compact" onclick="applyPreset('compact', this)">Compact</button>
-                <button id="indent-generous" onclick="applyPreset('generous', this)">Generous</button>
-            </div>
+<!-- Example 1: Simple Tree -->
+<div class="card">
+    <h2>BU01 · Simple File Tree</h2>
+    <p>A basic tree with hierarchical data using path-based structure. Click nodes to select, click the toggle icon to expand/collapse.</p>
 
-            <div class="display-sliders">
-                <label for="sl-indent">--wtv-indent-size</label>
-                <input type="range" id="sl-indent" min="0" max="48" step="1" value="32">
-                <output id="out-indent">32px</output>
+    <div class="controls">
+        <span class="muted">Display:</span>
+        <button id="indent-condensed" onclick="applyPreset('condensed', this)">Condensed</button>
+        <button id="indent-compact" onclick="applyPreset('compact', this)">Compact</button>
+        <button id="indent-generous" onclick="applyPreset('generous', this)">Generous</button>
+    </div>
 
-                <label for="sl-column">--wtv-toggle-icon-width</label>
-                <input type="range" id="sl-column" min="0" max="48" step="1" value="24">
-                <output id="out-column">24px</output>
+    <div class="display-sliders">
+        <label for="sl-indent">--wtv-indent-size</label>
+        <input type="range" id="sl-indent" min="0" max="48" step="1" value="32">
+        <output id="out-indent">32px</output>
 
-                <label for="sl-padding">--wtv-node-padding (left)</label>
-                <input type="range" id="sl-padding" min="0" max="24" step="1" value="8">
-                <output id="out-padding">8px</output>
-            </div>
+        <label for="sl-column">--wtv-toggle-icon-width</label>
+        <input type="range" id="sl-column" min="0" max="48" step="1" value="24">
+        <output id="out-column">24px</output>
 
-            <div id="indent-readout" class="css-readout"></div>
+        <label for="sl-padding">--wtv-node-padding (left)</label>
+        <input type="range" id="sl-padding" min="0" max="24" step="1" value="8">
+        <output id="out-padding">8px</output>
+    </div>
 
-            <div class="tree-container" id="tree1-container">
-                <web-treeview id="tree1"></web-treeview>
-            </div>
+    <div id="indent-readout" class="css-readout"></div>
 
-            <div class="note">
-                <p class="note-title">What makes a row's left offset</p>
-                <p style="margin-bottom:0.5rem">
-                    A row sits in by <b>toggle gutter + content padding + (level − 1) × indent</b>. The
-                    indentation buttons only move <code>--wtv-indent-size</code> — multiplied by
-                    <code>(level − 1)</code>, so at the <em>root</em> that's × 0 and the root rows never move.
-                    The fixed part left of every label (highlighted amber above) is the <strong>toggle column</strong>
-                    (<code>--wtv-toggle-icon-width</code>, reserved on every row so leaf labels align under branch
-                    labels) plus the content's left <code>--wtv-node-padding</code> — independent of indent.
-                </p>
-                <p style="margin-bottom:0">
-                    To tighten the root gap, lower <code>--wtv-toggle-icon-width</code> (and/or
-                    <code>--wtv-node-padding</code>); to change nesting density, use <code>--wtv-indent-size</code>.
-                    All inherit through the Shadow DOM when set inline on <code>&lt;web-treeview&gt;</code>, so rows
-                    re-flow instantly.
-                </p>
-            </div>
+    <div class="tree-container" id="tree1-container">
+        <web-treeview id="tree1"></web-treeview>
+    </div>
 
-            <div class="output">
-                <p class="output-label">Selected node:</p>
-                <pre id="tree1-output">Click a node to see selection info</pre>
-            </div>
-        </div>
+    <div class="note">
+        <p class="note-title">What makes a row's left offset</p>
+        <p style="margin-bottom:0.5rem">
+            A row sits in by <b>toggle gutter + content padding + (level − 1) × indent</b>. The
+            indentation buttons only move <code>--wtv-indent-size</code> — multiplied by
+            <code>(level − 1)</code>, so at the <em>root</em> that's × 0 and the root rows never move.
+            The fixed part left of every label (highlighted amber above) is the <strong>toggle column</strong>
+            (<code>--wtv-toggle-icon-width</code>, reserved on every row so leaf labels align under branch
+            labels) plus the content's left <code>--wtv-node-padding</code> — independent of indent.
+        </p>
+        <p style="margin-bottom:0">
+            To tighten the root gap, lower <code>--wtv-toggle-icon-width</code> (and/or
+            <code>--wtv-node-padding</code>); to change nesting density, use <code>--wtv-indent-size</code>.
+            All inherit through the Shadow DOM when set inline on <code>&lt;web-treeview&gt;</code>, so rows
+            re-flow instantly.
+        </p>
+    </div>
 
-        <!-- Example 2: Expand Level -->
-        <div class="card">
-            <h2>BU02 · Pre-expanded Tree</h2>
-            <p>Use <code>expand-level</code> to control how many levels are expanded on initial render. This tree starts with 2 levels expanded.</p>
+    <div class="output">
+        <p class="output-label">Selected node:</p>
+        <pre id="tree1-output">Click a node to see selection info</pre>
+    </div>
+</div>
 
-            <div class="controls">
-                <label for="tree2-expand-level">expand-level:</label>
-                <input type="number" id="tree2-expand-level" min="0" max="10" step="1" value="2" style="width:5rem">
-                <span class="muted">levels expanded (0 = roots only)</span>
-            </div>
+<!-- Example 2: Expand Level -->
+<div class="card">
+    <h2>BU02 · Pre-expanded Tree</h2>
+    <p>Use <code>expand-level</code> to control how many levels are expanded on initial render. This tree starts with 2 levels expanded.</p>
 
-            <div class="tree-container" id="tree2-container">
-                <web-treeview id="tree2" expand-level="2"></web-treeview>
-            </div>
-        </div>
+    <div class="controls">
+        <label for="tree2-expand-level">expand-level:</label>
+        <input type="number" id="tree2-expand-level" min="0" max="10" step="1" value="2" class="w-sm">
+        <span class="muted">levels expanded (0 = roots only)</span>
+    </div>
 
-        <!-- Example 3: Large Flat Dataset -->
-        <div class="card">
-            <h2>BU03 · Large Dataset with Progressive Rendering</h2>
-            <p>A tree with 1000+ nodes demonstrating progressive rendering. Nodes are rendered in batches to keep the UI responsive.</p>
+    <div class="tree-container" id="tree2-container">
+        <web-treeview id="tree2" expand-level="2"></web-treeview>
+    </div>
+</div>
 
-            <div class="controls">
-                <button onclick="loadLargeTree()">Load 1,000 nodes</button>
-                <button onclick="loadVeryLargeTree()">Load 5,000 nodes</button>
-                <button class="secondary" onclick="clearLargeTree()">Clear</button>
-            </div>
+<!-- Example 3: Large Flat Dataset -->
+<div class="card">
+    <h2>BU03 · Large Dataset with Progressive Rendering</h2>
+    <p>A tree with 1000+ nodes demonstrating progressive rendering. Nodes are rendered in batches to keep the UI responsive.</p>
 
-            <div class="tree-container tree-container-lg" id="tree3-container">
-                <web-treeview id="tree3" enable-progressive-render="true"></web-treeview>
-            </div>
+    <div class="controls">
+        <button onclick="loadLargeTree()">Load 1,000 nodes</button>
+        <button onclick="loadVeryLargeTree()">Load 5,000 nodes</button>
+        <button class="secondary" onclick="clearLargeTree()">Clear</button>
+    </div>
 
-            <div class="output">
-                <p class="output-label">Render stats:</p>
-                <pre id="tree3-output">Load data to see node counts</pre>
-            </div>
-        </div>
+    <div class="tree-container tree-container-lg" id="tree3-container">
+        <web-treeview id="tree3" enable-progressive-render="true"></web-treeview>
+    </div>
 
-        <!-- Example 4: Custom Member Mappings -->
-        <div class="card">
-            <h2>BU04 · Custom Data Mappings</h2>
-            <p>Map your own data shape to the tree using <code>id-member</code>, <code>path-member</code>, and <code>display-value-member</code> attributes.</p>
+    <div class="output">
+        <p class="output-label">Render stats:</p>
+        <pre id="tree3-output">Load data to see node counts</pre>
+    </div>
+</div>
 
-            <div class="tree-container" id="tree4-container">
-                <web-treeview id="tree4"></web-treeview>
-            </div>
+<!-- Example 4: Custom Member Mappings -->
+<div class="card">
+    <h2>BU04 · Custom Data Mappings</h2>
+    <p>Map your own data shape to the tree using <code>id-member</code>, <code>path-member</code>, and <code>display-value-member</code> attributes.</p>
 
-            <div class="code-block">
+    <div class="tree-container" id="tree4-container">
+        <web-treeview id="tree4"></web-treeview>
+    </div>
+
+    <div class="code-block">
 <pre><code>// Your data can use any property names
 const data = [
   { categoryId: 1, categoryPath: "1", label: "Electronics", ... },
@@ -127,301 +116,294 @@ const data = [
 element.setAttribute('id-member', 'categoryId');
 element.setAttribute('path-member', 'categoryPath');
 element.setAttribute('display-value-member', 'label');</code></pre>
-            </div>
-        </div>
+    </div>
+</div>
 
-        <!-- Example 5: Events -->
-        <div class="card">
-            <h2>BU05 · Events</h2>
-            <p>Listen to tree events: <code>node-click</code>, <code>focus-change</code>, <code>tree-change</code>.</p>
+<!-- Example 5: Events -->
+<div class="card">
+    <h2>BU05 · Events</h2>
+    <p>Listen to tree events: <code>node-click</code>, <code>focus-change</code>, <code>tree-change</code>.</p>
 
-            <div class="tree-container" id="tree5-container">
-                <web-treeview id="tree5" expand-level="1"></web-treeview>
-            </div>
-
-            <div class="output">
-                <p class="output-label">Event log:</p>
-                <div class="event-log" id="tree5-log"></div>
-            </div>
-            <button onclick="document.getElementById('tree5-log').innerHTML = ''" class="btn-outline mt-1">Clear log</button>
-        </div>
-
-        <!-- NEW (rc03): Accordion Expand -->
-        <div class="card">
-            <h2>BU06 · Accordion Expand</h2>
-            <p>With <code>expand-as-accordion="true"</code>, opening one branch automatically collapses its siblings at the same level. Useful when you want only one section open at a time (e.g. file managers, settings panels). User-driven toggles honor it; programmatic <code>expandNodes()</code> calls are unaffected.</p>
-
-            <div class="controls">
-                <label>
-                    <input type="checkbox" id="acc-enabled" onchange="applyAccordion()" checked>
-                    Accordion mode
-                </label>
-                <button class="btn-outline" onclick="document.getElementById('tree-acc').collapseAll()">Collapse all</button>
-            </div>
-
-            <div class="tree-container">
-                <web-treeview id="tree-acc" expand-as-accordion="true" expand-level="1"></web-treeview>
-            </div>
-            <p class="form-text mt-1">
-                Try expanding "src", then "public" &mdash; with accordion on, opening "public" auto-collapses "src". Untick the box and the two sections can stay open together.
-            </p>
-        </div>
+    <div class="tree-container" id="tree5-container">
+        <web-treeview id="tree5" expand-level="1"></web-treeview>
     </div>
 
-    <script type="module">
-        import '/src/index.ts';
-        import { persistControls } from './examples-controls-store.js';
+    <div class="output">
+        <p class="output-label">Event log:</p>
+        <div class="event-log" id="tree5-log"></div>
+    </div>
+    <button onclick="document.getElementById('tree5-log').innerHTML = ''" class="btn-outline mt-1">Clear log</button>
+</div>
 
-        // ── Sample Data ──────────────────────────────────────────────────
+<!-- NEW (rc03): Accordion Expand -->
+<div class="card">
+    <h2>BU06 · Accordion Expand</h2>
+    <p>With <code>expand-as-accordion="true"</code>, opening one branch automatically collapses its siblings at the same level. Useful when you want only one section open at a time (e.g. file managers, settings panels). User-driven toggles honor it; programmatic <code>expandNodes()</code> calls are unaffected.</p>
 
-        const fileTree = [
-            { id: 1, path: '1', name: 'src' },
-            { id: 2, path: '1.1', name: 'components' },
-            { id: 3, path: '1.1.1', name: 'Button.tsx' },
-            { id: 4, path: '1.1.2', name: 'Input.tsx' },
-            { id: 5, path: '1.1.3', name: 'Modal.tsx' },
-            { id: 6, path: '1.2', name: 'pages' },
-            { id: 7, path: '1.2.1', name: 'Home.tsx' },
-            { id: 8, path: '1.2.2', name: 'About.tsx' },
-            { id: 9, path: '1.2.3', name: 'Settings.tsx' },
-            { id: 10, path: '1.3', name: 'utils' },
-            { id: 11, path: '1.3.1', name: 'helpers.ts' },
-            { id: 12, path: '1.3.2', name: 'constants.ts' },
-            { id: 13, path: '2', name: 'public' },
-            { id: 14, path: '2.1', name: 'index.html' },
-            { id: 15, path: '2.2', name: 'favicon.ico' },
-            { id: 16, path: '3', name: 'package.json' },
-            { id: 17, path: '4', name: 'tsconfig.json' },
-            { id: 18, path: '5', name: 'README.md' }
-        ];
+    <div class="controls">
+        <label>
+            <input type="checkbox" id="acc-enabled" onchange="applyAccordion()" checked>
+            Accordion mode
+        </label>
+        <button class="btn-outline" onclick="document.getElementById('tree-acc').collapseAll()">Collapse all</button>
+    </div>
 
-        const orgChart = [
-            { id: 1, path: '1', name: 'CEO - Alice' },
-            { id: 2, path: '1.1', name: 'CTO - Bob' },
-            { id: 3, path: '1.1.1', name: 'Dev Lead - Charlie' },
-            { id: 4, path: '1.1.1.1', name: 'Frontend Dev - Dave' },
-            { id: 5, path: '1.1.1.2', name: 'Backend Dev - Eve' },
-            { id: 6, path: '1.1.1.3', name: 'DevOps - Frank' },
-            { id: 7, path: '1.1.2', name: 'QA Lead - Grace' },
-            { id: 8, path: '1.1.2.1', name: 'QA Engineer - Hank' },
-            { id: 9, path: '1.2', name: 'CFO - Ivy' },
-            { id: 10, path: '1.2.1', name: 'Accountant - Jack' },
-            { id: 11, path: '1.2.2', name: 'Financial Analyst - Kim' },
-            { id: 12, path: '1.3', name: 'COO - Leo' },
-            { id: 13, path: '1.3.1', name: 'HR Manager - Mia' },
-            { id: 14, path: '1.3.2', name: 'Office Manager - Noah' }
-        ];
+    <div class="tree-container">
+        <web-treeview id="tree-acc" expand-as-accordion="true" expand-level="1"></web-treeview>
+    </div>
+    <p class="form-text mt-1">
+        Try expanding "src", then "public" &mdash; with accordion on, opening "public" auto-collapses "src". Untick the box and the two sections can stay open together.
+    </p>
+</div>
 
-        const categories = [
-            { categoryId: 1, categoryPath: '1', label: 'Electronics' },
-            { categoryId: 2, categoryPath: '1.1', label: 'Phones' },
-            { categoryId: 3, categoryPath: '1.1.1', label: 'Smartphones' },
-            { categoryId: 4, categoryPath: '1.1.2', label: 'Feature Phones' },
-            { categoryId: 5, categoryPath: '1.2', label: 'Laptops' },
-            { categoryId: 6, categoryPath: '1.2.1', label: 'Gaming Laptops' },
-            { categoryId: 7, categoryPath: '1.2.2', label: 'Ultrabooks' },
-            { categoryId: 8, categoryPath: '1.3', label: 'Tablets' },
-            { categoryId: 9, categoryPath: '2', label: 'Clothing' },
-            { categoryId: 10, categoryPath: '2.1', label: 'Men' },
-            { categoryId: 11, categoryPath: '2.1.1', label: 'Shirts' },
-            { categoryId: 12, categoryPath: '2.1.2', label: 'Pants' },
-            { categoryId: 13, categoryPath: '2.2', label: 'Women' },
-            { categoryId: 14, categoryPath: '2.2.1', label: 'Dresses' },
-            { categoryId: 15, categoryPath: '2.2.2', label: 'Skirts' },
-            { categoryId: 16, categoryPath: '3', label: 'Books' },
-            { categoryId: 17, categoryPath: '3.1', label: 'Fiction' },
-            { categoryId: 18, categoryPath: '3.2', label: 'Non-Fiction' }
-        ];
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
-        // ── Generate large datasets ─────────────────────────────────────
+    // ── Sample Data ──────────────────────────────────────────────────
 
-        function generateLargeTree(count) {
-            const data = [];
-            let id = 1;
-            const topLevelCount = Math.min(count, 20);
-            const perBranch = Math.floor(count / topLevelCount);
+    const fileTree = [
+        { id: 1, path: '1', name: 'src' },
+        { id: 2, path: '1.1', name: 'components' },
+        { id: 3, path: '1.1.1', name: 'Button.tsx' },
+        { id: 4, path: '1.1.2', name: 'Input.tsx' },
+        { id: 5, path: '1.1.3', name: 'Modal.tsx' },
+        { id: 6, path: '1.2', name: 'pages' },
+        { id: 7, path: '1.2.1', name: 'Home.tsx' },
+        { id: 8, path: '1.2.2', name: 'About.tsx' },
+        { id: 9, path: '1.2.3', name: 'Settings.tsx' },
+        { id: 10, path: '1.3', name: 'utils' },
+        { id: 11, path: '1.3.1', name: 'helpers.ts' },
+        { id: 12, path: '1.3.2', name: 'constants.ts' },
+        { id: 13, path: '2', name: 'public' },
+        { id: 14, path: '2.1', name: 'index.html' },
+        { id: 15, path: '2.2', name: 'favicon.ico' },
+        { id: 16, path: '3', name: 'package.json' },
+        { id: 17, path: '4', name: 'tsconfig.json' },
+        { id: 18, path: '5', name: 'README.md' }
+    ];
 
-            for (let i = 1; i <= topLevelCount; i++) {
-                data.push({ id: id++, path: `${i}`, name: `Branch ${i}` });
-                const childCount = Math.min(perBranch, 50);
-                for (let j = 1; j <= childCount; j++) {
-                    data.push({ id: id++, path: `${i}.${j}`, name: `Item ${i}.${j}` });
-                    const subCount = Math.floor((count - topLevelCount * childCount) / (topLevelCount * childCount));
-                    for (let k = 1; k <= Math.min(subCount, 10); k++) {
-                        data.push({ id: id++, path: `${i}.${j}.${k}`, name: `Detail ${i}.${j}.${k}` });
-                        if (id > count) break;
-                    }
+    const orgChart = [
+        { id: 1, path: '1', name: 'CEO - Alice' },
+        { id: 2, path: '1.1', name: 'CTO - Bob' },
+        { id: 3, path: '1.1.1', name: 'Dev Lead - Charlie' },
+        { id: 4, path: '1.1.1.1', name: 'Frontend Dev - Dave' },
+        { id: 5, path: '1.1.1.2', name: 'Backend Dev - Eve' },
+        { id: 6, path: '1.1.1.3', name: 'DevOps - Frank' },
+        { id: 7, path: '1.1.2', name: 'QA Lead - Grace' },
+        { id: 8, path: '1.1.2.1', name: 'QA Engineer - Hank' },
+        { id: 9, path: '1.2', name: 'CFO - Ivy' },
+        { id: 10, path: '1.2.1', name: 'Accountant - Jack' },
+        { id: 11, path: '1.2.2', name: 'Financial Analyst - Kim' },
+        { id: 12, path: '1.3', name: 'COO - Leo' },
+        { id: 13, path: '1.3.1', name: 'HR Manager - Mia' },
+        { id: 14, path: '1.3.2', name: 'Office Manager - Noah' }
+    ];
+
+    const categories = [
+        { categoryId: 1, categoryPath: '1', label: 'Electronics' },
+        { categoryId: 2, categoryPath: '1.1', label: 'Phones' },
+        { categoryId: 3, categoryPath: '1.1.1', label: 'Smartphones' },
+        { categoryId: 4, categoryPath: '1.1.2', label: 'Feature Phones' },
+        { categoryId: 5, categoryPath: '1.2', label: 'Laptops' },
+        { categoryId: 6, categoryPath: '1.2.1', label: 'Gaming Laptops' },
+        { categoryId: 7, categoryPath: '1.2.2', label: 'Ultrabooks' },
+        { categoryId: 8, categoryPath: '1.3', label: 'Tablets' },
+        { categoryId: 9, categoryPath: '2', label: 'Clothing' },
+        { categoryId: 10, categoryPath: '2.1', label: 'Men' },
+        { categoryId: 11, categoryPath: '2.1.1', label: 'Shirts' },
+        { categoryId: 12, categoryPath: '2.1.2', label: 'Pants' },
+        { categoryId: 13, categoryPath: '2.2', label: 'Women' },
+        { categoryId: 14, categoryPath: '2.2.1', label: 'Dresses' },
+        { categoryId: 15, categoryPath: '2.2.2', label: 'Skirts' },
+        { categoryId: 16, categoryPath: '3', label: 'Books' },
+        { categoryId: 17, categoryPath: '3.1', label: 'Fiction' },
+        { categoryId: 18, categoryPath: '3.2', label: 'Non-Fiction' }
+    ];
+
+    // ── Generate large datasets ─────────────────────────────────────
+
+    function generateLargeTree(count) {
+        const data = [];
+        let id = 1;
+        const topLevelCount = Math.min(count, 20);
+        const perBranch = Math.floor(count / topLevelCount);
+
+        for (let i = 1; i <= topLevelCount; i++) {
+            data.push({ id: id++, path: `${i}`, name: `Branch ${i}` });
+            const childCount = Math.min(perBranch, 50);
+            for (let j = 1; j <= childCount; j++) {
+                data.push({ id: id++, path: `${i}.${j}`, name: `Item ${i}.${j}` });
+                const subCount = Math.floor((count - topLevelCount * childCount) / (topLevelCount * childCount));
+                for (let k = 1; k <= Math.min(subCount, 10); k++) {
+                    data.push({ id: id++, path: `${i}.${j}.${k}`, name: `Detail ${i}.${j}.${k}` });
                     if (id > count) break;
                 }
                 if (id > count) break;
             }
-            return data;
+            if (id > count) break;
+        }
+        return data;
+    }
+
+    // ── Initialize trees ────────────────────────────────────────────
+
+    customElements.whenDefined('web-treeview').then(() => {
+
+        // Tree 1: Simple file tree
+        const tree1 = document.getElementById('tree1');
+        tree1.nodes = fileTree;
+        tree1.idMember = 'id';
+        tree1.pathMember = 'path';
+        tree1.displayValueMember = 'name';
+        tree1.expandLevel = 1;
+
+        // Display demo: three sliders drive the CSS knobs that compose a row's
+        // left offset. --wtv-indent-size is the per-level indent; --wtv-toggle-icon-width
+        // is the fixed toggle gutter reserved on every row; --wtv-node-padding's
+        // horizontal part is the content's left pad. Setting them inline on the host
+        // inherits into the Shadow DOM and overrides the stylesheet default, so rows
+        // re-flow with no re-render. Presets just snap all three sliders at once.
+        const slIndent = document.getElementById('sl-indent');
+        const slColumn = document.getElementById('sl-column');
+        const slPadding = document.getElementById('sl-padding');
+        const PRESETS = {
+            condensed: { indent: 8,  column: 16, padding: 4 },
+            compact:   { indent: 16, column: 20, padding: 6 },
+            generous:  { indent: 32, column: 24, padding: 8 }
+        };
+
+        // Push the three slider values onto the host as inline CSS variables and
+        // refresh the readout (including the derived root gap = column + left pad).
+        function applySliders() {
+            const indent = +slIndent.value;
+            const column = +slColumn.value;
+            const padding = +slPadding.value;
+            tree1.style.setProperty('--wtv-indent-size', `${indent}px`);
+            tree1.style.setProperty('--wtv-toggle-icon-width', `${column}px`);
+            // Only the horizontal (left/right) part — keep the vertical pad intact.
+            tree1.style.setProperty('--wtv-node-padding', `var(--wtv-spacing-sm) ${padding}px`);
+            document.getElementById('out-indent').textContent = `${indent}px`;
+            document.getElementById('out-column').textContent = `${column}px`;
+            document.getElementById('out-padding').textContent = `${padding}px`;
+            document.getElementById('indent-readout').innerHTML = [
+                `<code>--wtv-indent-size: <b>${indent}px</b></code>`,
+                `<code>--wtv-toggle-icon-width: <b>${column}px</b></code>`,
+                `<code>--wtv-node-padding (left): <b>${padding}px</b></code>`,
+                `<code class="is-gap">root gap (gutter + padding): <b>${column + padding}px</b></code>`
+            ].join('');
         }
 
-        // ── Initialize trees ────────────────────────────────────────────
+        for (const sl of [slIndent, slColumn, slPadding]) {
+            sl.addEventListener('input', applySliders);
+        }
 
-        customElements.whenDefined('web-treeview').then(() => {
-
-            // Tree 1: Simple file tree
-            const tree1 = document.getElementById('tree1');
-            tree1.nodes = fileTree;
-            tree1.idMember = 'id';
-            tree1.pathMember = 'path';
-            tree1.displayValueMember = 'name';
-            tree1.expandLevel = 1;
-
-            // Display demo: three sliders drive the CSS knobs that compose a row's
-            // left offset. --wtv-indent-size is the per-level indent; --wtv-toggle-icon-width
-            // is the fixed toggle gutter reserved on every row; --wtv-node-padding's
-            // horizontal part is the content's left pad. Setting them inline on the host
-            // inherits into the Shadow DOM and overrides the stylesheet default, so rows
-            // re-flow with no re-render. Presets just snap all three sliders at once.
-            const slIndent = document.getElementById('sl-indent');
-            const slColumn = document.getElementById('sl-column');
-            const slPadding = document.getElementById('sl-padding');
-            const PRESETS = {
-                condensed: { indent: 8,  column: 16, padding: 4 },
-                compact:   { indent: 16, column: 20, padding: 6 },
-                generous:  { indent: 32, column: 24, padding: 8 }
-            };
-
-            // Push the three slider values onto the host as inline CSS variables and
-            // refresh the readout (including the derived root gap = column + left pad).
-            function applySliders() {
-                const indent = +slIndent.value;
-                const column = +slColumn.value;
-                const padding = +slPadding.value;
-                tree1.style.setProperty('--wtv-indent-size', `${indent}px`);
-                tree1.style.setProperty('--wtv-toggle-icon-width', `${column}px`);
-                // Only the horizontal (left/right) part — keep the vertical pad intact.
-                tree1.style.setProperty('--wtv-node-padding', `var(--wtv-spacing-sm) ${padding}px`);
-                document.getElementById('out-indent').textContent = `${indent}px`;
-                document.getElementById('out-column').textContent = `${column}px`;
-                document.getElementById('out-padding').textContent = `${padding}px`;
-                document.getElementById('indent-readout').innerHTML = [
-                    `<code>--wtv-indent-size: <b>${indent}px</b></code>`,
-                    `<code>--wtv-toggle-icon-width: <b>${column}px</b></code>`,
-                    `<code>--wtv-node-padding (left): <b>${padding}px</b></code>`,
-                    `<code class="is-gap">root gap (gutter + padding): <b>${column + padding}px</b></code>`
-                ].join('');
+        window.applyPreset = (preset, btn) => {
+            const p = PRESETS[preset];
+            slIndent.value = p.indent;
+            slColumn.value = p.column;
+            slPadding.value = p.padding;
+            for (const id of ['indent-condensed', 'indent-compact', 'indent-generous']) {
+                document.getElementById(id).classList.toggle('secondary', document.getElementById(id) !== btn);
             }
+            applySliders();
+        };
+        // Start on the stated defaults (indent 32 / column 24 / pad 8 → root gap 32 = Generous).
+        window.applyPreset('generous', document.getElementById('indent-generous'));
 
-            for (const sl of [slIndent, slColumn, slPadding]) {
-                sl.addEventListener('input', applySliders);
-            }
-
-            window.applyPreset = (preset, btn) => {
-                const p = PRESETS[preset];
-                slIndent.value = p.indent;
-                slColumn.value = p.column;
-                slPadding.value = p.padding;
-                for (const id of ['indent-condensed', 'indent-compact', 'indent-generous']) {
-                    document.getElementById(id).classList.toggle('secondary', document.getElementById(id) !== btn);
-                }
-                applySliders();
-            };
-            // Start on the stated defaults (indent 32 / column 24 / pad 8 → root gap 32 = Generous).
-            window.applyPreset('generous', document.getElementById('indent-generous'));
-
-            tree1.addEventListener('node-click', (e) => {
-                const { node } = e.detail;
-                document.getElementById('tree1-output').textContent = JSON.stringify({
-                    id: node.id,
-                    path: node.path,
-                    name: node.data?.name,
-                    level: node.level,
-                    hasChildren: node.hasChildren,
-                    isExpanded: node.isExpanded
-                }, null, 2);
-            });
-
-            // Tree 2: Org chart with expand-level=2
-            const tree2 = document.getElementById('tree2');
-            tree2.nodes = orgChart;
-            tree2.idMember = 'id';
-            tree2.pathMember = 'path';
-            tree2.displayValueMember = 'name';
-
-            // Live expand-level control: the number field re-drives expandLevel, which
-            // re-expands the tree from the root down to the requested depth.
-            document.getElementById('tree2-expand-level').addEventListener('input', (e) => {
-                const level = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
-                tree2.expandLevel = level;
-            });
-
-            // Tree 3: Large dataset (starts empty)
-            const tree3 = document.getElementById('tree3');
-            tree3.idMember = 'id';
-            tree3.pathMember = 'path';
-            tree3.displayValueMember = 'name';
-
-            const showLargeTreeStats = (count) => {
-                document.getElementById('tree3-output').textContent =
-                    `${count} nodes loaded · ${tree3.controller.getVisibleFlatNodes().length} visible`;
-            };
-            window.loadLargeTree = async () => {
-                tree3.nodes = generateLargeTree(1000);
-                await tree3.whenSettled();
-                showLargeTreeStats(1000);
-            };
-            window.loadVeryLargeTree = async () => {
-                tree3.nodes = generateLargeTree(5000);
-                await tree3.whenSettled();
-                showLargeTreeStats(5000);
-            };
-            window.clearLargeTree = () => {
-                tree3.nodes = [];
-                document.getElementById('tree3-output').textContent = 'Load data to see node counts';
-            };
-
-            // Tree 4: Custom member mappings
-            const tree4 = document.getElementById('tree4');
-            tree4.nodes = categories;
-            tree4.idMember = 'categoryId';
-            tree4.pathMember = 'categoryPath';
-            tree4.displayValueMember = 'label';
-            tree4.expandLevel = 1;
-
-            // Tree 5: Events
-            const tree5 = document.getElementById('tree5');
-            tree5.nodes = fileTree;
-            tree5.idMember = 'id';
-            tree5.pathMember = 'path';
-            tree5.displayValueMember = 'name';
-
-            const logEl = document.getElementById('tree5-log');
-            function logEvent(name, detail) {
-                const time = new Date().toLocaleTimeString();
-                const node = detail?.node ?? detail?.focusedNode;
-                const info = node ? ` - ${node.data?.name} (path: ${node.path})` : '';
-                const entry = document.createElement('div');
-                entry.className = 'event-entry';
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">${name}</span>${info}`;
-                logEl.prepend(entry);
-            }
-
-            tree5.addEventListener('node-click', (e) => logEvent('node-click', e.detail));
-            tree5.addEventListener('focus-change', (e) => logEvent('focus-change', e.detail));
-            tree5.addEventListener('tree-change', () => logEvent('tree-change'));
-
-            // Example 6: Accordion expand
-            const accTree = document.getElementById('tree-acc');
-            accTree.nodes = fileTree;
-            accTree.idMember = 'id';
-            accTree.pathMember = 'path';
-            accTree.displayValueMember = 'name';
-            window.applyAccordion = function () {
-                const on = document.getElementById('acc-enabled').checked;
-                if (on) accTree.setAttribute('expand-as-accordion', 'true');
-                else accTree.removeAttribute('expand-as-accordion');
-            };
-
-            // Persist .controls across reloads (shared helper — parity with web-multiselect).
-            persistControls('basic');
+        tree1.addEventListener('node-click', (e) => {
+            const { node } = e.detail;
+            document.getElementById('tree1-output').textContent = JSON.stringify({
+                id: node.id,
+                path: node.path,
+                name: node.data?.name,
+                level: node.level,
+                hasChildren: node.hasChildren,
+                isExpanded: node.isExpanded
+            }, null, 2);
         });
-    </script>
 
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        // Tree 2: Org chart with expand-level=2
+        const tree2 = document.getElementById('tree2');
+        tree2.nodes = orgChart;
+        tree2.idMember = 'id';
+        tree2.pathMember = 'path';
+        tree2.displayValueMember = 'name';
+
+        // Live expand-level control: the number field re-drives expandLevel, which
+        // re-expands the tree from the root down to the requested depth.
+        document.getElementById('tree2-expand-level').addEventListener('input', (e) => {
+            const level = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+            tree2.expandLevel = level;
+        });
+
+        // Tree 3: Large dataset (starts empty)
+        const tree3 = document.getElementById('tree3');
+        tree3.idMember = 'id';
+        tree3.pathMember = 'path';
+        tree3.displayValueMember = 'name';
+
+        const showLargeTreeStats = (count) => {
+            document.getElementById('tree3-output').textContent =
+                `${count} nodes loaded · ${tree3.controller.getVisibleFlatNodes().length} visible`;
+        };
+        window.loadLargeTree = async () => {
+            tree3.nodes = generateLargeTree(1000);
+            await tree3.whenSettled();
+            showLargeTreeStats(1000);
+        };
+        window.loadVeryLargeTree = async () => {
+            tree3.nodes = generateLargeTree(5000);
+            await tree3.whenSettled();
+            showLargeTreeStats(5000);
+        };
+        window.clearLargeTree = () => {
+            tree3.nodes = [];
+            document.getElementById('tree3-output').textContent = 'Load data to see node counts';
+        };
+
+        // Tree 4: Custom member mappings
+        const tree4 = document.getElementById('tree4');
+        tree4.nodes = categories;
+        tree4.idMember = 'categoryId';
+        tree4.pathMember = 'categoryPath';
+        tree4.displayValueMember = 'label';
+        tree4.expandLevel = 1;
+
+        // Tree 5: Events
+        const tree5 = document.getElementById('tree5');
+        tree5.nodes = fileTree;
+        tree5.idMember = 'id';
+        tree5.pathMember = 'path';
+        tree5.displayValueMember = 'name';
+
+        const logEl = document.getElementById('tree5-log');
+        function logEvent(name, detail) {
+            const time = new Date().toLocaleTimeString();
+            const node = detail?.node ?? detail?.focusedNode;
+            const info = node ? ` - ${node.data?.name} (path: ${node.path})` : '';
+            const entry = document.createElement('div');
+            entry.className = 'event-entry';
+            entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">${name}</span>${info}`;
+            logEl.prepend(entry);
+        }
+
+        tree5.addEventListener('node-click', (e) => logEvent('node-click', e.detail));
+        tree5.addEventListener('focus-change', (e) => logEvent('focus-change', e.detail));
+        tree5.addEventListener('tree-change', () => logEvent('tree-change'));
+
+        // Example 6: Accordion expand
+        const accTree = document.getElementById('tree-acc');
+        accTree.nodes = fileTree;
+        accTree.idMember = 'id';
+        accTree.pathMember = 'path';
+        accTree.displayValueMember = 'name';
+        window.applyAccordion = function () {
+            const on = document.getElementById('acc-enabled').checked;
+            if (on) accTree.setAttribute('expand-as-accordion', 'true');
+            else accTree.removeAttribute('expand-as-accordion');
+        };
+
+        // Persist .controls across reloads (shared helper — parity with web-multiselect).
+        attachControlsPersistence('basic');
+    });
+</script>

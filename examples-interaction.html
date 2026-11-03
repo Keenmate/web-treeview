@@ -1,773 +1,745 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Selection & Interaction</title>
-    <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        /* Page-specific: keycap chips for keyboard-shortcut docs. */
-        .kbd {
-            display: inline-block;
-            padding: 0.1rem 0.4rem;
-            font-size: 0.8em;
-            font-family: monospace;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-radius: 3px;
-            box-shadow: 0 1px 0 #94a3b8;
-        }
-        /* Page-specific: compact live-status bar with an inline count badge. */
-        .status-bar {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            color: #475569;
-            margin-bottom: 1rem;
-        }
-        .status-bar .badge {
-            padding: 0.1rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.8em;
-        }
-        /* Transient activity-log result toast (IN05). */
-        .bulk-result {
-            margin-top: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: #ecfdf5;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: #065f46;
-            display: none;
-        }
-        .bulk-result.error { background: #fef2f2; color: #991b1b; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Selection &amp; Interaction</h1>
-            <p class="subtitle">Click behavior, multi-select, keyboard nav, cascade checkboxes &amp; value policy, silent state restore, clipboard</p>
-        </header>
+<meta name="kmwc:title" content="Selection &amp; Interaction">
+<meta name="kmwc:subtitle" content="Click behavior, multi-select, keyboard nav, cascade checkboxes &amp; value policy, silent state restore, clipboard">
 
-        <!-- IN01 · Click Behavior & Multi-Select -->
-        <div class="card">
-            <h2>IN01 · Click Behavior &amp; Multi-Select</h2>
-            <p>
-                <code>click-behavior</code> controls what happens when you click a node;
-                <code>selection-mode</code> decides whether Ctrl/Shift+click can extend the set.
-                The library tracks three independent node states:
-            </p>
-            <ul>
-                <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focus-change</code>; styled by <code>focused-node-class</code>.</li>
-                <li><strong>selectedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>selection-change</code>; styled by <code>selected-node-class</code>.</li>
-                <li><strong>checkedPaths</strong> &mdash; checkbox data state. Surfaces as <code>checked-change</code>.</li>
-            </ul>
-            <p>
-                With <code>selection-mode="multiple"</code>:
-                <span class="kbd">Click</span> picks one node,
-                <span class="kbd">Ctrl/Cmd+Click</span> toggles individual nodes,
-                <span class="kbd">Shift+Click</span> range-selects, and
-                <span class="kbd">Ctrl+A</span> selects all (click the tree first for focus).
-                <code>range-selection-mode</code> controls whether a Shift range includes collapsed children.
-                Pick a <strong>Selected style</strong> below and build up a set to see it on every row.
-            </p>
+<link rel="stylesheet" href="examples-local.css">
 
-            <div class="controls">
-                <label>
-                    Click behavior:
-                    <select id="in1-click-behavior">
-                        <option value="expand-and-focus">expand-and-focus (select + expand)</option>
-                        <option value="select">select (dbl-click to expand)</option>
-                        <option value="expand">expand (no selection)</option>
-                    </select>
-                </label>
-                <label>
-                    Selection mode:
-                    <select id="in1-selection-mode">
-                        <option value="single">single (plain click only)</option>
-                        <option value="multiple" selected>multiple (Ctrl-toggle, Shift-range)</option>
-                    </select>
-                </label>
-                <label>
-                    Selected style:
-                    <select id="in1-selected-class">
-                        <option value="" selected>Default (soft tint)</option>
-                        <option value="wtv__node-content--selected-bold">Bold</option>
-                        <option value="wtv__node-content--selected-border">Border</option>
-                        <option value="wtv__node-content--selected-brackets">Brackets</option>
-                        <option value="wtv__node-content--selected-fill">Fill (Explorer-style)</option>
-                        <option value="wtv__node-content--selected-glow">Glow (soft ring)</option>
-                    </select>
-                </label>
-                <label>
-                    Focused style:
-                    <select id="in1-focus-class">
-                        <option value="" selected>Default (ring)</option>
-                        <option value="demo-focused-ring">Ring (inset)</option>
-                        <option value="demo-focus-none">None</option>
-                    </select>
-                </label>
-                <label>
-                    <input type="checkbox" id="in1-show-checkboxes">
-                    Show checkboxes
-                </label>
-                <label>
-                    Checkbox mode:
-                    <select id="in1-checkbox-mode">
-                        <option value="independent" selected>independent (each node standalone)</option>
-                        <option value="cascade">cascade (parent toggles children)</option>
-                    </select>
-                </label>
-                <label>
-                    <input type="checkbox" id="in1-click-toggles">
-                    Click row toggles checkbox
-                </label>
-                <label>
-                    Range selection mode:
-                    <select id="in1-range-mode">
-                        <option value="visual">visual (only visible/expanded nodes)</option>
-                        <option value="logical">logical (full tree walk, incl. collapsed)</option>
-                    </select>
-                </label>
-                <button id="in1-select-specific">Select 1.1.1, 1.1.3, 1.2.1</button>
-                <button class="secondary" id="in1-clear">Clear all</button>
-            </div>
+<style>
+    /* Page-specific: compact live-status bar with an inline count badge. */
+    .status-bar {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #475569;
+        margin-bottom: 1rem;
+    }
+    .status-bar .badge {
+        padding: 0.1rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.8em;
+    }
+    /* Transient activity-log result toast (IN05). */
+    .bulk-result {
+        margin-top: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #ecfdf5;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #065f46;
+        display: none;
+    }
+    .bulk-result.error { background: #fef2f2; color: #991b1b; }
+</style>
 
-            <div class="grid" style="--grid-min: 280px">
-                <div>
-                    <div class="demo-label">Tree</div>
-                    <div class="tree-container">
-                        <web-treeview id="in1-tree" expand-level="2"
-                            selection-mode="multiple"
-                            click-behavior="expand-and-focus"></web-treeview>
-                    </div>
-                </div>
-                <div>
-                    <div class="demo-label">Live state</div>
-                    <div class="output">
-                        <p class="output-label">focusedNode</p>
-                        <pre id="in1-focused">(none)</pre>
-                        <p class="output-label mt-1">selectedPaths (Ctrl/Shift+click) &mdash; <span id="in1-selected-count">0</span></p>
-                        <pre id="in1-selected">(none)</pre>
-                        <p class="output-label mt-1">checkedPaths (checkboxes) &mdash; <span id="in1-checked-count">0</span></p>
-                        <pre id="in1-checked">(none)</pre>
-                    </div>
-                </div>
-            </div>
+<!-- IN01 · Click Behavior & Multi-Select -->
+<div class="card">
+    <h2>IN01 · Click Behavior &amp; Multi-Select</h2>
+    <p>
+        <code>click-behavior</code> controls what happens when you click a node;
+        <code>selection-mode</code> decides whether Ctrl/Shift+click can extend the set.
+        The library tracks three independent node states:
+    </p>
+    <ul>
+        <li><strong>focusedNode</strong> &mdash; single cursor row (clicks, arrow keys). Surfaces as <code>focus-change</code>; styled by <code>focused-node-class</code>.</li>
+        <li><strong>selectedPaths</strong> &mdash; the multi-select set (Ctrl/Shift+click). Surfaces as <code>selection-change</code>; styled by <code>selected-node-class</code>.</li>
+        <li><strong>checkedPaths</strong> &mdash; checkbox data state. Surfaces as <code>checked-change</code>.</li>
+    </ul>
+    <p>
+        With <code>selection-mode="multiple"</code>:
+        <kbd>Click</kbd> picks one node,
+        <kbd>Ctrl/Cmd+Click</kbd> toggles individual nodes,
+        <kbd>Shift+Click</kbd> range-selects, and
+        <kbd>Ctrl+A</kbd> selects all (click the tree first for focus).
+        <code>range-selection-mode</code> controls whether a Shift range includes collapsed children.
+        Pick a <strong>Selected style</strong> below and build up a set to see it on every row.
+    </p>
 
-            <div class="note">
-                <div class="note-title">How the styles stack — one channel per state</div>
-                <p>
-                    Each state owns a different visual channel so they compose instead of fighting:
-                    <strong>Selected</strong> (the set) paints the <em>background</em> as a soft tint;
-                    <strong>Focused</strong> (the single cursor row) is a thin <em>inset outline ring</em>, so it
-                    stacks cleanly on top of any background. After a plain click the same row is both (tint + ring);
-                    after a Shift+click range the intermediate rows are tinted only, while the last-clicked row is
-                    tinted <em>and</em> ringed. Each default is a fallback &mdash; pick a <em>Selected</em> or
-                    <em>Focused style</em> above and the built-in look steps aside.
-                </p>
-                <p>
-                    <strong>Checkboxes</strong> are a separate channel &mdash; <code>checkedPaths</code>, independent of
-                    selection/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
-                    partial branches); <code>independent</code> toggles one node. With <code>click-toggle-checkbox</code> on,
-                    a plain row click flips that node's checkbox instead of just focusing the row.
-                </p>
-                <p style="margin-bottom:0">
-                    <strong>Visual vs logical range</strong> &mdash; click <code>components</code>, then Shift+click
-                    <code>README.md</code>. In <strong>visual</strong> mode only currently-visible nodes between them are
-                    added; in <strong>logical</strong> mode the range walks the full tree in depth-first order, including
-                    children inside collapsed parents.
-                </p>
-            </div>
-        </div>
+    <div class="controls">
+        <label>
+            Click behavior:
+            <select id="in1-click-behavior">
+                <option value="expand-and-focus">expand-and-focus (select + expand)</option>
+                <option value="select">select (dbl-click to expand)</option>
+                <option value="expand">expand (no selection)</option>
+            </select>
+        </label>
+        <label>
+            Selection mode:
+            <select id="in1-selection-mode">
+                <option value="single">single (plain click only)</option>
+                <option value="multiple" selected>multiple (Ctrl-toggle, Shift-range)</option>
+            </select>
+        </label>
+        <label>
+            Selected style:
+            <select id="in1-selected-class">
+                <option value="" selected>Default (soft tint)</option>
+                <option value="wtv__node-content--selected-bold">Bold</option>
+                <option value="wtv__node-content--selected-border">Border</option>
+                <option value="wtv__node-content--selected-brackets">Brackets</option>
+                <option value="wtv__node-content--selected-fill">Fill (Explorer-style)</option>
+                <option value="wtv__node-content--selected-glow">Glow (soft ring)</option>
+            </select>
+        </label>
+        <label>
+            Focused style:
+            <select id="in1-focus-class">
+                <option value="" selected>Default (ring)</option>
+                <option value="demo-focused-ring">Ring (inset)</option>
+                <option value="demo-focus-none">None</option>
+            </select>
+        </label>
+        <label>
+            <input type="checkbox" id="in1-show-checkboxes">
+            Show checkboxes
+        </label>
+        <label>
+            Checkbox mode:
+            <select id="in1-checkbox-mode">
+                <option value="independent" selected>independent (each node standalone)</option>
+                <option value="cascade">cascade (parent toggles children)</option>
+            </select>
+        </label>
+        <label>
+            <input type="checkbox" id="in1-click-toggles">
+            Click row toggles checkbox
+        </label>
+        <label>
+            Range selection mode:
+            <select id="in1-range-mode">
+                <option value="visual">visual (only visible/expanded nodes)</option>
+                <option value="logical">logical (full tree walk, incl. collapsed)</option>
+            </select>
+        </label>
+        <button id="in1-select-specific">Select 1.1.1, 1.1.3, 1.2.1</button>
+        <button class="secondary" id="in1-clear">Clear all</button>
+    </div>
 
-        <!-- IN03 · Keyboard Navigation -->
-        <div class="card">
-            <h2>IN02 · Keyboard Navigation</h2>
-            <p>Click any node to give the tree focus, then drive it entirely from the keyboard:</p>
-
-            <div class="grid" style="--grid-min: 280px">
-                <div>
-                    <div class="demo-label">Tree</div>
-                    <div class="tree-container">
-                        <web-treeview id="in3-tree" expand-level="1"
-                            selected-node-class="wtv__node-content--selected-bold"
-                            focused-node-class="demo-focused-outline"></web-treeview>
-                    </div>
-                    <div class="controls">
-                        <button id="in3-first">navFirst()</button>
-                        <button id="in3-last">navLast()</button>
-                        <button id="in3-next">navNext()</button>
-                        <button id="in3-prev">navPrev()</button>
-                        <button id="in3-into">navInto()</button>
-                        <button id="in3-out">navOut()</button>
-                        <button id="in3-toggle">navToggle()</button>
-                    </div>
-                </div>
-                <div>
-                    <div class="demo-label">Keyboard shortcuts</div>
-                    <div class="note">
-                        <ul>
-                            <li><span class="kbd">&darr;</span> / <span class="kbd">&uarr;</span> &mdash; Next / previous sibling</li>
-                            <li><span class="kbd">&rarr;</span> &mdash; Expand and move to first child</li>
-                            <li><span class="kbd">&larr;</span> &mdash; Collapse / move to parent</li>
-                            <li><span class="kbd">Backspace</span> &mdash; Collapse parent and move to it</li>
-                            <li><span class="kbd">Enter</span> &mdash; Toggle expand/collapse</li>
-                            <li><span class="kbd">Space</span> &mdash; Toggle the checkbox (checkboxes shown) / the selection</li>
-                            <li><span class="kbd">Home</span> / <span class="kbd">End</span> &mdash; First / last visible node</li>
-                            <li><span class="kbd">Escape</span> &mdash; Deselect all</li>
-                        </ul>
-                    </div>
-                    <div class="status-bar">
-                        Current node: <strong id="in3-current">none</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- IN04 · Cascade Checkboxes & Value Policy -->
-        <div class="card">
-            <h2>IN03 · Cascade Checkboxes &amp; Value Policy</h2>
-            <p>
-                Two orthogonal knobs. <code>checkbox-mode</code> controls how checking a branch
-                <em>behaves</em>; <code>cascade-check-policy</code> controls which paths the checked set
-                <em>emits</em> (what <code>checkedPaths</code> / the <code>checked-change</code> event report).
-                Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
-                (The <code>click-toggle-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
-                the IN01 picker above.)
-            </p>
-
-            <div class="controls">
-                <label>
-                    <input type="checkbox" id="in4-show-checkboxes" checked>
-                    Show checkboxes
-                </label>
-                <label>
-                    checkbox-mode:
-                    <select id="in4-checkbox-mode">
-                        <option value="independent">independent (each node standalone)</option>
-                        <option value="cascade" selected>cascade (branch toggles its subtree)</option>
-                    </select>
-                </label>
-                <label>
-                    cascade-check-policy:
-                    <select id="in4-policy">
-                        <option value="rolled-up" selected>rolled-up (minimal cover)</option>
-                        <option value="leaves">leaves (only checked leaves)</option>
-                        <option value="all">all (every fully-checked node)</option>
-                    </select>
-                </label>
-                <button class="secondary" id="in4-clear">Clear</button>
-            </div>
-
-            <div class="note">
-                <div class="note-title">What each option does</div>
-                <p style="margin-bottom:0">
-                    <code>independent</code> &mdash; each node toggles on its own; the policy is ignored and the
-                    emitted set is exactly the checked nodes.<br>
-                    <code>cascade</code> &mdash; checking a branch checks its whole subtree; a partial branch shows a
-                    tristate dash. Then the policy projects the emitted set:<br>
-                    &nbsp;&nbsp;&bull; <strong>rolled-up</strong> &mdash; a fully-checked subtree collapses to its root; a partial branch emits its individually-checked descendants.<br>
-                    &nbsp;&nbsp;&bull; <strong>leaves</strong> &mdash; only the checked leaf nodes.<br>
-                    &nbsp;&nbsp;&bull; <strong>all</strong> &mdash; every fully-checked node (branches + leaves).
-                </p>
-            </div>
-
-            <div class="grid" style="--grid-min: 280px">
-                <div>
-                    <div class="demo-label">Tree</div>
-                    <div class="tree-container">
-                        <web-treeview id="in4-tree" expand-level="3"
-                            show-checkboxes="true"
-                            checkbox-mode="cascade"
-                            cascade-check-policy="rolled-up"></web-treeview>
-                    </div>
-                </div>
-                <div>
-                    <div class="demo-label">Emitted checkedPaths</div>
-                    <div class="output">
-                        <p class="output-label">checkedPaths &mdash; <span id="in4-count">0</span> entries</p>
-                        <pre id="in4-checked">(none — check some branches)</pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- IN05 · Silent State Restore -->
-        <div class="card">
-            <h2>IN04 · Silent State Restore</h2>
-            <p>
-                Restore tree state from URL parameters <em>without</em> firing selection callbacks. You share a
-                link like <code>?nodePath=1.2.3</code>; the page loads form data from the URL, and the tree just
-                needs to scroll + visually select the matching node. Firing <code>selection-change</code> in
-                that flow would re-trigger your form-loader and overwrite whatever the URL just supplied.
-            </p>
-            <p>
-                Pass <code>{ isSilent: true }</code> to <code>selectNode()</code> / <code>selectNodes()</code> /
-                <code>clearSelection()</code> / <code>uncheckAll()</code>. State (selected set, CSS class,
-                focused node) still updates &mdash; only the <code>selection-change</code> / <code>checked-change</code>
-                events are suppressed.
-            </p>
-
-            <div class="controls">
-                <label>
-                    Path from URL:
-                    <input type="text" id="in5-path" value="1.2.3" style="width: 90px">
-                </label>
-                <label>
-                    <input type="checkbox" id="in5-silent" checked>
-                    <code>isSilent: true</code>
-                </label>
-                <button id="in5-load">Simulate URL load</button>
-                <button class="secondary" id="in5-reset">Reset</button>
-            </div>
-
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Tree</div>
             <div class="tree-container">
-                <web-treeview id="in5-tree" expand-level="2"
-                    selected-node-class="wtv__node-content--selected-bold"></web-treeview>
+                <web-treeview id="in1-tree" expand-level="2"
+                    selection-mode="multiple"
+                    click-behavior="expand-and-focus"></web-treeview>
             </div>
-
+        </div>
+        <div>
+            <div class="demo-label">Live state</div>
             <div class="output">
-                <p class="output-label">Form data (only changes when selection-change fires)</p>
-                <pre id="in5-form">(form not loaded yet)</pre>
-                <p class="output-label mt-1">selection-change fired</p>
-                <pre id="in5-fires">0 time(s)</pre>
+                <p class="output-label">focusedNode</p>
+                <pre id="in1-focused">(none)</pre>
+                <p class="output-label mt-1">selectedPaths (Ctrl/Shift+click) &mdash; <span id="in1-selected-count">0</span></p>
+                <pre id="in1-selected">(none)</pre>
+                <p class="output-label mt-1">checkedPaths (checkboxes) &mdash; <span id="in1-checked-count">0</span></p>
+                <pre id="in1-checked">(none)</pre>
             </div>
+        </div>
+    </div>
 
-            <div class="code-block">
+    <div class="note">
+        <div class="note-title">How the styles stack — one channel per state</div>
+        <p>
+            Each state owns a different visual channel so they compose instead of fighting:
+            <strong>Selected</strong> (the set) paints the <em>background</em> as a soft tint;
+            <strong>Focused</strong> (the single cursor row) is a thin <em>inset outline ring</em>, so it
+            stacks cleanly on top of any background. After a plain click the same row is both (tint + ring);
+            after a Shift+click range the intermediate rows are tinted only, while the last-clicked row is
+            tinted <em>and</em> ringed. Each default is a fallback &mdash; pick a <em>Selected</em> or
+            <em>Focused style</em> above and the built-in look steps aside.
+        </p>
+        <p>
+            <strong>Checkboxes</strong> are a separate channel &mdash; <code>checkedPaths</code>, independent of
+            selection/focus. <code>checkbox-mode=cascade</code> makes a branch toggle its whole subtree (tristate on
+            partial branches); <code>independent</code> toggles one node. With <code>click-toggle-checkbox</code> on,
+            a plain row click flips that node's checkbox instead of just focusing the row.
+        </p>
+        <p style="margin-bottom:0">
+            <strong>Visual vs logical range</strong> &mdash; click <code>components</code>, then Shift+click
+            <code>README.md</code>. In <strong>visual</strong> mode only currently-visible nodes between them are
+            added; in <strong>logical</strong> mode the range walks the full tree in depth-first order, including
+            children inside collapsed parents.
+        </p>
+    </div>
+</div>
+
+<!-- IN03 · Keyboard Navigation -->
+<div class="card">
+    <h2>IN02 · Keyboard Navigation</h2>
+    <p>Click any node to give the tree focus, then drive it entirely from the keyboard:</p>
+
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Tree</div>
+            <div class="tree-container">
+                <web-treeview id="in3-tree" expand-level="1"
+                    selected-node-class="wtv__node-content--selected-bold"
+                    focused-node-class="demo-focused-outline"></web-treeview>
+            </div>
+            <div class="controls">
+                <button id="in3-first">navFirst()</button>
+                <button id="in3-last">navLast()</button>
+                <button id="in3-next">navNext()</button>
+                <button id="in3-prev">navPrev()</button>
+                <button id="in3-into">navInto()</button>
+                <button id="in3-out">navOut()</button>
+                <button id="in3-toggle">navToggle()</button>
+            </div>
+        </div>
+        <div>
+            <div class="demo-label">Keyboard shortcuts</div>
+            <div class="note">
+                <ul>
+                    <li><kbd>&darr;</kbd> / <kbd>&uarr;</kbd> &mdash; Next / previous sibling</li>
+                    <li><kbd>&rarr;</kbd> &mdash; Expand and move to first child</li>
+                    <li><kbd>&larr;</kbd> &mdash; Collapse / move to parent</li>
+                    <li><kbd>Backspace</kbd> &mdash; Collapse parent and move to it</li>
+                    <li><kbd>Enter</kbd> &mdash; Toggle expand/collapse</li>
+                    <li><kbd>Space</kbd> &mdash; Toggle the checkbox (checkboxes shown) / the selection</li>
+                    <li><kbd>Home</kbd> / <kbd>End</kbd> &mdash; First / last visible node</li>
+                    <li><kbd>Escape</kbd> &mdash; Deselect all</li>
+                </ul>
+            </div>
+            <div class="status-bar">
+                Current node: <strong id="in3-current">none</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IN04 · Cascade Checkboxes & Value Policy -->
+<div class="card">
+    <h2>IN03 · Cascade Checkboxes &amp; Value Policy</h2>
+    <p>
+        Two orthogonal knobs. <code>checkbox-mode</code> controls how checking a branch
+        <em>behaves</em>; <code>cascade-check-policy</code> controls which paths the checked set
+        <em>emits</em> (what <code>checkedPaths</code> / the <code>checked-change</code> event report).
+        Flip them on one live tree and watch the emitted set change while the checkboxes stay put.
+        (The <code>click-toggle-checkbox</code> knob &mdash; a plain row click flips the checkbox &mdash; lives in
+        the IN01 picker above.)
+    </p>
+
+    <div class="controls">
+        <label>
+            <input type="checkbox" id="in4-show-checkboxes" checked>
+            Show checkboxes
+        </label>
+        <label>
+            checkbox-mode:
+            <select id="in4-checkbox-mode">
+                <option value="independent">independent (each node standalone)</option>
+                <option value="cascade" selected>cascade (branch toggles its subtree)</option>
+            </select>
+        </label>
+        <label>
+            cascade-check-policy:
+            <select id="in4-policy">
+                <option value="rolled-up" selected>rolled-up (minimal cover)</option>
+                <option value="leaves">leaves (only checked leaves)</option>
+                <option value="all">all (every fully-checked node)</option>
+            </select>
+        </label>
+        <button class="secondary" id="in4-clear">Clear</button>
+    </div>
+
+    <div class="note">
+        <div class="note-title">What each option does</div>
+        <p style="margin-bottom:0">
+            <code>independent</code> &mdash; each node toggles on its own; the policy is ignored and the
+            emitted set is exactly the checked nodes.<br>
+            <code>cascade</code> &mdash; checking a branch checks its whole subtree; a partial branch shows a
+            tristate dash. Then the policy projects the emitted set:<br>
+            &nbsp;&nbsp;&bull; <strong>rolled-up</strong> &mdash; a fully-checked subtree collapses to its root; a partial branch emits its individually-checked descendants.<br>
+            &nbsp;&nbsp;&bull; <strong>leaves</strong> &mdash; only the checked leaf nodes.<br>
+            &nbsp;&nbsp;&bull; <strong>all</strong> &mdash; every fully-checked node (branches + leaves).
+        </p>
+    </div>
+
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Tree</div>
+            <div class="tree-container">
+                <web-treeview id="in4-tree" expand-level="3"
+                    show-checkboxes="true"
+                    checkbox-mode="cascade"
+                    cascade-check-policy="rolled-up"></web-treeview>
+            </div>
+        </div>
+        <div>
+            <div class="demo-label">Emitted checkedPaths</div>
+            <div class="output">
+                <p class="output-label">checkedPaths &mdash; <span id="in4-count">0</span> entries</p>
+                <pre id="in4-checked">(none — check some branches)</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IN05 · Silent State Restore -->
+<div class="card">
+    <h2>IN04 · Silent State Restore</h2>
+    <p>
+        Restore tree state from URL parameters <em>without</em> firing selection callbacks. You share a
+        link like <code>?nodePath=1.2.3</code>; the page loads form data from the URL, and the tree just
+        needs to scroll + visually select the matching node. Firing <code>selection-change</code> in
+        that flow would re-trigger your form-loader and overwrite whatever the URL just supplied.
+    </p>
+    <p>
+        Pass <code>{ isSilent: true }</code> to <code>selectNode()</code> / <code>selectNodes()</code> /
+        <code>clearSelection()</code> / <code>uncheckAll()</code>. State (selected set, CSS class,
+        focused node) still updates &mdash; only the <code>selection-change</code> / <code>checked-change</code>
+        events are suppressed.
+    </p>
+
+    <div class="controls">
+        <label>
+            Path from URL:
+            <input type="text" id="in5-path" value="1.2.3" class="w-sm">
+        </label>
+        <label>
+            <input type="checkbox" id="in5-silent" checked>
+            <code>isSilent: true</code>
+        </label>
+        <button id="in5-load">Simulate URL load</button>
+        <button class="secondary" id="in5-reset">Reset</button>
+    </div>
+
+    <div class="tree-container">
+        <web-treeview id="in5-tree" expand-level="2"
+            selected-node-class="wtv__node-content--selected-bold"></web-treeview>
+    </div>
+
+    <div class="output">
+        <p class="output-label">Form data (only changes when selection-change fires)</p>
+        <pre id="in5-form">(form not loaded yet)</pre>
+        <p class="output-label mt-1">selection-change fired</p>
+        <pre id="in5-fires">0 time(s)</pre>
+    </div>
+
+    <div class="code-block">
 <pre><code>// Restore tree state from URL params without firing selection-change
 function restoreFromUrl(nodePath) {
   loadFormDataFromUrl(nodePath);              // preserve this value
   tree.selectNode(nodePath, 'replace', { isSilent: true });
   tree.scrollToPath(nodePath, { shouldHighlight: true });
 }</code></pre>
+    </div>
+</div>
+
+<!-- IN06 · Clipboard & Bulk -->
+<div class="card">
+    <h2>IN05 · Clipboard &amp; Bulk Operations</h2>
+    <p>
+        Cross-tree copy/cut/paste plus batch branch mutations. Select nodes in the source tree, then
+        <kbd>Ctrl+C</kbd>/<kbd>Ctrl+X</kbd>; click a target node in the right
+        tree and <kbd>Ctrl+V</kbd> (or use the buttons). Cut nodes dim until pasted or
+        cancelled with <kbd>Escape</kbd>.
+    </p>
+
+    <div class="status-bar">
+        Clipboard: <strong id="in6-op">empty</strong>
+        <span id="in6-info"></span>
+    </div>
+
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Source tree</div>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="in6-source" expand-level="2" tree-id="source"
+                    selection-mode="multiple"
+                    selected-node-class="wtv__node-content--selected-border"></web-treeview>
+            </div>
+            <div class="controls">
+                <button id="in6-copy">Copy</button>
+                <button id="in6-cut">Cut</button>
+                <button class="secondary" id="in6-cancel">Cancel cut</button>
             </div>
         </div>
-
-        <!-- IN06 · Clipboard & Bulk -->
-        <div class="card">
-            <h2>IN05 · Clipboard &amp; Bulk Operations</h2>
-            <p>
-                Cross-tree copy/cut/paste plus batch branch mutations. Select nodes in the source tree, then
-                <span class="kbd">Ctrl+C</span>/<span class="kbd">Ctrl+X</span>; click a target node in the right
-                tree and <span class="kbd">Ctrl+V</span> (or use the buttons). Cut nodes dim until pasted or
-                cancelled with <span class="kbd">Escape</span>.
-            </p>
-
-            <div class="status-bar">
-                Clipboard: <strong id="in6-op">empty</strong>
-                <span id="in6-info"></span>
+        <div>
+            <div class="demo-label">Target tree</div>
+            <div class="tree-container tree-container-sm">
+                <web-treeview id="in6-target" expand-level="2" tree-id="target"
+                    selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-
-            <div class="grid" style="--grid-min: 280px">
-                <div>
-                    <div class="demo-label">Source tree</div>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="in6-source" expand-level="2" tree-id="source"
-                            selection-mode="multiple"
-                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
-                    </div>
-                    <div class="controls">
-                        <button id="in6-copy">Copy</button>
-                        <button id="in6-cut">Cut</button>
-                        <button class="secondary" id="in6-cancel">Cancel cut</button>
-                    </div>
-                </div>
-                <div>
-                    <div class="demo-label">Target tree</div>
-                    <div class="tree-container tree-container-sm">
-                        <web-treeview id="in6-target" expand-level="2" tree-id="target"
-                            selected-node-class="wtv__node-content--selected-border"></web-treeview>
-                    </div>
-                    <div class="controls">
-                        <button id="in6-paste">Paste here</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="output">
-                <p class="output-label">Paste result:</p>
-                <pre id="in6-paste-out">Select nodes, copy/cut, then paste into the target tree</pre>
-            </div>
-
-            <h3 style="margin-top:1.5rem">Bulk branch mutations</h3>
-            <p>Insert, replace, or delete entire branches in a single operation.</p>
-
-            <div class="tree-container" id="in6-bulk-container">
-                <web-treeview id="in6-bulk" expand-level="3"
-                    selected-node-class="wtv__node-content--selected-bold"></web-treeview>
-            </div>
-
             <div class="controls">
-                <button id="in6-insert">addBranch('1.1', 3 items)</button>
-                <button id="in6-replace">replaceBranch('1.2', 2 items)</button>
-                <button class="btn-danger" id="in6-delete">removeBranch('1.3')</button>
-                <button class="btn-danger" id="in6-delete-keep">removeBranch('1.1', keepParent)</button>
-                <button class="btn-outline" id="in6-reset">Reset tree</button>
-            </div>
-
-            <div class="bulk-result" id="in6-bulk-result"></div>
-
-            <div class="output">
-                <p class="output-label">Tree data (live):</p>
-                <pre id="in6-bulk-out"></pre>
+                <button id="in6-paste">Paste here</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import '/src/index.ts';
-        import { persistControls } from './examples-controls-store.js';
+    <div class="output">
+        <p class="output-label">Paste result:</p>
+        <pre id="in6-paste-out">Select nodes, copy/cut, then paste into the target tree</pre>
+    </div>
 
-        // ── Sample data ──────────────────────────────────────────────────
-        const fileTree = [
-            { id: 1, path: '1', name: 'src' },
-            { id: 2, path: '1.1', name: 'components' },
-            { id: 3, path: '1.1.1', name: 'Button.tsx' },
-            { id: 4, path: '1.1.2', name: 'Input.tsx' },
-            { id: 5, path: '1.1.3', name: 'Modal.tsx' },
-            { id: 6, path: '1.2', name: 'pages' },
-            { id: 7, path: '1.2.1', name: 'Home.tsx' },
-            { id: 8, path: '1.2.2', name: 'About.tsx' },
-            { id: 9, path: '1.2.3', name: 'Settings.tsx' },
-            { id: 10, path: '1.3', name: 'utils' },
-            { id: 11, path: '1.3.1', name: 'helpers.ts' },
-            { id: 12, path: '1.3.2', name: 'constants.ts' },
-            { id: 13, path: '2', name: 'public' },
-            { id: 14, path: '2.1', name: 'index.html' },
-            { id: 15, path: '2.2', name: 'favicon.ico' },
-            { id: 16, path: '3', name: 'package.json' },
-            { id: 17, path: '4', name: 'tsconfig.json' },
-            { id: 18, path: '5', name: 'README.md' }
-        ];
+    <h3 style="margin-top:1.5rem">Bulk branch mutations</h3>
+    <p>Insert, replace, or delete entire branches in a single operation.</p>
 
-        const sourceTree = [
-            { id: 101, path: '1', name: 'Documents' },
-            { id: 102, path: '1.1', name: 'Reports' },
-            { id: 103, path: '1.1.1', name: 'Q1 Report.pdf' },
-            { id: 104, path: '1.1.2', name: 'Q2 Report.pdf' },
-            { id: 105, path: '1.2', name: 'Presentations' },
-            { id: 106, path: '1.2.1', name: 'Kickoff.pptx' },
-            { id: 107, path: '1.2.2', name: 'Review.pptx' },
-            { id: 108, path: '2', name: 'Images' },
-            { id: 109, path: '2.1', name: 'logo.png' },
-            { id: 110, path: '2.2', name: 'banner.jpg' },
-        ];
+    <div class="tree-container" id="in6-bulk-container">
+        <web-treeview id="in6-bulk" expand-level="3"
+            selected-node-class="wtv__node-content--selected-bold"></web-treeview>
+    </div>
 
-        const targetTree = [
-            { id: 201, path: '1', name: 'Inbox' },
-            { id: 202, path: '1.1', name: 'Unread' },
-            { id: 203, path: '2', name: 'Archive' },
-            { id: 204, path: '2.1', name: '2025' },
-            { id: 205, path: '3', name: 'Trash' },
-        ];
+    <div class="controls">
+        <button id="in6-insert">addBranch('1.1', 3 items)</button>
+        <button id="in6-replace">replaceBranch('1.2', 2 items)</button>
+        <button class="btn-danger" id="in6-delete">removeBranch('1.3')</button>
+        <button class="btn-danger" id="in6-delete-keep">removeBranch('1.1', keepParent)</button>
+        <button class="btn-outline" id="in6-reset">Reset tree</button>
+    </div>
 
-        const bulkData = [
-            { id: 1, path: '1', name: 'Project' },
-            { id: 2, path: '1.1', name: 'Frontend' },
-            { id: 3, path: '1.1.1', name: 'React' },
-            { id: 4, path: '1.1.2', name: 'Vue' },
-            { id: 5, path: '1.2', name: 'Backend' },
-            { id: 6, path: '1.2.1', name: 'Node.js' },
-            { id: 7, path: '1.2.2', name: 'Python' },
-            { id: 8, path: '1.3', name: 'DevOps' },
-            { id: 9, path: '1.3.1', name: 'Docker' },
-            { id: 10, path: '1.3.2', name: 'Kubernetes' },
-            { id: 11, path: '2', name: 'Documentation' },
-            { id: 12, path: '2.1', name: 'API Docs' },
-            { id: 13, path: '2.2', name: 'User Guide' },
-        ];
+    <div class="bulk-result" id="in6-bulk-result"></div>
 
-        let nextId = 1000;
-        const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
+    <div class="output">
+        <p class="output-label">Tree data (live):</p>
+        <pre id="in6-bulk-out"></pre>
+    </div>
+</div>
 
-        // The component ships a DEFAULT focus look (a 1px inset outline ring, applied
-        // when no focused-node-class is set). These are opt-in FLAVORS a demo swaps in
-        // via focused-node-class. Because the focused row lives inside the Shadow DOM,
-        // the rule must be injected there (a page <style> wouldn't reach it).
-        //   • demo-focused-ring — an INSET ring (stays inside the pill, no spill)
-        //   • demo-focus-none   — a no-op class that suppresses the built-in ring
-        //   • demo-focused-outline — inset left bar (kept for the Keyboard Navigation tree)
-        const focusStyles = () => `
-            .demo-focused-outline { box-shadow: inset 3px 0 0 0 var(--wtv-accent-color, #3b82f6); }
-            .demo-focused-ring { box-shadow: inset 0 0 0 2px var(--wtv-accent-color, #3b82f6); border-radius: var(--wtv-border-radius-sm, 4px); }
-            .demo-focus-none { /* suppresses the built-in focus ring */ }
-        `;
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
-        customElements.whenDefined('web-treeview').then(() => {
-            // ── IN01 · Click Behavior ─────────────────────────────────────
-            const in1 = document.getElementById('in1-tree');
-            Object.assign(in1, treeConfig);
-            in1.getCustomStylesCallback = focusStyles;
-            in1.nodes = fileTree;
+    // ── Sample data ──────────────────────────────────────────────────
+    const fileTree = [
+        { id: 1, path: '1', name: 'src' },
+        { id: 2, path: '1.1', name: 'components' },
+        { id: 3, path: '1.1.1', name: 'Button.tsx' },
+        { id: 4, path: '1.1.2', name: 'Input.tsx' },
+        { id: 5, path: '1.1.3', name: 'Modal.tsx' },
+        { id: 6, path: '1.2', name: 'pages' },
+        { id: 7, path: '1.2.1', name: 'Home.tsx' },
+        { id: 8, path: '1.2.2', name: 'About.tsx' },
+        { id: 9, path: '1.2.3', name: 'Settings.tsx' },
+        { id: 10, path: '1.3', name: 'utils' },
+        { id: 11, path: '1.3.1', name: 'helpers.ts' },
+        { id: 12, path: '1.3.2', name: 'constants.ts' },
+        { id: 13, path: '2', name: 'public' },
+        { id: 14, path: '2.1', name: 'index.html' },
+        { id: 15, path: '2.2', name: 'favicon.ico' },
+        { id: 16, path: '3', name: 'package.json' },
+        { id: 17, path: '4', name: 'tsconfig.json' },
+        { id: 18, path: '5', name: 'README.md' }
+    ];
 
-            in1.addEventListener('focus-change', (e) => {
-                const { focusedNode: n } = e.detail;
-                document.getElementById('in1-focused').textContent =
-                    n ? `${n.data?.name} (${n.path})` : '(none)';
-            });
-            in1.addEventListener('selection-change', (e) => {
-                const paths = [...e.detail.paths].sort();
-                document.getElementById('in1-selected-count').textContent = paths.length;
-                document.getElementById('in1-selected').textContent =
-                    paths.length ? paths.join(', ') : '(none)';
-            });
-            in1.addEventListener('checked-change', () => {
-                const paths = [...in1.checkedPaths].sort();
-                document.getElementById('in1-checked-count').textContent = paths.length;
-                document.getElementById('in1-checked').textContent =
-                    paths.length ? paths.join(', ') : '(none)';
-            });
+    const sourceTree = [
+        { id: 101, path: '1', name: 'Documents' },
+        { id: 102, path: '1.1', name: 'Reports' },
+        { id: 103, path: '1.1.1', name: 'Q1 Report.pdf' },
+        { id: 104, path: '1.1.2', name: 'Q2 Report.pdf' },
+        { id: 105, path: '1.2', name: 'Presentations' },
+        { id: 106, path: '1.2.1', name: 'Kickoff.pptx' },
+        { id: 107, path: '1.2.2', name: 'Review.pptx' },
+        { id: 108, path: '2', name: 'Images' },
+        { id: 109, path: '2.1', name: 'logo.png' },
+        { id: 110, path: '2.2', name: 'banner.jpg' },
+    ];
 
-            document.getElementById('in1-click-behavior').addEventListener('change', (e) => {
-                in1.setAttribute('click-behavior', e.target.value);
-            });
-            document.getElementById('in1-selection-mode').addEventListener('change', (e) => {
-                in1.setAttribute('selection-mode', e.target.value);
-            });
-            document.getElementById('in1-selected-class').addEventListener('change', (e) => {
-                if (e.target.value) in1.setAttribute('selected-node-class', e.target.value);
-                else in1.removeAttribute('selected-node-class'); // '' → built-in soft tint
-            });
-            document.getElementById('in1-focus-class').addEventListener('change', (e) => {
-                if (e.target.value) in1.setAttribute('focused-node-class', e.target.value);
-                else in1.removeAttribute('focused-node-class');
-            });
-            document.getElementById('in1-show-checkboxes').addEventListener('change', (e) => {
-                if (e.target.checked) in1.setAttribute('show-checkboxes', 'true');
-                else in1.removeAttribute('show-checkboxes');
-            });
-            document.getElementById('in1-checkbox-mode').addEventListener('change', (e) => {
-                in1.setAttribute('checkbox-mode', e.target.value);
-            });
-            document.getElementById('in1-click-toggles').addEventListener('change', (e) => {
-                if (e.target.checked) in1.setAttribute('click-toggle-checkbox', 'true');
-                else in1.removeAttribute('click-toggle-checkbox');
-            });
-            document.getElementById('in1-range-mode').addEventListener('change', (e) => {
-                in1.rangeSelectionMode = e.target.value;
-                in1.clearSelection();
-            });
-            document.getElementById('in1-select-specific').addEventListener('click', () => {
-                in1.selectedPaths = ['1.1.1', '1.1.3', '1.2.1'];
-            });
-            document.getElementById('in1-clear').addEventListener('click', () => {
-                in1.clearSelection();
-                in1.clearFocus();
-                in1.uncheckAll();
-            });
+    const targetTree = [
+        { id: 201, path: '1', name: 'Inbox' },
+        { id: 202, path: '1.1', name: 'Unread' },
+        { id: 203, path: '2', name: 'Archive' },
+        { id: 204, path: '2.1', name: '2025' },
+        { id: 205, path: '3', name: 'Trash' },
+    ];
 
-            // ── IN02 · Keyboard Navigation ────────────────────────────────
-            const in3 = document.getElementById('in3-tree');
-            Object.assign(in3, treeConfig);
-            in3.getCustomStylesCallback = focusStyles;
-            in3.nodes = fileTree;
+    const bulkData = [
+        { id: 1, path: '1', name: 'Project' },
+        { id: 2, path: '1.1', name: 'Frontend' },
+        { id: 3, path: '1.1.1', name: 'React' },
+        { id: 4, path: '1.1.2', name: 'Vue' },
+        { id: 5, path: '1.2', name: 'Backend' },
+        { id: 6, path: '1.2.1', name: 'Node.js' },
+        { id: 7, path: '1.2.2', name: 'Python' },
+        { id: 8, path: '1.3', name: 'DevOps' },
+        { id: 9, path: '1.3.1', name: 'Docker' },
+        { id: 10, path: '1.3.2', name: 'Kubernetes' },
+        { id: 11, path: '2', name: 'Documentation' },
+        { id: 12, path: '2.1', name: 'API Docs' },
+        { id: 13, path: '2.2', name: 'User Guide' },
+    ];
 
-            in3.addEventListener('focus-change', (e) => {
-                const { focusedNode: n } = e.detail;
-                document.getElementById('in3-current').textContent =
-                    n ? `${n.data?.name} (${n.path})` : 'none';
-            });
+    let nextId = 1000;
+    const treeConfig = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
 
-            const navBtns = {
-                'in3-first': 'navFirst', 'in3-last': 'navLast',
-                'in3-next': 'navNext', 'in3-prev': 'navPrev',
-                'in3-into': 'navInto', 'in3-out': 'navOut', 'in3-toggle': 'navToggle',
-            };
-            for (const [id, method] of Object.entries(navBtns)) {
-                document.getElementById(id).addEventListener('click', () => in3[method]());
-            }
+    // The component ships a DEFAULT focus look (a 1px inset outline ring, applied
+    // when no focused-node-class is set). These are opt-in FLAVORS a demo swaps in
+    // via focused-node-class. Because the focused row lives inside the Shadow DOM,
+    // the rule must be injected there (a page <style> wouldn't reach it).
+    //   • demo-focused-ring — an INSET ring (stays inside the pill, no spill)
+    //   • demo-focus-none   — a no-op class that suppresses the built-in ring
+    //   • demo-focused-outline — inset left bar (kept for the Keyboard Navigation tree)
+    const focusStyles = () => `
+        .demo-focused-outline { box-shadow: inset 3px 0 0 0 var(--wtv-accent-color, #3b82f6); }
+        .demo-focused-ring { box-shadow: inset 0 0 0 2px var(--wtv-accent-color, #3b82f6); border-radius: var(--wtv-border-radius-sm, 4px); }
+        .demo-focus-none { /* suppresses the built-in focus ring */ }
+    `;
 
-            // ── IN04 · Cascade Checkboxes & Value Policy ──────────────────
-            const in4 = document.getElementById('in4-tree');
-            Object.assign(in4, treeConfig);
-            in4.nodes = fileTree;
+    customElements.whenDefined('web-treeview').then(() => {
+        // ── IN01 · Click Behavior ─────────────────────────────────────
+        const in1 = document.getElementById('in1-tree');
+        Object.assign(in1, treeConfig);
+        in1.getCustomStylesCallback = focusStyles;
+        in1.nodes = fileTree;
 
-            function refreshIn4Emitted() {
-                // checkedPaths already projects through cascadeCheckPolicy.
-                const paths = [...in4.checkedPaths].sort();
-                document.getElementById('in4-count').textContent = paths.length;
-                document.getElementById('in4-checked').textContent =
-                    paths.length ? paths.join('\n') : '(none — check some branches)';
-            }
-            in4.addEventListener('checked-change', refreshIn4Emitted);
-
-            document.getElementById('in4-show-checkboxes').addEventListener('change', (e) => {
-                if (e.target.checked) in4.setAttribute('show-checkboxes', 'true');
-                else in4.removeAttribute('show-checkboxes');
-            });
-            document.getElementById('in4-checkbox-mode').addEventListener('change', (e) => {
-                in4.setAttribute('checkbox-mode', e.target.value);
-                document.getElementById('in4-policy').disabled = e.target.value !== 'cascade';
-                refreshIn4Emitted();
-            });
-            document.getElementById('in4-policy').addEventListener('change', (e) => {
-                in4.setAttribute('cascade-check-policy', e.target.value);
-                refreshIn4Emitted();
-            });
-            document.getElementById('in4-clear').addEventListener('click', () => {
-                in4.uncheckAll();
-                refreshIn4Emitted();
-            });
-
-            // ── IN05 · Silent State Restore ───────────────────────────────
-            const in5 = document.getElementById('in5-tree');
-            Object.assign(in5, treeConfig);
-            in5.nodes = fileTree;
-
-            let in5Fires = 0;
-            const in5FormEl = document.getElementById('in5-form');
-            const in5FiresEl = document.getElementById('in5-fires');
-
-            in5.addEventListener('selection-change', (e) => {
-                in5Fires++;
-                const last = [...e.detail.paths].pop();
-                if (last) in5FormEl.textContent =
-                    `Form reloaded for ${last} (overwrote any URL-loaded data)`;
-                updateIn5Fires();
-            });
-
-            function updateIn5Fires() {
-                const silent = document.getElementById('in5-silent').checked;
-                in5FiresEl.textContent = `${in5Fires} time(s)\n` +
-                    (silent ? '→ expected 0 in silent mode'
-                            : '→ expected 1 in loud mode (form data was overwritten)');
-            }
-
-            document.getElementById('in5-load').addEventListener('click', async () => {
-                const path = document.getElementById('in5-path').value.trim();
-                const isSilent = document.getElementById('in5-silent').checked;
-                // 1. Load form data from the "URL" — preserve this value.
-                in5FormEl.textContent = `URL-loaded data for "${path}" — do not overwrite`;
-                in5Fires = 0;
-                // 2. Mark the node; silent skips selection-change.
-                in5.selectNode(path, 'replace', { isSilent });
-                // 3. Scroll into view (scrollToPath never fires selection events).
-                await in5.scrollToPath(path, { shouldHighlight: true, behavior: 'smooth', block: 'center' });
-                updateIn5Fires();
-            });
-            document.getElementById('in5-silent').addEventListener('change', updateIn5Fires);
-            document.getElementById('in5-reset').addEventListener('click', () => {
-                in5.clearSelection(undefined, { isSilent: true });
-                in5Fires = 0;
-                in5FormEl.textContent = '(form not loaded yet)';
-                in5FiresEl.textContent = '0 time(s)';
-            });
-            updateIn5Fires();
-
-            // ── IN06 · Clipboard & Bulk ───────────────────────────────────
-            const in6src = document.getElementById('in6-source');
-            Object.assign(in6src, treeConfig);
-            in6src.nodes = sourceTree;
-
-            const in6tgt = document.getElementById('in6-target');
-            Object.assign(in6tgt, treeConfig);
-            in6tgt.nodes = targetTree;
-
-            function updateClipboardStatus() {
-                const op = in6src.getClipboardOperation?.() ?? in6tgt.getClipboardOperation?.();
-                const has = in6src.hasClipboardContent?.() ?? false;
-                document.getElementById('in6-op').textContent = has ? op : 'empty';
-                document.getElementById('in6-info').textContent = has
-                    ? `(${in6src.selectedPaths.length || '?'} entries)` : '';
-            }
-            in6src.addEventListener('selection-change', updateClipboardStatus);
-            in6src.addEventListener('tree-change', updateClipboardStatus);
-            in6tgt.addEventListener('tree-change', updateClipboardStatus);
-            for (const ev of ["node-copy", "node-cut", "node-paste"]) {
-                in6src.addEventListener(ev, updateClipboardStatus);
-                in6tgt.addEventListener(ev, updateClipboardStatus);
-            }
-
-            document.getElementById('in6-copy').addEventListener('click', () => {
-                in6src.copyNodes(); updateClipboardStatus();
-            });
-            document.getElementById('in6-cut').addEventListener('click', () => {
-                in6src.cutNodes(); updateClipboardStatus();
-            });
-            document.getElementById('in6-cancel').addEventListener('click', () => {
-                in6src.cancelCut(); updateClipboardStatus();
-            });
-            document.getElementById('in6-paste').addEventListener('click', () => {
-                const target = in6tgt.controller.focusedNode;
-                if (!target) {
-                    document.getElementById('in6-paste-out').textContent =
-                        'Click a target node in the right tree first';
-                    return;
-                }
-                const result = in6tgt.pasteNodes(target.path, ({ data }) => ({ ...data, id: nextId++ }));
-                document.getElementById('in6-paste-out').textContent = JSON.stringify(result, null, 2);
-                updateClipboardStatus();
-            });
-
-            // Bulk mutations
-            const in6bulk = document.getElementById('in6-bulk');
-            Object.assign(in6bulk, treeConfig);
-            in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
-
-            function updateBulkOutput() {
-                const data = in6bulk.nodes;
-                document.getElementById('in6-bulk-out').textContent = JSON.stringify(
-                    data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
-            }
-            updateBulkOutput();
-            in6bulk.addEventListener('tree-change', updateBulkOutput);
-
-            function showBulkResult(result, isError) {
-                const el = document.getElementById('in6-bulk-result');
-                el.textContent = JSON.stringify({ ...result, parentNode: result.parentNode?.path, failed: result.failed?.map((f) => f.error) });
-                el.className = 'bulk-result' + (isError ? ' error' : '');
-                el.style.display = 'block';
-                setTimeout(() => { el.style.display = 'none'; }, 4000);
-            }
-
-            document.getElementById('in6-insert').addEventListener('click', () => {
-                const r = in6bulk.addBranch('1.1', [
-                    { id: nextId, path: `1.1.${nextId++}`, name: 'Angular' },
-                    { id: nextId, path: `1.1.${nextId++}`, name: 'Svelte' },
-                    { id: nextId, path: `1.1.${nextId++}`, name: 'Solid' },
-                ]);
-                showBulkResult(r, !r.success); updateBulkOutput();
-            });
-            document.getElementById('in6-replace').addEventListener('click', () => {
-                const r = in6bulk.replaceBranch('1.2', [
-                    { id: nextId, path: `1.2.${nextId++}`, name: 'Go' },
-                    { id: nextId, path: `1.2.${nextId++}`, name: 'Rust' },
-                ]);
-                showBulkResult(r, !r.success); updateBulkOutput();
-            });
-            document.getElementById('in6-delete').addEventListener('click', () => {
-                const r = in6bulk.removeBranch('1.3');
-                showBulkResult(r, !r.success); updateBulkOutput();
-            });
-            document.getElementById('in6-delete-keep').addEventListener('click', () => {
-                const r = in6bulk.removeBranch('1.1', true);
-                showBulkResult(r, !r.success); updateBulkOutput();
-            });
-            document.getElementById('in6-reset').addEventListener('click', () => {
-                nextId = 1000;
-                in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
-                updateBulkOutput();
-                document.getElementById('in6-bulk-result').style.display = 'none';
-            });
-
-            // Persist every .controls input/select on this page across reloads, then
-            // re-apply the saved config by replaying each control's change handler.
-            // Call last — after all pickers + listeners are wired. (Shared helper,
-            // standard across example pages — parity with web-multiselect.)
-            persistControls('interaction');
+        in1.addEventListener('focus-change', (e) => {
+            const { focusedNode: n } = e.detail;
+            document.getElementById('in1-focused').textContent =
+                n ? `${n.data?.name} (${n.path})` : '(none)';
         });
-    </script>
+        in1.addEventListener('selection-change', (e) => {
+            const paths = [...e.detail.paths].sort();
+            document.getElementById('in1-selected-count').textContent = paths.length;
+            document.getElementById('in1-selected').textContent =
+                paths.length ? paths.join(', ') : '(none)';
+        });
+        in1.addEventListener('checked-change', () => {
+            const paths = [...in1.checkedPaths].sort();
+            document.getElementById('in1-checked-count').textContent = paths.length;
+            document.getElementById('in1-checked').textContent =
+                paths.length ? paths.join(', ') : '(none)';
+        });
 
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        document.getElementById('in1-click-behavior').addEventListener('change', (e) => {
+            in1.setAttribute('click-behavior', e.target.value);
+        });
+        document.getElementById('in1-selection-mode').addEventListener('change', (e) => {
+            in1.setAttribute('selection-mode', e.target.value);
+        });
+        document.getElementById('in1-selected-class').addEventListener('change', (e) => {
+            if (e.target.value) in1.setAttribute('selected-node-class', e.target.value);
+            else in1.removeAttribute('selected-node-class'); // '' → built-in soft tint
+        });
+        document.getElementById('in1-focus-class').addEventListener('change', (e) => {
+            if (e.target.value) in1.setAttribute('focused-node-class', e.target.value);
+            else in1.removeAttribute('focused-node-class');
+        });
+        document.getElementById('in1-show-checkboxes').addEventListener('change', (e) => {
+            if (e.target.checked) in1.setAttribute('show-checkboxes', 'true');
+            else in1.removeAttribute('show-checkboxes');
+        });
+        document.getElementById('in1-checkbox-mode').addEventListener('change', (e) => {
+            in1.setAttribute('checkbox-mode', e.target.value);
+        });
+        document.getElementById('in1-click-toggles').addEventListener('change', (e) => {
+            if (e.target.checked) in1.setAttribute('click-toggle-checkbox', 'true');
+            else in1.removeAttribute('click-toggle-checkbox');
+        });
+        document.getElementById('in1-range-mode').addEventListener('change', (e) => {
+            in1.rangeSelectionMode = e.target.value;
+            in1.clearSelection();
+        });
+        document.getElementById('in1-select-specific').addEventListener('click', () => {
+            in1.selectedPaths = ['1.1.1', '1.1.3', '1.2.1'];
+        });
+        document.getElementById('in1-clear').addEventListener('click', () => {
+            in1.clearSelection();
+            in1.clearFocus();
+            in1.uncheckAll();
+        });
+
+        // ── IN02 · Keyboard Navigation ────────────────────────────────
+        const in3 = document.getElementById('in3-tree');
+        Object.assign(in3, treeConfig);
+        in3.getCustomStylesCallback = focusStyles;
+        in3.nodes = fileTree;
+
+        in3.addEventListener('focus-change', (e) => {
+            const { focusedNode: n } = e.detail;
+            document.getElementById('in3-current').textContent =
+                n ? `${n.data?.name} (${n.path})` : 'none';
+        });
+
+        const navBtns = {
+            'in3-first': 'navFirst', 'in3-last': 'navLast',
+            'in3-next': 'navNext', 'in3-prev': 'navPrev',
+            'in3-into': 'navInto', 'in3-out': 'navOut', 'in3-toggle': 'navToggle',
+        };
+        for (const [id, method] of Object.entries(navBtns)) {
+            document.getElementById(id).addEventListener('click', () => in3[method]());
+        }
+
+        // ── IN04 · Cascade Checkboxes & Value Policy ──────────────────
+        const in4 = document.getElementById('in4-tree');
+        Object.assign(in4, treeConfig);
+        in4.nodes = fileTree;
+
+        function refreshIn4Emitted() {
+            // checkedPaths already projects through cascadeCheckPolicy.
+            const paths = [...in4.checkedPaths].sort();
+            document.getElementById('in4-count').textContent = paths.length;
+            document.getElementById('in4-checked').textContent =
+                paths.length ? paths.join('\n') : '(none — check some branches)';
+        }
+        in4.addEventListener('checked-change', refreshIn4Emitted);
+
+        document.getElementById('in4-show-checkboxes').addEventListener('change', (e) => {
+            if (e.target.checked) in4.setAttribute('show-checkboxes', 'true');
+            else in4.removeAttribute('show-checkboxes');
+        });
+        document.getElementById('in4-checkbox-mode').addEventListener('change', (e) => {
+            in4.setAttribute('checkbox-mode', e.target.value);
+            document.getElementById('in4-policy').disabled = e.target.value !== 'cascade';
+            refreshIn4Emitted();
+        });
+        document.getElementById('in4-policy').addEventListener('change', (e) => {
+            in4.setAttribute('cascade-check-policy', e.target.value);
+            refreshIn4Emitted();
+        });
+        document.getElementById('in4-clear').addEventListener('click', () => {
+            in4.uncheckAll();
+            refreshIn4Emitted();
+        });
+
+        // ── IN05 · Silent State Restore ───────────────────────────────
+        const in5 = document.getElementById('in5-tree');
+        Object.assign(in5, treeConfig);
+        in5.nodes = fileTree;
+
+        let in5Fires = 0;
+        const in5FormEl = document.getElementById('in5-form');
+        const in5FiresEl = document.getElementById('in5-fires');
+
+        in5.addEventListener('selection-change', (e) => {
+            in5Fires++;
+            const last = [...e.detail.paths].pop();
+            if (last) in5FormEl.textContent =
+                `Form reloaded for ${last} (overwrote any URL-loaded data)`;
+            updateIn5Fires();
+        });
+
+        function updateIn5Fires() {
+            const silent = document.getElementById('in5-silent').checked;
+            in5FiresEl.textContent = `${in5Fires} time(s)\n` +
+                (silent ? '→ expected 0 in silent mode'
+                        : '→ expected 1 in loud mode (form data was overwritten)');
+        }
+
+        document.getElementById('in5-load').addEventListener('click', async () => {
+            const path = document.getElementById('in5-path').value.trim();
+            const isSilent = document.getElementById('in5-silent').checked;
+            // 1. Load form data from the "URL" — preserve this value.
+            in5FormEl.textContent = `URL-loaded data for "${path}" — do not overwrite`;
+            in5Fires = 0;
+            // 2. Mark the node; silent skips selection-change.
+            in5.selectNode(path, 'replace', { isSilent });
+            // 3. Scroll into view (scrollToPath never fires selection events).
+            await in5.scrollToPath(path, { shouldHighlight: true, behavior: 'smooth', block: 'center' });
+            updateIn5Fires();
+        });
+        document.getElementById('in5-silent').addEventListener('change', updateIn5Fires);
+        document.getElementById('in5-reset').addEventListener('click', () => {
+            in5.clearSelection(undefined, { isSilent: true });
+            in5Fires = 0;
+            in5FormEl.textContent = '(form not loaded yet)';
+            in5FiresEl.textContent = '0 time(s)';
+        });
+        updateIn5Fires();
+
+        // ── IN06 · Clipboard & Bulk ───────────────────────────────────
+        const in6src = document.getElementById('in6-source');
+        Object.assign(in6src, treeConfig);
+        in6src.nodes = sourceTree;
+
+        const in6tgt = document.getElementById('in6-target');
+        Object.assign(in6tgt, treeConfig);
+        in6tgt.nodes = targetTree;
+
+        function updateClipboardStatus() {
+            const op = in6src.getClipboardOperation?.() ?? in6tgt.getClipboardOperation?.();
+            const has = in6src.hasClipboardContent?.() ?? false;
+            document.getElementById('in6-op').textContent = has ? op : 'empty';
+            document.getElementById('in6-info').textContent = has
+                ? `(${in6src.selectedPaths.length || '?'} entries)` : '';
+        }
+        in6src.addEventListener('selection-change', updateClipboardStatus);
+        in6src.addEventListener('tree-change', updateClipboardStatus);
+        in6tgt.addEventListener('tree-change', updateClipboardStatus);
+        for (const ev of ["node-copy", "node-cut", "node-paste"]) {
+            in6src.addEventListener(ev, updateClipboardStatus);
+            in6tgt.addEventListener(ev, updateClipboardStatus);
+        }
+
+        document.getElementById('in6-copy').addEventListener('click', () => {
+            in6src.copyNodes(); updateClipboardStatus();
+        });
+        document.getElementById('in6-cut').addEventListener('click', () => {
+            in6src.cutNodes(); updateClipboardStatus();
+        });
+        document.getElementById('in6-cancel').addEventListener('click', () => {
+            in6src.cancelCut(); updateClipboardStatus();
+        });
+        document.getElementById('in6-paste').addEventListener('click', () => {
+            const target = in6tgt.controller.focusedNode;
+            if (!target) {
+                document.getElementById('in6-paste-out').textContent =
+                    'Click a target node in the right tree first';
+                return;
+            }
+            const result = in6tgt.pasteNodes(target.path, ({ data }) => ({ ...data, id: nextId++ }));
+            document.getElementById('in6-paste-out').textContent = JSON.stringify(result, null, 2);
+            updateClipboardStatus();
+        });
+
+        // Bulk mutations
+        const in6bulk = document.getElementById('in6-bulk');
+        Object.assign(in6bulk, treeConfig);
+        in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
+
+        function updateBulkOutput() {
+            const data = in6bulk.nodes;
+            document.getElementById('in6-bulk-out').textContent = JSON.stringify(
+                data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
+        }
+        updateBulkOutput();
+        in6bulk.addEventListener('tree-change', updateBulkOutput);
+
+        function showBulkResult(result, isError) {
+            const el = document.getElementById('in6-bulk-result');
+            el.textContent = JSON.stringify({ ...result, parentNode: result.parentNode?.path, failed: result.failed?.map((f) => f.error) });
+            el.className = 'bulk-result' + (isError ? ' error' : '');
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        document.getElementById('in6-insert').addEventListener('click', () => {
+            const r = in6bulk.addBranch('1.1', [
+                { id: nextId, path: `1.1.${nextId++}`, name: 'Angular' },
+                { id: nextId, path: `1.1.${nextId++}`, name: 'Svelte' },
+                { id: nextId, path: `1.1.${nextId++}`, name: 'Solid' },
+            ]);
+            showBulkResult(r, !r.success); updateBulkOutput();
+        });
+        document.getElementById('in6-replace').addEventListener('click', () => {
+            const r = in6bulk.replaceBranch('1.2', [
+                { id: nextId, path: `1.2.${nextId++}`, name: 'Go' },
+                { id: nextId, path: `1.2.${nextId++}`, name: 'Rust' },
+            ]);
+            showBulkResult(r, !r.success); updateBulkOutput();
+        });
+        document.getElementById('in6-delete').addEventListener('click', () => {
+            const r = in6bulk.removeBranch('1.3');
+            showBulkResult(r, !r.success); updateBulkOutput();
+        });
+        document.getElementById('in6-delete-keep').addEventListener('click', () => {
+            const r = in6bulk.removeBranch('1.1', true);
+            showBulkResult(r, !r.success); updateBulkOutput();
+        });
+        document.getElementById('in6-reset').addEventListener('click', () => {
+            nextId = 1000;
+            in6bulk.nodes = JSON.parse(JSON.stringify(bulkData));
+            updateBulkOutput();
+            document.getElementById('in6-bulk-result').style.display = 'none';
+        });
+
+        // Persist every .controls input/select on this page across reloads, then
+        // re-apply the saved config by replaying each control's change handler.
+        // Call last — after all pickers + listeners are wired. (Shared helper,
+        // standard across example pages — parity with web-multiselect.)
+        attachControlsPersistence('interaction');
+    });
+</script>

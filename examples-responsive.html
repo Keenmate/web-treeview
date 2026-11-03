@@ -1,132 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TreeView - Responsive & Device-Adaptive</title>
-<link rel="stylesheet" href="examples-shared.css">
+<meta name="kmwc:title" content="Responsive &amp; Device-Adaptive">
+<meta name="kmwc:subtitle" content="NodeRenderContext: adapt rows to device class and container size">
+
+<link rel="stylesheet" href="examples-local.css">
+
 <style>
-    /* A resizable demo frame. The tree renders inline inside it; its own border-box
-       is what the NodeRenderContext reports as ctx.container. The native resize
-       handle (bottom-right) lets you drag across the breakpoints live. */
-    .resize-box {
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.5rem;
-        background: #fff;
-        overflow: auto;
-        resize: horizontal;
-        height: 360px;
-        min-width: 280px;
-        max-width: 100%;
-        margin-bottom: 1rem;
-    }
-    .resize-box web-treeview { display: block; }
+/* A resizable demo frame. The tree renders inline inside it; its own border-box
+   is what the NodeRenderContext reports as ctx.container. The native resize
+   handle (bottom-right) lets you drag across the breakpoints live. */
+.resize-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem;
+    background: #fff;
+    overflow: auto;
+    resize: horizontal;
+    height: 360px;
+    min-width: 280px;
+    max-width: 100%;
+    margin-bottom: 1rem;
+}
+.resize-box web-treeview { display: block; }
 
-    /* RS01 / RS02 custom row markup injected by renderNodeCallback. */
-    .isco-row {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 0.5rem;
-        min-width: 0;
-    }
-    .isco-code {
-        flex: none;
-        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-        font-size: 0.72rem;
-        color: #fff;
-        background: #6366f1;
-        border-radius: 4px;
-        padding: 0.05rem 0.4rem;
-    }
-    .isco-label { min-width: 0; }
+/* RS01 / RS02 custom row markup injected by renderNodeCallback. */
+.isco-row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.isco-code {
+    flex: none;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: #fff;
+    background: #6366f1;
+    border-radius: 4px;
+    padding: 0.05rem 0.4rem;
+}
+.isco-label { min-width: 0; }
 
-    /* A small per-row device badge (RS01) — driven by ctx.deviceClass. */
-    .dev-badge {
-        flex: none;
-        font-size: 0.62rem;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        border-radius: 4px;
-        padding: 0.02rem 0.3rem;
-        color: #fff;
-    }
-    .dev-badge.mobile  { background: #ef4444; }
-    .dev-badge.tablet  { background: #f59e0b; }
-    .dev-badge.desktop { background: #10b981; }
+/* A small per-row device badge (RS01) — driven by ctx.deviceClass. */
+.dev-badge {
+    flex: none;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 0.02rem 0.3rem;
+    color: #fff;
+}
+.dev-badge.mobile  { background: #ef4444; }
+.dev-badge.tablet  { background: #f59e0b; }
+.dev-badge.desktop { background: #10b981; }
 
-    /* RS03 — label overflow behaviours applied to the custom label span. */
-    .ov-label { display: inline-block; max-width: 100%; vertical-align: bottom; }
-    .ov-wrap .ov-label     { white-space: normal; }
-    .ov-ellipsis .ov-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* RS03 — label overflow behaviours applied to the custom label span. */
+.ov-label { display: inline-block; max-width: 100%; vertical-align: bottom; }
+.ov-wrap .ov-label     { white-space: normal; }
+.ov-ellipsis .ov-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .hint {
-        font-size: 0.85rem;
-        color: #6b7280;
-        margin: 0.4rem 0 0;
-    }
+.hint {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0.4rem 0 0;
+}
 </style>
-</head>
-<body>
-<div class="container">
-    <header>
-        <a href="index.html" class="back-link">&larr; Back to Examples</a>
-        <h1>Responsive &amp; Device-Adaptive</h1>
-        <p class="subtitle">NodeRenderContext: adapt rows to device class and container size</p>
-    </header>
 
-    <div class="card">
-        <p style="margin-top:0">
-            The tree renders inline and never pops out, but every render callback's single <code>ctx</code>
-            carries the <code>NodeRenderContext</code> fields &mdash; a live signal of the
-            tree's own container box and the current device. Branch on it inside
-            <code>renderNodeCallback({ node, contentElement, container, deviceClass })</code> / <code>renderIconCallback({ node, value, iconElement, container, deviceClass })</code>
-            to adapt each row to the available space. The engine wires one shared
-            <code>ResizeObserver</code> + device matcher from
-            <code>@keenmate/web-components-core/environment</code> so you don't have to.
-        </p>
-        <div class="note">
-            <p class="note-title">Re-render semantics</p>
-            <p style="margin-bottom:0">
-                A <strong>device-class flip</strong> (<code>mobile</code> &harr; <code>tablet</code> &harr;
-                <code>desktop</code>) is discrete, so it forces a full re-render &mdash; your callback runs again
-                with the new <code>ctx.deviceClass</code>. A plain <strong>container resize</strong> updates
-                <code>ctx.container</code> silently (virtual-scroll-first: no row churn on every pixel). If you want a
-                width threshold to re-flow rows on the fly, drive it from your own observer (RS01 below) and nudge the
-                tree &mdash; or key your layout off CSS that reads the live width.
-            </p>
-        </div>
-    </div>
+<div class="card">
+<p style="margin-top:0">
+    The tree renders inline and never pops out, but every render callback's single <code>ctx</code>
+    carries the <code>NodeRenderContext</code> fields &mdash; a live signal of the
+    tree's own container box and the current device. Branch on it inside
+    <code>renderNodeCallback({ node, contentElement, container, deviceClass })</code> / <code>renderIconCallback({ node, value, iconElement, container, deviceClass })</code>
+    to adapt each row to the available space. The engine wires one shared
+    <code>ResizeObserver</code> + device matcher from
+    <code>@keenmate/web-components-core/environment</code> so you don't have to.
+</p>
+<div class="note">
+    <p class="note-title">Re-render semantics</p>
+    <p style="margin-bottom:0">
+        A <strong>device-class flip</strong> (<code>mobile</code> &harr; <code>tablet</code> &harr;
+        <code>desktop</code>) is discrete, so it forces a full re-render &mdash; your callback runs again
+        with the new <code>ctx.deviceClass</code>. A plain <strong>container resize</strong> updates
+        <code>ctx.container</code> silently (virtual-scroll-first: no row churn on every pixel). If you want a
+        width threshold to re-flow rows on the fly, drive it from your own observer (RS01 below) and nudge the
+        tree &mdash; or key your layout off CSS that reads the live width.
+    </p>
+</div>
+</div>
 
-    <!-- RS01 -->
-    <div class="card">
-        <h2>RS01 &middot; Container-Size Signal</h2>
-        <p>
-            <code>renderNodeCallback</code> reads <code>ctx.container.width</code> and
-            <code>ctx.deviceClass</code> to decide what a row shows: wide rows carry the <strong>ISCO code + a
-            device badge + the title</strong>; narrow rows drop the code so the long occupation titles still fit.
-            Drag the frame's resize handle (bottom-right) or use the width buttons and watch the live readout flip.
-        </p>
+<!-- RS01 -->
+<div class="card">
+<h2>RS01 · Container-Size Signal</h2>
+<p>
+    <code>renderNodeCallback</code> reads <code>ctx.container.width</code> and
+    <code>ctx.deviceClass</code> to decide what a row shows: wide rows carry the <strong>ISCO code + a
+    device badge + the title</strong>; narrow rows drop the code so the long occupation titles still fit.
+    Drag the frame's resize handle (bottom-right) or use the width buttons and watch the live readout flip.
+</p>
 
-        <div class="controls">
-            <span class="muted">Width:</span>
-            <button id="rs01-360" onclick="setWidth1(360, this)">360px</button>
-            <button id="rs01-460" onclick="setWidth1(460, this)">460px</button>
-            <button id="rs01-620" onclick="setWidth1(620, this)">620px</button>
-        </div>
+<div class="controls">
+    <span class="muted">Width:</span>
+    <button id="rs01-360" onclick="setWidth1(360, this)">360px</button>
+    <button id="rs01-460" onclick="setWidth1(460, this)">460px</button>
+    <button id="rs01-620" onclick="setWidth1(620, this)">620px</button>
+</div>
 
-        <div class="output">
-            <p class="output-label">Live signal (tree's own border-box):</p>
-            <pre id="rs01-readout">measuring…</pre>
-        </div>
+<div class="output">
+    <p class="output-label">Live signal (tree's own border-box):</p>
+    <pre id="rs01-readout">measuring…</pre>
+</div>
 
-        <div class="resize-box" id="rs01-box" style="width:620px">
-            <web-treeview id="rs01-tree" expand-level="2"></web-treeview>
-        </div>
-        <p class="hint">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
+<div class="resize-box" id="rs01-box" style="width:620px">
+    <web-treeview id="rs01-tree" expand-level="2"></web-treeview>
+</div>
+<p class="hint">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
 
-        <div class="code-block"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
+<div class="code-block"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
   const narrow = container.width &lt; 460;            // the tree's OWN box
   el.innerHTML = '';
   const row = document.createElement('span');
@@ -146,37 +136,37 @@
   row.append(badge, label);
   el.append(row);
 };</code></pre></div>
-    </div>
+</div>
 
-    <!-- RS02 -->
-    <div class="card">
-        <h2>RS02 &middot; Device-Adaptive Depth</h2>
-        <p>
-            The <strong>device-class flip is the re-render trigger</strong>: when the container crosses a device
-            breakpoint, <code>ctx.deviceClass</code> changes and the tree re-renders. Here a page-side observer
-            maps the live width to an <code>expandLevel</code> and reassigns it on the tree &mdash; a roomy box opens
-            down to minor groups, a tight one shows only the ten major groups. Container-only resizes (no device
-            flip) update <code>ctx.container</code> silently; this knob reacts to the derived breakpoints.
-        </p>
+<!-- RS02 -->
+<div class="card">
+<h2>RS02 · Device-Adaptive Depth</h2>
+<p>
+    The <strong>device-class flip is the re-render trigger</strong>: when the container crosses a device
+    breakpoint, <code>ctx.deviceClass</code> changes and the tree re-renders. Here a page-side observer
+    maps the live width to an <code>expandLevel</code> and reassigns it on the tree &mdash; a roomy box opens
+    down to minor groups, a tight one shows only the ten major groups. Container-only resizes (no device
+    flip) update <code>ctx.container</code> silently; this knob reacts to the derived breakpoints.
+</p>
 
-        <div class="controls">
-            <span class="muted">Width:</span>
-            <button id="rs02-360" onclick="setWidth2(360, this)">360px</button>
-            <button id="rs02-500" onclick="setWidth2(500, this)">500px</button>
-            <button id="rs02-620" onclick="setWidth2(620, this)">620px</button>
-        </div>
+<div class="controls">
+    <span class="muted">Width:</span>
+    <button id="rs02-360" onclick="setWidth2(360, this)">360px</button>
+    <button id="rs02-500" onclick="setWidth2(500, this)">500px</button>
+    <button id="rs02-620" onclick="setWidth2(620, this)">620px</button>
+</div>
 
-        <div class="output">
-            <p class="output-label">Resolved config:</p>
-            <pre id="rs02-readout">measuring…</pre>
-        </div>
+<div class="output">
+    <p class="output-label">Resolved config:</p>
+    <pre id="rs02-readout">measuring…</pre>
+</div>
 
-        <div class="resize-box" id="rs02-box" style="width:620px">
-            <web-treeview id="rs02-tree" expand-level="2"></web-treeview>
-        </div>
-        <p class="hint">&harr; Drag the handle below ~380px to collapse to major groups only.</p>
+<div class="resize-box" id="rs02-box" style="width:620px">
+    <web-treeview id="rs02-tree" expand-level="2"></web-treeview>
+</div>
+<p class="hint">&harr; Drag the handle below ~380px to collapse to major groups only.</p>
 
-        <div class="code-block"><pre><code>// ctx tells each row the device + box; your app picks the depth from the
+<div class="code-block"><pre><code>// ctx tells each row the device + box; your app picks the depth from the
 // derived breakpoint and reassigns expandLevel (capability first, then width):
 function resolveDepth(width, deviceClass) {
   if (deviceClass === 'mobile' || width &lt; 380) return 1; // major groups
@@ -187,41 +177,41 @@ new ResizeObserver(([e]) =&gt; {
   const w = e.contentRect.width;
   tree.expandLevel = resolveDepth(w, deviceClassFromCtx);
 }).observe(box);</code></pre></div>
-    </div>
+</div>
 
-    <!-- RS03 -->
-    <div class="card">
-        <h2>RS03 &middot; Label Overflow</h2>
-        <p>
-            The companion to the responsive signal: what a single node label does when it's wider than the row.
-            <code>renderNodeCallback</code> wraps the title in a span whose overflow behaviour you pick &mdash;
-            <code>wrap</code> (the label wraps, the row grows taller), or <code>ellipsis</code> (one clipped line
-            with a native <code>title</code> tooltip on the full text). ISCO occupation titles are long, so in this
-            deliberately narrow box the difference is obvious.
-        </p>
+<!-- RS03 -->
+<div class="card">
+<h2>RS03 · Label Overflow</h2>
+<p>
+    The companion to the responsive signal: what a single node label does when it's wider than the row.
+    <code>renderNodeCallback</code> wraps the title in a span whose overflow behaviour you pick &mdash;
+    <code>wrap</code> (the label wraps, the row grows taller), or <code>ellipsis</code> (one clipped line
+    with a native <code>title</code> tooltip on the full text). ISCO occupation titles are long, so in this
+    deliberately narrow box the difference is obvious.
+</p>
 
-        <div class="note">
-            <p class="note-title">Ellipsis &amp; uniform rows</p>
-            <p style="margin-bottom:0">
-                <code>ellipsis</code> keeps every row one line tall &mdash; which is exactly what the virtual
-                scroller wants (uniform row height lets it place thousands of rows cheaply). <code>wrap</code>
-                produces variable-height rows; fine for small trees, but it defeats the fixed-height fast path. For
-                large datasets, prefer <code>ellipsis</code> (+ a tooltip) over <code>wrap</code>.
-            </p>
-        </div>
+<div class="note">
+    <p class="note-title">Ellipsis &amp; uniform rows</p>
+    <p style="margin-bottom:0">
+        <code>ellipsis</code> keeps every row one line tall &mdash; which is exactly what the virtual
+        scroller wants (uniform row height lets it place thousands of rows cheaply). <code>wrap</code>
+        produces variable-height rows; fine for small trees, but it defeats the fixed-height fast path. For
+        large datasets, prefer <code>ellipsis</code> (+ a tooltip) over <code>wrap</code>.
+    </p>
+</div>
 
-        <div class="controls">
-            <span class="muted">Overflow:</span>
-            <button id="rs03-wrap" onclick="setOverflow('wrap', this)">wrap</button>
-            <button id="rs03-ellipsis" onclick="setOverflow('ellipsis', this)">ellipsis</button>
-        </div>
+<div class="controls">
+    <span class="muted">Overflow:</span>
+    <button id="rs03-wrap" onclick="setOverflow('wrap', this)">wrap</button>
+    <button id="rs03-ellipsis" onclick="setOverflow('ellipsis', this)">ellipsis</button>
+</div>
 
-        <div class="resize-box" id="rs03-box" style="width:340px">
-            <web-treeview id="rs03-tree" expand-level="3"></web-treeview>
-        </div>
-        <p class="hint">In <code>ellipsis</code> mode, hover a clipped occupation title to see the full text.</p>
+<div class="resize-box" id="rs03-box" style="width:340px">
+    <web-treeview id="rs03-tree" expand-level="3"></web-treeview>
+</div>
+<p class="hint">In <code>ellipsis</code> mode, hover a clipped occupation title to see the full text.</p>
 
-        <div class="code-block"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
+<div class="code-block"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
 
 tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
   el.innerHTML = '';
@@ -232,18 +222,18 @@ tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
   if (overflow === 'ellipsis') label.title = node.data.label; // full text on hover
   el.append(label);
 };</code></pre></div>
-    </div>
+</div>
 
-    <!-- RS04 -->
-    <div class="card">
-        <h2>RS04 &middot; How the Signal Works</h2>
-        <p>
-            Everything above runs off the render state spread onto the single <code>ctx</code> your render
-            callbacks receive. No bindings, no listeners, no teardown on your side &mdash; the renderer owns the
-            observers and tears them down in <code>destroy()</code>.
-        </p>
+<!-- RS04 -->
+<div class="card">
+<h2>RS04 · How the Signal Works</h2>
+<p>
+    Everything above runs off the render state spread onto the single <code>ctx</code> your render
+    callbacks receive. No bindings, no listeners, no teardown on your side &mdash; the renderer owns the
+    observers and tears them down in <code>destroy()</code>.
+</p>
 
-        <div class="code-block"><pre><code>interface NodeRenderContext {
+<div class="code-block"><pre><code>interface NodeRenderContext {
   deviceClass: 'mobile' | 'tablet' | 'desktop'; // classifyDevice(): capability + size
   container: { width: number; height: number }; // the tree's OWN border-box, in px
   isExpanded:    boolean;
@@ -258,195 +248,189 @@ tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
 tree.renderNodeCallback = ({ node, contentElement, deviceClass, container }) =&gt; { /* … */ };
 tree.renderIconCallback = ({ node, value, iconElement, deviceClass, container }) =&gt; { /* … */ };</code></pre></div>
 
-        <table class="reference-table">
-            <thead>
-                <tr><th>Field</th><th>Type</th><th>Source</th></tr>
-            </thead>
-            <tbody>
-                <tr><td><code>deviceClass</code></td><td><code>'mobile' | 'tablet' | 'desktop'</code></td><td><code>classifyDevice</code> + <code>observeEnvironment</code> (capability + physical size, orientation-robust)</td></tr>
-                <tr><td><code>container</code></td><td><code>{ width, height }</code></td><td><code>observeElementSize</code> on the tree's own container (shared <code>ResizeObserver</code>)</td></tr>
-                <tr><td><code>isExpanded</code></td><td><code>boolean</code></td><td>live node state at render time</td></tr>
-                <tr><td><code>isChecked</code></td><td><code>boolean</code></td><td>live node state (checkbox)</td></tr>
-                <tr><td><code>isSelected</code></td><td><code>boolean</code></td><td>live node state (row selection)</td></tr>
-                <tr><td><code>isFocused</code></td><td><code>boolean</code></td><td>live node state (keyboard focus)</td></tr>
-                <tr><td><code>level</code></td><td><code>number</code></td><td>node depth (1-based)</td></tr>
-                <tr><td><code>hasChildren</code></td><td><code>boolean</code></td><td>node has descendants</td></tr>
-            </tbody>
-        </table>
+<table class="reference-table">
+    <thead>
+        <tr><th>Field</th><th>Type</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>deviceClass</code></td><td><code>'mobile' | 'tablet' | 'desktop'</code></td><td><code>classifyDevice</code> + <code>observeEnvironment</code> (capability + physical size, orientation-robust)</td></tr>
+        <tr><td><code>container</code></td><td><code>{ width, height }</code></td><td><code>observeElementSize</code> on the tree's own container (shared <code>ResizeObserver</code>)</td></tr>
+        <tr><td><code>isExpanded</code></td><td><code>boolean</code></td><td>live node state at render time</td></tr>
+        <tr><td><code>isChecked</code></td><td><code>boolean</code></td><td>live node state (checkbox)</td></tr>
+        <tr><td><code>isSelected</code></td><td><code>boolean</code></td><td>live node state (row selection)</td></tr>
+        <tr><td><code>isFocused</code></td><td><code>boolean</code></td><td>live node state (keyboard focus)</td></tr>
+        <tr><td><code>level</code></td><td><code>number</code></td><td>node depth (1-based)</td></tr>
+        <tr><td><code>hasChildren</code></td><td><code>boolean</code></td><td>node has descendants</td></tr>
+    </tbody>
+</table>
 
-        <div class="note">
-            <p class="note-title">Where device &amp; container come from</p>
-            <p style="margin-bottom:0">
-                <code>deviceClass</code> and <code>container</code> are produced by
-                <code>@keenmate/web-components-core/environment</code> (<code>classifyDevice</code> +
-                <code>observeEnvironment</code> / <code>observeElementSize</code>), set up in the renderer's
-                <code>mount()</code> and torn down in <code>destroy()</code>. Detection is feature-based (media
-                queries), not UA sniffing, so it reacts to an orientation flip, a resize, or plugging in a mouse.
-                A device-class change forces a full re-render; container size updates are applied silently. Requires
-                core &ge; rc10. Parity with svelte-treeview's <code>NodeRenderContext</code>.
-            </p>
-        </div>
-    </div>
+<div class="note">
+    <p class="note-title">Where device &amp; container come from</p>
+    <p style="margin-bottom:0">
+        <code>deviceClass</code> and <code>container</code> are produced by
+        <code>@keenmate/web-components-core/environment</code> (<code>classifyDevice</code> +
+        <code>observeEnvironment</code> / <code>observeElementSize</code>), set up in the renderer's
+        <code>mount()</code> and torn down in <code>destroy()</code>. Detection is feature-based (media
+        queries), not UA sniffing, so it reacts to an orientation flip, a resize, or plugging in a mouse.
+        A device-class change forces a full re-render; container size updates are applied silently. Requires
+        core &ge; rc10. Parity with svelte-treeview's <code>NodeRenderContext</code>.
+    </p>
+</div>
 </div>
 
 <script type="module">
-    import '/src/index.ts';
-    import { persistControls } from './examples-controls-store.js';
+import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
-    // ── ISCO-ish sample data: 4 levels, dot-separated paths. Long titles on purpose
-    //    so overflow/narrow behaviours are visible. value = ISCO code, label = title.
-    const data = [
-        { value: '1', path: '1',       label: 'Managers' },
-        { value: '11', path: '1.1',    label: 'Chief Executives, Senior Officials and Legislators' },
-        { value: '111', path: '1.1.1', label: 'Legislators and Senior Government Officials' },
-        { value: '112', path: '1.1.2', label: 'Managing Directors and Chief Executives' },
-        { value: '12', path: '1.2',    label: 'Administrative and Commercial Managers' },
-        { value: '121', path: '1.2.1', label: 'Business Services and Administration Managers' },
-        { value: '122', path: '1.2.2', label: 'Sales, Marketing and Development Managers' },
-        { value: '2', path: '2',       label: 'Professionals' },
-        { value: '21', path: '2.1',    label: 'Science and Engineering Professionals' },
-        { value: '211', path: '2.1.1', label: 'Physical and Earth Science Professionals' },
-        { value: '212', path: '2.1.2', label: 'Mathematicians, Actuaries and Statisticians' },
-        { value: '22', path: '2.2',    label: 'Health Professionals' },
-        { value: '221', path: '2.2.1', label: 'Medical Doctors' },
-        { value: '222', path: '2.2.2', label: 'Nursing and Midwifery Professionals' },
-        { value: '25', path: '2.5',    label: 'Information and Communications Technology Professionals' },
-        { value: '251', path: '2.5.1', label: 'Software and Applications Developers and Analysts' },
-        { value: '252', path: '2.5.2', label: 'Database and Network Professionals' },
-        { value: '3', path: '3',       label: 'Technicians and Associate Professionals' },
-        { value: '31', path: '3.1',    label: 'Science and Engineering Associate Professionals' },
-        { value: '311', path: '3.1.1', label: 'Physical and Engineering Science Technicians' },
-        { value: '35', path: '3.5',    label: 'Information and Communications Technicians' },
-        { value: '351', path: '3.5.1', label: 'Information and Communications Technology Operations Technicians' }
-    ];
+// ── ISCO-ish sample data: 4 levels, dot-separated paths. Long titles on purpose
+//    so overflow/narrow behaviours are visible. value = ISCO code, label = title.
+const data = [
+    { value: '1', path: '1',       label: 'Managers' },
+    { value: '11', path: '1.1',    label: 'Chief Executives, Senior Officials and Legislators' },
+    { value: '111', path: '1.1.1', label: 'Legislators and Senior Government Officials' },
+    { value: '112', path: '1.1.2', label: 'Managing Directors and Chief Executives' },
+    { value: '12', path: '1.2',    label: 'Administrative and Commercial Managers' },
+    { value: '121', path: '1.2.1', label: 'Business Services and Administration Managers' },
+    { value: '122', path: '1.2.2', label: 'Sales, Marketing and Development Managers' },
+    { value: '2', path: '2',       label: 'Professionals' },
+    { value: '21', path: '2.1',    label: 'Science and Engineering Professionals' },
+    { value: '211', path: '2.1.1', label: 'Physical and Earth Science Professionals' },
+    { value: '212', path: '2.1.2', label: 'Mathematicians, Actuaries and Statisticians' },
+    { value: '22', path: '2.2',    label: 'Health Professionals' },
+    { value: '221', path: '2.2.1', label: 'Medical Doctors' },
+    { value: '222', path: '2.2.2', label: 'Nursing and Midwifery Professionals' },
+    { value: '25', path: '2.5',    label: 'Information and Communications Technology Professionals' },
+    { value: '251', path: '2.5.1', label: 'Software and Applications Developers and Analysts' },
+    { value: '252', path: '2.5.2', label: 'Database and Network Professionals' },
+    { value: '3', path: '3',       label: 'Technicians and Associate Professionals' },
+    { value: '31', path: '3.1',    label: 'Science and Engineering Associate Professionals' },
+    { value: '311', path: '3.1.1', label: 'Physical and Engineering Science Technicians' },
+    { value: '35', path: '3.5',    label: 'Information and Communications Technicians' },
+    { value: '351', path: '3.5.1', label: 'Information and Communications Technology Operations Technicians' }
+];
 
-    const baseConfig = { idMember: 'value', pathMember: 'path', displayValueMember: 'label', nodes: data };
+const baseConfig = { idMember: 'value', pathMember: 'path', displayValueMember: 'label', nodes: data };
 
-    customElements.whenDefined('web-treeview').then(() => {
-        // Expose button handlers (inline onclick) once the element is defined.
-        const activate = (groupSel, el) => {
-            document.querySelectorAll(groupSel).forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-        };
+customElements.whenDefined('web-treeview').then(() => {
+    // Expose button handlers (inline onclick) once the element is defined.
+    const activate = (groupSel, el) => {
+        document.querySelectorAll(groupSel).forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    };
 
-        // ── RS01 · container-size signal ────────────────────────────────────
-        const rs01Tree = document.getElementById('rs01-tree');
-        const rs01Box = document.getElementById('rs01-box');
-        const rs01Readout = document.getElementById('rs01-readout');
-        let rs01Device = 'desktop';
+    // ── RS01 · container-size signal ────────────────────────────────────
+    const rs01Tree = document.getElementById('rs01-tree');
+    const rs01Box = document.getElementById('rs01-box');
+    const rs01Readout = document.getElementById('rs01-readout');
+    let rs01Device = 'desktop';
 
-        Object.assign(rs01Tree, baseConfig, {
-            renderNodeCallback: ({ node, contentElement: el, container, deviceClass }) => {
-                rs01Device = deviceClass;
-                const narrow = container.width < 460;
-                el.innerHTML = '';
-                const row = document.createElement('span');
-                row.className = 'isco-row';
-                if (!narrow) {
-                    const code = document.createElement('span');
-                    code.className = 'isco-code';
-                    code.textContent = node.data?.value ?? '';
-                    row.append(code);
-                }
-                const badge = document.createElement('span');
-                badge.className = 'dev-badge ' + deviceClass;
-                badge.textContent = deviceClass;
-                const label = document.createElement('span');
-                label.className = 'isco-label';
-                label.textContent = node.data?.label ?? '';
-                row.append(badge, label);
-                el.append(row);
-            }
-        });
-
-        const paintRs01 = (w) => {
-            const narrow = w < 460;
-            rs01Readout.textContent =
-                `container = { width: ${Math.round(w)}, device: ${rs01Device} }\n` +
-                `width < 460 → ${narrow}   ·   ${narrow ? 'compact rows (title only)' : 'comfortable rows (code + badge + title)'}`;
-        };
-        new ResizeObserver(([e]) => paintRs01(e.contentRect.width)).observe(rs01Box);
-
-        window.setWidth1 = (px, btn) => { rs01Box.style.width = px + 'px'; activate('[id^="rs01-"]', btn); };
-
-        // ── RS02 · device-adaptive depth ────────────────────────────────────
-        const rs02Tree = document.getElementById('rs02-tree');
-        const rs02Box = document.getElementById('rs02-box');
-        const rs02Readout = document.getElementById('rs02-readout');
-        let rs02Device = 'desktop';
-
-        const levelName = { 1: 'major groups only', 2: 'major → sub-major', 3: 'down to minor groups' };
-        const resolveDepth = (width, deviceClass) => {
-            if (deviceClass === 'mobile' || width < 380) return 1;
-            if (width < 560) return 2;
-            return 3;
-        };
-
-        Object.assign(rs02Tree, baseConfig, {
-            renderNodeCallback: ({ node, contentElement: el, deviceClass }) => {
-                rs02Device = deviceClass;
-                el.innerHTML = '';
-                const row = document.createElement('span');
-                row.className = 'isco-row';
+    Object.assign(rs01Tree, baseConfig, {
+        renderNodeCallback: ({ node, contentElement: el, container, deviceClass }) => {
+            rs01Device = deviceClass;
+            const narrow = container.width < 460;
+            el.innerHTML = '';
+            const row = document.createElement('span');
+            row.className = 'isco-row';
+            if (!narrow) {
                 const code = document.createElement('span');
                 code.className = 'isco-code';
                 code.textContent = node.data?.value ?? '';
-                const label = document.createElement('span');
-                label.className = 'isco-label';
-                label.textContent = node.data?.label ?? '';
-                row.append(code, label);
-                el.append(row);
+                row.append(code);
             }
-        });
-
-        const applyRs02 = (w) => {
-            const depth = resolveDepth(w, rs02Device);
-            rs02Tree.expandLevel = depth;
-            rs02Readout.textContent =
-                `container = ${Math.round(w)}px   ·   deviceClass = ${rs02Device}\n` +
-                `→ expandLevel = ${depth}   (${levelName[depth]})`;
-        };
-        new ResizeObserver(([e]) => applyRs02(e.contentRect.width)).observe(rs02Box);
-
-        window.setWidth2 = (px, btn) => { rs02Box.style.width = px + 'px'; activate('[id^="rs02-"]', btn); };
-
-        // ── RS03 · label overflow ───────────────────────────────────────────
-        const rs03Tree = document.getElementById('rs03-tree');
-        let overflow = 'ellipsis';
-
-        // Build a fresh callback bound to the current overflow mode. Re-assigning
-        // renderNodeCallback (a new function identity) is a post-data assignment, which
-        // the renderer treats as dirty → _fullRender, so the new mode takes effect.
-        const makeRs03Renderer = (mode) => ({ node, contentElement: el }) => {
-            el.innerHTML = '';
-            el.className = 'ov-' + mode;
+            const badge = document.createElement('span');
+            badge.className = 'dev-badge ' + deviceClass;
+            badge.textContent = deviceClass;
             const label = document.createElement('span');
-            label.className = 'ov-label';
+            label.className = 'isco-label';
             label.textContent = node.data?.label ?? '';
-            if (mode === 'ellipsis') label.title = node.data?.label ?? '';
-            el.append(label);
-        };
-
-        Object.assign(rs03Tree, baseConfig, { renderNodeCallback: makeRs03Renderer(overflow) });
-
-        window.setOverflow = (mode, btn) => {
-            overflow = mode;
-            activate('[id^="rs03-"]', btn);
-            rs03Tree.renderNodeCallback = makeRs03Renderer(mode);
-        };
-
-        // Mark default-active buttons + prime readouts.
-        document.getElementById('rs01-620').classList.add('active');
-        document.getElementById('rs02-620').classList.add('active');
-        document.getElementById('rs03-ellipsis').classList.add('active');
-        paintRs01(rs01Box.getBoundingClientRect().width);
-        applyRs02(rs02Box.getBoundingClientRect().width);
-
-        // Persist .controls across reloads (shared helper — parity with web-multiselect).
-        persistControls('responsive');
+            row.append(badge, label);
+            el.append(row);
+        }
     });
+
+    const paintRs01 = (w) => {
+        const narrow = w < 460;
+        rs01Readout.textContent =
+            `container = { width: ${Math.round(w)}, device: ${rs01Device} }\n` +
+            `width < 460 → ${narrow}   ·   ${narrow ? 'compact rows (title only)' : 'comfortable rows (code + badge + title)'}`;
+    };
+    new ResizeObserver(([e]) => paintRs01(e.contentRect.width)).observe(rs01Box);
+
+    window.setWidth1 = (px, btn) => { rs01Box.style.width = px + 'px'; activate('[id^="rs01-"]', btn); };
+
+    // ── RS02 · device-adaptive depth ────────────────────────────────────
+    const rs02Tree = document.getElementById('rs02-tree');
+    const rs02Box = document.getElementById('rs02-box');
+    const rs02Readout = document.getElementById('rs02-readout');
+    let rs02Device = 'desktop';
+
+    const levelName = { 1: 'major groups only', 2: 'major → sub-major', 3: 'down to minor groups' };
+    const resolveDepth = (width, deviceClass) => {
+        if (deviceClass === 'mobile' || width < 380) return 1;
+        if (width < 560) return 2;
+        return 3;
+    };
+
+    Object.assign(rs02Tree, baseConfig, {
+        renderNodeCallback: ({ node, contentElement: el, deviceClass }) => {
+            rs02Device = deviceClass;
+            el.innerHTML = '';
+            const row = document.createElement('span');
+            row.className = 'isco-row';
+            const code = document.createElement('span');
+            code.className = 'isco-code';
+            code.textContent = node.data?.value ?? '';
+            const label = document.createElement('span');
+            label.className = 'isco-label';
+            label.textContent = node.data?.label ?? '';
+            row.append(code, label);
+            el.append(row);
+        }
+    });
+
+    const applyRs02 = (w) => {
+        const depth = resolveDepth(w, rs02Device);
+        rs02Tree.expandLevel = depth;
+        rs02Readout.textContent =
+            `container = ${Math.round(w)}px   ·   deviceClass = ${rs02Device}\n` +
+            `→ expandLevel = ${depth}   (${levelName[depth]})`;
+    };
+    new ResizeObserver(([e]) => applyRs02(e.contentRect.width)).observe(rs02Box);
+
+    window.setWidth2 = (px, btn) => { rs02Box.style.width = px + 'px'; activate('[id^="rs02-"]', btn); };
+
+    // ── RS03 · label overflow ───────────────────────────────────────────
+    const rs03Tree = document.getElementById('rs03-tree');
+    let overflow = 'ellipsis';
+
+    // Build a fresh callback bound to the current overflow mode. Re-assigning
+    // renderNodeCallback (a new function identity) is a post-data assignment, which
+    // the renderer treats as dirty → _fullRender, so the new mode takes effect.
+    const makeRs03Renderer = (mode) => ({ node, contentElement: el }) => {
+        el.innerHTML = '';
+        el.className = 'ov-' + mode;
+        const label = document.createElement('span');
+        label.className = 'ov-label';
+        label.textContent = node.data?.label ?? '';
+        if (mode === 'ellipsis') label.title = node.data?.label ?? '';
+        el.append(label);
+    };
+
+    Object.assign(rs03Tree, baseConfig, { renderNodeCallback: makeRs03Renderer(overflow) });
+
+    window.setOverflow = (mode, btn) => {
+        overflow = mode;
+        activate('[id^="rs03-"]', btn);
+        rs03Tree.renderNodeCallback = makeRs03Renderer(mode);
+    };
+
+    // Mark default-active buttons + prime readouts.
+    document.getElementById('rs01-620').classList.add('active');
+    document.getElementById('rs02-620').classList.add('active');
+    document.getElementById('rs03-ellipsis').classList.add('active');
+    paintRs01(rs01Box.getBoundingClientRect().width);
+    applyRs02(rs02Box.getBoundingClientRect().width);
+
+    // Persist .controls across reloads (shared helper — parity with web-multiselect).
+    attachControlsPersistence('responsive');
+});
 </script>
-<script type="module" src="examples-copy-link.js"></script>
-<script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>

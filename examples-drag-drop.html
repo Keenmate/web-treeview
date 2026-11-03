@@ -1,792 +1,775 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Drag & Drop</title>
-    <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        /* Page-specific: field widths for the DnD settings panel. Base padding /
-           border / radius now come from the shared `.controls select|input` rule. */
-        .controls select {
-            min-width: 160px;
-        }
-        .controls input[type="text"] {
-            width: 80px;
-        }
-        .controls input[type="number"] {
-            width: 70px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Drag & Drop</h1>
-            <p class="subtitle">Reorder nodes, drop zones, copy operations, and cross-tree transfers</p>
-        </header>
+<meta name="kmwc:title" content="Drag &amp; Drop">
+<meta name="kmwc:subtitle" content="Reorder nodes, drop zones, copy operations, and cross-tree transfers">
 
-        <!-- Main DnD Example with Control Panel -->
-        <div class="card">
-            <h2>DD01 · Drag Between Trees</h2>
-            <p><strong>Source tree (left):</strong> Drag to reorganize nodes (move). Enable "Allow Ctrl+drag to copy" then hold Ctrl while dragging to copy nodes.
-                With <code>selection-mode="multiple"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole selected set moves together.
-                <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag (it's still a valid drop target).
-                <strong>Target tree (right):</strong> Drag from source to add nodes. Starts empty to demo drop placeholder.</p>
-            <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>shouldHandleKeyboardShortcuts</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
+<link rel="stylesheet" href="examples-local.css">
 
-            <div class="controls">
-                <button class="btn-outline" onclick="clearTarget()">Clear Target Tree</button>
-                <button onclick="resetTarget()">Reset Target Tree (100 nodes)</button>
-                <button class="btn-outline" onclick="clearLog()">Clear Log</button>
-            </div>
+<style>
+    /* Page-specific: field widths for the DnD settings panel. Base padding /
+       border / radius now come from the shared `.controls select|input` rule. */
+    .controls select {
+        min-width: 160px;
+    }
+    .controls input[type="text"] {
+        width: 80px;
+    }
+    .controls input[type="number"] {
+        width: 70px;
+    }
+</style>
 
-            <div class="controls" id="dnd-controls">
-                <label>
-                    Source Drag Mode:
-                    <select id="ctrl-drag-mode" onchange="applySettings()">
-                        <option value="none">none (disabled)</option>
-                        <option value="cross">cross (to other trees only)</option>
-                        <option value="both" selected>both (self + cross)</option>
-                    </select>
-                </label>
-                <label>
-                    Drop Zone Mode:
-                    <select id="ctrl-drop-zone-mode" onchange="applySettings()">
-                        <option value="glow">Glow (border indicators)</option>
-                        <option value="floating">Floating (popup zones)</option>
-                    </select>
-                </label>
-                <span id="floating-controls" style="display: none;">
-                    <label>
-                        Layout:
-                        <select id="ctrl-layout" onchange="applySettings()">
-                            <option value="around">Around (before + after/child)</option>
-                            <option value="before">Before (all 3 in a row above the node)</option>
-                            <option value="after">After (all 3 in a row below the node)</option>
-                            <option value="wave">Wave (stacked vertically)</option>
-                            <option value="wave2">Wave2 (diagonal pattern)</option>
-                        </select>
-                    </label>
-                    <label>
-                        Zone Start:
-                        <input type="text" id="ctrl-zone-start" value="33%" placeholder="33% or 50px" onchange="applySettings()">
-                    </label>
-                    <label>
-                        Max Width (px):
-                        <input type="number" id="ctrl-max-width" value="120" min="50" max="300" onchange="applySettings()">
-                    </label>
-                </span>
-                <label>
-                    <input type="checkbox" id="ctrl-allow-copy" onchange="applySettings()">
-                    Allow Ctrl+drag to copy
-                </label>
-                <label>
-                    <input type="checkbox" id="ctrl-show-empty-placeholder" checked onchange="applySettings()">
-                    Show drop zone when target empty
-                </label>
-                <label title="highlight-on-page-drag: the target arms (drop zone shown + tinted) as soon as a node is dragged anywhere on the page">
-                    <input type="checkbox" id="ctrl-highlight-on-page-drag" checked onchange="applySettings()">
-                    Highlight on page drag
-                </label>
-                <label title="Ctrl/Cmd+C/X/V, Delete, Esc + Ctrl+Insert / Shift+Insert / Shift+Delete">
-                    <input type="checkbox" id="ctrl-keyboard-shortcuts" checked onchange="applySettings()">
-                    Built-in keyboard shortcuts
-                </label>
-                <label>
-                    Selection mode:
-                    <select id="ctrl-selection-mode" onchange="applySettings()">
-                        <option value="single">single (one selected node; one node per drag)</option>
-                        <option value="multiple" selected>multiple (Ctrl/Shift+click; drag the whole set)</option>
-                    </select>
-                </label>
-            </div>
+<!-- Main DnD Example with Control Panel -->
+<div class="card">
+    <h2>DD01 · Drag Between Trees</h2>
+    <p><strong>Source tree (left):</strong> Drag to reorganize nodes (move). Enable "Allow Ctrl+drag to copy" then hold Ctrl while dragging to copy nodes.
+        With <code>selection-mode="multiple"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole selected set moves together.
+        <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag (it's still a valid drop target).
+        <strong>Target tree (right):</strong> Drag from source to add nodes. Starts empty to demo drop placeholder.</p>
+    <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>shouldHandleKeyboardShortcuts</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
 
-            <div class="grid-2">
-                <div>
-                    <p class="demo-label">Source Tree (Reorganizable)</p>
-                    <div class="tree-container" id="source-container">
-                        <web-treeview id="source-tree"></web-treeview>
-                    </div>
-                </div>
-                <div>
-                    <p class="demo-label" id="target-label">Target Tree (Empty - Drop Here!)</p>
-                    <div class="tree-container" id="target-container">
-                        <web-treeview id="target-tree"></web-treeview>
-                    </div>
-                </div>
-            </div>
+    <div class="controls">
+        <button class="btn-outline" onclick="clearTarget()">Clear Target Tree</button>
+        <button onclick="resetTarget()">Reset Target Tree (100 nodes)</button>
+        <button class="btn-outline" onclick="clearLog()">Clear Log</button>
+    </div>
 
-            <div class="output" id="source-selected-output" style="display: none;">
-                <p class="output-label" id="source-selected-label"></p>
-                <pre id="source-selected-log"></pre>
-            </div>
-            <div class="output" id="target-selected-output" style="display: none;">
-                <p class="output-label" id="target-selected-label"></p>
-                <pre id="target-selected-log"></pre>
-            </div>
+    <div class="controls" id="dnd-controls">
+        <label>
+            Source Drag Mode:
+            <select id="ctrl-drag-mode" onchange="applySettings()">
+                <option value="none">none (disabled)</option>
+                <option value="cross">cross (to other trees only)</option>
+                <option value="both" selected>both (self + cross)</option>
+            </select>
+        </label>
+        <label>
+            Drop Zone Mode:
+            <select id="ctrl-drop-zone-mode" onchange="applySettings()">
+                <option value="glow">Glow (border indicators)</option>
+                <option value="floating">Floating (popup zones)</option>
+            </select>
+        </label>
+        <span id="floating-controls" style="display: none;">
+            <label>
+                Layout:
+                <select id="ctrl-layout" onchange="applySettings()">
+                    <option value="around">Around (before + after/child)</option>
+                    <option value="before">Before (all 3 in a row above the node)</option>
+                    <option value="after">After (all 3 in a row below the node)</option>
+                    <option value="wave">Wave (stacked vertically)</option>
+                    <option value="wave2">Wave2 (diagonal pattern)</option>
+                </select>
+            </label>
+            <label>
+                Zone Start:
+                <input type="text" id="ctrl-zone-start" value="33%" placeholder="33% or 50px" onchange="applySettings()">
+            </label>
+            <label>
+                Max Width (px):
+                <input type="number" id="ctrl-max-width" value="120" min="50" max="300" onchange="applySettings()">
+            </label>
+        </span>
+        <label>
+            <input type="checkbox" id="ctrl-allow-copy" onchange="applySettings()">
+            Allow Ctrl+drag to copy
+        </label>
+        <label>
+            <input type="checkbox" id="ctrl-show-empty-placeholder" checked onchange="applySettings()">
+            Show drop zone when target empty
+        </label>
+        <label title="highlight-on-page-drag: the target arms (drop zone shown + tinted) as soon as a node is dragged anywhere on the page">
+            <input type="checkbox" id="ctrl-highlight-on-page-drag" checked onchange="applySettings()">
+            Highlight on page drag
+        </label>
+        <label title="Ctrl/Cmd+C/X/V, Delete, Esc + Ctrl+Insert / Shift+Insert / Shift+Delete">
+            <input type="checkbox" id="ctrl-keyboard-shortcuts" checked onchange="applySettings()">
+            Built-in keyboard shortcuts
+        </label>
+        <label>
+            Selection mode:
+            <select id="ctrl-selection-mode" onchange="applySettings()">
+                <option value="single">single (one selected node; one node per drag)</option>
+                <option value="multiple" selected>multiple (Ctrl/Shift+click; drag the whole set)</option>
+            </select>
+        </label>
+    </div>
 
-            <div class="output" id="activity-output" style="display: none;">
-                <p class="output-label">Activity Log:</p>
-                <pre id="activity-log"></pre>
+    <div class="grid-2">
+        <div>
+            <p class="demo-label">Source Tree (Reorganizable)</p>
+            <div class="tree-container" id="source-container">
+                <web-treeview id="source-tree"></web-treeview>
             </div>
         </div>
-
-        <!-- Multi-Drag -->
-        <div class="card">
-            <h2>DD02 · Multi-Drag (Select Multiple &amp; Drag as Group)</h2>
-            <p>Set <code>selection-mode="multiple"</code> and the tree honors OS-explorer drag semantics: Ctrl/Shift-click several rows, then drag any one of them &mdash; the whole selected set moves together. Grabbing a row that's <strong>not</strong> in the selected set replaces the selection with just that row, matching how Finder / Explorer behave.</p>
-
-            <div class="note">
-                <p class="note-title">Try it</p>
-                <ol>
-                    <li><strong>Ctrl+click</strong> on three rows (e.g. Apple, Cherry, Eggplant) &mdash; you'll see them get selected.</li>
-                    <li><strong>Drag any selected row</strong> and drop it onto another row.</li>
-                    <li>The whole set lands as a group: first node lands at the requested position, the rest chain <em>after</em> it as siblings.</li>
-                    <li><strong>Shift+click</strong> selects a visual range between two rows.</li>
-                </ol>
-            </div>
-
-            <div class="controls">
-                <label>
-                    Click behavior:
-                    <select id="multi-click-behavior" onchange="applyMultiSettings()">
-                        <option value="select">select (single click = focus, no expand)</option>
-                        <option value="expand-and-focus">expand-and-focus (default)</option>
-                    </select>
-                </label>
-                <label>
-                    <input type="checkbox" id="multi-show-checkboxes" onchange="applyMultiSettings()">
-                    Show checkboxes (separate <code>checkedPaths</code> state)
-                </label>
-                <button class="btn-outline" onclick="resetMultiTree()">Reset Tree</button>
-            </div>
-
-            <div class="note warning">
-                <p>
-                    <strong>Three-level model:</strong>
-                    <code>focusedNode</code> (single, last click / arrow nav) &middot;
-                    <code>selectedPaths</code> (multi-select set used for drag &mdash; Ctrl/Shift-click) &middot;
-                    <code>checkedPaths</code> (independent checkbox data state, visible only when checkboxes are on).
-                </p>
-            </div>
-
-            <div class="grid-2">
-                <div>
-                    <p class="demo-label">Multi-Select Tree</p>
-                    <div class="tree-container" id="multi-container">
-                        <web-treeview id="multi-tree"
-                            selection-mode="multiple"
-                            click-behavior="select"
-                            drag-drop-mode="both"
-                            selected-node-class="wtv__node-content--selected-bold"
-                            checkbox-mode="independent"
-                            expand-level="3"></web-treeview>
-                    </div>
-                </div>
-                <div>
-                    <p class="demo-label">Live State</p>
-                    <div class="output">
-                        <p class="output-label">Focused node</p>
-                        <pre id="multi-focused">(none)</pre>
-                        <p class="output-label mt-1">Selected paths (multi-select, drives drag)</p>
-                        <pre id="multi-selected">(none)</pre>
-                        <p class="output-label mt-1">Checked paths (checkbox state)</p>
-                        <pre id="multi-checked">(none)</pre>
-                        <p class="output-label mt-1">Last drop</p>
-                        <pre id="multi-drop">(none)</pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Restricted Drop Positions -->
-        <div class="card">
-            <h2>DD03 · Restricted Drop Positions</h2>
-            <p>Control which drop positions are valid per node using <code>allowedDropPositionsMember</code> (data-driven, shown below) or <code>getAllowedDropPositionsCallback</code> (runtime per-node logic). Both let the lib snap an attempted drop to the nearest allowed position. Try dragging items to different targets:</p>
-
-            <div class="note">
-                <p class="note-title">Node Types</p>
-                <ul>
-                    <li><strong>&#x1F5D1;&#xFE0F; Trash</strong> - Only accepts <code>child</code> drops (drop INTO, not above/below)</li>
-                    <li><strong>&#x1F4C2; Projects</strong> - All positions allowed (default behavior)</li>
-                    <li><strong>&#x1F4C4; Files</strong> - Only <code>before</code> and <code>after</code> (can't drop INTO a file)</li>
-                </ul>
-            </div>
-
-            <div class="tree-container" id="tree-restricted-container">
-                <web-treeview id="tree-restricted"></web-treeview>
-            </div>
-
-            <div class="output" id="restricted-output" style="display: none;">
-                <p class="output-label">Activity Log:</p>
-                <pre id="restricted-log"></pre>
-            </div>
-        </div>
-
-        <!-- beforeDropCallback -->
-        <div class="card">
-            <h2>DD04 · Drop Validation</h2>
-            <p>Use <code>beforeDropCallback</code> to validate or reject drops. In this example, "Important" nodes cannot be moved.</p>
-
-            <div class="tree-container" id="tree5-container">
-                <web-treeview id="tree5"></web-treeview>
-            </div>
-
-            <div class="note">
-                <strong>Rules:</strong> Nodes with "[locked]" in their name cannot be dragged away. Dropping onto the root "Archive" node is not allowed.
-            </div>
-
-            <div class="output">
-                <p class="output-label">Validation results:</p>
-                <div class="event-log" id="tree5-log"></div>
+        <div>
+            <p class="demo-label" id="target-label">Target Tree (Empty - Drop Here!)</p>
+            <div class="tree-container" id="target-container">
+                <web-treeview id="target-tree"></web-treeview>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import '/src/index.ts';
-        import { uniqueName } from '/src/index.ts';
+    <div class="output" id="source-selected-output" style="display: none;">
+        <p class="output-label" id="source-selected-label"></p>
+        <pre id="source-selected-log"></pre>
+    </div>
+    <div class="output" id="target-selected-output" style="display: none;">
+        <p class="output-label" id="target-selected-label"></p>
+        <pre id="target-selected-log"></pre>
+    </div>
 
-        // ── Sample Data ──────────────────────────────────────────────────
+    <div class="output" id="activity-output" style="display: none;">
+        <p class="output-label">Activity Log:</p>
+        <pre id="activity-log"></pre>
+    </div>
+</div>
 
-        const sourceData = [
-            { id: 1, path: '1', name: 'Source Folder', sortOrder: 10 },
-            { id: 2, path: '1.1', name: 'File A', sortOrder: 10 },
-            { id: 3, path: '1.2', name: 'File B', sortOrder: 20 },
-            { id: 4, path: '1.3', name: '🔒 File C (pinned)', sortOrder: 30, isDraggable: false },
-            { id: 5, path: '2', name: 'Another Folder', sortOrder: 20 },
-            { id: 6, path: '2.1', name: 'Document 1', sortOrder: 10 },
-            { id: 7, path: '2.2', name: 'Document 2', sortOrder: 20 }
-        ];
+<!-- Multi-Drag -->
+<div class="card">
+    <h2>DD02 · Multi-Drag (Select Multiple &amp; Drag as Group)</h2>
+    <p>Set <code>selection-mode="multiple"</code> and the tree honors OS-explorer drag semantics: Ctrl/Shift-click several rows, then drag any one of them &mdash; the whole selected set moves together. Grabbing a row that's <strong>not</strong> in the selected set replaces the selection with just that row, matching how Finder / Explorer behave.</p>
 
-        const restrictedData = [
-            // Trash folder: only accepts drops as children (can't drop above/below)
-            { id: 101, path: '1', name: 'Trash', icon: '\u{1F5D1}\uFE0F', sortOrder: 10, allowedDropPositions: ['child'] },
-            { id: 102, path: '1.1', name: 'Deleted Item 1', icon: '\u{1F4C4}', sortOrder: 10 },
-            { id: 103, path: '1.2', name: 'Deleted Item 2', icon: '\u{1F4C4}', sortOrder: 20 },
+    <div class="note">
+        <p class="note-title">Try it</p>
+        <ol>
+            <li><strong>Ctrl+click</strong> on three rows (e.g. Apple, Cherry, Eggplant) &mdash; you'll see them get selected.</li>
+            <li><strong>Drag any selected row</strong> and drop it onto another row.</li>
+            <li>The whole set lands as a group: first node lands at the requested position, the rest chain <em>after</em> it as siblings.</li>
+            <li><strong>Shift+click</strong> selects a visual range between two rows.</li>
+        </ol>
+    </div>
 
-            // Regular folder: all drop positions allowed (default)
-            { id: 104, path: '2', name: 'Projects', icon: '\u{1F4C2}', sortOrder: 20 },
-            { id: 105, path: '2.1', name: 'Project A', icon: '\u{1F4C2}', sortOrder: 10 },
-            { id: 106, path: '2.2', name: 'Project B', icon: '\u{1F4C2}', sortOrder: 20 },
+    <div class="controls">
+        <label>
+            Click behavior:
+            <select id="multi-click-behavior" onchange="applyMultiSettings()">
+                <option value="select">select (single click = focus, no expand)</option>
+                <option value="expand-and-focus">expand-and-focus (default)</option>
+            </select>
+        </label>
+        <label>
+            <input type="checkbox" id="multi-show-checkboxes" onchange="applyMultiSettings()">
+            Show checkboxes (separate <code>checkedPaths</code> state)
+        </label>
+        <button class="btn-outline" onclick="resetMultiTree()">Reset Tree</button>
+    </div>
 
-            // Files: only accept drops before/after (can't drop INTO a file)
-            { id: 107, path: '3', name: 'Readme.md', icon: '\u{1F4C4}', sortOrder: 30, allowedDropPositions: ['before', 'after'] },
-            { id: 108, path: '4', name: 'Config.json', icon: '\u{1F4C4}', sortOrder: 40, allowedDropPositions: ['before', 'after'] },
+    <div class="note warning">
+        <p>
+            <strong>Three-level model:</strong>
+            <code>focusedNode</code> (single, last click / arrow nav) &middot;
+            <code>selectedPaths</code> (multi-select set used for drag &mdash; Ctrl/Shift-click) &middot;
+            <code>checkedPaths</code> (independent checkbox data state, visible only when checkboxes are on).
+        </p>
+    </div>
 
-            // Source items to drag
-            { id: 109, path: '5', name: 'Source Items', icon: '\u{1F4C2}', sortOrder: 50 },
-            { id: 110, path: '5.1', name: 'Drag me!', icon: '\u{1F535}', sortOrder: 10 },
-            { id: 111, path: '5.2', name: 'Drag me too!', icon: '\u{1F7E2}', sortOrder: 20 },
-        ];
+    <div class="grid-2">
+        <div>
+            <p class="demo-label">Multi-Select Tree</p>
+            <div class="tree-container" id="multi-container">
+                <web-treeview id="multi-tree"
+                    selection-mode="multiple"
+                    click-behavior="select"
+                    drag-drop-mode="both"
+                    selected-node-class="wtv__node-content--selected-bold"
+                    checkbox-mode="independent"
+                    expand-level="3"></web-treeview>
+            </div>
+        </div>
+        <div>
+            <p class="demo-label">Live State</p>
+            <div class="output">
+                <p class="output-label">Focused node</p>
+                <pre id="multi-focused">(none)</pre>
+                <p class="output-label mt-1">Selected paths (multi-select, drives drag)</p>
+                <pre id="multi-selected">(none)</pre>
+                <p class="output-label mt-1">Checked paths (checkbox state)</p>
+                <pre id="multi-checked">(none)</pre>
+                <p class="output-label mt-1">Last drop</p>
+                <pre id="multi-drop">(none)</pre>
+            </div>
+        </div>
+    </div>
+</div>
 
-        const multiSeedData = [
-            { id: 1, path: '1', name: 'Apple', sortOrder: 10 },
-            { id: 11, path: '1.1', name: 'Apple slice 1', sortOrder: 10 },
-            { id: 12, path: '1.2', name: 'Apple slice 2', sortOrder: 20 },
-            { id: 2, path: '2', name: 'Banana', sortOrder: 20 },
-            { id: 3, path: '3', name: 'Cherry', sortOrder: 30 },
-            { id: 4, path: '4', name: 'Date', sortOrder: 40 },
-            { id: 5, path: '5', name: 'Eggplant', sortOrder: 50 },
-            { id: 6, path: '6', name: 'Fig', sortOrder: 60 }
-        ];
+<!-- Restricted Drop Positions -->
+<div class="card">
+    <h2>DD03 · Restricted Drop Positions</h2>
+    <p>Control which drop positions are valid per node using <code>allowedDropPositionsMember</code> (data-driven, shown below) or <code>getAllowedDropPositionsCallback</code> (runtime per-node logic). Both let the lib snap an attempted drop to the nearest allowed position. Try dragging items to different targets:</p>
 
-        const validationData = [
-            { id: 1, path: '1', name: 'Active Tasks' },
-            { id: 2, path: '1.1', name: 'Important [locked]' },
-            { id: 3, path: '1.1.1', name: 'Critical Bug Fix [locked]' },
-            { id: 4, path: '1.2', name: 'Normal Task' },
-            { id: 5, path: '1.3', name: 'Low Priority' },
-            { id: 6, path: '2', name: 'Archive' },
-            { id: 7, path: '2.1', name: 'Old Task 1' },
-            { id: 8, path: '2.2', name: 'Old Task 2' }
-        ];
+    <div class="note">
+        <p class="note-title">Node Types</p>
+        <ul>
+            <li><strong>&#x1F5D1;&#xFE0F; Trash</strong> - Only accepts <code>child</code> drops (drop INTO, not above/below)</li>
+            <li><strong>&#x1F4C2; Projects</strong> - All positions allowed (default behavior)</li>
+            <li><strong>&#x1F4C4; Files</strong> - Only <code>before</code> and <code>after</code> (can't drop INTO a file)</li>
+        </ul>
+    </div>
 
-        // ── State ─────────────────────────────────────────────────────────
+    <div class="tree-container" id="tree-restricted-container">
+        <web-treeview id="tree-restricted"></web-treeview>
+    </div>
 
-        let activityLog = [];
-        let nextId = 100;
-        let sourceTreeEl, targetTreeEl;
+    <div class="output" id="restricted-output" style="display: none;">
+        <p class="output-label">Activity Log:</p>
+        <pre id="restricted-log"></pre>
+    </div>
+</div>
 
-        // ── Helpers ───────────────────────────────────────────────────────
+<!-- beforeDropCallback -->
+<div class="card">
+    <h2>DD04 · Drop Validation</h2>
+    <p>Use <code>beforeDropCallback</code> to validate or reject drops. In this example, "Important" nodes cannot be moved.</p>
 
-        // Always hand each tree its OWN fresh copy of the seed data. The seed
-        // arrays above are module-level consts; assigning them directly would let
-        // in-place tree mutations (moves/removes) pollute the shared const, so a
-        // hot-module reload — which re-runs interaction state but NOT the const
-        // literals — could resurrect a previous session's edits. structuredClone
-        // guarantees a clean start on every (re)init.
-        function initTree(id, data, opts = {}) {
-            const el = document.getElementById(id);
-            // Wire per-node draggability before .data (matches the e2e fixture +
-            // svelte's build-time resolution). Behavior resolves through
-            // getNodeIsDraggable() so a fresh load is always correct; a "pinned node
-            // still drags" symptom is an HMR half-reload leaving the callback unwired
-            // — hard-reload to clear it.
-            if (opts.getIsDraggableCallback) el.getIsDraggableCallback = opts.getIsDraggableCallback;
-            el.nodes = structuredClone(data);
-            el.idMember = 'id';
-            el.pathMember = 'path';
-            el.displayValueMember = 'name';
-            el.expandLevel = opts.expandLevel ?? 3;
-            el.dragDropMode = opts.dragDropMode ?? 'both';
-            if (opts.dropZoneMode) el.dropZoneMode = opts.dropZoneMode;
-            if (opts.isCopyAllowed) el.isCopyAllowed = true;
-            if (opts.shouldAutoHandleCopy) el.shouldAutoHandleCopy = true;
-            if (opts.treeId) el.treeId = opts.treeId;
-            return el;
+    <div class="tree-container" id="tree5-container">
+        <web-treeview id="tree5"></web-treeview>
+    </div>
+
+    <div class="note">
+        <strong>Rules:</strong> Nodes with "[locked]" in their name cannot be dragged away. Dropping onto the root "Archive" node is not allowed.
+    </div>
+
+    <div class="output">
+        <p class="output-label">Validation results:</p>
+        <div class="event-log" id="tree5-log"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { uniqueName } from '/src/index.ts';
+
+    // ── Sample Data ──────────────────────────────────────────────────
+
+    const sourceData = [
+        { id: 1, path: '1', name: 'Source Folder', sortOrder: 10 },
+        { id: 2, path: '1.1', name: 'File A', sortOrder: 10 },
+        { id: 3, path: '1.2', name: 'File B', sortOrder: 20 },
+        { id: 4, path: '1.3', name: '🔒 File C (pinned)', sortOrder: 30, isDraggable: false },
+        { id: 5, path: '2', name: 'Another Folder', sortOrder: 20 },
+        { id: 6, path: '2.1', name: 'Document 1', sortOrder: 10 },
+        { id: 7, path: '2.2', name: 'Document 2', sortOrder: 20 }
+    ];
+
+    const restrictedData = [
+        // Trash folder: only accepts drops as children (can't drop above/below)
+        { id: 101, path: '1', name: 'Trash', icon: '\u{1F5D1}\uFE0F', sortOrder: 10, allowedDropPositions: ['child'] },
+        { id: 102, path: '1.1', name: 'Deleted Item 1', icon: '\u{1F4C4}', sortOrder: 10 },
+        { id: 103, path: '1.2', name: 'Deleted Item 2', icon: '\u{1F4C4}', sortOrder: 20 },
+
+        // Regular folder: all drop positions allowed (default)
+        { id: 104, path: '2', name: 'Projects', icon: '\u{1F4C2}', sortOrder: 20 },
+        { id: 105, path: '2.1', name: 'Project A', icon: '\u{1F4C2}', sortOrder: 10 },
+        { id: 106, path: '2.2', name: 'Project B', icon: '\u{1F4C2}', sortOrder: 20 },
+
+        // Files: only accept drops before/after (can't drop INTO a file)
+        { id: 107, path: '3', name: 'Readme.md', icon: '\u{1F4C4}', sortOrder: 30, allowedDropPositions: ['before', 'after'] },
+        { id: 108, path: '4', name: 'Config.json', icon: '\u{1F4C4}', sortOrder: 40, allowedDropPositions: ['before', 'after'] },
+
+        // Source items to drag
+        { id: 109, path: '5', name: 'Source Items', icon: '\u{1F4C2}', sortOrder: 50 },
+        { id: 110, path: '5.1', name: 'Drag me!', icon: '\u{1F535}', sortOrder: 10 },
+        { id: 111, path: '5.2', name: 'Drag me too!', icon: '\u{1F7E2}', sortOrder: 20 },
+    ];
+
+    const multiSeedData = [
+        { id: 1, path: '1', name: 'Apple', sortOrder: 10 },
+        { id: 11, path: '1.1', name: 'Apple slice 1', sortOrder: 10 },
+        { id: 12, path: '1.2', name: 'Apple slice 2', sortOrder: 20 },
+        { id: 2, path: '2', name: 'Banana', sortOrder: 20 },
+        { id: 3, path: '3', name: 'Cherry', sortOrder: 30 },
+        { id: 4, path: '4', name: 'Date', sortOrder: 40 },
+        { id: 5, path: '5', name: 'Eggplant', sortOrder: 50 },
+        { id: 6, path: '6', name: 'Fig', sortOrder: 60 }
+    ];
+
+    const validationData = [
+        { id: 1, path: '1', name: 'Active Tasks' },
+        { id: 2, path: '1.1', name: 'Important [locked]' },
+        { id: 3, path: '1.1.1', name: 'Critical Bug Fix [locked]' },
+        { id: 4, path: '1.2', name: 'Normal Task' },
+        { id: 5, path: '1.3', name: 'Low Priority' },
+        { id: 6, path: '2', name: 'Archive' },
+        { id: 7, path: '2.1', name: 'Old Task 1' },
+        { id: 8, path: '2.2', name: 'Old Task 2' }
+    ];
+
+    // ── State ─────────────────────────────────────────────────────────
+
+    let activityLog = [];
+    let nextId = 100;
+    let sourceTreeEl, targetTreeEl;
+
+    // ── Helpers ───────────────────────────────────────────────────────
+
+    // Always hand each tree its OWN fresh copy of the seed data. The seed
+    // arrays above are module-level consts; assigning them directly would let
+    // in-place tree mutations (moves/removes) pollute the shared const, so a
+    // hot-module reload — which re-runs interaction state but NOT the const
+    // literals — could resurrect a previous session's edits. structuredClone
+    // guarantees a clean start on every (re)init.
+    function initTree(id, data, opts = {}) {
+        const el = document.getElementById(id);
+        // Wire per-node draggability before .data (matches the e2e fixture +
+        // svelte's build-time resolution). Behavior resolves through
+        // getNodeIsDraggable() so a fresh load is always correct; a "pinned node
+        // still drags" symptom is an HMR half-reload leaving the callback unwired
+        // — hard-reload to clear it.
+        if (opts.getIsDraggableCallback) el.getIsDraggableCallback = opts.getIsDraggableCallback;
+        el.nodes = structuredClone(data);
+        el.idMember = 'id';
+        el.pathMember = 'path';
+        el.displayValueMember = 'name';
+        el.expandLevel = opts.expandLevel ?? 3;
+        el.dragDropMode = opts.dragDropMode ?? 'both';
+        if (opts.dropZoneMode) el.dropZoneMode = opts.dropZoneMode;
+        if (opts.isCopyAllowed) el.isCopyAllowed = true;
+        if (opts.shouldAutoHandleCopy) el.shouldAutoHandleCopy = true;
+        if (opts.treeId) el.treeId = opts.treeId;
+        return el;
+    }
+
+    function addLog(message) {
+        activityLog = [...activityLog.slice(-9), `${new Date().toLocaleTimeString()} - ${message}`];
+        const outputEl = document.getElementById('activity-output');
+        const logEl = document.getElementById('activity-log');
+        outputEl.style.display = '';
+        logEl.textContent = activityLog.join('\n');
+    }
+
+    // ── Settings Persistence ──────────────────────────────────────────
+
+    function loadSettings() {
+        const saved = localStorage.getItem('dropZoneConfig');
+        if (!saved) return;
+        try {
+            const config = JSON.parse(saved);
+            if (config.dragDropModeSource) document.getElementById('ctrl-drag-mode').value = config.dragDropModeSource;
+            if (config.mode) document.getElementById('ctrl-drop-zone-mode').value = config.mode;
+            if (config.layout) document.getElementById('ctrl-layout').value = config.layout === 'above' ? 'before' : config.layout === 'below' ? 'after' : config.layout; // map pre-rename saved values
+            if (config.start !== undefined) document.getElementById('ctrl-zone-start').value = config.start;
+            if (config.maxWidth !== undefined) document.getElementById('ctrl-max-width').value = config.maxWidth;
+            if (config.isCopyAllowed !== undefined) document.getElementById('ctrl-allow-copy').checked = config.isCopyAllowed;
+            if (config.showDropZoneWhenEmpty !== undefined) document.getElementById('ctrl-show-empty-placeholder').checked = config.showDropZoneWhenEmpty;
+            if (config.highlightOnPageDrag !== undefined) document.getElementById('ctrl-highlight-on-page-drag').checked = config.highlightOnPageDrag;
+            if (config.handleKeyboardShortcuts !== undefined) document.getElementById('ctrl-keyboard-shortcuts').checked = config.handleKeyboardShortcuts;
+            if (config.selectionMode) document.getElementById('ctrl-selection-mode').value = config.selectionMode;
+        } catch (e) {
+            // Ignore invalid JSON
         }
+    }
 
-        function addLog(message) {
-            activityLog = [...activityLog.slice(-9), `${new Date().toLocaleTimeString()} - ${message}`];
-            const outputEl = document.getElementById('activity-output');
-            const logEl = document.getElementById('activity-log');
-            outputEl.style.display = '';
-            logEl.textContent = activityLog.join('\n');
-        }
-
-        // ── Settings Persistence ──────────────────────────────────────────
-
-        function loadSettings() {
-            const saved = localStorage.getItem('dropZoneConfig');
-            if (!saved) return;
-            try {
-                const config = JSON.parse(saved);
-                if (config.dragDropModeSource) document.getElementById('ctrl-drag-mode').value = config.dragDropModeSource;
-                if (config.mode) document.getElementById('ctrl-drop-zone-mode').value = config.mode;
-                if (config.layout) document.getElementById('ctrl-layout').value = config.layout === 'above' ? 'before' : config.layout === 'below' ? 'after' : config.layout; // map pre-rename saved values
-                if (config.start !== undefined) document.getElementById('ctrl-zone-start').value = config.start;
-                if (config.maxWidth !== undefined) document.getElementById('ctrl-max-width').value = config.maxWidth;
-                if (config.isCopyAllowed !== undefined) document.getElementById('ctrl-allow-copy').checked = config.isCopyAllowed;
-                if (config.showDropZoneWhenEmpty !== undefined) document.getElementById('ctrl-show-empty-placeholder').checked = config.showDropZoneWhenEmpty;
-                if (config.highlightOnPageDrag !== undefined) document.getElementById('ctrl-highlight-on-page-drag').checked = config.highlightOnPageDrag;
-                if (config.handleKeyboardShortcuts !== undefined) document.getElementById('ctrl-keyboard-shortcuts').checked = config.handleKeyboardShortcuts;
-                if (config.selectionMode) document.getElementById('ctrl-selection-mode').value = config.selectionMode;
-            } catch (e) {
-                // Ignore invalid JSON
-            }
-        }
-
-        function saveSettings() {
-            const config = {
-                dragDropModeSource: document.getElementById('ctrl-drag-mode').value,
-                mode: document.getElementById('ctrl-drop-zone-mode').value,
-                layout: document.getElementById('ctrl-layout').value,
-                start: document.getElementById('ctrl-zone-start').value,
-                maxWidth: parseInt(document.getElementById('ctrl-max-width').value, 10),
-                isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
-                showDropZoneWhenEmpty: document.getElementById('ctrl-show-empty-placeholder').checked,
-                highlightOnPageDrag: document.getElementById('ctrl-highlight-on-page-drag').checked,
-                handleKeyboardShortcuts: document.getElementById('ctrl-keyboard-shortcuts').checked,
-                selectionMode: document.getElementById('ctrl-selection-mode').value
-            };
-            localStorage.setItem('dropZoneConfig', JSON.stringify(config));
-        }
-
-        // ── Apply Settings to Trees ───────────────────────────────────────
-
-        window.applySettings = function() {
-            const dragMode = document.getElementById('ctrl-drag-mode').value;
-            const dropZoneMode = document.getElementById('ctrl-drop-zone-mode').value;
-            const layout = document.getElementById('ctrl-layout').value;
-            const zoneStart = document.getElementById('ctrl-zone-start').value;
-            const maxWidth = parseInt(document.getElementById('ctrl-max-width').value, 10);
-            const isCopyAllowed = document.getElementById('ctrl-allow-copy').checked;
-            const showEmptyPlaceholder = document.getElementById('ctrl-show-empty-placeholder').checked;
-            const highlightOnPageDrag = document.getElementById('ctrl-highlight-on-page-drag').checked;
-            const keyboardShortcuts = document.getElementById('ctrl-keyboard-shortcuts').checked;
-            const selectionMode = document.getElementById('ctrl-selection-mode').value;
-
-            // Show/hide floating-specific controls
-            const floatingControls = document.getElementById('floating-controls');
-            floatingControls.style.display = dropZoneMode === 'floating' ? 'contents' : 'none';
-
-            // Apply to source tree
-            if (sourceTreeEl) {
-                sourceTreeEl.dragDropMode = dragMode;
-                sourceTreeEl.dropZoneMode = dropZoneMode;
-                sourceTreeEl.dropZoneLayout = layout;
-                sourceTreeEl.dropZoneStart = zoneStart;
-                sourceTreeEl.dropZoneMaxWidth = maxWidth;
-                sourceTreeEl.isCopyAllowed = isCopyAllowed;
-                sourceTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
-                sourceTreeEl.setAttribute('selection-mode', selectionMode);
-            }
-
-            // Apply to target tree (always 'both' mode)
-            if (targetTreeEl) {
-                targetTreeEl.dropZoneMode = dropZoneMode;
-                targetTreeEl.dropZoneLayout = layout;
-                targetTreeEl.dropZoneStart = zoneStart;
-                targetTreeEl.dropZoneMaxWidth = maxWidth;
-                targetTreeEl.isCopyAllowed = isCopyAllowed;
-                targetTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
-                targetTreeEl.isEmptyDropPlaceholderShown = showEmptyPlaceholder;
-                targetTreeEl.shouldHighlightOnPageDrag = highlightOnPageDrag;
-                targetTreeEl.setAttribute('selection-mode', selectionMode);
-            }
-
-            saveSettings();
+    function saveSettings() {
+        const config = {
+            dragDropModeSource: document.getElementById('ctrl-drag-mode').value,
+            mode: document.getElementById('ctrl-drop-zone-mode').value,
+            layout: document.getElementById('ctrl-layout').value,
+            start: document.getElementById('ctrl-zone-start').value,
+            maxWidth: parseInt(document.getElementById('ctrl-max-width').value, 10),
+            isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
+            showDropZoneWhenEmpty: document.getElementById('ctrl-show-empty-placeholder').checked,
+            highlightOnPageDrag: document.getElementById('ctrl-highlight-on-page-drag').checked,
+            handleKeyboardShortcuts: document.getElementById('ctrl-keyboard-shortcuts').checked,
+            selectionMode: document.getElementById('ctrl-selection-mode').value
         };
+        localStorage.setItem('dropZoneConfig', JSON.stringify(config));
+    }
 
-        // ── Target Tree Actions ───────────────────────────────────────────
+    // ── Apply Settings to Trees ───────────────────────────────────────
 
-        window.clearTarget = function() {
-            if (targetTreeEl) {
-                targetTreeEl.nodes = [];
-                document.getElementById('target-label').textContent = 'Target Tree (Empty - Drop Here!)';
-            }
-            addLog('Cleared target tree');
-        };
+    window.applySettings = function() {
+        const dragMode = document.getElementById('ctrl-drag-mode').value;
+        const dropZoneMode = document.getElementById('ctrl-drop-zone-mode').value;
+        const layout = document.getElementById('ctrl-layout').value;
+        const zoneStart = document.getElementById('ctrl-zone-start').value;
+        const maxWidth = parseInt(document.getElementById('ctrl-max-width').value, 10);
+        const isCopyAllowed = document.getElementById('ctrl-allow-copy').checked;
+        const showEmptyPlaceholder = document.getElementById('ctrl-show-empty-placeholder').checked;
+        const highlightOnPageDrag = document.getElementById('ctrl-highlight-on-page-drag').checked;
+        const keyboardShortcuts = document.getElementById('ctrl-keyboard-shortcuts').checked;
+        const selectionMode = document.getElementById('ctrl-selection-mode').value;
 
-        window.resetTarget = function() {
-            const nodes = [];
-            let id = 1000;
-            for (let i = 1; i <= 10; i++) {
-                nodes.push({ id: id++, path: `${i}`, name: `Folder ${i}`, sortOrder: i * 10 });
-                for (let j = 1; j <= 3; j++) {
-                    nodes.push({ id: id++, path: `${i}.${j}`, name: `Subfolder ${i}.${j}`, sortOrder: j * 10 });
-                    for (let k = 1; k <= 2 + (i % 2); k++) {
-                        nodes.push({ id: id++, path: `${i}.${j}.${k}`, name: `File ${i}.${j}.${k}`, sortOrder: k * 10 });
-                    }
+        // Show/hide floating-specific controls
+        const floatingControls = document.getElementById('floating-controls');
+        floatingControls.style.display = dropZoneMode === 'floating' ? 'contents' : 'none';
+
+        // Apply to source tree
+        if (sourceTreeEl) {
+            sourceTreeEl.dragDropMode = dragMode;
+            sourceTreeEl.dropZoneMode = dropZoneMode;
+            sourceTreeEl.dropZoneLayout = layout;
+            sourceTreeEl.dropZoneStart = zoneStart;
+            sourceTreeEl.dropZoneMaxWidth = maxWidth;
+            sourceTreeEl.isCopyAllowed = isCopyAllowed;
+            sourceTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
+            sourceTreeEl.setAttribute('selection-mode', selectionMode);
+        }
+
+        // Apply to target tree (always 'both' mode)
+        if (targetTreeEl) {
+            targetTreeEl.dropZoneMode = dropZoneMode;
+            targetTreeEl.dropZoneLayout = layout;
+            targetTreeEl.dropZoneStart = zoneStart;
+            targetTreeEl.dropZoneMaxWidth = maxWidth;
+            targetTreeEl.isCopyAllowed = isCopyAllowed;
+            targetTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
+            targetTreeEl.isEmptyDropPlaceholderShown = showEmptyPlaceholder;
+            targetTreeEl.shouldHighlightOnPageDrag = highlightOnPageDrag;
+            targetTreeEl.setAttribute('selection-mode', selectionMode);
+        }
+
+        saveSettings();
+    };
+
+    // ── Target Tree Actions ───────────────────────────────────────────
+
+    window.clearTarget = function() {
+        if (targetTreeEl) {
+            targetTreeEl.nodes = [];
+            document.getElementById('target-label').textContent = 'Target Tree (Empty - Drop Here!)';
+        }
+        addLog('Cleared target tree');
+    };
+
+    window.resetTarget = function() {
+        const nodes = [];
+        let id = 1000;
+        for (let i = 1; i <= 10; i++) {
+            nodes.push({ id: id++, path: `${i}`, name: `Folder ${i}`, sortOrder: i * 10 });
+            for (let j = 1; j <= 3; j++) {
+                nodes.push({ id: id++, path: `${i}.${j}`, name: `Subfolder ${i}.${j}`, sortOrder: j * 10 });
+                for (let k = 1; k <= 2 + (i % 2); k++) {
+                    nodes.push({ id: id++, path: `${i}.${j}.${k}`, name: `File ${i}.${j}.${k}`, sortOrder: k * 10 });
                 }
             }
-            if (targetTreeEl) {
-                targetTreeEl.nodes = nodes;
-                document.getElementById('target-label').textContent = 'Target Tree';
-            }
-            addLog(`Reset target tree with ${nodes.length} nodes`);
+        }
+        if (targetTreeEl) {
+            targetTreeEl.nodes = nodes;
+            document.getElementById('target-label').textContent = 'Target Tree';
+        }
+        addLog(`Reset target tree with ${nodes.length} nodes`);
+    };
+
+    window.clearLog = function() {
+        activityLog = [];
+        document.getElementById('activity-log').textContent = '';
+        document.getElementById('activity-output').style.display = 'none';
+    };
+
+    // ── Cross-tree clipboard policy hooks (mirror the svelte demo) ─────
+    // Each pasted node gets a fresh id; path is assigned by the paste insert.
+    // A root whose name already exists in the destination becomes "Name Copy N".
+    // Landing neighbours depend on ctx.position: a 'child' paste lands among
+    // target.node's children, a 'before'/'after' paste among target.siblings.
+    function transformPasted(ctx) {
+        const { data } = ctx;
+        const landing =
+            ctx.position === 'child' && ctx.target?.node
+                ? Object.values(ctx.target.node.children)
+                : ctx.target?.siblings ?? [];
+        const taken = landing.map((s) => s.data?.name ?? '');
+        return {
+            ...data,
+            id: nextId++,
+            path: '',
+            name: ctx.isRoot ? uniqueName(data.name, taken) : data.name
         };
+    }
 
-        window.clearLog = function() {
-            activityLog = [];
-            document.getElementById('activity-log').textContent = '';
-            document.getElementById('activity-output').style.display = 'none';
-        };
+    // Pasting onto one of the copied nodes itself would hit the paste-into-self
+    // guard and skip everything. Redirect into the node's parent so the copy
+    // lands beside it.
+    function selfPasteRedirect(ctx) {
+        if (ctx.target.path && ctx.entries.some((e) => e.sourcePath === ctx.target.path)) {
+            return { targetPath: ctx.target.node?.parentPath ?? '' };
+        }
+    }
 
-        // ── Cross-tree clipboard policy hooks (mirror the svelte demo) ─────
-        // Each pasted node gets a fresh id; path is assigned by the paste insert.
-        // A root whose name already exists in the destination becomes "Name Copy N".
-        // Landing neighbours depend on ctx.position: a 'child' paste lands among
-        // target.node's children, a 'before'/'after' paste among target.siblings.
-        function transformPasted(ctx) {
-            const { data } = ctx;
-            const landing =
-                ctx.position === 'child' && ctx.target?.node
-                    ? Object.values(ctx.target.node.children)
-                    : ctx.target?.siblings ?? [];
-            const taken = landing.map((s) => s.data?.name ?? '');
-            return {
-                ...data,
-                id: nextId++,
-                path: '',
-                name: ctx.isRoot ? uniqueName(data.name, taken) : data.name
-            };
+    // ── Cross-Tree Drop Handler (multi-drag aware) ────────────────────
+
+    function handleTargetDrop(ctx) {
+        const dropNode = ctx.target?.node ?? null;
+        const draggedNode = ctx.source?.node ?? null;
+        const position = ctx.position;
+        const operation = ctx.operation;
+        if (!draggedNode) return;
+        // Same-tree operations are auto-handled by the library - just log
+        const isSameTreeDrag = draggedNode.treeId === 'target-tree';
+        if (isSameTreeDrag) {
+            addLog(`[${operation.toUpperCase()}] ${operation === 'move' ? 'Moved' : 'Copied'} "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name || 'root'}"`);
+            return;
         }
 
-        // Pasting onto one of the copied nodes itself would hit the paste-into-self
-        // guard and skip everything. Redirect into the node's parent so the copy
-        // lands beside it.
-        function selfPasteRedirect(ctx) {
-            if (ctx.target.path && ctx.entries.some((e) => e.sourcePath === ctx.target.path)) {
-                return { targetPath: ctx.target.node?.parentPath ?? '' };
-            }
+        // Cross-tree drags - use copyNodeWithDescendants to include children.
+        let parentPath, siblingPath, copyPosition;
+        if (dropNode === null) {
+            parentPath = '';
+        } else if (position === 'child') {
+            parentPath = dropNode.path;
+        } else {
+            parentPath = dropNode.parentPath || '';
+            siblingPath = dropNode.path;
+            copyPosition = position;
         }
 
-        // ── Cross-Tree Drop Handler (multi-drag aware) ────────────────────
-
-        function handleTargetDrop(ctx) {
-            const dropNode = ctx.target?.node ?? null;
-            const draggedNode = ctx.source?.node ?? null;
-            const position = ctx.position;
-            const operation = ctx.operation;
-            if (!draggedNode) return;
-            // Same-tree operations are auto-handled by the library - just log
-            const isSameTreeDrag = draggedNode.treeId === 'target-tree';
-            if (isSameTreeDrag) {
-                addLog(`[${operation.toUpperCase()}] ${operation === 'move' ? 'Moved' : 'Copied'} "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name || 'root'}"`);
-                return;
-            }
-
-            // Cross-tree drags - use copyNodeWithDescendants to include children.
-            let parentPath, siblingPath, copyPosition;
-            if (dropNode === null) {
-                parentPath = '';
-            } else if (position === 'child') {
-                parentPath = dropNode.path;
-            } else {
-                parentPath = dropNode.parentPath || '';
-                siblingPath = dropNode.path;
-                copyPosition = position;
-            }
-
-            // Cross-tree multi-drag isn't auto-handled (the library only auto-places
-            // the lead node), but ctx.dragged carries the FULL top-level dragged set,
-            // so we copy each subtree in turn. The first uses the requested position
-            // relative to dropNode; the rest chain as children of dropNode so the set
-            // lands together. sortOrder is re-numbered across the batch to preserve
-            // source order under the target's sortByOrder.
-            const sourcePaths = (ctx.dragged ?? [{ path: draggedNode.path }]).map((r) => r.path);
-            let copied = 0, failed = 0, batchSort = 10;
-            for (let i = 0; i < sourcePaths.length; i++) {
-                const srcNode = sourceTreeEl.getNodeByPath(sourcePaths[i]);
-                if (!srcNode) { failed++; continue; }
-                const useParent = i === 0 ? parentPath : (dropNode ? dropNode.path : '');
-                const useSibling = i === 0 ? siblingPath : undefined;
-                const usePos = i === 0 ? copyPosition : undefined;
-                const rootSort = batchSort;
-                batchSort += 10;
-                const result = targetTreeEl.copyNodeWithDescendants(
-                    srcNode,
-                    useParent,
-                    ({ data }) => ({
-                        ...data,
-                        id: nextId++,
-                        path: '',
-                        sortOrder: data.id === srcNode.data?.id ? rootSort : (data.sortOrder || 10)
-                    }),
-                    useSibling,
-                    usePos
-                );
-                if (result.success) copied += result.count; else failed++;
-            }
-
-            if (failed === 0) {
-                const label = sourcePaths.length > 1 ? `${sourcePaths.length} subtrees (${copied} nodes)` : `${copied} node(s)`;
-                addLog(`[CROSS-TREE] Copied ${label} to "${parentPath || 'root'}"${siblingPath ? ` ${copyPosition} "${siblingPath}"` : ''}`);
-                document.getElementById('target-label').textContent = 'Target Tree';
-            } else {
-                addLog(`Error: ${failed} of ${sourcePaths.length} subtree(s) failed to copy`);
-            }
+        // Cross-tree multi-drag isn't auto-handled (the library only auto-places
+        // the lead node), but ctx.dragged carries the FULL top-level dragged set,
+        // so we copy each subtree in turn. The first uses the requested position
+        // relative to dropNode; the rest chain as children of dropNode so the set
+        // lands together. sortOrder is re-numbered across the batch to preserve
+        // source order under the target's sortByOrder.
+        const sourcePaths = (ctx.dragged ?? [{ path: draggedNode.path }]).map((r) => r.path);
+        let copied = 0, failed = 0, batchSort = 10;
+        for (let i = 0; i < sourcePaths.length; i++) {
+            const srcNode = sourceTreeEl.getNodeByPath(sourcePaths[i]);
+            if (!srcNode) { failed++; continue; }
+            const useParent = i === 0 ? parentPath : (dropNode ? dropNode.path : '');
+            const useSibling = i === 0 ? siblingPath : undefined;
+            const usePos = i === 0 ? copyPosition : undefined;
+            const rootSort = batchSort;
+            batchSort += 10;
+            const result = targetTreeEl.copyNodeWithDescendants(
+                srcNode,
+                useParent,
+                ({ data }) => ({
+                    ...data,
+                    id: nextId++,
+                    path: '',
+                    sortOrder: data.id === srcNode.data?.id ? rootSort : (data.sortOrder || 10)
+                }),
+                useSibling,
+                usePos
+            );
+            if (result.success) copied += result.count; else failed++;
         }
 
-        function handleSourceDrop(ctx) {
-            const dropNode = ctx.target?.node ?? null;
-            const draggedNode = ctx.source?.node ?? null;
-            const position = ctx.position;
-            const operation = ctx.operation;
-            const event = ctx.event;
-            if (!dropNode) {
-                addLog('Cannot drop at root level in source tree');
-                return;
-            }
-            addLog(`[${operation.toUpperCase()}] ${operation === 'move' ? 'Moved' : 'Copied'} "${draggedNode.data?.name}" ${position} "${dropNode.data?.name}"`);
+        if (failed === 0) {
+            const label = sourcePaths.length > 1 ? `${sourcePaths.length} subtrees (${copied} nodes)` : `${copied} node(s)`;
+            addLog(`[CROSS-TREE] Copied ${label} to "${parentPath || 'root'}"${siblingPath ? ` ${copyPosition} "${siblingPath}"` : ''}`);
+            document.getElementById('target-label').textContent = 'Target Tree';
+        } else {
+            addLog(`Error: ${failed} of ${sourcePaths.length} subtree(s) failed to copy`);
+        }
+    }
+
+    function handleSourceDrop(ctx) {
+        const dropNode = ctx.target?.node ?? null;
+        const draggedNode = ctx.source?.node ?? null;
+        const position = ctx.position;
+        const operation = ctx.operation;
+        const event = ctx.event;
+        if (!dropNode) {
+            addLog('Cannot drop at root level in source tree');
+            return;
+        }
+        addLog(`[${operation.toUpperCase()}] ${operation === 'move' ? 'Moved' : 'Copied'} "${draggedNode.data?.name}" ${position} "${dropNode.data?.name}"`);
+    }
+
+    // ── Initialize ─────────────────────────────────────────────────
+
+    customElements.whenDefined('web-treeview').then(() => {
+
+        // Load settings from localStorage
+        loadSettings();
+
+        // Shared clipboard wiring so cross-tree copy/cut/paste + Delete are
+        // testable the same way as the svelte demo. The clipboard is a shared
+        // singleton, so copy in one tree + paste in the other just works.
+        // Per-node draggability: items default to draggable; only an explicit
+        // isDraggable:false opts out (e.g. "🔒 File C (pinned)"). Mirrors the
+        // svelte demo's getIsDraggableCallback — a pinned node shows no grab
+        // cursor and won't start a drag (it's still a valid drop TARGET). Wired
+        // via initTree BEFORE .data so the stored isDraggable field is correct.
+        const isDraggableCb = ({ node }) => node.data?.isDraggable !== false;
+
+        function wireClipboard(el, treeName) {
+            el.clickBehavior = 'select';
+            el.selectedNodeClass = 'wtv__node-content--selected-bold';
+            el.nodeInputTransformationCallback = transformPasted;
+            el.beforePasteCallback = selfPasteRedirect;
+            el.onNodeCopy = (c) => addLog(`Copied ${c.paths.length} from ${treeName}`);
+            el.onNodeCut = (c) => addLog(`Cut ${c.paths.length} from ${treeName}`);
+            el.onNodePaste = (r) => addLog(`Pasted ${r.count} into ${treeName}${r.skipped ? ` (skipped ${r.skipped})` : ''}`);
+            el.onNodeDelete = (c) => addLog(`Deleted ${c.paths.length} node(s) from ${treeName}`);
         }
 
-        // ── Initialize ─────────────────────────────────────────────────
-
-        customElements.whenDefined('web-treeview').then(() => {
-
-            // Load settings from localStorage
-            loadSettings();
-
-            // Shared clipboard wiring so cross-tree copy/cut/paste + Delete are
-            // testable the same way as the svelte demo. The clipboard is a shared
-            // singleton, so copy in one tree + paste in the other just works.
-            // Per-node draggability: items default to draggable; only an explicit
-            // isDraggable:false opts out (e.g. "🔒 File C (pinned)"). Mirrors the
-            // svelte demo's getIsDraggableCallback — a pinned node shows no grab
-            // cursor and won't start a drag (it's still a valid drop TARGET). Wired
-            // via initTree BEFORE .data so the stored isDraggable field is correct.
-            const isDraggableCb = ({ node }) => node.data?.isDraggable !== false;
-
-            function wireClipboard(el, treeName) {
-                el.clickBehavior = 'select';
-                el.selectedNodeClass = 'wtv__node-content--selected-bold';
-                el.nodeInputTransformationCallback = transformPasted;
-                el.beforePasteCallback = selfPasteRedirect;
-                el.onNodeCopy = (c) => addLog(`Copied ${c.paths.length} from ${treeName}`);
-                el.onNodeCut = (c) => addLog(`Cut ${c.paths.length} from ${treeName}`);
-                el.onNodePaste = (r) => addLog(`Pasted ${r.count} into ${treeName}${r.skipped ? ` (skipped ${r.skipped})` : ''}`);
-                el.onNodeDelete = (c) => addLog(`Deleted ${c.paths.length} node(s) from ${treeName}`);
-            }
-
-            // Reflect a tree's selected set into its output panel (mirrors the
-            // svelte demo — lets you see what a multi-drag will move).
-            function wireSelectionOutput(el, prefix, label) {
-                const out = document.getElementById(`${prefix}-selected-output`);
-                const lab = document.getElementById(`${prefix}-selected-label`);
-                const log = document.getElementById(`${prefix}-selected-log`);
-                el.addEventListener('selection-change', (e) => {
-                    const paths = [...e.detail.paths].sort();
-                    if (paths.length === 0) { out.style.display = 'none'; return; }
-                    out.style.display = '';
-                    lab.textContent = `${label} (${paths.length}) — dragging any of these moves the whole set`;
-                    log.textContent = paths.join(', ');
-                });
-            }
-
-            // Source tree
-            sourceTreeEl = initTree('source-tree', sourceData, {
-                dragDropMode: document.getElementById('ctrl-drag-mode').value,
-                treeId: 'source-tree',
-                isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
-                shouldAutoHandleCopy: true,
-                getIsDraggableCallback: isDraggableCb
-            });
-            sourceTreeEl.onNodeDrop = handleSourceDrop;
-            wireClipboard(sourceTreeEl, 'source-tree');
-            wireSelectionOutput(sourceTreeEl, 'source', 'Source selection');
-
-            // Target tree (always accepts drops)
-            targetTreeEl = initTree('target-tree', [], {
-                dragDropMode: 'both',
-                treeId: 'target-tree',
-                isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
-                shouldAutoHandleCopy: true,
-                getIsDraggableCallback: isDraggableCb
-            });
-            targetTreeEl.onNodeDrop = handleTargetDrop;
-            wireClipboard(targetTreeEl, 'target-tree');
-            wireSelectionOutput(targetTreeEl, 'target', 'Target selection');
-
-            // Apply all settings from controls
-            applySettings();
-
-            // Restricted Drop Positions tree
-            const restrictedTree = initTree('tree-restricted', restrictedData, { dragDropMode: 'both' });
-            restrictedTree.allowedDropPositionsMember = 'allowedDropPositions';
-            restrictedTree.orderMember = 'sortOrder';
-            restrictedTree.renderNodeCallback = ({ node, contentElement: el }) => {
-                const label = document.createElement('span');
-                const icon = node.data?.icon ? node.data.icon + ' ' : '';
-                label.textContent = icon + (node.data?.name || String(node.id));
-                el.appendChild(label);
-                if (node.data?.allowedDropPositions) {
-                    const hint = document.createElement('small');
-                    hint.style.cssText = 'color: #888; margin-left: 0.5rem; font-size: 0.7em;';
-                    hint.textContent = `(${node.data.allowedDropPositions.join('/')})`;
-                    el.appendChild(hint);
-                }
-            };
-            const restrictedLogEl = document.getElementById('restricted-log');
-            const restrictedOutputEl = document.getElementById('restricted-output');
-            let restrictedLogEntries = [];
-            restrictedTree.onNodeDrop = (ctx) => {
-                const dropNode = ctx.target?.node ?? null;
-                const draggedNode = ctx.source?.node ?? null;
-                const position = ctx.position;
-                const posLabel = dropNode?.data?.allowedDropPositions?.length === 1
-                    ? `(only ${dropNode.data.allowedDropPositions[0]} allowed)`
-                    : '';
-                restrictedLogEntries = [...restrictedLogEntries.slice(-4),
-                    `${new Date().toLocaleTimeString()} - Dropped "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name || 'root'}" ${posLabel}`
-                ];
-                restrictedOutputEl.style.display = '';
-                restrictedLogEl.textContent = restrictedLogEntries.join('\n');
-            };
-
-            // Multi-Drag tree (rc03 selection-mode='multiple' + drag-drop-mode='both')
-            const multiTreeEl = document.getElementById('multi-tree');
-            multiTreeEl.idMember = 'id';
-            multiTreeEl.pathMember = 'path';
-            multiTreeEl.displayValueMember = 'name';
-            multiTreeEl.orderMember = 'sortOrder';
-            multiTreeEl.nodes = structuredClone(multiSeedData);
-
-            const multiSelectedEl = document.getElementById('multi-selected');
-            const multiFocusedEl = document.getElementById('multi-focused');
-            const multiCheckedEl = document.getElementById('multi-checked');
-            const multiDropEl = document.getElementById('multi-drop');
-
-            multiTreeEl.addEventListener('selection-change', (e) => {
+        // Reflect a tree's selected set into its output panel (mirrors the
+        // svelte demo — lets you see what a multi-drag will move).
+        function wireSelectionOutput(el, prefix, label) {
+            const out = document.getElementById(`${prefix}-selected-output`);
+            const lab = document.getElementById(`${prefix}-selected-label`);
+            const log = document.getElementById(`${prefix}-selected-log`);
+            el.addEventListener('selection-change', (e) => {
                 const paths = [...e.detail.paths].sort();
-                if (paths.length === 0) {
-                    multiSelectedEl.textContent = '(none)';
-                    return;
-                }
-                const names = e.detail.nodes.map(n => n.data?.name).join(', ');
-                multiSelectedEl.textContent = `${paths.length} selected — ${names}`;
+                if (paths.length === 0) { out.style.display = 'none'; return; }
+                out.style.display = '';
+                lab.textContent = `${label} (${paths.length}) — dragging any of these moves the whole set`;
+                log.textContent = paths.join(', ');
             });
+        }
 
-            multiTreeEl.addEventListener('focus-change', (e) => {
-                const { focusedNode: n } = e.detail;
-                multiFocusedEl.textContent = n ? `${n.data?.name} (${n.path})` : '(none)';
-            });
-
-            multiTreeEl.addEventListener('checked-change', (e) => {
-                const paths = [...e.detail.paths].sort();
-                if (paths.length === 0) {
-                    multiCheckedEl.textContent = multiTreeEl.isCheckboxesShown ? '(none)' : '(checkboxes off)';
-                    return;
-                }
-                const names = e.detail.nodes.map(n => n.data?.name).join(', ');
-                multiCheckedEl.textContent = `${paths.length} checked — ${names}`;
-            });
-
-            multiTreeEl.onNodeDrop = (ctx) => {
-                const dropNode = ctx.target?.node ?? null;
-                const draggedNode = ctx.source?.node ?? null;
-                const position = ctx.position;
-                const op = ctx.operation;
-                multiDropEl.textContent =
-                    `[${op.toUpperCase()}] "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name ?? 'root'}"`;
-            };
-
-            window.applyMultiSettings = function () {
-                const beh = document.getElementById('multi-click-behavior').value;
-                const showCb = document.getElementById('multi-show-checkboxes').checked;
-                multiTreeEl.clickBehavior = beh;
-                if (showCb) {
-                    multiTreeEl.setAttribute('show-checkboxes', '');
-                    if (multiCheckedEl.textContent === '(checkboxes off)') {
-                        multiCheckedEl.textContent = '(none)';
-                    }
-                } else {
-                    multiTreeEl.removeAttribute('show-checkboxes');
-                    multiTreeEl.uncheckAll({ isSilent: true });
-                    multiCheckedEl.textContent = '(checkboxes off)';
-                }
-            };
-
-            window.resetMultiTree = function () {
-                multiTreeEl.nodes = structuredClone(multiSeedData);
-                multiTreeEl.clearSelection?.();
-                multiTreeEl.uncheckAll({ isSilent: true });
-                multiSelectedEl.textContent = '(none)';
-                multiFocusedEl.textContent = '(none)';
-                multiCheckedEl.textContent = multiTreeEl.hasAttribute('show-checkboxes') ? '(none)' : '(checkboxes off)';
-                multiDropEl.textContent = '(none)';
-            };
-
-            // Initialize checked-paths panel label based on initial checkbox state
-            multiCheckedEl.textContent = document.getElementById('multi-show-checkboxes').checked ? '(none)' : '(checkboxes off)';
-
-            // Validation tree
-            const tree5 = initTree('tree5', validationData, { dragDropMode: 'both' });
-            const log5 = document.getElementById('tree5-log');
-
-            tree5.beforeDropCallback = ({ target, dragged, position, operation, event }) => {
-                const time = new Date().toLocaleTimeString();
-                const entry = document.createElement('div');
-                entry.className = 'event-entry';
-                const draggedNode = dragged[0]?.node ?? dragged[0];
-                const dropNode = target?.node ?? null;
-
-                // Reject moving locked nodes
-                if (draggedNode?.data?.name?.includes('[locked]')) {
-                    entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot move locked node: ${draggedNode.data.name}`;
-                    log5.prepend(entry);
-                    return false;
-                }
-
-                // Reject dropping directly on Archive root
-                if (dropNode?.data?.name === 'Archive' && position === 'child') {
-                    entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot drop into Archive root directly`;
-                    log5.prepend(entry);
-                    return false;
-                }
-
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">ALLOWED</span> ${draggedNode.data?.name} &rarr; ${dropNode?.data?.name} (${position})`;
-                log5.prepend(entry);
-                return true;
-            };
+        // Source tree
+        sourceTreeEl = initTree('source-tree', sourceData, {
+            dragDropMode: document.getElementById('ctrl-drag-mode').value,
+            treeId: 'source-tree',
+            isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
+            shouldAutoHandleCopy: true,
+            getIsDraggableCallback: isDraggableCb
         });
-    </script>
+        sourceTreeEl.onNodeDrop = handleSourceDrop;
+        wireClipboard(sourceTreeEl, 'source-tree');
+        wireSelectionOutput(sourceTreeEl, 'source', 'Source selection');
 
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        // Target tree (always accepts drops)
+        targetTreeEl = initTree('target-tree', [], {
+            dragDropMode: 'both',
+            treeId: 'target-tree',
+            isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
+            shouldAutoHandleCopy: true,
+            getIsDraggableCallback: isDraggableCb
+        });
+        targetTreeEl.onNodeDrop = handleTargetDrop;
+        wireClipboard(targetTreeEl, 'target-tree');
+        wireSelectionOutput(targetTreeEl, 'target', 'Target selection');
+
+        // Apply all settings from controls
+        applySettings();
+
+        // Restricted Drop Positions tree
+        const restrictedTree = initTree('tree-restricted', restrictedData, { dragDropMode: 'both' });
+        restrictedTree.allowedDropPositionsMember = 'allowedDropPositions';
+        restrictedTree.orderMember = 'sortOrder';
+        restrictedTree.renderNodeCallback = ({ node, contentElement: el }) => {
+            const label = document.createElement('span');
+            const icon = node.data?.icon ? node.data.icon + ' ' : '';
+            label.textContent = icon + (node.data?.name || String(node.id));
+            el.appendChild(label);
+            if (node.data?.allowedDropPositions) {
+                const hint = document.createElement('small');
+                hint.style.cssText = 'color: #888; margin-left: 0.5rem; font-size: 0.7em;';
+                hint.textContent = `(${node.data.allowedDropPositions.join('/')})`;
+                el.appendChild(hint);
+            }
+        };
+        const restrictedLogEl = document.getElementById('restricted-log');
+        const restrictedOutputEl = document.getElementById('restricted-output');
+        let restrictedLogEntries = [];
+        restrictedTree.onNodeDrop = (ctx) => {
+            const dropNode = ctx.target?.node ?? null;
+            const draggedNode = ctx.source?.node ?? null;
+            const position = ctx.position;
+            const posLabel = dropNode?.data?.allowedDropPositions?.length === 1
+                ? `(only ${dropNode.data.allowedDropPositions[0]} allowed)`
+                : '';
+            restrictedLogEntries = [...restrictedLogEntries.slice(-4),
+                `${new Date().toLocaleTimeString()} - Dropped "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name || 'root'}" ${posLabel}`
+            ];
+            restrictedOutputEl.style.display = '';
+            restrictedLogEl.textContent = restrictedLogEntries.join('\n');
+        };
+
+        // Multi-Drag tree (rc03 selection-mode='multiple' + drag-drop-mode='both')
+        const multiTreeEl = document.getElementById('multi-tree');
+        multiTreeEl.idMember = 'id';
+        multiTreeEl.pathMember = 'path';
+        multiTreeEl.displayValueMember = 'name';
+        multiTreeEl.orderMember = 'sortOrder';
+        multiTreeEl.nodes = structuredClone(multiSeedData);
+
+        const multiSelectedEl = document.getElementById('multi-selected');
+        const multiFocusedEl = document.getElementById('multi-focused');
+        const multiCheckedEl = document.getElementById('multi-checked');
+        const multiDropEl = document.getElementById('multi-drop');
+
+        multiTreeEl.addEventListener('selection-change', (e) => {
+            const paths = [...e.detail.paths].sort();
+            if (paths.length === 0) {
+                multiSelectedEl.textContent = '(none)';
+                return;
+            }
+            const names = e.detail.nodes.map(n => n.data?.name).join(', ');
+            multiSelectedEl.textContent = `${paths.length} selected — ${names}`;
+        });
+
+        multiTreeEl.addEventListener('focus-change', (e) => {
+            const { focusedNode: n } = e.detail;
+            multiFocusedEl.textContent = n ? `${n.data?.name} (${n.path})` : '(none)';
+        });
+
+        multiTreeEl.addEventListener('checked-change', (e) => {
+            const paths = [...e.detail.paths].sort();
+            if (paths.length === 0) {
+                multiCheckedEl.textContent = multiTreeEl.isCheckboxesShown ? '(none)' : '(checkboxes off)';
+                return;
+            }
+            const names = e.detail.nodes.map(n => n.data?.name).join(', ');
+            multiCheckedEl.textContent = `${paths.length} checked — ${names}`;
+        });
+
+        multiTreeEl.onNodeDrop = (ctx) => {
+            const dropNode = ctx.target?.node ?? null;
+            const draggedNode = ctx.source?.node ?? null;
+            const position = ctx.position;
+            const op = ctx.operation;
+            multiDropEl.textContent =
+                `[${op.toUpperCase()}] "${draggedNode.data?.name}" ${position} "${dropNode?.data?.name ?? 'root'}"`;
+        };
+
+        window.applyMultiSettings = function () {
+            const beh = document.getElementById('multi-click-behavior').value;
+            const showCb = document.getElementById('multi-show-checkboxes').checked;
+            multiTreeEl.clickBehavior = beh;
+            if (showCb) {
+                multiTreeEl.setAttribute('show-checkboxes', '');
+                if (multiCheckedEl.textContent === '(checkboxes off)') {
+                    multiCheckedEl.textContent = '(none)';
+                }
+            } else {
+                multiTreeEl.removeAttribute('show-checkboxes');
+                multiTreeEl.uncheckAll({ isSilent: true });
+                multiCheckedEl.textContent = '(checkboxes off)';
+            }
+        };
+
+        window.resetMultiTree = function () {
+            multiTreeEl.nodes = structuredClone(multiSeedData);
+            multiTreeEl.clearSelection?.();
+            multiTreeEl.uncheckAll({ isSilent: true });
+            multiSelectedEl.textContent = '(none)';
+            multiFocusedEl.textContent = '(none)';
+            multiCheckedEl.textContent = multiTreeEl.hasAttribute('show-checkboxes') ? '(none)' : '(checkboxes off)';
+            multiDropEl.textContent = '(none)';
+        };
+
+        // Initialize checked-paths panel label based on initial checkbox state
+        multiCheckedEl.textContent = document.getElementById('multi-show-checkboxes').checked ? '(none)' : '(checkboxes off)';
+
+        // Validation tree
+        const tree5 = initTree('tree5', validationData, { dragDropMode: 'both' });
+        const log5 = document.getElementById('tree5-log');
+
+        tree5.beforeDropCallback = ({ target, dragged, position, operation, event }) => {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'event-entry';
+            const draggedNode = dragged[0]?.node ?? dragged[0];
+            const dropNode = target?.node ?? null;
+
+            // Reject moving locked nodes
+            if (draggedNode?.data?.name?.includes('[locked]')) {
+                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot move locked node: ${draggedNode.data.name}`;
+                log5.prepend(entry);
+                return false;
+            }
+
+            // Reject dropping directly on Archive root
+            if (dropNode?.data?.name === 'Archive' && position === 'child') {
+                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot drop into Archive root directly`;
+                log5.prepend(entry);
+                return false;
+            }
+
+            entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">ALLOWED</span> ${draggedNode.data?.name} &rarr; ${dropNode?.data?.name} (${position})`;
+            log5.prepend(entry);
+            return true;
+        };
+    });
+</script>

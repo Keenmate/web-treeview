@@ -1,655 +1,643 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Theming</title>
+<meta name="kmwc:title" content="Theming">
+<meta name="kmwc:subtitle" content="Customize appearance with CSS custom properties. Dark mode, neon, corporate, and more">
 
-    <!-- Shared example styles -->
-    <link rel="stylesheet" href="examples-shared.css">
+<link rel="stylesheet" href="examples-local.css">
 
-    <!-- Page-specific styles: theme presets (demo content) + gallery/editor layout -->
-    <style>
-        /* Theme grid layout */
-        .theme-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
+<!-- Page-specific styles: theme presets (demo content) + gallery/editor layout -->
+<style>
+    /* Theme grid layout */
+    .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(500px, 100%), 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
 
-        /* Theme card base styling */
-        .theme-card {
-            padding: 1.5rem;
-            border-radius: 8px;
-        }
+    /* Theme card base styling */
+    .theme-card {
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
 
-        .theme-card p {
-            font-size: 0.875rem;
-        }
+    .theme-card p {
+        font-size: 0.875rem;
+    }
 
-        .theme-card .tree-container {
-            margin-bottom: 0;
-        }
+    .theme-card .tree-container {
+        margin-bottom: 0;
+    }
 
-        /* Dark Mode Theme */
-        .dark-theme {
-            background: #1a1a1a;
-        }
+    /* Dark Mode Theme */
+    .dark-theme {
+        background: #1a1a1a;
+    }
 
-        .dark-theme h2,
-        .dark-theme p,
-        .dark-theme label {
-            color: #e5e5e5;
-        }
+    .dark-theme h2,
+    .dark-theme p,
+    .dark-theme label {
+        color: #e5e5e5;
+    }
 
-        #dark-mode {
-            /* Base theme variables — these cascade to all components */
-            --base-main-bg: #2a2a2a;
-            --base-text-color-1: #e5e5e5;
-            --base-text-color-3: #808080;
-            --base-border-color: #404040;
-            --base-primary-color: #667eea;
-            --base-primary-color-hover: #7b93ff;
-            --base-hover-bg: #3a3a3a;
-            --base-active-bg: #444444;
-            --base-elevated-bg: #3a3a3a;
-            --base-selected-bg: rgba(102, 126, 234, 0.15);
+    #dark-mode {
+        /* Base theme variables — these cascade to all components */
+        --base-main-bg: #2a2a2a;
+        --base-text-color-1: #e5e5e5;
+        --base-text-color-3: #808080;
+        --base-border-color: #404040;
+        --base-primary-color: #667eea;
+        --base-primary-color-hover: #7b93ff;
+        --base-hover-bg: #3a3a3a;
+        --base-active-bg: #444444;
+        --base-elevated-bg: #3a3a3a;
+        --base-selected-bg: rgba(102, 126, 234, 0.15);
 
-            /* Component-specific overrides */
-            --wtv-context-menu-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-            --wtv-loading-bg: rgba(26, 26, 26, 0.8);
-        }
+        /* Component-specific overrides */
+        --wtv-context-menu-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+        --wtv-loading-bg: rgba(26, 26, 26, 0.8);
+    }
 
-        /* Neon/Cyberpunk Theme */
-        .neon-theme {
-            background: #0a0a0a;
-            position: relative;
-        }
+    /* Neon/Cyberpunk Theme */
+    .neon-theme {
+        background: #0a0a0a;
+        position: relative;
+    }
 
-        .neon-theme::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(45deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
-            pointer-events: none;
-            border-radius: 8px;
-        }
+    .neon-theme::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(45deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
+        pointer-events: none;
+        border-radius: 8px;
+    }
 
-        .neon-theme h2,
-        .neon-theme p,
-        .neon-theme label {
-            color: #00ffff;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
+    .neon-theme h2,
+    .neon-theme p,
+    .neon-theme label {
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
 
-        #neon-mode {
-            /* Base theme variables */
-            --base-main-bg: #1a0a1a;
-            --base-text-color-1: #00ffff;
-            --base-text-color-3: #ff00ff;
-            --base-border-color: #ff00ff;
-            --base-primary-color: #ff00ff;
-            --base-primary-color-hover: #ff66ff;
-            --base-hover-bg: rgba(255, 0, 255, 0.15);
-            --base-active-bg: rgba(255, 0, 255, 0.25);
-            --base-elevated-bg: rgba(255, 0, 255, 0.1);
-            --base-selected-bg: rgba(0, 255, 255, 0.15);
-            --base-on-primary-text-color: #1a0a1a;
+    #neon-mode {
+        /* Base theme variables */
+        --base-main-bg: #1a0a1a;
+        --base-text-color-1: #00ffff;
+        --base-text-color-3: #ff00ff;
+        --base-border-color: #ff00ff;
+        --base-primary-color: #ff00ff;
+        --base-primary-color-hover: #ff66ff;
+        --base-hover-bg: rgba(255, 0, 255, 0.15);
+        --base-active-bg: rgba(255, 0, 255, 0.25);
+        --base-elevated-bg: rgba(255, 0, 255, 0.1);
+        --base-selected-bg: rgba(0, 255, 255, 0.15);
+        --base-on-primary-text-color: #1a0a1a;
 
-            /* Component-specific overrides */
-            --wtv-context-menu-box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-            --wtv-drop-glow-before-color: rgba(0, 255, 255, 0.8);
-            --wtv-drop-glow-after-color: rgba(255, 0, 255, 0.8);
-            --wtv-drop-glow-child-color: rgba(255, 255, 0, 0.8);
+        /* Component-specific overrides */
+        --wtv-context-menu-box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        --wtv-drop-glow-before-color: rgba(0, 255, 255, 0.8);
+        --wtv-drop-glow-after-color: rgba(255, 0, 255, 0.8);
+        --wtv-drop-glow-child-color: rgba(255, 255, 0, 0.8);
 
-            /* Custom disclosure glyph — one --base-icon-chevron swap re-skins the
-               whole tree's toggle (double-chevron to match the neon energy). */
-            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 17 5-5-5-5'/><path d='m13 17 5-5-5-5'/></svg>");
-        }
+        /* Custom disclosure glyph — one --base-icon-chevron swap re-skins the
+           whole tree's toggle (double-chevron to match the neon energy). */
+        --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 17 5-5-5-5'/><path d='m13 17 5-5-5-5'/></svg>");
+    }
 
-        /* Audi Corporate Theme */
-        .audi-theme {
-            background: #f7f7f7;
-        }
+    /* Audi Corporate Theme */
+    .audi-theme {
+        background: #f7f7f7;
+    }
 
-        .audi-theme h2 {
-            color: #bb0a30;
-            font-weight: 300;
-            letter-spacing: 0.05em;
-        }
+    .audi-theme h2 {
+        color: #bb0a30;
+        font-weight: 300;
+        letter-spacing: 0.05em;
+    }
 
-        .audi-theme p,
-        .audi-theme label {
-            color: #555;
-        }
+    .audi-theme p,
+    .audi-theme label {
+        color: #555;
+    }
 
-        #audi-mode {
-            /* Base theme variables */
-            --base-text-color-1: #333333;
-            --base-text-color-3: #666666;
-            --base-border-color: #d0d0d0;
-            --base-primary-color: #bb0a30;
-            --base-primary-color-hover: #990825;
-            --base-hover-bg: #f5f5f5;
-            --base-elevated-bg: #f5f5f5;
-            --base-selected-bg: rgba(187, 10, 48, 0.08);
+    #audi-mode {
+        /* Base theme variables */
+        --base-text-color-1: #333333;
+        --base-text-color-3: #666666;
+        --base-border-color: #d0d0d0;
+        --base-primary-color: #bb0a30;
+        --base-primary-color-hover: #990825;
+        --base-hover-bg: #f5f5f5;
+        --base-elevated-bg: #f5f5f5;
+        --base-selected-bg: rgba(187, 10, 48, 0.08);
 
-            /* Component-specific overrides */
-            --wtv-border-radius-sm: 2px;
-            --wtv-border-radius-lg: 4px;
-            --wtv-context-menu-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
+        /* Component-specific overrides */
+        --wtv-border-radius-sm: 2px;
+        --wtv-border-radius-lg: 4px;
+        --wtv-context-menu-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        /* Rounded/Soft Theme */
-        .rounded-theme {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-        }
+    /* Rounded/Soft Theme */
+    .rounded-theme {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    }
 
-        #rounded-mode {
-            /* Base theme variables */
-            --base-text-color-1: #5a3e36;
-            --base-text-color-3: #8b6e60;
-            --base-border-color: #f0d0c0;
-            --base-primary-color: #ff6b9d;
-            --base-primary-color-hover: #ff3b7a;
-            --base-hover-bg: #fff5f0;
-            --base-elevated-bg: #fff5f0;
-            --base-selected-bg: #ffe5f0;
+    #rounded-mode {
+        /* Base theme variables */
+        --base-text-color-1: #5a3e36;
+        --base-text-color-3: #8b6e60;
+        --base-border-color: #f0d0c0;
+        --base-primary-color: #ff6b9d;
+        --base-primary-color-hover: #ff3b7a;
+        --base-hover-bg: #fff5f0;
+        --base-elevated-bg: #fff5f0;
+        --base-selected-bg: #ffe5f0;
 
-            /* Component-specific overrides */
-            --wtv-border-radius-sm: 12px;
-            --wtv-border-radius-lg: 20px;
-            --wtv-context-menu-box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        /* Component-specific overrides */
+        --wtv-border-radius-sm: 12px;
+        --wtv-border-radius-lg: 20px;
+        --wtv-context-menu-box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 
-            /* Soft rounded disclosure glyph (circle-chevron) to match the pill shapes. */
-            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m10 8 4 4-4 4'/></svg>");
-        }
+        /* Soft rounded disclosure glyph (circle-chevron) to match the pill shapes. */
+        --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m10 8 4 4-4 4'/></svg>");
+    }
 
-        /* Sharp/Minimal Theme */
-        .sharp-theme {
-            background: #ffffff;
-            border: 2px solid #000000;
-        }
+    /* Sharp/Minimal Theme */
+    .sharp-theme {
+        background: #ffffff;
+        border: 2px solid #000000;
+    }
 
-        #sharp-mode {
-            /* Base theme variables */
-            --base-text-color-1: #000000;
-            --base-text-color-3: #555555;
-            --base-border-color: #000000;
-            --base-primary-color: #000000;
-            --base-primary-color-hover: #333333;
-            --base-hover-bg: #f0f0f0;
-            --base-elevated-bg: #f0f0f0;
-            --base-selected-bg: #e0e0e0;
+    #sharp-mode {
+        /* Base theme variables */
+        --base-text-color-1: #000000;
+        --base-text-color-3: #555555;
+        --base-border-color: #000000;
+        --base-primary-color: #000000;
+        --base-primary-color-hover: #333333;
+        --base-hover-bg: #f0f0f0;
+        --base-elevated-bg: #f0f0f0;
+        --base-selected-bg: #e0e0e0;
 
-            /* Component-specific overrides */
-            --wtv-border-radius-sm: 0;
-            --wtv-border-radius-lg: 0;
-            --wtv-context-menu-box-shadow: none;
-            --wtv-context-menu-border: 2px solid #000000;
+        /* Component-specific overrides */
+        --wtv-border-radius-sm: 0;
+        --wtv-border-radius-lg: 0;
+        --wtv-context-menu-box-shadow: none;
+        --wtv-context-menu-border: 2px solid #000000;
 
-            /* Hard geometric disclosure glyph (filled square-chevron) for the brutalist look. */
-            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M19 2a3 3 0 0 1 3 3v14a3 3 0 0 1 -3 3h-14a3 3 0 0 1 -3 -3v-14a3 3 0 0 1 3 -3zm-10.387 6.21a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3zm5 0a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3z'/></svg>");
-        }
+        /* Hard geometric disclosure glyph (filled square-chevron) for the brutalist look. */
+        --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M19 2a3 3 0 0 1 3 3v14a3 3 0 0 1 -3 3h-14a3 3 0 0 1 -3 -3v-14a3 3 0 0 1 3 -3zm-10.387 6.21a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3zm5 0a1 1 0 0 0 -1.32 .083l-.083 .094a1 1 0 0 0 .083 1.32l2.292 2.293l-2.292 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l3 -3l.083 -.094a1 1 0 0 0 -.083 -1.32l-3 -3z'/></svg>");
+    }
 
-        /* Material Design Theme */
-        .material-theme {
-            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-        }
+    /* Material Design Theme */
+    .material-theme {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    }
 
-        #material-mode {
-            /* Base theme variables */
-            --base-text-color-1: #212121;
-            --base-text-color-3: #757575;
-            --base-border-color: transparent;
-            --base-primary-color: #1976d2;
-            --base-primary-color-hover: #1565c0;
-            --base-hover-bg: #e3f2fd;
-            --base-elevated-bg: #f5f5f5;
-            --base-selected-bg: #e3f2fd;
+    #material-mode {
+        /* Base theme variables */
+        --base-text-color-1: #212121;
+        --base-text-color-3: #757575;
+        --base-border-color: transparent;
+        --base-primary-color: #1976d2;
+        --base-primary-color-hover: #1565c0;
+        --base-hover-bg: #e3f2fd;
+        --base-elevated-bg: #f5f5f5;
+        --base-selected-bg: #e3f2fd;
 
-            /* Component-specific overrides */
-            --wtv-border-radius-sm: 4px;
-            --wtv-border-radius-lg: 4px;
-            --wtv-context-menu-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        /* Component-specific overrides */
+        --wtv-border-radius-sm: 4px;
+        --wtv-border-radius-lg: 4px;
+        --wtv-context-menu-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 
-            /* Custom glyph + rotation RE-MAP. Material's indicator is a PRE-ORIENTED
-               downward caret (arrow_drop_down), so we hand the toggle a down-caret and
-               re-map the rotation tokens (collapsed points it right, expanded leaves it
-               down) instead of the default right-chevron 0deg→90deg. Same escape hatch as
-               icon-set="triangle", done here purely through the --base-* / --wtv- contract. */
-            --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z'/></svg>");
-            --wtv-icon-rotate-collapsed: -90deg;
-            --wtv-icon-rotate-expanded: 0deg;
-        }
+        /* Custom glyph + rotation RE-MAP. Material's indicator is a PRE-ORIENTED
+           downward caret (arrow_drop_down), so we hand the toggle a down-caret and
+           re-map the rotation tokens (collapsed points it right, expanded leaves it
+           down) instead of the default right-chevron 0deg→90deg. Same escape hatch as
+           icon-set="triangle", done here purely through the --base-* / --wtv- contract. */
+        --base-icon-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M18 9c.852 0 1.297 .986 .783 1.623l-.076 .084l-6 6a1 1 0 0 1 -1.32 .083l-.094 -.083l-6 -6l-.083 -.094l-.054 -.077l-.054 -.096l-.017 -.036l-.027 -.067l-.032 -.108l-.01 -.053l-.01 -.06l-.004 -.057v-.118l.005 -.058l.009 -.06l.01 -.052l.032 -.108l.027 -.067l.07 -.132l.065 -.09l.073 -.081l.094 -.083l.077 -.054l.096 -.054l.036 -.017l.067 -.027l.108 -.032l.053 -.01l.06 -.01l.057 -.004l12.059 -.002z'/></svg>");
+        --wtv-icon-rotate-collapsed: -90deg;
+        --wtv-icon-rotate-expanded: 0deg;
+    }
 
-        /* Glassmorphism Theme */
-        .glass-theme {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: visible;
-        }
+    /* Glassmorphism Theme */
+    .glass-theme {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: visible;
+    }
 
-        .glass-theme::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="15" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="20" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="80" r="25" fill="rgba(255,255,255,0.08)"/></svg>');
-            background-size: 200px 200px;
-            pointer-events: none;
-            border-radius: 8px;
-        }
+    .glass-theme::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="15" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="20" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="80" r="25" fill="rgba(255,255,255,0.08)"/></svg>');
+        background-size: 200px 200px;
+        pointer-events: none;
+        border-radius: 8px;
+    }
 
-        .glass-theme h2,
-        .glass-theme p,
-        .glass-theme label {
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+    .glass-theme h2,
+    .glass-theme p,
+    .glass-theme label {
+        color: #ffffff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
 
-        #glass-mode {
-            /* Base theme variables */
-            --base-main-bg: rgba(255, 255, 255, 0.15);
-            --base-text-color-1: #ffffff;
-            --base-text-color-3: rgba(255, 255, 255, 0.7);
-            --base-border-color: rgba(255, 255, 255, 0.3);
-            --base-primary-color: #a5b4fc;
-            --base-primary-color-hover: #c7d2fe;
-            --base-hover-bg: rgba(255, 255, 255, 0.2);
-            --base-active-bg: rgba(255, 255, 255, 0.3);
-            --base-elevated-bg: rgba(255, 255, 255, 0.1);
-            --base-selected-bg: rgba(255, 255, 255, 0.2);
-            --base-on-primary-text-color: #1e1b4b;
+    #glass-mode {
+        /* Base theme variables */
+        --base-main-bg: rgba(255, 255, 255, 0.15);
+        --base-text-color-1: #ffffff;
+        --base-text-color-3: rgba(255, 255, 255, 0.7);
+        --base-border-color: rgba(255, 255, 255, 0.3);
+        --base-primary-color: #a5b4fc;
+        --base-primary-color-hover: #c7d2fe;
+        --base-hover-bg: rgba(255, 255, 255, 0.2);
+        --base-active-bg: rgba(255, 255, 255, 0.3);
+        --base-elevated-bg: rgba(255, 255, 255, 0.1);
+        --base-selected-bg: rgba(255, 255, 255, 0.2);
+        --base-on-primary-text-color: #1e1b4b;
 
-            /* Component-specific overrides */
-            --wtv-context-menu-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            --wtv-loading-bg: rgba(102, 126, 234, 0.3);
-        }
+        /* Component-specific overrides */
+        --wtv-context-menu-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        --wtv-loading-bg: rgba(102, 126, 234, 0.3);
+    }
 
-        .glass-theme .tree-container {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
+    .glass-theme .tree-container {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
 
-        /* Live theme editor */
-        .color-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        .color-row label {
-            min-width: 140px;
-            font-size: 0.875rem;
-            color: #4a5568;
-        }
-        .color-row input[type="color"] {
-            width: 40px;
-            height: 30px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 2px;
-        }
-        .color-row code {
-            font-size: 0.75rem;
-        }
+    /* Live theme editor */
+    .color-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .color-row label {
+        min-width: 140px;
+        font-size: 0.875rem;
+        color: var(--kmwc-text-color-2);
+    }
+    .color-row input[type="color"] {
+        width: 40px;
+        height: 30px;
+        border: 1px solid var(--kmwc-input-border);
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 2px;
+    }
+    .color-row code {
+        font-size: 0.75rem;
+    }
 
-        /* ──────────────────────────────────────────────────────────────────
-           TC01 · Shared --base-* contract (theme comparison)
-           Each .tc-theme-* class is a full --base-* token set extracted
-           verbatim from a @keenmate/pure-admin-theme-* package. They are set
-           on a WRAPPER around the <web-treeview> and inherit through the
-           Shadow DOM — nothing is styled per-component, only the shared token
-           layer changes. (Token names verified against src/css/variables.css.)
-           ────────────────────────────────────────────────────────────────── */
-        .tc-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.25rem;
-            margin: 1rem 0;
-        }
+    /* ──────────────────────────────────────────────────────────────────
+       TC01 · Shared --base-* contract (theme comparison)
+       Each .tc-theme-* class is a full --base-* token set extracted
+       verbatim from a @keenmate/pure-admin-theme-* package. They are set
+       on a WRAPPER around the <web-treeview> and inherit through the
+       Shadow DOM — nothing is styled per-component, only the shared token
+       layer changes. (Token names verified against src/css/variables.css.)
+       ────────────────────────────────────────────────────────────────── */
+    .tc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+        margin: 1rem 0;
+    }
 
-        .tc-panel {
-            /* Page tokens: the contract's values, its defaults / formulas as the fallback
-               (base-contract-check C2 / C3) — the page doesn't load base-css-variables. */
-            --tc-bg: var(--base-main-bg, light-dark(#ffffff, #1e293b));
-            --tc-border: var(--base-border-color, light-dark(oklch(from var(--tc-bg) calc(l - 0.096) c h), oklch(from var(--tc-bg) calc(l + 0.192) c h)));
-            --tc-head-bg: var(--base-elevated-bg, light-dark(oklch(from var(--tc-bg) calc(l - 0.03) c h), oklch(from var(--tc-bg) calc(l + 0.06) c h)));
-            --tc-text: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
-            --tc-primary: var(--base-primary-color, #3b82f6);
-            --tc-on-primary: var(--base-on-primary-text-color, color(from color(from var(--tc-primary) srgb calc(0.21 * r * r * (0.4 + r * (0.82 - 0.22 * r)) + 0.72 * g * g * (0.4 + g * (0.82 - 0.22 * g)) + 0.07 * b * b * (0.4 + b * (0.82 - 0.22 * b))) 0 0) srgb clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1)));
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--tc-border);
-            border-radius: 8px;
-            overflow: hidden;
-            background: var(--tc-bg);
-        }
+    .tc-panel {
+        /* Page tokens: the contract's values, its defaults / formulas as the fallback
+           (base-contract-check C2 / C3) — the page doesn't load base-css-variables. */
+        --tc-bg: var(--base-main-bg, light-dark(#ffffff, #1e293b));
+        --tc-border: var(--base-border-color, light-dark(oklch(from var(--tc-bg) calc(l - 0.096) c h), oklch(from var(--tc-bg) calc(l + 0.192) c h)));
+        --tc-head-bg: var(--base-elevated-bg, light-dark(oklch(from var(--tc-bg) calc(l - 0.03) c h), oklch(from var(--tc-bg) calc(l + 0.06) c h)));
+        --tc-text: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
+        --tc-primary: var(--base-primary-color, #3b82f6);
+        --tc-on-primary: var(--base-on-primary-text-color, color(from color(from var(--tc-primary) srgb calc(0.21 * r * r * (0.4 + r * (0.82 - 0.22 * r)) + 0.72 * g * g * (0.4 + g * (0.82 - 0.22 * g)) + 0.07 * b * b * (0.4 + b * (0.82 - 0.22 * b))) 0 0) srgb clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1) clamp(0, (0.34 - r) * 1e9, 1)));
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--tc-border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--tc-bg);
+    }
 
-        .tc-panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5rem;
-            padding: 0.6rem 0.9rem;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--tc-text);
-            border-bottom: 1px solid var(--tc-border);
-            background: var(--tc-head-bg);
-        }
+    .tc-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--tc-text);
+        border-bottom: 1px solid var(--tc-border);
+        background: var(--tc-head-bg);
+    }
 
-        .tc-panel-badge {
-            font-weight: 500;
-            font-size: 0.7rem;
-            padding: 0.1rem 0.5rem;
-            border-radius: 999px;
-            color: var(--tc-on-primary);
-            background: var(--tc-primary);
-        }
+    .tc-panel-badge {
+        font-weight: 500;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        color: var(--tc-on-primary);
+        background: var(--tc-primary);
+    }
 
-        .tc-panel-body {
-            padding: 0.75rem;
-            flex: 1;
-        }
+    .tc-panel-body {
+        padding: 0.75rem;
+        flex: 1;
+    }
 
-        /* ── Dracula (dark · purple) — from @keenmate/pure-admin-theme-dracula ── */
-        .tc-theme-dracula {
-            color-scheme: dark;
-            --base-primary-color: #bd93f9;
-            --base-primary-color-hover: #d4b9fb;
-            --base-selected-bg: rgba(189, 147, 249, 0.15);
-            --base-text-color-1: #f8f8f2;
-            --base-text-color-3: #6272a4;
-            --base-on-primary-text-color: #1a1a2e;
-            --base-main-bg: #2d2f3d;
-            --base-elevated-bg: #343746;
-            --base-hover-bg: #343746;
-            --base-active-bg: #44475a;
-            --base-border-color: #44475a;
-            --base-checkbox-border-color: #44475a;
-            --base-input-bg: #282a36;
-            --base-dropdown-bg: #2d2f3d;
-            --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-            --base-tooltip-bg: #343746;
-            --base-tooltip-text-color: #f8f8f2;
-            --base-danger-color: #ff5555;
-            --base-success-color: #50fa7b;
-        }
+    /* ── Dracula (dark · purple) — from @keenmate/pure-admin-theme-dracula ── */
+    .tc-theme-dracula {
+        color-scheme: dark;
+        --base-primary-color: #bd93f9;
+        --base-primary-color-hover: #d4b9fb;
+        --base-selected-bg: rgba(189, 147, 249, 0.15);
+        --base-text-color-1: #f8f8f2;
+        --base-text-color-3: #6272a4;
+        --base-on-primary-text-color: #1a1a2e;
+        --base-main-bg: #2d2f3d;
+        --base-elevated-bg: #343746;
+        --base-hover-bg: #343746;
+        --base-active-bg: #44475a;
+        --base-border-color: #44475a;
+        --base-checkbox-border-color: #44475a;
+        --base-input-bg: #282a36;
+        --base-dropdown-bg: #2d2f3d;
+        --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        --base-tooltip-bg: #343746;
+        --base-tooltip-text-color: #f8f8f2;
+        --base-danger-color: #ff5555;
+        --base-success-color: #50fa7b;
+    }
 
-        /* ── Corporate (dark slate · blue) — from @keenmate/pure-admin-theme-corporate ── */
-        .tc-theme-corporate {
-            color-scheme: dark;
-            --base-primary-color: #0ea5e9;
-            --base-primary-color-hover: #0284c7;
-            --base-selected-bg: rgba(14, 165, 233, 0.12);
-            --base-text-color-1: #f1f5f9;
-            --base-text-color-3: #94a3b8;
-            --base-on-primary-text-color: #ffffff;
-            --base-main-bg: #1e293b;
-            --base-elevated-bg: #334155;
-            --base-hover-bg: #334155;
-            --base-active-bg: #475569;
-            --base-border-color: #475569;
-            --base-checkbox-border-color: #64748b;
-            --base-input-bg: #334155;
-            --base-dropdown-bg: #1e293b;
-            --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-            --base-tooltip-bg: #475569;
-            --base-tooltip-text-color: #f1f5f9;
-            --base-danger-color: #ef4444;
-            --base-success-color: #10b981;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Theming</h1>
-            <p class="subtitle">Customize appearance with CSS custom properties. Dark mode, neon, corporate, and more</p>
-        </header>
+    /* ── Corporate (dark slate · blue) — from @keenmate/pure-admin-theme-corporate ── */
+    .tc-theme-corporate {
+        color-scheme: dark;
+        --base-primary-color: #0ea5e9;
+        --base-primary-color-hover: #0284c7;
+        --base-selected-bg: rgba(14, 165, 233, 0.12);
+        --base-text-color-1: #f1f5f9;
+        --base-text-color-3: #94a3b8;
+        --base-on-primary-text-color: #ffffff;
+        --base-main-bg: #1e293b;
+        --base-elevated-bg: #334155;
+        --base-hover-bg: #334155;
+        --base-active-bg: #475569;
+        --base-border-color: #475569;
+        --base-checkbox-border-color: #64748b;
+        --base-input-bg: #334155;
+        --base-dropdown-bg: #1e293b;
+        --base-dropdown-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        --base-tooltip-bg: #475569;
+        --base-tooltip-text-color: #f1f5f9;
+        --base-danger-color: #ef4444;
+        --base-success-color: #10b981;
+    }
+</style>
 
-        <!-- NEW (rc03): theme prop + built-in dark mode -->
-        <div class="card">
-            <h2>TH01 · Built-in Dark Mode</h2>
-            <p>Three signals flip the tree's surface between light and dark, applied in order of precedence (highest first):</p>
-            <ol style="margin: 0 0 1rem 1.5rem; padding: 0; font-size: 0.9rem;">
-                <li><code>theme="dark"</code> / <code>theme="light"</code> attribute on the <code>&lt;web-treeview&gt;</code> &mdash; per-instance override, beats everything else.</li>
-                <li>OS preference via <code>@media (prefers-color-scheme: dark)</code> &mdash; auto-flips when the user's OS is in dark mode.</li>
-                <li>Library defaults &mdash; light, with <code>#1a1a1a</code> as the dark fallback when a signal does flip.</li>
-            </ol>
-            <p>Each block re-declares <code>--wtv-main-bg</code>, <code>--wtv-text-color-1</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
+<!-- NEW (rc03): theme prop + built-in dark mode -->
+<div class="card">
+    <h2>TH01 · Built-in Dark Mode</h2>
+    <p>Three signals flip the tree's surface between light and dark, applied in order of precedence (highest first):</p>
+    <ol style="margin: 0 0 1rem 1.5rem; padding: 0; font-size: 0.9rem;">
+        <li><code>theme="dark"</code> / <code>theme="light"</code> attribute on the <code>&lt;web-treeview&gt;</code> &mdash; per-instance override, beats everything else.</li>
+        <li>OS preference via <code>@media (prefers-color-scheme: dark)</code> &mdash; auto-flips when the user's OS is in dark mode.</li>
+        <li>Library defaults &mdash; light, with <code>#1a1a1a</code> as the dark fallback when a signal does flip.</li>
+    </ol>
+    <p>Each block re-declares <code>--wtv-main-bg</code>, <code>--wtv-text-color-1</code>, etc. with sensible fallbacks. To customize, set the <code>--base-*</code> tokens on an ancestor and they cascade through the Shadow DOM.</p>
 
-            <div class="controls">
-                <label>
-                    Tree A theme:
-                    <select id="rc03-theme-a" onchange="applyRc03Themes()">
-                        <option value="">(none — follows OS)</option>
-                        <option value="light">light (force)</option>
-                        <option value="dark" selected>dark (force)</option>
-                    </select>
-                </label>
-                <label>
-                    Tree B theme:
-                    <select id="rc03-theme-b" onchange="applyRc03Themes()">
-                        <option value="" selected>(none — follows OS)</option>
-                        <option value="light">light (force)</option>
-                        <option value="dark">dark (force)</option>
-                    </select>
-                </label>
-                <span class="muted">
-                    Tree B follows your OS preference. Toggle your OS dark mode to see it flip.
-                </span>
-            </div>
+    <div class="controls">
+        <label>
+            Tree A theme:
+            <select id="rc03-theme-a" onchange="applyRc03Themes()">
+                <option value="">(none — follows OS)</option>
+                <option value="light">light (force)</option>
+                <option value="dark" selected>dark (force)</option>
+            </select>
+        </label>
+        <label>
+            Tree B theme:
+            <select id="rc03-theme-b" onchange="applyRc03Themes()">
+                <option value="" selected>(none — follows OS)</option>
+                <option value="light">light (force)</option>
+                <option value="dark">dark (force)</option>
+            </select>
+        </label>
+        <span class="muted">
+            Tree B follows your OS preference. Toggle your OS dark mode to see it flip.
+        </span>
+    </div>
 
-            <div class="theme-grid" style="margin-bottom: 0;">
-                <div class="theme-card" style="padding: 0;">
-                    <div class="tree-container" style="padding: 0; border: none;">
-                        <web-treeview id="rc03-tree-a" theme="dark" expand-level="2"></web-treeview>
-                    </div>
-                </div>
-                <div class="theme-card" style="padding: 0;">
-                    <div class="tree-container" style="padding: 0; border: none;">
-                        <web-treeview id="rc03-tree-b" expand-level="2"></web-treeview>
-                    </div>
-                </div>
+    <div class="theme-grid" style="margin-bottom: 0;">
+        <div class="theme-card" style="padding: 0;">
+            <div class="tree-container" style="padding: 0; border: none;">
+                <web-treeview id="rc03-tree-a" theme="dark" expand-level="2"></web-treeview>
             </div>
         </div>
-
-        <!-- Theme Examples -->
-        <h2>TH02 · Theme Examples</h2>
-
-        <div class="theme-grid">
-            <!-- Default Theme -->
-            <div class="theme-card" style="background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <h3>Default</h3>
-                <p>Out-of-the-box appearance with no variable overrides</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container">
-                        <web-treeview id="default-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Blue accent with light neutral backgrounds</span>
-                </div>
-            </div>
-
-            <!-- Dark Mode Theme -->
-            <div class="theme-card dark-theme">
-                <h3>Dark Mode</h3>
-                <p>High contrast dark theme for low-light environments</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border-color: #404040; background: #2a2a2a;">
-                        <web-treeview id="dark-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Dark backgrounds with light text and purple accents</span>
-                </div>
-            </div>
-
-            <!-- Neon/Cyberpunk Theme -->
-            <div class="theme-card neon-theme">
-                <h3>Neon/Cyberpunk</h3>
-                <p>Bright neon colors with glowing effects</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border-color: #ff00ff; background: #1a0a1a;">
-                        <web-treeview id="neon-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Cyan and magenta with glowing shadows &middot; double-chevron toggle via <code>--base-icon-chevron</code></span>
-                </div>
-            </div>
-
-            <!-- Audi Corporate Theme -->
-            <div class="theme-card audi-theme">
-                <h3>Audi Corporate</h3>
-                <p>Clean, minimal corporate styling with subtle borders</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container">
-                        <web-treeview id="audi-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Professional gray with Audi red accents</span>
-                </div>
-            </div>
-
-            <!-- Rounded/Soft Theme -->
-            <div class="theme-card rounded-theme">
-                <h3>Rounded/Soft</h3>
-                <p>Large border-radius with soft shadows and pastel colors</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border-radius: 16px;">
-                        <web-treeview id="rounded-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Warm gradient background with pink accents &middot; soft circle-chevron toggle via <code>--base-icon-chevron</code></span>
-                </div>
-            </div>
-
-            <!-- Sharp/Minimal Theme -->
-            <div class="theme-card sharp-theme">
-                <h3>Sharp/Minimal</h3>
-                <p>No border-radius, flat design, pure black and white</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border: 2px solid #000000; border-radius: 0;">
-                        <web-treeview id="sharp-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Brutalist design with sharp edges &middot; filled square-chevron toggle via <code>--base-icon-chevron</code></span>
-                </div>
-            </div>
-
-            <!-- Material Design Theme -->
-            <div class="theme-card material-theme">
-                <h3>Material Design</h3>
-                <p>Elevation shadows, vibrant colors, standard radius</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border-color: transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
-                        <web-treeview id="material-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Google Material Design principles &middot; pre-oriented down-caret with <code>--wtv-icon-rotate-*</code> re-map</span>
-                </div>
-            </div>
-
-            <!-- Glassmorphism Theme -->
-            <div class="theme-card glass-theme">
-                <h3>Glassmorphism</h3>
-                <p>Frosted glass effect with backdrop blur and transparency</p>
-                <div class="form-group">
-                    <label>Project Files</label>
-                    <div class="tree-container" style="border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);">
-                        <web-treeview id="glass-mode"></web-treeview>
-                    </div>
-                    <span class="form-text">Translucent with blur effect (requires modern browser)</span>
-                </div>
+        <div class="theme-card" style="padding: 0;">
+            <div class="tree-container" style="padding: 0; border: none;">
+                <web-treeview id="rc03-tree-b" expand-level="2"></web-treeview>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Live Theme Editor -->
-        <div class="card">
-            <h2>TH03 · Live Theme Editor</h2>
-            <p>Adjust CSS custom properties in real time using the color pickers.</p>
+<!-- Theme Examples -->
+<h2>TH02 · Theme Examples</h2>
 
-            <div class="grid-2">
-                <div>
-                    <div class="color-row">
-                        <label>Accent color</label>
-                        <input type="color" id="cp-accent" value="#3b82f6">
-                        <code>--wtv-accent-color</code>
-                    </div>
-                    <div class="color-row">
-                        <label>Text color</label>
-                        <input type="color" id="cp-text" value="#1e293b">
-                        <code>--wtv-text-color-1</code>
-                    </div>
-                    <div class="color-row">
-                        <label>Secondary text</label>
-                        <input type="color" id="cp-text2" value="#64748b">
-                        <code>--wtv-text-color-3</code>
-                    </div>
-                    <div class="color-row">
-                        <label>Hover background</label>
-                        <input type="color" id="cp-hover" value="#f1f5f9">
-                        <code>--wtv-node-bg-hover</code>
-                    </div>
-                    <div class="color-row">
-                        <label>Border color</label>
-                        <input type="color" id="cp-border" value="#e2e8f0">
-                        <code>--wtv-border-color</code>
-                    </div>
-                    <div class="color-row">
-                        <label>Transition time</label>
-                        <input type="range" id="cp-transition" min="0" max="500" step="10" value="150" style="width: 100px;">
-                        <span id="cp-transition-value">150ms</span>
-                        <code>--wtv-node-transition</code>
-                    </div>
-                    <button onclick="resetLiveTheme()" class="btn-outline" style="margin-top: 0.5rem">Reset to defaults</button>
-                </div>
-                <div>
-                    <div class="tree-container" id="tree-live-container">
-                        <web-treeview id="tree-live"></web-treeview>
-                    </div>
-                </div>
+<div class="theme-grid">
+    <!-- Default Theme -->
+    <div class="theme-card" style="background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3>Default</h3>
+        <p>Out-of-the-box appearance with no variable overrides</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container">
+                <web-treeview id="default-mode"></web-treeview>
+            </div>
+            <span class="form-text">Blue accent with light neutral backgrounds</span>
+        </div>
+    </div>
+
+    <!-- Dark Mode Theme -->
+    <div class="theme-card dark-theme">
+        <h3>Dark Mode</h3>
+        <p>High contrast dark theme for low-light environments</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border-color: #404040; background: #2a2a2a;">
+                <web-treeview id="dark-mode"></web-treeview>
+            </div>
+            <span class="form-text">Dark backgrounds with light text and purple accents</span>
+        </div>
+    </div>
+
+    <!-- Neon/Cyberpunk Theme -->
+    <div class="theme-card neon-theme">
+        <h3>Neon/Cyberpunk</h3>
+        <p>Bright neon colors with glowing effects</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border-color: #ff00ff; background: #1a0a1a;">
+                <web-treeview id="neon-mode"></web-treeview>
+            </div>
+            <span class="form-text">Cyan and magenta with glowing shadows &middot; double-chevron toggle via <code>--base-icon-chevron</code></span>
+        </div>
+    </div>
+
+    <!-- Audi Corporate Theme -->
+    <div class="theme-card audi-theme">
+        <h3>Audi Corporate</h3>
+        <p>Clean, minimal corporate styling with subtle borders</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container">
+                <web-treeview id="audi-mode"></web-treeview>
+            </div>
+            <span class="form-text">Professional gray with Audi red accents</span>
+        </div>
+    </div>
+
+    <!-- Rounded/Soft Theme -->
+    <div class="theme-card rounded-theme">
+        <h3>Rounded/Soft</h3>
+        <p>Large border-radius with soft shadows and pastel colors</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border-radius: 16px;">
+                <web-treeview id="rounded-mode"></web-treeview>
+            </div>
+            <span class="form-text">Warm gradient background with pink accents &middot; soft circle-chevron toggle via <code>--base-icon-chevron</code></span>
+        </div>
+    </div>
+
+    <!-- Sharp/Minimal Theme -->
+    <div class="theme-card sharp-theme">
+        <h3>Sharp/Minimal</h3>
+        <p>No border-radius, flat design, pure black and white</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border: 2px solid #000000; border-radius: 0;">
+                <web-treeview id="sharp-mode"></web-treeview>
+            </div>
+            <span class="form-text">Brutalist design with sharp edges &middot; filled square-chevron toggle via <code>--base-icon-chevron</code></span>
+        </div>
+    </div>
+
+    <!-- Material Design Theme -->
+    <div class="theme-card material-theme">
+        <h3>Material Design</h3>
+        <p>Elevation shadows, vibrant colors, standard radius</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border-color: transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
+                <web-treeview id="material-mode"></web-treeview>
+            </div>
+            <span class="form-text">Google Material Design principles &middot; pre-oriented down-caret with <code>--wtv-icon-rotate-*</code> re-map</span>
+        </div>
+    </div>
+
+    <!-- Glassmorphism Theme -->
+    <div class="theme-card glass-theme">
+        <h3>Glassmorphism</h3>
+        <p>Frosted glass effect with backdrop blur and transparency</p>
+        <div class="form-group">
+            <label>Project Files</label>
+            <div class="tree-container" style="border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);">
+                <web-treeview id="glass-mode"></web-treeview>
+            </div>
+            <span class="form-text">Translucent with blur effect (requires modern browser)</span>
+        </div>
+    </div>
+</div>
+
+<!-- Live Theme Editor -->
+<div class="card">
+    <h2>TH03 · Live Theme Editor</h2>
+    <p>Adjust CSS custom properties in real time using the color pickers.</p>
+
+    <div class="grid-2">
+        <div>
+            <div class="color-row">
+                <label>Accent color</label>
+                <input type="color" id="cp-accent" value="#3b82f6">
+                <code>--wtv-accent-color</code>
+            </div>
+            <div class="color-row">
+                <label>Text color</label>
+                <input type="color" id="cp-text" value="#1e293b">
+                <code>--wtv-text-color-1</code>
+            </div>
+            <div class="color-row">
+                <label>Secondary text</label>
+                <input type="color" id="cp-text2" value="#64748b">
+                <code>--wtv-text-color-3</code>
+            </div>
+            <div class="color-row">
+                <label>Hover background</label>
+                <input type="color" id="cp-hover" value="#f1f5f9">
+                <code>--wtv-node-bg-hover</code>
+            </div>
+            <div class="color-row">
+                <label>Border color</label>
+                <input type="color" id="cp-border" value="#e2e8f0">
+                <code>--wtv-border-color</code>
+            </div>
+            <div class="color-row">
+                <label>Transition time</label>
+                <input type="range" id="cp-transition" min="0" max="500" step="10" value="150" class="w-sm">
+                <span id="cp-transition-value">150ms</span>
+                <code>--wtv-node-transition</code>
+            </div>
+            <button onclick="resetLiveTheme()" class="btn-outline" style="margin-top: 0.5rem">Reset to defaults</button>
+        </div>
+        <div>
+            <div class="tree-container" id="tree-live-container">
+                <web-treeview id="tree-live"></web-treeview>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Icon Set & Icon Reskin -->
-        <div class="card">
-            <h2>TH04 · Toggle Icon Set &amp; Icon Reskin</h2>
-            <p>The disclosure glyph is driven by CSS custom properties. Switch between the built-in <code>iconSet</code> presets, or reskin the chevron globally through the shared <code>--base-icon-chevron</code> contract &mdash; the same override a design system applies across every Keenmate component at once.</p>
+<!-- Icon Set & Icon Reskin -->
+<div class="card">
+    <h2>TH04 · Toggle Icon Set &amp; Icon Reskin</h2>
+    <p>The disclosure glyph is driven by CSS custom properties. Switch between the built-in <code>iconSet</code> presets, or reskin the chevron globally through the shared <code>--base-icon-chevron</code> contract &mdash; the same override a design system applies across every Keenmate component at once.</p>
 
-            <div class="controls">
-                <label>
-                    Icon set:
-                    <select id="icon-set-select">
-                        <option value="chevron">chevron (default)</option>
-                        <option value="triangle">triangle</option>
-                        <option value="plus-minus">plus-minus</option>
-                        <option value="arrow">arrow</option>
-                    </select>
-                </label>
-                <label class="toggle-label">
-                    <input type="checkbox" id="brand-icon-toggle">
-                    Reskin chevron via <code>--base-icon-chevron</code>
-                </label>
-            </div>
+    <div class="controls">
+        <label>
+            Icon set:
+            <select id="icon-set-select">
+                <option value="chevron">chevron (default)</option>
+                <option value="triangle">triangle</option>
+                <option value="plus-minus">plus-minus</option>
+                <option value="arrow">arrow</option>
+            </select>
+        </label>
+        <label class="toggle-label">
+            <input type="checkbox" id="brand-icon-toggle">
+            Reskin chevron via <code>--base-icon-chevron</code>
+        </label>
+    </div>
 
-            <div class="tree-container" id="tree-icons-container">
-                <web-treeview id="tree-icons" expand-level="1"></web-treeview>
-            </div>
-            <p class="form-text">Setting <code>--base-icon-chevron</code> on the host flows into <code>--wtv-icon-expand</code> through the shadow boundary, so the whole tree's chevron swaps to a custom mask. <code>plus-minus</code> is a swap set (distinct expand/collapse glyphs); the others rotate a single glyph.</p>
-        </div>
+    <div class="tree-container" id="tree-icons-container">
+        <web-treeview id="tree-icons" expand-level="1"></web-treeview>
+    </div>
+    <p class="form-text">Setting <code>--base-icon-chevron</code> on the host flows into <code>--wtv-icon-expand</code> through the shadow boundary, so the whole tree's chevron swaps to a custom mask. <code>plus-minus</code> is a swap set (distinct expand/collapse glyphs); the others rotate a single glyph.</p>
+</div>
 
-        <!-- CSS Variables Reference -->
-        <div class="card">
-            <h2>TH05 · CSS Custom Properties Reference</h2>
-            <p>Two layers of CSS custom properties are available. <code>--base-*</code> variables come from the design system and cascade to all components. <code>--wtv-*</code> variables are treeview-specific and reference <code>--base-*</code> with hardcoded fallbacks.</p>
+<!-- CSS Variables Reference -->
+<div class="card">
+    <h2>TH05 · CSS Custom Properties Reference</h2>
+    <p>Two layers of CSS custom properties are available. <code>--base-*</code> variables come from the design system and cascade to all components. <code>--wtv-*</code> variables are treeview-specific and reference <code>--base-*</code> with hardcoded fallbacks.</p>
 
-            <div class="code-block">
+    <div class="code-block">
 <pre><code>/* ── Design System tokens (--base-*) ── set on :root or container */
 /* These cascade to ALL components sharing the design system */
 
@@ -680,219 +668,212 @@
 --wtv-font-size        /* = --wtv-font-size-sm (14px) */
 --wtv-border-radius-sm /* = calc(--base-border-radius-sm * --wtv-rem) */
 --wtv-transition-normal /* = 150ms */</code></pre>
+    </div>
+</div>
+
+<!-- TC01 · Shared --base-* contract (theme comparison with svelte-treeview) -->
+<div class="card">
+    <h2>TC01 · Shared <code>--base-*</code> contract</h2>
+    <p>Three <code>&lt;web-treeview&gt;</code> instances, <strong>identical markup and data</strong>, reskinned purely by swapping the shared <code>--base-*</code> design tokens &mdash; the same contract every Keenmate component reads (<code>web-multiselect</code>, <code>web-daterangepicker</code>, <code>svelte-treeview</code>&hellip;). Nothing below is styled per-component: only the token layer on the wrapper changes, so accent, surfaces, text hierarchy, borders, hover and the checkbox/chevron glyphs all track together. Each theme is a <code>--base-*</code> set extracted verbatim from a <code>@keenmate/pure-admin-theme-*</code> package.</p>
+
+    <div class="tc-grid">
+        <div class="tc-panel">
+            <header class="tc-panel-head">Component defaults <span class="tc-panel-badge">light</span></header>
+            <div class="tc-panel-body">
+                <web-treeview id="tc-default" expand-level="2"></web-treeview>
             </div>
         </div>
-
-        <!-- TC01 · Shared --base-* contract (theme comparison with svelte-treeview) -->
-        <div class="card">
-            <h2>TC01 &middot; Shared <code>--base-*</code> contract</h2>
-            <p>Three <code>&lt;web-treeview&gt;</code> instances, <strong>identical markup and data</strong>, reskinned purely by swapping the shared <code>--base-*</code> design tokens &mdash; the same contract every Keenmate component reads (<code>web-multiselect</code>, <code>web-daterangepicker</code>, <code>svelte-treeview</code>&hellip;). Nothing below is styled per-component: only the token layer on the wrapper changes, so accent, surfaces, text hierarchy, borders, hover and the checkbox/chevron glyphs all track together. Each theme is a <code>--base-*</code> set extracted verbatim from a <code>@keenmate/pure-admin-theme-*</code> package.</p>
-
-            <div class="tc-grid">
-                <div class="tc-panel">
-                    <header class="tc-panel-head">Component defaults <span class="tc-panel-badge">light</span></header>
-                    <div class="tc-panel-body">
-                        <web-treeview id="tc-default" expand-level="2"></web-treeview>
-                    </div>
-                </div>
-                <div class="tc-panel tc-theme-dracula">
-                    <header class="tc-panel-head">Dracula <span class="tc-panel-badge">dark &middot; purple</span></header>
-                    <div class="tc-panel-body">
-                        <web-treeview id="tc-dracula" expand-level="2"></web-treeview>
-                    </div>
-                </div>
-                <div class="tc-panel tc-theme-corporate">
-                    <header class="tc-panel-head">Corporate <span class="tc-panel-badge">dark &middot; blue</span></header>
-                    <div class="tc-panel-body">
-                        <web-treeview id="tc-corporate" expand-level="2"></web-treeview>
-                    </div>
-                </div>
+        <div class="tc-panel tc-theme-dracula">
+            <header class="tc-panel-head">Dracula <span class="tc-panel-badge">dark &middot; purple</span></header>
+            <div class="tc-panel-body">
+                <web-treeview id="tc-dracula" expand-level="2"></web-treeview>
             </div>
-
-            <div class="controls">
-                <label>
-                    Playground theme:
-                    <select id="tc-theme-select" onchange="applyTcPlaygroundTheme()">
-                        <option value="">Component defaults (light)</option>
-                        <option value="tc-theme-dracula">Dracula (dark &middot; purple)</option>
-                        <option value="tc-theme-corporate" selected>Corporate (dark &middot; blue)</option>
-                    </select>
-                </label>
-                <span class="muted">Swaps the <code>--base-*</code> token set on one playground tree &mdash; same markup, instant reskin.</span>
-            </div>
-
-            <div class="tc-panel tc-theme-corporate" id="tc-playground-wrap">
-                <header class="tc-panel-head">Playground <span class="tc-panel-badge">live</span></header>
-                <div class="tc-panel-body">
-                    <web-treeview id="tc-playground" expand-level="2"></web-treeview>
-                </div>
+        </div>
+        <div class="tc-panel tc-theme-corporate">
+            <header class="tc-panel-head">Corporate <span class="tc-panel-badge">dark &middot; blue</span></header>
+            <div class="tc-panel-body">
+                <web-treeview id="tc-corporate" expand-level="2"></web-treeview>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import '/src/index.ts';
-        import { persistControls } from './examples-controls-store.js';
+    <div class="controls">
+        <label>
+            Playground theme:
+            <select id="tc-theme-select" onchange="applyTcPlaygroundTheme()">
+                <option value="">Component defaults (light)</option>
+                <option value="tc-theme-dracula">Dracula (dark &middot; purple)</option>
+                <option value="tc-theme-corporate" selected>Corporate (dark &middot; blue)</option>
+            </select>
+        </label>
+        <span class="muted">Swaps the <code>--base-*</code> token set on one playground tree &mdash; same markup, instant reskin.</span>
+    </div>
 
-        // ── Sample Data ──────────────────────────────────────────────────
+    <div class="tc-panel tc-theme-corporate" id="tc-playground-wrap">
+        <header class="tc-panel-head">Playground <span class="tc-panel-badge">live</span></header>
+        <div class="tc-panel-body">
+            <web-treeview id="tc-playground" expand-level="2"></web-treeview>
+        </div>
+    </div>
+</div>
 
-        const sampleData = [
-            { id: 1, path: '1', name: 'Project' },
-            { id: 2, path: '1.1', name: 'Source' },
-            { id: 3, path: '1.1.1', name: 'Components' },
-            { id: 4, path: '1.1.1.1', name: 'Header.tsx' },
-            { id: 5, path: '1.1.1.2', name: 'Footer.tsx' },
-            { id: 6, path: '1.1.2', name: 'Pages' },
-            { id: 7, path: '1.1.2.1', name: 'Home.tsx' },
-            { id: 8, path: '1.1.2.2', name: 'About.tsx' },
-            { id: 9, path: '1.2', name: 'Assets' },
-            { id: 10, path: '1.2.1', name: 'styles.css' },
-            { id: 11, path: '1.2.2', name: 'logo.svg' },
-            { id: 12, path: '2', name: 'Config' },
-            { id: 13, path: '2.1', name: 'tsconfig.json' },
-            { id: 14, path: '2.2', name: 'vite.config.ts' },
-            { id: 15, path: '3', name: 'README.md' }
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+
+    // ── Sample Data ──────────────────────────────────────────────────
+
+    const sampleData = [
+        { id: 1, path: '1', name: 'Project' },
+        { id: 2, path: '1.1', name: 'Source' },
+        { id: 3, path: '1.1.1', name: 'Components' },
+        { id: 4, path: '1.1.1.1', name: 'Header.tsx' },
+        { id: 5, path: '1.1.1.2', name: 'Footer.tsx' },
+        { id: 6, path: '1.1.2', name: 'Pages' },
+        { id: 7, path: '1.1.2.1', name: 'Home.tsx' },
+        { id: 8, path: '1.1.2.2', name: 'About.tsx' },
+        { id: 9, path: '1.2', name: 'Assets' },
+        { id: 10, path: '1.2.1', name: 'styles.css' },
+        { id: 11, path: '1.2.2', name: 'logo.svg' },
+        { id: 12, path: '2', name: 'Config' },
+        { id: 13, path: '2.1', name: 'tsconfig.json' },
+        { id: 14, path: '2.2', name: 'vite.config.ts' },
+        { id: 15, path: '3', name: 'README.md' }
+    ];
+
+    // ── Initialize ─────────────────────────────────────────────────
+
+    function initTree(id, opts = {}) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.nodes = sampleData;
+        el.idMember = 'id';
+        el.pathMember = 'path';
+        el.displayValueMember = 'name';
+        el.expandLevel = opts.expandLevel ?? 2;
+        return el;
+    }
+
+    customElements.whenDefined('web-treeview').then(() => {
+        // rc03 theme prop trees
+        initTree('rc03-tree-a');
+        initTree('rc03-tree-b');
+
+        window.applyRc03Themes = function () {
+            const a = document.getElementById('rc03-theme-a').value;
+            const b = document.getElementById('rc03-theme-b').value;
+            const ta = document.getElementById('rc03-tree-a');
+            const tb = document.getElementById('rc03-tree-b');
+            if (a) ta.setAttribute('theme', a); else ta.removeAttribute('theme');
+            if (b) tb.setAttribute('theme', b); else tb.removeAttribute('theme');
+        };
+
+        // Theme examples
+        const themeIds = [
+            'default-mode', 'dark-mode', 'neon-mode', 'audi-mode',
+            'rounded-mode', 'sharp-mode', 'material-mode', 'glass-mode'
         ];
+        themeIds.forEach(id => initTree(id));
 
-        // ── Initialize ─────────────────────────────────────────────────
+        // Live theme editor
+        initTree('tree-live');
 
-        function initTree(id, opts = {}) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.nodes = sampleData;
-            el.idMember = 'id';
-            el.pathMember = 'path';
-            el.displayValueMember = 'name';
-            el.expandLevel = opts.expandLevel ?? 2;
-            return el;
+        const liveEl = document.getElementById('tree-live');
+        const inputs = {
+            accent: document.getElementById('cp-accent'),
+            text: document.getElementById('cp-text'),
+            text2: document.getElementById('cp-text2'),
+            hover: document.getElementById('cp-hover'),
+            border: document.getElementById('cp-border'),
+        };
+        const transitionInput = document.getElementById('cp-transition');
+        const transitionValue = document.getElementById('cp-transition-value');
+
+        const varMap = {
+            accent: '--wtv-accent-color',
+            text: '--wtv-text-color-1',
+            text2: '--wtv-text-color-3',
+            hover: '--wtv-node-bg-hover',
+            border: '--wtv-border-color',
+        };
+
+        function updateLiveTheme() {
+            const ms = transitionInput.value;
+            transitionValue.textContent = `${ms}ms`;
+            const transitionCss = ms === '0'
+                ? '--wtv-node-transition: none;'
+                : `--wtv-node-transition: background ${ms}ms, box-shadow ${ms}ms ease;`;
+            const css = `:host {
+                ${Object.entries(inputs).map(([key, input]) =>
+                    `${varMap[key]}: ${input.value};`
+                ).join('\n                    ')}
+                ${transitionCss}
+            }`;
+            liveEl.getCustomStylesCallback = () => css;
+            // Log which values actually changed from defaults
+            const defaults = { accent: '#3b82f6', text: '#1e293b', text2: '#64748b', hover: '#f1f5f9', border: '#e2e8f0' };
+            const changed = Object.entries(inputs).filter(([key, input]) => input.value !== defaults[key]).map(([key, input]) => `${varMap[key]}: ${input.value}`);
+            console.log('[LiveThemeEditor] changed:', changed.length ? changed.join(', ') : '(none)');
+            // Check resolved --wtv-* values
+            const h = getComputedStyle(liveEl);
+            console.log('[LiveThemeEditor] --wtv-text-color-1:', h.getPropertyValue('--wtv-text-color-1'));
+            console.log('[LiveThemeEditor] --wtv-hover-bg:', h.getPropertyValue('--wtv-hover-bg'));
+            console.log('[LiveThemeEditor] --wtv-accent-color:', h.getPropertyValue('--wtv-accent-color'));
+            console.log('[LiveThemeEditor] --wtv-border-color:', h.getPropertyValue('--wtv-border-color'));
         }
 
-        customElements.whenDefined('web-treeview').then(() => {
-            // rc03 theme prop trees
-            initTree('rc03-tree-a');
-            initTree('rc03-tree-b');
+        window.resetLiveTheme = () => {
+            inputs.accent.value = '#3b82f6';
+            inputs.text.value = '#1e293b';
+            inputs.text2.value = '#64748b';
+            inputs.hover.value = '#f1f5f9';
+            inputs.border.value = '#e2e8f0';
+            transitionInput.value = '150';
+            transitionValue.textContent = '150ms';
+            liveEl.getCustomStylesCallback = undefined;
+        };
 
-            window.applyRc03Themes = function () {
-                const a = document.getElementById('rc03-theme-a').value;
-                const b = document.getElementById('rc03-theme-b').value;
-                const ta = document.getElementById('rc03-tree-a');
-                const tb = document.getElementById('rc03-tree-b');
-                if (a) ta.setAttribute('theme', a); else ta.removeAttribute('theme');
-                if (b) tb.setAttribute('theme', b); else tb.removeAttribute('theme');
-            };
+        for (const input of Object.values(inputs)) {
+            input.addEventListener('input', updateLiveTheme);
+            input.addEventListener('change', updateLiveTheme);
+        }
+        transitionInput.addEventListener('input', updateLiveTheme);
 
-            // Theme examples
-            const themeIds = [
-                'default-mode', 'dark-mode', 'neon-mode', 'audi-mode',
-                'rounded-mode', 'sharp-mode', 'material-mode', 'glass-mode'
-            ];
-            themeIds.forEach(id => initTree(id));
+        // Icon set + icon reskin
+        const iconTree = initTree('tree-icons', { expandLevel: 1 });
+        const iconSetSelect = document.getElementById('icon-set-select');
+        if (iconSetSelect) {
+            // One enum knob that re-points the --wtv-icon-* variables.
+            // (chevron | triangle | plus-minus | arrow — plus-minus is a swap set.)
+            iconSetSelect.addEventListener('change', (e) => { iconTree.iconSet = e.target.value; });
+        }
+        // Reskin the disclosure glyph via the shared --base-icon-* contract: setting
+        // --base-icon-chevron on the host flows into --wtv-icon-expand through the
+        // shadow boundary, so the whole tree's chevron swaps to a custom mask.
+        const brandChevron =
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M8 5l11 7-11 7z'/></svg>\")";
+        const brandToggle = document.getElementById('brand-icon-toggle');
+        if (brandToggle) {
+            brandToggle.addEventListener('change', (e) => {
+                iconTree.style.setProperty('--base-icon-chevron', e.target.checked ? brandChevron : '');
+            });
+        }
 
-            // Live theme editor
-            initTree('tree-live');
+        // TC01 · Shared --base-* contract — same data, three token sets.
+        // The theme classes live on the WRAPPER (.tc-theme-*) in <style>; the
+        // tree inherits the --base-* tokens through the Shadow DOM.
+        initTree('tc-default');
+        initTree('tc-dracula');
+        initTree('tc-corporate');
+        initTree('tc-playground');
 
-            const liveEl = document.getElementById('tree-live');
-            const inputs = {
-                accent: document.getElementById('cp-accent'),
-                text: document.getElementById('cp-text'),
-                text2: document.getElementById('cp-text2'),
-                hover: document.getElementById('cp-hover'),
-                border: document.getElementById('cp-border'),
-            };
-            const transitionInput = document.getElementById('cp-transition');
-            const transitionValue = document.getElementById('cp-transition-value');
+        window.applyTcPlaygroundTheme = function () {
+            const theme = document.getElementById('tc-theme-select').value;
+            const wrap = document.getElementById('tc-playground-wrap');
+            // Keep the base panel class, swap only the theme-token class.
+            wrap.className = 'tc-panel' + (theme ? ' ' + theme : '');
+        };
 
-            const varMap = {
-                accent: '--wtv-accent-color',
-                text: '--wtv-text-color-1',
-                text2: '--wtv-text-color-3',
-                hover: '--wtv-node-bg-hover',
-                border: '--wtv-border-color',
-            };
-
-            function updateLiveTheme() {
-                const ms = transitionInput.value;
-                transitionValue.textContent = `${ms}ms`;
-                const transitionCss = ms === '0'
-                    ? '--wtv-node-transition: none;'
-                    : `--wtv-node-transition: background ${ms}ms, box-shadow ${ms}ms ease;`;
-                const css = `:host {
-                    ${Object.entries(inputs).map(([key, input]) =>
-                        `${varMap[key]}: ${input.value};`
-                    ).join('\n                    ')}
-                    ${transitionCss}
-                }`;
-                liveEl.getCustomStylesCallback = () => css;
-                // Log which values actually changed from defaults
-                const defaults = { accent: '#3b82f6', text: '#1e293b', text2: '#64748b', hover: '#f1f5f9', border: '#e2e8f0' };
-                const changed = Object.entries(inputs).filter(([key, input]) => input.value !== defaults[key]).map(([key, input]) => `${varMap[key]}: ${input.value}`);
-                console.log('[LiveThemeEditor] changed:', changed.length ? changed.join(', ') : '(none)');
-                // Check resolved --wtv-* values
-                const h = getComputedStyle(liveEl);
-                console.log('[LiveThemeEditor] --wtv-text-color-1:', h.getPropertyValue('--wtv-text-color-1'));
-                console.log('[LiveThemeEditor] --wtv-hover-bg:', h.getPropertyValue('--wtv-hover-bg'));
-                console.log('[LiveThemeEditor] --wtv-accent-color:', h.getPropertyValue('--wtv-accent-color'));
-                console.log('[LiveThemeEditor] --wtv-border-color:', h.getPropertyValue('--wtv-border-color'));
-            }
-
-            window.resetLiveTheme = () => {
-                inputs.accent.value = '#3b82f6';
-                inputs.text.value = '#1e293b';
-                inputs.text2.value = '#64748b';
-                inputs.hover.value = '#f1f5f9';
-                inputs.border.value = '#e2e8f0';
-                transitionInput.value = '150';
-                transitionValue.textContent = '150ms';
-                liveEl.getCustomStylesCallback = undefined;
-            };
-
-            for (const input of Object.values(inputs)) {
-                input.addEventListener('input', updateLiveTheme);
-                input.addEventListener('change', updateLiveTheme);
-            }
-            transitionInput.addEventListener('input', updateLiveTheme);
-
-            // Icon set + icon reskin
-            const iconTree = initTree('tree-icons', { expandLevel: 1 });
-            const iconSetSelect = document.getElementById('icon-set-select');
-            if (iconSetSelect) {
-                // One enum knob that re-points the --wtv-icon-* variables.
-                // (chevron | triangle | plus-minus | arrow — plus-minus is a swap set.)
-                iconSetSelect.addEventListener('change', (e) => { iconTree.iconSet = e.target.value; });
-            }
-            // Reskin the disclosure glyph via the shared --base-icon-* contract: setting
-            // --base-icon-chevron on the host flows into --wtv-icon-expand through the
-            // shadow boundary, so the whole tree's chevron swaps to a custom mask.
-            const brandChevron =
-                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M8 5l11 7-11 7z'/></svg>\")";
-            const brandToggle = document.getElementById('brand-icon-toggle');
-            if (brandToggle) {
-                brandToggle.addEventListener('change', (e) => {
-                    iconTree.style.setProperty('--base-icon-chevron', e.target.checked ? brandChevron : '');
-                });
-            }
-
-            // TC01 · Shared --base-* contract — same data, three token sets.
-            // The theme classes live on the WRAPPER (.tc-theme-*) in <style>; the
-            // tree inherits the --base-* tokens through the Shadow DOM.
-            initTree('tc-default');
-            initTree('tc-dracula');
-            initTree('tc-corporate');
-            initTree('tc-playground');
-
-            window.applyTcPlaygroundTheme = function () {
-                const theme = document.getElementById('tc-theme-select').value;
-                const wrap = document.getElementById('tc-playground-wrap');
-                // Keep the base panel class, swap only the theme-token class.
-                wrap.className = 'tc-panel' + (theme ? ' ' + theme : '');
-            };
-
-            // Persist .controls across reloads (shared helper — parity with web-multiselect).
-            persistControls('theming');
-        });
-    </script>
-
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        // Persist .controls across reloads (shared helper — parity with web-multiselect).
+        attachControlsPersistence('theming');
+    });
+</script>

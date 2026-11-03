@@ -1,300 +1,290 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TreeView - Custom Layouts</title>
-<link rel="stylesheet" href="examples-shared.css">
+<meta name="kmwc:title" content="Custom Layouts">
+<meta name="kmwc:subtitle" content="Custom node templates, badges, empty/loading/header/footer slots, and a headless iOS-Files demo">
+
+<link rel="stylesheet" href="examples-local.css">
+
 <style>
-    /* ──────────────────────────────────────────────────────────────
-       Page-specific styling: custom node looks, status badges,
-       empty/loading states, header/footer slots, and the iOS-Files
-       skeuomorphic phone UI (headless-controller demo). All scoped to
-       this page; everything else uses shared classes.
-       ────────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────
+   Page-specific styling: custom node looks, status badges,
+   empty/loading states, header/footer slots, and the iOS-Files
+   skeuomorphic phone UI (headless-controller demo). All scoped to
+   this page; everything else uses shared classes.
+   ────────────────────────────────────────────────────────────── */
 
-    /* ── CL01 custom node template ── */
-    .file-icon { display: inline-block; width: 20px; text-align: center; margin-right: 6px; }
-    .file-size { margin-left: auto; color: #94a3b8; font-size: 0.8rem; }
-    .custom-node { display: flex; align-items: center; gap: 6px; width: 100%; padding: 2px 0; }
-    .custom-node .name { font-weight: 500; }
+/* ── CL01 custom node template ── */
+.file-icon { display: inline-block; width: 20px; text-align: center; margin-right: 6px; }
+.file-size { margin-left: auto; color: #94a3b8; font-size: 0.8rem; }
+.custom-node { display: flex; align-items: center; gap: 6px; width: 100%; padding: 2px 0; }
+.custom-node .name { font-weight: 500; }
 
-    /* ── CL02 status badges ── */
-    .node-badge {
-        display: inline-block;
-        padding: 0.1rem 0.4rem;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-left: 0.5rem;
-    }
-    .badge-new { background: #dcfce7; color: #166534; }
-    .badge-modified { background: #fef3c7; color: #92400e; }
-    .badge-deleted { background: #fee2e2; color: #991b1b; }
+/* ── CL02 status badges ── */
+.node-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+.badge-new { background: #dcfce7; color: #166534; }
+.badge-modified { background: #fef3c7; color: #92400e; }
+.badge-deleted { background: #fee2e2; color: #991b1b; }
 
-    /* ── CL04 empty / loading states ── */
-    .empty-state {
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 3rem; color: #94a3b8;
-    }
-    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
-    .loading-state {
-        display: flex; align-items: center; justify-content: center;
-        padding: 3rem; gap: 0.75rem; color: #64748b;
-    }
-    .spinner {
-        width: 24px; height: 24px;
-        border: 3px solid #e2e8f0; border-top-color: #059669;
-        border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+/* ── CL04 empty / loading states ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 3rem; color: #94a3b8;
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+.loading-state {
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem; gap: 0.75rem; color: #64748b;
+}
+.spinner {
+    width: 24px; height: 24px;
+    border: 3px solid #e2e8f0; border-top-color: #059669;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── CL05 toggle-icon demo labels ── */
-    .fa-mode-label { font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b; }
+/* ── CL05 toggle-icon demo labels ── */
+.fa-mode-label { font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b; }
 
-    /* ── CL06 iOS Files ── renderer toggle ── */
-    .renderer-toggle {
-        display: inline-flex;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 1rem;
-    }
-    .renderer-toggle button {
-        background: #fff;
-        border: none;
-        border-radius: 0;
-        padding: 8px 20px;
-        font-size: 0.9rem;
-        cursor: pointer;
-        color: #334155;
-    }
-    .renderer-toggle button + button { border-left: 1px solid #d1d5db; }
-    .renderer-toggle button.active { background: #007aff; color: #fff; }
+/* ── CL06 iOS Files ── renderer toggle ── */
+.renderer-toggle {
+    display: inline-flex;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.renderer-toggle button {
+    background: #fff;
+    border: none;
+    border-radius: 0;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #334155;
+}
+.renderer-toggle button + button { border-left: 1px solid #d1d5db; }
+.renderer-toggle button.active { background: #007aff; color: #fff; }
 
-    .demo-layout {
-        display: grid;
-        grid-template-columns: 460px 1fr;
-        gap: 2rem;
-        align-items: start;
-    }
-    @media (max-width: 960px) { .demo-layout { grid-template-columns: 1fr; } }
+.demo-layout {
+    display: grid;
+    grid-template-columns: 460px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+@media (max-width: 960px) { .demo-layout { grid-template-columns: 1fr; } }
 
-    /* ── iOS Phone Frame ── */
-    .ios-phone {
-        width: 420px;
-        background: #f2f2f7;
-        border-radius: 40px;
-        box-shadow: 0 0 0 2px #bbb, 0 20px 60px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.10);
-        overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        user-select: none;
-    }
+/* ── iOS Phone Frame ── */
+.ios-phone {
+    width: min(420px, 100%);
+    background: #f2f2f7;
+    border-radius: 40px;
+    box-shadow: 0 0 0 2px #bbb, 0 20px 60px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.10);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    user-select: none;
+}
 
-    /* ── Status Bar ── */
-    .ios-status-bar {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 14px 28px 6px; font-size: 15px; font-weight: 600;
-        letter-spacing: 0.01em; color: #1c1c1e; background: #f2f2f7;
-    }
-    .ios-status-bar .time { font-variant-numeric: tabular-nums; }
-    .ios-status-icons { display: flex; gap: 5px; align-items: center; }
-    .ios-status-icons svg { display: block; }
+/* ── Status Bar ── */
+.ios-status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 28px 6px; font-size: 15px; font-weight: 600;
+    letter-spacing: 0.01em; color: #1c1c1e; background: #f2f2f7;
+}
+.ios-status-bar .time { font-variant-numeric: tabular-nums; }
+.ios-status-icons { display: flex; gap: 5px; align-items: center; }
+.ios-status-icons svg { display: block; }
 
-    /* ── Navigation Bar ── */
-    .ios-navbar {
-        display: flex; align-items: center; padding: 2px 8px 8px;
-        background: #f2f2f7; min-height: 44px; position: sticky; top: 0; z-index: 10;
-    }
-    .ios-nav-btn {
-        background: none !important; border: none; color: #007aff;
-        font-size: 17px; font-family: inherit; padding: 6px 8px; cursor: pointer;
-        min-width: 50px; text-align: left; border-radius: 0;
-    }
-    .ios-nav-btn:hover { background: none !important; }
-    .ios-nav-btn:disabled { color: transparent; cursor: default; }
-    .ios-nav-btn.right { text-align: right; min-width: 40px; font-size: 20px; }
-    .ios-nav-title {
-        flex: 1; text-align: center; font-size: 17px; font-weight: 600;
-        color: #1c1c1e; white-space: nowrap; overflow: hidden;
-        text-overflow: ellipsis; padding: 0 4px;
-    }
+/* ── Navigation Bar ── */
+.ios-navbar {
+    display: flex; align-items: center; padding: 2px 8px 8px;
+    background: #f2f2f7; min-height: 44px; position: sticky; top: 0; z-index: 10;
+}
+.ios-nav-btn {
+    background: none !important; border: none; color: #007aff;
+    font-size: 17px; font-family: inherit; padding: 6px 8px; cursor: pointer;
+    min-width: 50px; text-align: left; border-radius: 0;
+}
+.ios-nav-btn:hover { background: none !important; }
+.ios-nav-btn:disabled { color: transparent; cursor: default; }
+.ios-nav-btn.right { text-align: right; min-width: 40px; font-size: 20px; }
+.ios-nav-title {
+    flex: 1; text-align: center; font-size: 17px; font-weight: 600;
+    color: #1c1c1e; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; padding: 0 4px;
+}
 
-    /* ── Search Bar ── */
-    .ios-search-bar { padding: 0 16px 10px; background: #f2f2f7; }
-    .ios-search-field {
-        display: flex; align-items: center; gap: 6px;
-        background: #e5e5ea; border-radius: 10px; padding: 0 10px; height: 36px;
-    }
-    .ios-search-icon { color: #8e8e93; font-size: 14px; flex-shrink: 0; }
-    .ios-search-input {
-        flex: 1; border: none; background: transparent; font-size: 17px;
-        font-family: inherit; color: #1c1c1e; outline: none;
-    }
-    .ios-search-input::placeholder { color: #8e8e93; }
-    .ios-search-clear {
-        background: none !important; border: none; color: #8e8e93;
-        font-size: 14px; padding: 2px 4px; cursor: pointer; display: none; border-radius: 0;
-    }
-    .ios-search-clear.visible { display: block; }
+/* ── Search Bar ── */
+.ios-search-bar { padding: 0 16px 10px; background: #f2f2f7; }
+.ios-search-field {
+    display: flex; align-items: center; gap: 6px;
+    background: #e5e5ea; border-radius: 10px; padding: 0 10px; height: 36px;
+}
+.ios-search-icon { color: #8e8e93; font-size: 14px; flex-shrink: 0; }
+.ios-search-input {
+    flex: 1; border: none; background: transparent; font-size: 17px;
+    font-family: inherit; color: #1c1c1e; outline: none;
+}
+.ios-search-input::placeholder { color: #8e8e93; }
+.ios-search-clear {
+    background: none !important; border: none; color: #8e8e93;
+    font-size: 14px; padding: 2px 4px; cursor: pointer; display: none; border-radius: 0;
+}
+.ios-search-clear.visible { display: block; }
 
-    /* ── Breadcrumbs ── */
-    .ios-breadcrumbs {
-        display: flex; align-items: center; gap: 2px; padding: 4px 16px 8px;
-        overflow-x: auto; white-space: nowrap; background: #f2f2f7;
-        -webkit-overflow-scrolling: touch;
-    }
-    .ios-breadcrumbs::-webkit-scrollbar { display: none; }
-    .ios-crumb {
-        background: none !important; border: none; color: #007aff;
-        font-size: 13px; font-family: inherit; padding: 3px 6px; cursor: pointer;
-        border-radius: 4px; white-space: nowrap;
-    }
-    .ios-crumb:hover { background: rgba(0,122,255,0.08) !important; }
-    .ios-crumb.current { color: #8e8e93; cursor: default; }
-    .ios-crumb.current:hover { background: none !important; }
-    .ios-crumb-sep { color: #c7c7cc; font-size: 13px; font-weight: 300; }
+/* ── Breadcrumbs ── */
+.ios-breadcrumbs {
+    display: flex; align-items: center; gap: 2px; padding: 4px 16px 8px;
+    overflow-x: auto; white-space: nowrap; background: #f2f2f7;
+    -webkit-overflow-scrolling: touch;
+}
+.ios-breadcrumbs::-webkit-scrollbar { display: none; }
+.ios-crumb {
+    background: none !important; border: none; color: #007aff;
+    font-size: 13px; font-family: inherit; padding: 3px 6px; cursor: pointer;
+    border-radius: 4px; white-space: nowrap;
+}
+.ios-crumb:hover { background: rgba(0,122,255,0.08) !important; }
+.ios-crumb.current { color: #8e8e93; cursor: default; }
+.ios-crumb.current:hover { background: none !important; }
+.ios-crumb-sep { color: #c7c7cc; font-size: 13px; font-weight: 300; }
 
-    /* ── Sort Menu ── */
-    .ios-sort-overlay { position: absolute; inset: 0; z-index: 19; display: none; }
-    .ios-sort-overlay.open { display: block; }
-    .ios-sort-menu {
-        position: absolute; top: 90px; right: 20px; background: white;
-        border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
-        min-width: 180px; z-index: 20; overflow: hidden; display: none;
-    }
-    .ios-sort-menu.open { display: block; }
-    .ios-sort-menu .sort-label {
-        font-size: 13px; font-weight: 600; color: #8e8e93;
-        padding: 12px 16px 4px; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .ios-sort-option {
-        display: flex !important; align-items: center; justify-content: space-between;
-        width: 100%; background: none !important; border: none;
-        border-bottom: 0.5px solid #e5e5ea; padding: 12px 16px !important;
-        font-size: 17px; font-family: inherit; color: #1c1c1e; cursor: pointer;
-        text-align: left; border-radius: 0 !important;
-    }
-    .ios-sort-option:last-child { border-bottom: none; }
-    .ios-sort-option:hover { background: #f2f2f7 !important; }
-    .ios-sort-option.active { color: #007aff; font-weight: 500; }
-    .ios-sort-option .sort-check { font-size: 16px; color: #007aff; }
+/* ── Sort Menu ── */
+.ios-sort-overlay { position: absolute; inset: 0; z-index: 19; display: none; }
+.ios-sort-overlay.open { display: block; }
+.ios-sort-menu {
+    position: absolute; top: 90px; right: 20px; background: white;
+    border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    min-width: 180px; z-index: 20; overflow: hidden; display: none;
+}
+.ios-sort-menu.open { display: block; }
+.ios-sort-menu .sort-label {
+    font-size: 13px; font-weight: 600; color: #8e8e93;
+    padding: 12px 16px 4px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.ios-sort-option {
+    display: flex !important; align-items: center; justify-content: space-between;
+    width: 100%; background: none !important; border: none;
+    border-bottom: 0.5px solid #e5e5ea; padding: 12px 16px !important;
+    font-size: 17px; font-family: inherit; color: #1c1c1e; cursor: pointer;
+    text-align: left; border-radius: 0 !important;
+}
+.ios-sort-option:last-child { border-bottom: none; }
+.ios-sort-option:hover { background: #f2f2f7 !important; }
+.ios-sort-option.active { color: #007aff; font-weight: 500; }
+.ios-sort-option .sort-check { font-size: 16px; color: #007aff; }
 
-    /* ── File List ── */
-    .ios-file-list {
-        flex: 1; overflow-y: auto; background: white;
-        height: 460px; min-height: 460px; -webkit-overflow-scrolling: touch;
-    }
-    .ios-file-row {
-        display: flex !important; align-items: center; width: 100%;
-        min-height: 56px; padding: 0 16px !important; background: white !important;
-        border: none; border-bottom: 0.5px solid #e5e5ea; cursor: pointer;
-        text-align: left; font-family: inherit; gap: 12px; border-radius: 0 !important;
-        transition: background 0.15s;
-    }
-    .ios-file-row:hover { background: #f2f2f7 !important; }
-    .ios-file-row:active { background: #e5e5ea !important; }
-    .ios-file-icon {
-        width: 40px; height: 40px; display: flex; align-items: center;
-        justify-content: center; font-size: 28px; flex-shrink: 0;
-    }
-    .ios-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-    .ios-file-name {
-        font-size: 17px; color: #1c1c1e; white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
-    }
-    .ios-file-meta { font-size: 13px; color: #8e8e93; }
-    .ios-file-chevron { color: #c7c7cc; font-size: 20px; font-weight: 300; flex-shrink: 0; }
-    .ios-empty {
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 60px 20px; color: #8e8e93; font-size: 17px;
-    }
-    .ios-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+/* ── File List ── */
+.ios-file-list {
+    flex: 1; overflow-y: auto; background: white;
+    height: 460px; min-height: 460px; -webkit-overflow-scrolling: touch;
+}
+.ios-file-row {
+    display: flex !important; align-items: center; width: 100%;
+    min-height: 56px; padding: 0 16px !important; background: white !important;
+    border: none; border-bottom: 0.5px solid #e5e5ea; cursor: pointer;
+    text-align: left; font-family: inherit; gap: 12px; border-radius: 0 !important;
+    transition: background 0.15s;
+}
+.ios-file-row:hover { background: #f2f2f7 !important; }
+.ios-file-row:active { background: #e5e5ea !important; }
+.ios-file-icon {
+    width: 40px; height: 40px; display: flex; align-items: center;
+    justify-content: center; font-size: 28px; flex-shrink: 0;
+}
+.ios-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ios-file-name {
+    font-size: 17px; color: #1c1c1e; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.ios-file-meta { font-size: 13px; color: #8e8e93; }
+.ios-file-chevron { color: #c7c7cc; font-size: 20px; font-weight: 300; flex-shrink: 0; }
+.ios-empty {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 60px 20px; color: #8e8e93; font-size: 17px;
+}
+.ios-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
 
-    /* ── Footer ── */
-    .ios-footer {
-        padding: 10px 16px 20px; text-align: center; font-size: 13px;
-        color: #8e8e93; background: #f2f2f7; border-top: 0.5px solid #c8c7cc;
-    }
+/* ── Footer ── */
+.ios-footer {
+    padding: 10px 16px 20px; text-align: center; font-size: 13px;
+    color: #8e8e93; background: #f2f2f7; border-top: 0.5px solid #c8c7cc;
+}
 
-    /* ── Detail Sheet ── */
-    .ios-sheet-overlay {
-        position: absolute; inset: 0; background: rgba(0,0,0,0.3);
-        z-index: 100; border-radius: 40px; display: none; animation: iosFadeIn 0.25s ease;
-    }
-    .ios-sheet-overlay.open { display: block; }
-    .ios-detail-sheet {
-        position: absolute; bottom: 0; left: 0; right: 0; max-height: 55%;
-        background: #f2f2f7; border-radius: 14px 14px 0 0; z-index: 101;
-        display: none; animation: iosSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.3, 1); overflow: hidden;
-    }
-    .ios-detail-sheet.open { display: flex; flex-direction: column; }
-    .ios-detail-handle {
-        width: 36px; height: 5px; background: #c7c7cc;
-        border-radius: 3px; margin: 8px auto 0; flex-shrink: 0;
-    }
-    .ios-detail-header {
-        display: flex; align-items: center; gap: 10px; padding: 12px 20px;
-        font-size: 20px; font-weight: 600; color: #1c1c1e; border-bottom: 0.5px solid #c8c7cc;
-    }
-    .ios-detail-header-icon { font-size: 32px; }
-    .ios-detail-header-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ios-detail-rows {
-        flex: 1; overflow-y: auto; background: white;
-        margin: 12px 16px; border-radius: 10px;
-    }
-    .ios-detail-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 12px 16px; font-size: 15px; border-bottom: 0.5px solid #e5e5ea;
-    }
-    .ios-detail-row:last-child { border-bottom: none; }
-    .ios-detail-row .label { color: #1c1c1e; }
-    .ios-detail-row .value {
-        color: #8e8e93; text-align: right; max-width: 60%;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .ios-detail-done {
-        margin: 0 20px 24px; padding: 14px !important; background: #007aff !important;
-        color: white; border: none; border-radius: 12px !important; font-size: 17px;
-        font-weight: 600; font-family: inherit; cursor: pointer; text-align: center;
-    }
-    .ios-detail-done:hover { background: #0066d6 !important; }
+/* ── Detail Sheet ── */
+.ios-sheet-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 100; border-radius: 40px; display: none; animation: iosFadeIn 0.25s ease;
+}
+.ios-sheet-overlay.open { display: block; }
+.ios-detail-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0; max-height: 55%;
+    background: #f2f2f7; border-radius: 14px 14px 0 0; z-index: 101;
+    display: none; animation: iosSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.3, 1); overflow: hidden;
+}
+.ios-detail-sheet.open { display: flex; flex-direction: column; }
+.ios-detail-handle {
+    width: 36px; height: 5px; background: #c7c7cc;
+    border-radius: 3px; margin: 8px auto 0; flex-shrink: 0;
+}
+.ios-detail-header {
+    display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+    font-size: 20px; font-weight: 600; color: #1c1c1e; border-bottom: 0.5px solid #c8c7cc;
+}
+.ios-detail-header-icon { font-size: 32px; }
+.ios-detail-header-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-detail-rows {
+    flex: 1; overflow-y: auto; background: white;
+    margin: 12px 16px; border-radius: 10px;
+}
+.ios-detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; font-size: 15px; border-bottom: 0.5px solid #e5e5ea;
+}
+.ios-detail-row:last-child { border-bottom: none; }
+.ios-detail-row .label { color: #1c1c1e; }
+.ios-detail-row .value {
+    color: #8e8e93; text-align: right; max-width: 60%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ios-detail-done {
+    margin: 0 20px 24px; padding: 14px !important; background: #007aff !important;
+    color: white; border: none; border-radius: 12px !important; font-size: 17px;
+    font-weight: 600; font-family: inherit; cursor: pointer; text-align: center;
+}
+.ios-detail-done:hover { background: #0066d6 !important; }
 
-    @keyframes iosSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @keyframes iosFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iosSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes iosFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* ── Sidebar info ── */
-    .info-sidebar h3 { margin-top: 1.5rem; }
-    .info-sidebar h3:first-child { margin-top: 0; }
-    .api-list { list-style: none; padding: 0; margin: 0.5rem 0; }
-    .api-list li { padding: 4px 0; font-size: 0.9rem; color: #4a5568; }
-    .api-list code { font-size: 0.82rem; }
+/* ── Sidebar info ── */
+.info-sidebar h3 { margin-top: 1.5rem; }
+.info-sidebar h3:first-child { margin-top: 0; }
+.api-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+.api-list li { padding: 4px 0; font-size: 0.9rem; color: #4a5568; }
+.api-list code { font-size: 0.82rem; }
 </style>
-</head>
-<body>
-<div class="container">
-    <header>
-        <a href="index.html" class="back-link">&larr; Back to Examples</a>
-        <h1>Custom Layouts</h1>
-        <p class="subtitle">Custom node templates, badges, empty/loading/header/footer slots, and a headless iOS-Files demo</p>
-    </header>
 
-    <!-- ================================================================ -->
-    <!-- CL01 · Custom Node Template                                      -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL01 · Custom Node Template</h2>
-        <p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives one <code>ctx</code>: <code>ctx.node</code> (the <code>LTreeNode</code>), <code>ctx.contentElement</code> (inside <code>.wtv__node-content</code>) and the render state (<code>isExpanded</code>, <code>level</code>, &hellip;). This example shows file-type icons and sizes.</p>
+<!-- ================================================================ -->
+<!-- CL01 · Custom Node Template                                      -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL01 · Custom Node Template</h2>
+<p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives one <code>ctx</code>: <code>ctx.node</code> (the <code>LTreeNode</code>), <code>ctx.contentElement</code> (inside <code>.wtv__node-content</code>) and the render state (<code>isExpanded</code>, <code>level</code>, &hellip;). This example shows file-type icons and sizes.</p>
 
-        <div class="tree-container" id="tree1-container">
-            <web-treeview id="tree1" icon-set="plus-minus"></web-treeview>
-        </div>
+<div class="tree-container" id="tree1-container">
+    <web-treeview id="tree1" icon-set="plus-minus"></web-treeview>
+</div>
 
-        <div class="code-block">
+<div class="code-block">
 <pre><code>element.renderNodeCallback = ({ node, contentElement }) => {
     const name = node.data?.name || '';
     const size = node.data?.size || '';
@@ -305,60 +295,60 @@
             ${size ? `&lt;span class="file-size"&gt;${size}&lt;/span&gt;` : ''}
         &lt;/div&gt;`;
 };</code></pre>
-        </div>
-    </div>
+</div>
+</div>
 
-    <!-- ================================================================ -->
-    <!-- CL02 · Status Badges                                             -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL02 · Status Badges</h2>
-        <p>The same <code>renderNodeCallback</code> hook can add dynamic badges that reflect per-node state (new, modified, deleted) &mdash; here a git-style status column.</p>
+<!-- ================================================================ -->
+<!-- CL02 · Status Badges                                             -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL02 · Status Badges</h2>
+<p>The same <code>renderNodeCallback</code> hook can add dynamic badges that reflect per-node state (new, modified, deleted) &mdash; here a git-style status column.</p>
 
-        <div class="tree-container" id="tree2-container">
-            <web-treeview id="tree2" icon-set="arrow"></web-treeview>
-        </div>
-    </div>
+<div class="tree-container" id="tree2-container">
+    <web-treeview id="tree2" icon-set="arrow"></web-treeview>
+</div>
+</div>
 
-    <!-- ================================================================ -->
-    <!-- CL03 · Header & Footer slots                                     -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL03 · Header &amp; Footer Slots</h2>
-        <p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both receive a <code>ctx</code> whose <code>containerElement</code> you populate.</p>
+<!-- ================================================================ -->
+<!-- CL03 · Header & Footer slots                                     -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL03 · Header &amp; Footer Slots</h2>
+<p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both receive a <code>ctx</code> whose <code>containerElement</code> you populate.</p>
 
-        <div class="tree-container" id="tree5-container">
-            <web-treeview id="tree5" icon-set="triangle"></web-treeview>
-        </div>
+<div class="tree-container" id="tree5-container">
+    <web-treeview id="tree5" icon-set="triangle"></web-treeview>
+</div>
 
-        <div class="code-block">
+<div class="code-block">
 <pre><code>tree.renderHeaderCallback = ({ containerElement }) => {
     containerElement.innerHTML = `&lt;div class="my-header"&gt;📁 File Browser&lt;/div&gt;`;
 };
 tree.renderFooterCallback = ({ containerElement }) => {
     containerElement.innerHTML = `&lt;div class="my-footer"&gt;Right-click for context menu&lt;/div&gt;`;
 };</code></pre>
-        </div>
-    </div>
+</div>
+</div>
 
-    <!-- ================================================================ -->
-    <!-- CL04 · Empty & Loading states                                    -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL04 · Empty &amp; Loading States</h2>
-        <p>Customize what appears when the tree has no data (<code>renderEmptyStateCallback</code>) or is loading (<code>renderLoadingCallback</code> + the <code>isLoading</code> property).</p>
+<!-- ================================================================ -->
+<!-- CL04 · Empty & Loading states                                    -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL04 · Empty &amp; Loading States</h2>
+<p>Customize what appears when the tree has no data (<code>renderEmptyStateCallback</code>) or is loading (<code>renderLoadingCallback</code> + the <code>isLoading</code> property).</p>
 
-        <div class="controls">
-            <button onclick="showEmpty()">Show Empty State</button>
-            <button onclick="showLoading()">Show Loading State</button>
-            <button onclick="showData()" class="btn-outline">Load Data</button>
-        </div>
+<div class="controls">
+    <button onclick="showEmpty()">Show Empty State</button>
+    <button onclick="showLoading()">Show Loading State</button>
+    <button onclick="showData()" class="btn-outline">Load Data</button>
+</div>
 
-        <div class="tree-container" id="tree4-container">
-            <web-treeview id="tree4"></web-treeview>
-        </div>
+<div class="tree-container" id="tree4-container">
+    <web-treeview id="tree4"></web-treeview>
+</div>
 
-        <div class="code-block">
+<div class="code-block">
 <pre><code>tree.renderEmptyStateCallback = ({ containerElement }) => {
     containerElement.innerHTML = `&lt;div class="empty-state"&gt;🍃 No items&lt;/div&gt;`;
 };
@@ -370,141 +360,141 @@ tree.isLoading = true;   // show the loading template
 tree.isLoading = false;
 tree.nodes = [];          // empty → empty template
 tree.nodes = someRows;    // populated → the tree</code></pre>
-        </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- CL05 · Toggle-Icon Modes & Icon Sets                             -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL05 · Toggle-Icon Modes &amp; Icon Sets</h2>
+<p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). Leaf rows can carry a class glyph via <code>leaf-icon-class</code> (e.g. FontAwesome &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>); per-node icons go through <code>icon-member</code> / <code>renderIconCallback</code>.</p>
+
+<h3 class="fa-mode-label mt-1">Built-in icon sets (no FontAwesome)</h3>
+<div class="grid" style="--grid-min: 260px; --grid-gap: 1.5rem;">
+    <div>
+        <h3 class="fa-mode-label">chevron (default, rotate)</h3>
+        <div class="tree-container"><web-treeview id="is-chevron" icon-set="chevron"></web-treeview></div>
     </div>
+    <div>
+        <h3 class="fa-mode-label">triangle</h3>
+        <div class="tree-container"><web-treeview id="is-triangle" icon-set="triangle"></web-treeview></div>
+    </div>
+    <div>
+        <h3 class="fa-mode-label">plus-minus</h3>
+        <div class="tree-container"><web-treeview id="is-plusminus" icon-set="plus-minus"></web-treeview></div>
+    </div>
+    <div>
+        <h3 class="fa-mode-label">arrow</h3>
+        <div class="tree-container"><web-treeview id="is-arrow" icon-set="arrow"></web-treeview></div>
+    </div>
+</div>
 
-    <!-- ================================================================ -->
-    <!-- CL05 · Toggle-Icon Modes & Icon Sets                             -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL05 · Toggle-Icon Modes &amp; Icon Sets</h2>
-        <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). Leaf rows can carry a class glyph via <code>leaf-icon-class</code> (e.g. FontAwesome &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>); per-node icons go through <code>icon-member</code> / <code>renderIconCallback</code>.</p>
-
-        <h3 class="fa-mode-label" style="margin-top:1rem">Built-in icon sets (no FontAwesome)</h3>
-        <div class="grid" style="--grid-min: 260px; --grid-gap: 1.5rem;">
-            <div>
-                <h3 class="fa-mode-label">chevron (default, rotate)</h3>
-                <div class="tree-container"><web-treeview id="is-chevron" icon-set="chevron"></web-treeview></div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">triangle</h3>
-                <div class="tree-container"><web-treeview id="is-triangle" icon-set="triangle"></web-treeview></div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">plus-minus</h3>
-                <div class="tree-container"><web-treeview id="is-plusminus" icon-set="plus-minus"></web-treeview></div>
-            </div>
-            <div>
-                <h3 class="fa-mode-label">arrow</h3>
-                <div class="tree-container"><web-treeview id="is-arrow" icon-set="arrow"></web-treeview></div>
-            </div>
-        </div>
-
-        <div class="code-block mt-1">
+<div class="code-block mt-1">
 <pre><code>// Built-in — no FontAwesome needed
 &lt;web-treeview icon-set="triangle"&gt;
 
 // Swap mode — the set's expand / collapse glyph pair
 &lt;web-treeview icon-set="plus-minus" toggle-icon-mode="swap"&gt;</code></pre>
-        </div>
-    </div>
+</div>
+</div>
 
-    <!-- ================================================================ -->
-    <!-- CL06 · iOS Files Explorer (headless TreeEngine)              -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL06 · iOS Files Explorer (headless <code>TreeEngine</code>)</h2>
-        <p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeEngine</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
+<!-- ================================================================ -->
+<!-- CL06 · iOS Files Explorer (headless TreeEngine)              -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL06 · iOS Files Explorer (headless <code>TreeEngine</code>)</h2>
+<p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeEngine</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
 
-        <div class="renderer-toggle" role="group" aria-label="Renderer">
-            <button id="rtVanilla" class="active" type="button">Vanilla</button>
-            <button id="rtLit" type="button">lit-html</button>
-        </div>
+<div class="renderer-toggle" role="group" aria-label="Renderer">
+    <button id="rtVanilla" class="active" type="button">Vanilla</button>
+    <button id="rtLit" type="button">lit-html</button>
+</div>
 
-        <div class="demo-layout">
-            <!-- Phone -->
-            <div id="phone" class="ios-phone">
-                <!-- Status bar (static) -->
-                <div class="ios-status-bar">
-                    <span class="time">9:41</span>
-                    <div class="ios-status-icons">
-                        <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="3" width="3" height="9" rx="0.5" fill="#1c1c1e"/><rect x="4.5" y="2" width="3" height="10" rx="0.5" fill="#1c1c1e"/><rect x="9" y="1" width="3" height="11" rx="0.5" fill="#1c1c1e"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#1c1c1e"/></svg>
-                        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 3.6C9.8 3.6 11.4 4.3 12.6 5.5L14 4.1C12.4 2.5 10.3 1.5 8 1.5C5.7 1.5 3.6 2.5 2 4.1L3.4 5.5C4.6 4.3 6.2 3.6 8 3.6Z" fill="#1c1c1e"/><path d="M8 7.2C9.1 7.2 10.1 7.6 10.8 8.3L12.2 6.9C11.1 5.8 9.6 5.2 8 5.2C6.4 5.2 4.9 5.8 3.8 6.9L5.2 8.3C5.9 7.6 6.9 7.2 8 7.2Z" fill="#1c1c1e"/><circle cx="8" cy="10.5" r="1.5" fill="#1c1c1e"/></svg>
-                        <svg width="27" height="12" viewBox="0 0 27 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="#1c1c1e" stroke-width="1" fill="none"/><rect x="23" y="3.5" width="2" height="5" rx="1" fill="#1c1c1e" opacity="0.4"/><rect x="1.5" y="2.5" width="19" height="7" rx="1" fill="#1c1c1e"/></svg>
-                    </div>
-                </div>
-
-                <!-- Dynamic region — both renderers target these mount points -->
-                <div id="iosNavbar"></div>
-                <div id="iosSearchBar"></div>
-                <div id="iosBreadcrumbs"></div>
-                <div id="iosSortOverlay" class="ios-sort-overlay"></div>
-                <div id="iosSortMenu"></div>
-                <div id="iosFileList" class="ios-file-list"></div>
-                <div id="iosFooter"></div>
-                <div id="iosSheetOverlay" class="ios-sheet-overlay"></div>
-                <div id="iosDetailSheet"></div>
-            </div>
-
-            <!-- Sidebar -->
-            <div class="card info-sidebar">
-                <h2>Two renderers, one controller</h2>
-                <p>The controller is created once; a <code>mode</code> flag chooses which render function the shared <code>render()</code> dispatch calls. Switching the toggle just re-renders &mdash; no controller rebuild, state (path, sort, search, open sheet) is preserved.</p>
-
-                <div class="note">
-                    <div class="note-title">No web component used</div>
-                    <code>TreeEngine</code> (the element's internal engine, exported for renderer authors) is imported directly and used as a headless data engine. Everything visible is custom DOM.
-                </div>
-
-                <h3>Vanilla render path</h3>
-                <ul class="api-list">
-                    <li><code>document.createElement</code> + <code>appendChild</code></li>
-                    <li>imperative <code>addEventListener</code> per row</li>
-                    <li>full <code>innerHTML = ''</code> + rebuild each tick</li>
-                </ul>
-
-                <h3>lit-html render path</h3>
-                <ul class="api-list">
-                    <li><code>html` … `</code> tagged templates from <code>esm.run</code></li>
-                    <li><code>@click=${fn}</code> event bindings</li>
-                    <li>efficient DOM diffing on re-render</li>
-                </ul>
-
-                <h3>Controller APIs used</h3>
-                <ul class="api-list">
-                    <li><code>ctrl.getChildren(path)</code> &mdash; folder contents</li>
-                    <li><code>ctrl.flatNodesToRender</code> &mdash; all nodes (deep search)</li>
-                    <li><code>node.data</code> &mdash; original user data</li>
-                    <li><code>node.path</code> &mdash; LTree path</li>
-                    <li><code>node.hasChildren</code> &mdash; folder check</li>
-                </ul>
+<div class="demo-layout">
+    <!-- Phone -->
+    <div id="phone" class="ios-phone">
+        <!-- Status bar (static) -->
+        <div class="ios-status-bar">
+            <span class="time">9:41</span>
+            <div class="ios-status-icons">
+                <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="3" width="3" height="9" rx="0.5" fill="#1c1c1e"/><rect x="4.5" y="2" width="3" height="10" rx="0.5" fill="#1c1c1e"/><rect x="9" y="1" width="3" height="11" rx="0.5" fill="#1c1c1e"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#1c1c1e"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 3.6C9.8 3.6 11.4 4.3 12.6 5.5L14 4.1C12.4 2.5 10.3 1.5 8 1.5C5.7 1.5 3.6 2.5 2 4.1L3.4 5.5C4.6 4.3 6.2 3.6 8 3.6Z" fill="#1c1c1e"/><path d="M8 7.2C9.1 7.2 10.1 7.6 10.8 8.3L12.2 6.9C11.1 5.8 9.6 5.2 8 5.2C6.4 5.2 4.9 5.8 3.8 6.9L5.2 8.3C5.9 7.6 6.9 7.2 8 7.2Z" fill="#1c1c1e"/><circle cx="8" cy="10.5" r="1.5" fill="#1c1c1e"/></svg>
+                <svg width="27" height="12" viewBox="0 0 27 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="#1c1c1e" stroke-width="1" fill="none"/><rect x="23" y="3.5" width="2" height="5" rx="1" fill="#1c1c1e" opacity="0.4"/><rect x="1.5" y="2.5" width="19" height="7" rx="1" fill="#1c1c1e"/></svg>
             </div>
         </div>
+
+        <!-- Dynamic region — both renderers target these mount points -->
+        <div id="iosNavbar"></div>
+        <div id="iosSearchBar"></div>
+        <div id="iosBreadcrumbs"></div>
+        <div id="iosSortOverlay" class="ios-sort-overlay"></div>
+        <div id="iosSortMenu"></div>
+        <div id="iosFileList" class="ios-file-list"></div>
+        <div id="iosFooter"></div>
+        <div id="iosSheetOverlay" class="ios-sheet-overlay"></div>
+        <div id="iosDetailSheet"></div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- CL07 · How it works                                              -->
-    <!-- ================================================================ -->
-    <div class="card">
-        <h2>CL07 · How it works</h2>
-        <p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeEngine</code></strong> for a 100%-custom UI (CL06).</p>
+    <!-- Sidebar -->
+    <div class="card info-sidebar">
+        <h3>Two renderers, one controller</h3>
+        <p>The controller is created once; a <code>mode</code> flag chooses which render function the shared <code>render()</code> dispatch calls. Switching the toggle just re-renders &mdash; no controller rebuild, state (path, sort, search, open sheet) is preserved.</p>
 
-        <h3>Render callbacks (on the element)</h3>
-        <table class="reference-table">
-            <thead><tr><th>Callback</th><th>Signature</th><th>Renders</th></tr></thead>
-            <tbody>
-                <tr><td><code>renderNodeCallback</code></td><td><code>({ node, contentElement, isExpanded, level, &hellip; }) =&gt; void</code></td><td>a node row's content</td></tr>
-                <tr><td><code>renderIconCallback</code></td><td><code>({ node, value, iconElement, &hellip; }) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
-                <tr><td><code>renderHeaderCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome above the tree</td></tr>
-                <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
-                <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
-                <tr><td><code>renderLoadingCallback</code></td><td><code>({ component, context, containerElement, element, label }) =&gt; void | (() =&gt; void)</code></td><td>the loading state (<code>isLoading=true</code>) — core's shared loader hook (beats the page-wide <code>window.components.renderLoaderCallback</code>); may return a cleanup</td></tr>
-                <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
-            </tbody>
-        </table>
+        <div class="note">
+            <div class="note-title">No web component used</div>
+            <code>TreeEngine</code> (the element's internal engine, exported for renderer authors) is imported directly and used as a headless data engine. Everything visible is custom DOM.
+        </div>
 
-        <h3>Headless controller (no element)</h3>
-        <div class="code-block">
+        <h3>Vanilla render path</h3>
+        <ul class="api-list">
+            <li><code>document.createElement</code> + <code>appendChild</code></li>
+            <li>imperative <code>addEventListener</code> per row</li>
+            <li>full <code>innerHTML = ''</code> + rebuild each tick</li>
+        </ul>
+
+        <h3>lit-html render path</h3>
+        <ul class="api-list">
+            <li><code>html` … `</code> tagged templates from <code>esm.run</code></li>
+            <li><code>@click=${fn}</code> event bindings</li>
+            <li>efficient DOM diffing on re-render</li>
+        </ul>
+
+        <h3>Controller APIs used</h3>
+        <ul class="api-list">
+            <li><code>ctrl.getChildren(path)</code> &mdash; folder contents</li>
+            <li><code>ctrl.flatNodesToRender</code> &mdash; all nodes (deep search)</li>
+            <li><code>node.data</code> &mdash; original user data</li>
+            <li><code>node.path</code> &mdash; LTree path</li>
+            <li><code>node.hasChildren</code> &mdash; folder check</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- CL07 · How it works                                              -->
+<!-- ================================================================ -->
+<div class="card">
+<h2>CL07 · How it works</h2>
+<p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeEngine</code></strong> for a 100%-custom UI (CL06).</p>
+
+<h3>Render callbacks (on the element)</h3>
+<table class="reference-table">
+    <thead><tr><th>Callback</th><th>Signature</th><th>Renders</th></tr></thead>
+    <tbody>
+        <tr><td><code>renderNodeCallback</code></td><td><code>({ node, contentElement, isExpanded, level, &hellip; }) =&gt; void</code></td><td>a node row's content</td></tr>
+        <tr><td><code>renderIconCallback</code></td><td><code>({ node, value, iconElement, &hellip; }) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
+        <tr><td><code>renderHeaderCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome above the tree</td></tr>
+        <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
+        <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
+        <tr><td><code>renderLoadingCallback</code></td><td><code>({ component, context, containerElement, element, label }) =&gt; void | (() =&gt; void)</code></td><td>the loading state (<code>isLoading=true</code>) — core's shared loader hook (beats the page-wide <code>window.components.renderLoaderCallback</code>); may return a cleanup</td></tr>
+        <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
+    </tbody>
+</table>
+
+<h3>Headless controller (no element)</h3>
+<div class="code-block">
 <pre><code>import { TreeEngine } from '/src/index.ts';
 
 const ctrl = new TreeEngine({
@@ -520,669 +510,662 @@ ctrl.getChildren('Notepad++');   // direct children of a path
 ctrl.flatNodesToRender;          // every node (for deep search)
 ctrl.getNodeByPath(path);        // single node lookup
 node.data; node.path; node.hasChildren;</code></pre>
-        </div>
+</div>
 
-        <div class="note">
-            <p class="note-title">Why headless?</p>
-            <p>When the target UI has nothing to do with a tree row &mdash; an iOS Files browser, an org chart, a badge cloud &mdash; skip the renderer entirely. Keep the controller for hierarchy, path math, search, and drag-drop; own every pixel yourself.</p>
-        </div>
-    </div>
+<div class="note">
+    <p class="note-title">Why headless?</p>
+    <p>When the target UI has nothing to do with a tree row &mdash; an iOS Files browser, an org chart, a badge cloud &mdash; skip the renderer entirely. Keep the controller for hierarchy, path math, search, and drag-drop; own every pixel yourself.</p>
+</div>
 </div>
 
 <!-- ==================================================================== -->
 <!-- Element-driven demos (CL01–CL05): import the component               -->
 <!-- ==================================================================== -->
 <script type="module">
-    import '/src/index.ts';
-    import { persistControls } from './examples-controls-store.js';
+import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
-    // ── Sample data ──────────────────────────────────────────────────
-    const fileTree = [
-        { id: 1, path: '1', name: 'src', size: '' },
-        { id: 2, path: '1.1', name: 'index.ts', size: '2.4 KB' },
-        { id: 3, path: '1.2', name: 'app.tsx', size: '5.1 KB' },
-        { id: 4, path: '1.3', name: 'styles.css', size: '1.8 KB' },
-        { id: 5, path: '1.4', name: 'utils.ts', size: '3.2 KB' },
-        { id: 6, path: '2', name: 'tests', size: '' },
-        { id: 7, path: '2.1', name: 'app.test.ts', size: '4.5 KB' },
-        { id: 8, path: '2.2', name: 'utils.test.ts', size: '2.1 KB' },
-        { id: 9, path: '3', name: 'package.json', size: '0.8 KB' },
-        { id: 10, path: '4', name: 'README.md', size: '1.2 KB' }
-    ];
+// ── Sample data ──────────────────────────────────────────────────
+const fileTree = [
+    { id: 1, path: '1', name: 'src', size: '' },
+    { id: 2, path: '1.1', name: 'index.ts', size: '2.4 KB' },
+    { id: 3, path: '1.2', name: 'app.tsx', size: '5.1 KB' },
+    { id: 4, path: '1.3', name: 'styles.css', size: '1.8 KB' },
+    { id: 5, path: '1.4', name: 'utils.ts', size: '3.2 KB' },
+    { id: 6, path: '2', name: 'tests', size: '' },
+    { id: 7, path: '2.1', name: 'app.test.ts', size: '4.5 KB' },
+    { id: 8, path: '2.2', name: 'utils.test.ts', size: '2.1 KB' },
+    { id: 9, path: '3', name: 'package.json', size: '0.8 KB' },
+    { id: 10, path: '4', name: 'README.md', size: '1.2 KB' }
+];
 
-    const gitTree = [
-        { id: 1, path: '1', name: 'src', status: null },
-        { id: 2, path: '1.1', name: 'index.ts', status: 'modified' },
-        { id: 3, path: '1.2', name: 'app.tsx', status: null },
-        { id: 4, path: '1.3', name: 'new-feature.ts', status: 'new' },
-        { id: 5, path: '1.4', name: 'deprecated.ts', status: 'deleted' },
-        { id: 6, path: '2', name: 'config', status: null },
-        { id: 7, path: '2.1', name: 'settings.json', status: 'modified' },
-        { id: 8, path: '2.2', name: 'env.local', status: 'new' },
-        { id: 9, path: '3', name: 'package.json', status: 'modified' }
-    ];
+const gitTree = [
+    { id: 1, path: '1', name: 'src', status: null },
+    { id: 2, path: '1.1', name: 'index.ts', status: 'modified' },
+    { id: 3, path: '1.2', name: 'app.tsx', status: null },
+    { id: 4, path: '1.3', name: 'new-feature.ts', status: 'new' },
+    { id: 5, path: '1.4', name: 'deprecated.ts', status: 'deleted' },
+    { id: 6, path: '2', name: 'config', status: null },
+    { id: 7, path: '2.1', name: 'settings.json', status: 'modified' },
+    { id: 8, path: '2.2', name: 'env.local', status: 'new' },
+    { id: 9, path: '3', name: 'package.json', status: 'modified' }
+];
 
-    const menuTree = [
-        { id: 1, path: '1', name: 'Documents' },
-        { id: 2, path: '1.1', name: 'Report.pdf' },
-        { id: 3, path: '1.2', name: 'Presentation.pptx' },
-        { id: 4, path: '1.3', name: 'Notes.txt' },
-        { id: 5, path: '2', name: 'Images' },
-        { id: 6, path: '2.1', name: 'photo.jpg' },
-        { id: 7, path: '2.2', name: 'logo.png' },
-        { id: 8, path: '3', name: 'Downloads' },
-        { id: 9, path: '3.1', name: 'installer.exe' },
-        { id: 10, path: '3.2', name: 'archive.zip' }
-    ];
+const menuTree = [
+    { id: 1, path: '1', name: 'Documents' },
+    { id: 2, path: '1.1', name: 'Report.pdf' },
+    { id: 3, path: '1.2', name: 'Presentation.pptx' },
+    { id: 4, path: '1.3', name: 'Notes.txt' },
+    { id: 5, path: '2', name: 'Images' },
+    { id: 6, path: '2.1', name: 'photo.jpg' },
+    { id: 7, path: '2.2', name: 'logo.png' },
+    { id: 8, path: '3', name: 'Downloads' },
+    { id: 9, path: '3.1', name: 'installer.exe' },
+    { id: 10, path: '3.2', name: 'archive.zip' }
+];
 
-    // ── Helpers ──────────────────────────────────────────────────────
-    const fileIcons = {
-        ts: '📜', tsx: '⚛️', js: '🟨', css: '🎨',
-        json: '⚙️', md: '📖', html: '🌐',
-        pdf: '📄', pptx: '📊', txt: '📝',
-        jpg: '🖼️', png: '🖼️', exe: '📦', zip: '🗜️'
+// ── Helpers ──────────────────────────────────────────────────────
+const fileIcons = {
+    ts: '📜', tsx: '⚛️', js: '🟨', css: '🎨',
+    json: '⚙️', md: '📖', html: '🌐',
+    pdf: '📄', pptx: '📊', txt: '📝',
+    jpg: '🖼️', png: '🖼️', exe: '📦', zip: '🗜️'
+};
+function getExt(name) {
+    const parts = name.split('.');
+    return parts.length > 1 ? parts.pop() : null;
+}
+function getIcon(name) {
+    const ext = getExt(name);
+    return ext ? (fileIcons[ext] || '📄') : '📁';
+}
+const statusBadge = {
+    new: '<span class="node-badge badge-new">NEW</span>',
+    modified: '<span class="node-badge badge-modified">MODIFIED</span>',
+    deleted: '<span class="node-badge badge-deleted">DELETED</span>'
+};
+
+customElements.whenDefined('web-treeview').then(() => {
+    // ── CL01: custom node template ──
+    const tree1 = document.getElementById('tree1');
+    tree1.nodes = fileTree;
+    tree1.idMember = 'id';
+    tree1.pathMember = 'path';
+    tree1.displayValueMember = 'name';
+    tree1.expandLevel = 2;
+    tree1.renderNodeCallback = ({ node, contentElement }) => {
+        const name = node.data?.name || '';
+        const size = node.data?.size || '';
+        contentElement.innerHTML = `
+            <div class="custom-node">
+                <span class="file-icon">${getIcon(name)}</span>
+                <span class="name">${name}</span>
+                ${size ? `<span class="file-size">${size}</span>` : ''}
+            </div>`;
     };
-    function getExt(name) {
-        const parts = name.split('.');
-        return parts.length > 1 ? parts.pop() : null;
-    }
-    function getIcon(name) {
-        const ext = getExt(name);
-        return ext ? (fileIcons[ext] || '📄') : '📁';
-    }
-    const statusBadge = {
-        new: '<span class="node-badge badge-new">NEW</span>',
-        modified: '<span class="node-badge badge-modified">MODIFIED</span>',
-        deleted: '<span class="node-badge badge-deleted">DELETED</span>'
+
+    // ── CL02: status badges ──
+    const tree2 = document.getElementById('tree2');
+    tree2.nodes = gitTree;
+    tree2.idMember = 'id';
+    tree2.pathMember = 'path';
+    tree2.displayValueMember = 'name';
+    tree2.expandLevel = 2;
+    tree2.renderNodeCallback = ({ node, contentElement }) => {
+        const name = node.data?.name || '';
+        const status = node.data?.status;
+        contentElement.innerHTML = `
+            <div class="custom-node">
+                <span class="file-icon">${getIcon(name)}</span>
+                <span class="name">${name}</span>
+                ${status ? statusBadge[status] : ''}
+            </div>`;
     };
 
-    customElements.whenDefined('web-treeview').then(() => {
-        // ── CL01: custom node template ──
-        const tree1 = document.getElementById('tree1');
-        tree1.nodes = fileTree;
-        tree1.idMember = 'id';
-        tree1.pathMember = 'path';
-        tree1.displayValueMember = 'name';
-        tree1.expandLevel = 2;
-        tree1.renderNodeCallback = ({ node, contentElement }) => {
-            const name = node.data?.name || '';
-            const size = node.data?.size || '';
-            contentElement.innerHTML = `
-                <div class="custom-node">
-                    <span class="file-icon">${getIcon(name)}</span>
-                    <span class="name">${name}</span>
-                    ${size ? `<span class="file-size">${size}</span>` : ''}
-                </div>`;
-        };
+    // ── CL03: header & footer ──
+    const tree5 = document.getElementById('tree5');
+    tree5.nodes = menuTree;
+    tree5.idMember = 'id';
+    tree5.pathMember = 'path';
+    tree5.displayValueMember = 'name';
+    tree5.expandLevel = 1;
+    tree5.renderHeaderCallback = ({ containerElement }) => {
+        containerElement.innerHTML = `
+            <div style="padding: 8px 12px; background: #ecfdf5; border-bottom: 1px solid #d1fae5; font-size: 0.85rem; color: #065f46; display: flex; align-items: center; gap: 6px;">
+                <span>📁</span>
+                <strong>File Browser</strong>
+                <span style="margin-left: auto; color: #6ee7b7;">${menuTree.length} items</span>
+            </div>`;
+    };
+    tree5.renderFooterCallback = ({ containerElement }) => {
+        containerElement.innerHTML = `
+            <div style="padding: 6px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center;">
+                Right-click for context menu
+            </div>`;
+    };
 
-        // ── CL02: status badges ──
-        const tree2 = document.getElementById('tree2');
-        tree2.nodes = gitTree;
-        tree2.idMember = 'id';
-        tree2.pathMember = 'path';
-        tree2.displayValueMember = 'name';
-        tree2.expandLevel = 2;
-        tree2.renderNodeCallback = ({ node, contentElement }) => {
-            const name = node.data?.name || '';
-            const status = node.data?.status;
-            contentElement.innerHTML = `
-                <div class="custom-node">
-                    <span class="file-icon">${getIcon(name)}</span>
-                    <span class="name">${name}</span>
-                    ${status ? statusBadge[status] : ''}
-                </div>`;
-        };
+    // ── CL04: empty & loading ──
+    const tree4 = document.getElementById('tree4');
+    tree4.idMember = 'id';
+    tree4.pathMember = 'path';
+    tree4.displayValueMember = 'name';
+    tree4.nodes = [];
+    tree4.renderEmptyStateCallback = ({ containerElement }) => {
+        containerElement.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🍃</div>
+                <p>No items to display</p>
+                <p style="font-size: 0.85rem">Add some data to get started</p>
+            </div>`;
+    };
+    tree4.renderLoadingCallback = ({ containerElement }) => {
+        containerElement.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Loading tree data...</span>
+            </div>`;
+    };
+    window.showEmpty = () => { tree4.isLoading = false; tree4.nodes = []; };
+    window.showLoading = () => { tree4.isLoading = true; };
+    window.showData = () => { tree4.isLoading = false; tree4.nodes = menuTree; tree4.expandLevel = 2; };
 
-        // ── CL03: header & footer ──
-        const tree5 = document.getElementById('tree5');
-        tree5.nodes = menuTree;
-        tree5.idMember = 'id';
-        tree5.pathMember = 'path';
-        tree5.displayValueMember = 'name';
-        tree5.expandLevel = 1;
-        tree5.renderHeaderCallback = ({ containerElement }) => {
-            containerElement.innerHTML = `
-                <div style="padding: 8px 12px; background: #ecfdf5; border-bottom: 1px solid #d1fae5; font-size: 0.85rem; color: #065f46; display: flex; align-items: center; gap: 6px;">
-                    <span>📁</span>
-                    <strong>File Browser</strong>
-                    <span style="margin-left: auto; color: #6ee7b7;">${menuTree.length} items</span>
-                </div>`;
-        };
-        tree5.renderFooterCallback = ({ containerElement }) => {
-            containerElement.innerHTML = `
-                <div style="padding: 6px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center;">
-                    Right-click for context menu
-                </div>`;
-        };
+    // ── CL05: icon sets + FontAwesome ──
+    function initTree(id, extra) {
+        const el = document.getElementById(id);
+        el.nodes = menuTree;
+        el.idMember = 'id';
+        el.pathMember = 'path';
+        el.displayValueMember = 'name';
+        el.expandLevel = 2;
+        if (extra) extra(el);
+        return el;
+    }
+    ['is-chevron', 'is-triangle', 'is-plusminus', 'is-arrow'].forEach(id => initTree(id));
+});
 
-        // ── CL04: empty & loading ──
-        const tree4 = document.getElementById('tree4');
-        tree4.idMember = 'id';
-        tree4.pathMember = 'path';
-        tree4.displayValueMember = 'name';
-        tree4.nodes = [];
-        tree4.renderEmptyStateCallback = ({ containerElement }) => {
-            containerElement.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">🍃</div>
-                    <p>No items to display</p>
-                    <p style="font-size: 0.85rem">Add some data to get started</p>
-                </div>`;
-        };
-        tree4.renderLoadingCallback = ({ containerElement }) => {
-            containerElement.innerHTML = `
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <span>Loading tree data...</span>
-                </div>`;
-        };
-        window.showEmpty = () => { tree4.isLoading = false; tree4.nodes = []; };
-        window.showLoading = () => { tree4.isLoading = true; };
-        window.showData = () => { tree4.isLoading = false; tree4.nodes = menuTree; tree4.expandLevel = 2; };
-
-        // ── CL05: icon sets + FontAwesome ──
-        function initTree(id, extra) {
-            const el = document.getElementById(id);
-            el.nodes = menuTree;
-            el.idMember = 'id';
-            el.pathMember = 'path';
-            el.displayValueMember = 'name';
-            el.expandLevel = 2;
-            if (extra) extra(el);
-            return el;
-        }
-        ['is-chevron', 'is-triangle', 'is-plusminus', 'is-arrow'].forEach(id => initTree(id));
-    });
-
-    // Persist .controls across reloads (shared helper — parity with web-multiselect).
-    persistControls('custom-layout');
+// Persist .controls across reloads (shared helper — parity with web-multiselect).
+attachControlsPersistence('custom-layout');
 </script>
 
 <!-- ==================================================================== -->
 <!-- CL06 · iOS Files Explorer — headless controller + Vanilla/lit toggle -->
 <!-- ==================================================================== -->
 <script type="module">
-    import { html, render as litRender } from 'https://esm.run/lit-html@3';
-    import { TreeEngine } from '/src/index.ts';
+import { html, render as litRender } from 'https://esm.run/lit-html@3';
+import { TreeEngine } from '/src/index.ts';
 
-    // ── Notepad++ sample data (shared by both renderers) ───────────────
-    const notepadppData = [
-      { id: '1', path: 'Notepad++', name: 'Notepad++', size: 0, modified: '2023-09-05T05:50:48', isDirectory: true, extension: '' },
-      { id: '2', path: 'Notepad++/LICENSE', name: 'LICENSE', size: 35500, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '' },
-      { id: '3', path: 'Notepad++/autoCompletion', name: 'autoCompletion', size: 0, modified: '2026-01-22T12:54:21', isDirectory: true, extension: '' },
-      { id: '4', path: 'Notepad++/autoCompletion/BaanC.xml', name: 'BaanC.xml', size: 18483, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '5', path: 'Notepad++/autoCompletion/actionscript.xml', name: 'actionscript.xml', size: 20745, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '6', path: 'Notepad++/autoCompletion/autoit.xml', name: 'autoit.xml', size: 738716, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '7', path: 'Notepad++/autoCompletion/c.xml', name: 'c.xml', size: 44386, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '8', path: 'Notepad++/autoCompletion/cpp.xml', name: 'cpp.xml', size: 61526, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '9', path: 'Notepad++/autoCompletion/css.xml', name: 'css.xml', size: 11515, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '10', path: 'Notepad++/autoCompletion/html.xml', name: 'html.xml', size: 19490, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '11', path: 'Notepad++/autoCompletion/java.xml', name: 'java.xml', size: 205359, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '12', path: 'Notepad++/autoCompletion/javascript.xml', name: 'javascript.xml', size: 27257, modified: '2021-07-15T03:21:30', isDirectory: false, extension: '.xml' },
-      { id: '13', path: 'Notepad++/autoCompletion/php.xml', name: 'php.xml', size: 428366, modified: '2021-12-05T15:43:56', isDirectory: false, extension: '.xml' },
-      { id: '14', path: 'Notepad++/autoCompletion/python.xml', name: 'python.xml', size: 61578, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '15', path: 'Notepad++/autoCompletion/sql.xml', name: 'sql.xml', size: 67945, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
-      { id: '16', path: 'Notepad++/autoCompletion/typescript.xml', name: 'typescript.xml', size: 2417, modified: '2021-08-15T11:46:50', isDirectory: false, extension: '.xml' },
-      { id: '17', path: 'Notepad++/change.log', name: 'change.log', size: 1280, modified: '2026-01-19T02:36:18', isDirectory: false, extension: '.log' },
-      { id: '18', path: 'Notepad++/contextMenu', name: 'contextMenu', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
-      { id: '19', path: 'Notepad++/contextMenu.xml', name: 'contextMenu.xml', size: 4928, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '20', path: 'Notepad++/contextMenu/NppShell.dll', name: 'NppShell.dll', size: 387200, modified: '2026-01-19T02:58:32', isDirectory: false, extension: '.dll' },
-      { id: '21', path: 'Notepad++/contextMenu/NppShell.msix', name: 'NppShell.msix', size: 58902, modified: '2026-01-19T02:58:30', isDirectory: false, extension: '.msix' },
-      { id: '22', path: 'Notepad++/functionList', name: 'functionList', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
-      { id: '23', path: 'Notepad++/functionList/c.xml', name: 'c.xml', size: 4133, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '24', path: 'Notepad++/functionList/cpp.xml', name: 'cpp.xml', size: 18515, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '25', path: 'Notepad++/functionList/java.xml', name: 'java.xml', size: 9331, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '26', path: 'Notepad++/functionList/php.xml', name: 'php.xml', size: 10085, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '27', path: 'Notepad++/functionList/python.xml', name: 'python.xml', size: 1149, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '28', path: 'Notepad++/langs.model.xml', name: 'langs.model.xml', size: 535908, modified: '2026-01-13T18:46:48', isDirectory: false, extension: '.xml' },
-      { id: '29', path: 'Notepad++/localization', name: 'localization', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
-      { id: '30', path: 'Notepad++/localization/english.xml', name: 'english.xml', size: 106271, modified: '2026-01-13T18:46:48', isDirectory: false, extension: '.xml' },
-      { id: '31', path: 'Notepad++/notepad++.exe', name: 'notepad++.exe', size: 8422016, modified: '2026-01-19T02:58:08', isDirectory: false, extension: '.exe' },
-      { id: '32', path: 'Notepad++/plugins', name: 'plugins', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
-      { id: '33', path: 'Notepad++/plugins/Config', name: 'Config', size: 0, modified: '2022-02-22T18:47:10', isDirectory: true, extension: '' },
-      { id: '34', path: 'Notepad++/plugins/Config/nppPluginList.dll', name: 'nppPluginList.dll', size: 220288, modified: '2026-01-19T02:58:10', isDirectory: false, extension: '.dll' },
-      { id: '35', path: 'Notepad++/plugins/mimeTools', name: 'mimeTools', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
-      { id: '36', path: 'Notepad++/plugins/mimeTools/mimeTools.dll', name: 'mimeTools.dll', size: 148096, modified: '2026-01-19T02:58:24', isDirectory: false, extension: '.dll' },
-      { id: '37', path: 'Notepad++/readme.txt', name: 'readme.txt', size: 1526, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.txt' },
-      { id: '38', path: 'Notepad++/shortcuts.xml', name: 'shortcuts.xml', size: 965, modified: '2021-04-17T18:47:52', isDirectory: false, extension: '.xml' },
-      { id: '39', path: 'Notepad++/themes', name: 'themes', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
-      { id: '40', path: 'Notepad++/themes/Monokai.xml', name: 'Monokai.xml', size: 234545, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '41', path: 'Notepad++/themes/Obsidian.xml', name: 'Obsidian.xml', size: 234044, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '42', path: 'Notepad++/themes/Solarized.xml', name: 'Solarized.xml', size: 236961, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '43', path: 'Notepad++/themes/Zenburn.xml', name: 'Zenburn.xml', size: 232690, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
-      { id: '44', path: 'Notepad++/uninstall.exe', name: 'uninstall.exe', size: 278312, modified: '2026-02-10T17:18:48', isDirectory: false, extension: '.exe' },
-      { id: '45', path: 'Notepad++/updater', name: 'updater', size: 0, modified: '2022-02-22T18:47:10', isDirectory: true, extension: '' },
-      { id: '46', path: 'Notepad++/updater/GUP.exe', name: 'GUP.exe', size: 650880, modified: '2026-01-19T02:58:14', isDirectory: false, extension: '.exe' },
-      { id: '47', path: 'Notepad++/updater/README.md', name: 'README.md', size: 4114, modified: '2026-01-19T02:47:08', isDirectory: false, extension: '.md' },
-      { id: '48', path: 'Notepad++/updater/libcurl.dll', name: 'libcurl.dll', size: 839296, modified: '2026-01-19T02:58:18', isDirectory: false, extension: '.dll' },
-      { id: '49', path: 'Notepad++/updater/updater.ico', name: 'updater.ico', size: 133872, modified: '2026-01-19T02:47:08', isDirectory: false, extension: '.ico' },
-    ];
+// ── Notepad++ sample data (shared by both renderers) ───────────────
+const notepadppData = [
+  { id: '1', path: 'Notepad++', name: 'Notepad++', size: 0, modified: '2023-09-05T05:50:48', isDirectory: true, extension: '' },
+  { id: '2', path: 'Notepad++/LICENSE', name: 'LICENSE', size: 35500, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '' },
+  { id: '3', path: 'Notepad++/autoCompletion', name: 'autoCompletion', size: 0, modified: '2026-01-22T12:54:21', isDirectory: true, extension: '' },
+  { id: '4', path: 'Notepad++/autoCompletion/BaanC.xml', name: 'BaanC.xml', size: 18483, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '5', path: 'Notepad++/autoCompletion/actionscript.xml', name: 'actionscript.xml', size: 20745, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '6', path: 'Notepad++/autoCompletion/autoit.xml', name: 'autoit.xml', size: 738716, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '7', path: 'Notepad++/autoCompletion/c.xml', name: 'c.xml', size: 44386, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '8', path: 'Notepad++/autoCompletion/cpp.xml', name: 'cpp.xml', size: 61526, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '9', path: 'Notepad++/autoCompletion/css.xml', name: 'css.xml', size: 11515, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '10', path: 'Notepad++/autoCompletion/html.xml', name: 'html.xml', size: 19490, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '11', path: 'Notepad++/autoCompletion/java.xml', name: 'java.xml', size: 205359, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '12', path: 'Notepad++/autoCompletion/javascript.xml', name: 'javascript.xml', size: 27257, modified: '2021-07-15T03:21:30', isDirectory: false, extension: '.xml' },
+  { id: '13', path: 'Notepad++/autoCompletion/php.xml', name: 'php.xml', size: 428366, modified: '2021-12-05T15:43:56', isDirectory: false, extension: '.xml' },
+  { id: '14', path: 'Notepad++/autoCompletion/python.xml', name: 'python.xml', size: 61578, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '15', path: 'Notepad++/autoCompletion/sql.xml', name: 'sql.xml', size: 67945, modified: '2021-02-06T03:57:44', isDirectory: false, extension: '.xml' },
+  { id: '16', path: 'Notepad++/autoCompletion/typescript.xml', name: 'typescript.xml', size: 2417, modified: '2021-08-15T11:46:50', isDirectory: false, extension: '.xml' },
+  { id: '17', path: 'Notepad++/change.log', name: 'change.log', size: 1280, modified: '2026-01-19T02:36:18', isDirectory: false, extension: '.log' },
+  { id: '18', path: 'Notepad++/contextMenu', name: 'contextMenu', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
+  { id: '19', path: 'Notepad++/contextMenu.xml', name: 'contextMenu.xml', size: 4928, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '20', path: 'Notepad++/contextMenu/NppShell.dll', name: 'NppShell.dll', size: 387200, modified: '2026-01-19T02:58:32', isDirectory: false, extension: '.dll' },
+  { id: '21', path: 'Notepad++/contextMenu/NppShell.msix', name: 'NppShell.msix', size: 58902, modified: '2026-01-19T02:58:30', isDirectory: false, extension: '.msix' },
+  { id: '22', path: 'Notepad++/functionList', name: 'functionList', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
+  { id: '23', path: 'Notepad++/functionList/c.xml', name: 'c.xml', size: 4133, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '24', path: 'Notepad++/functionList/cpp.xml', name: 'cpp.xml', size: 18515, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '25', path: 'Notepad++/functionList/java.xml', name: 'java.xml', size: 9331, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '26', path: 'Notepad++/functionList/php.xml', name: 'php.xml', size: 10085, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '27', path: 'Notepad++/functionList/python.xml', name: 'python.xml', size: 1149, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '28', path: 'Notepad++/langs.model.xml', name: 'langs.model.xml', size: 535908, modified: '2026-01-13T18:46:48', isDirectory: false, extension: '.xml' },
+  { id: '29', path: 'Notepad++/localization', name: 'localization', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
+  { id: '30', path: 'Notepad++/localization/english.xml', name: 'english.xml', size: 106271, modified: '2026-01-13T18:46:48', isDirectory: false, extension: '.xml' },
+  { id: '31', path: 'Notepad++/notepad++.exe', name: 'notepad++.exe', size: 8422016, modified: '2026-01-19T02:58:08', isDirectory: false, extension: '.exe' },
+  { id: '32', path: 'Notepad++/plugins', name: 'plugins', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
+  { id: '33', path: 'Notepad++/plugins/Config', name: 'Config', size: 0, modified: '2022-02-22T18:47:10', isDirectory: true, extension: '' },
+  { id: '34', path: 'Notepad++/plugins/Config/nppPluginList.dll', name: 'nppPluginList.dll', size: 220288, modified: '2026-01-19T02:58:10', isDirectory: false, extension: '.dll' },
+  { id: '35', path: 'Notepad++/plugins/mimeTools', name: 'mimeTools', size: 0, modified: '2026-02-10T17:18:47', isDirectory: true, extension: '' },
+  { id: '36', path: 'Notepad++/plugins/mimeTools/mimeTools.dll', name: 'mimeTools.dll', size: 148096, modified: '2026-01-19T02:58:24', isDirectory: false, extension: '.dll' },
+  { id: '37', path: 'Notepad++/readme.txt', name: 'readme.txt', size: 1526, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.txt' },
+  { id: '38', path: 'Notepad++/shortcuts.xml', name: 'shortcuts.xml', size: 965, modified: '2021-04-17T18:47:52', isDirectory: false, extension: '.xml' },
+  { id: '39', path: 'Notepad++/themes', name: 'themes', size: 0, modified: '2022-02-22T18:47:11', isDirectory: true, extension: '' },
+  { id: '40', path: 'Notepad++/themes/Monokai.xml', name: 'Monokai.xml', size: 234545, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '41', path: 'Notepad++/themes/Obsidian.xml', name: 'Obsidian.xml', size: 234044, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '42', path: 'Notepad++/themes/Solarized.xml', name: 'Solarized.xml', size: 236961, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '43', path: 'Notepad++/themes/Zenburn.xml', name: 'Zenburn.xml', size: 232690, modified: '2026-01-07T16:04:00', isDirectory: false, extension: '.xml' },
+  { id: '44', path: 'Notepad++/uninstall.exe', name: 'uninstall.exe', size: 278312, modified: '2026-02-10T17:18:48', isDirectory: false, extension: '.exe' },
+  { id: '45', path: 'Notepad++/updater', name: 'updater', size: 0, modified: '2022-02-22T18:47:10', isDirectory: true, extension: '' },
+  { id: '46', path: 'Notepad++/updater/GUP.exe', name: 'GUP.exe', size: 650880, modified: '2026-01-19T02:58:14', isDirectory: false, extension: '.exe' },
+  { id: '47', path: 'Notepad++/updater/README.md', name: 'README.md', size: 4114, modified: '2026-01-19T02:47:08', isDirectory: false, extension: '.md' },
+  { id: '48', path: 'Notepad++/updater/libcurl.dll', name: 'libcurl.dll', size: 839296, modified: '2026-01-19T02:58:18', isDirectory: false, extension: '.dll' },
+  { id: '49', path: 'Notepad++/updater/updater.ico', name: 'updater.ico', size: 133872, modified: '2026-01-19T02:47:08', isDirectory: false, extension: '.ico' },
+];
 
-    // ── ONE headless controller ────────────────────────────────────────
-    const ctrl = new TreeEngine({
-      data: notepadppData,
-      idMember: 'id',
-      pathMember: 'path',
-      treePathSeparator: '/',
-      expandLevel: 99,
-    });
+// ── ONE headless controller ────────────────────────────────────────
+const ctrl = new TreeEngine({
+  data: notepadppData,
+  idMember: 'id',
+  pathMember: 'path',
+  treePathSeparator: '/',
+  expandLevel: 99,
+});
 
-    // ── Shared state ────────────────────────────────────────────────────
-    let mode = 'vanilla';        // 'vanilla' | 'lit'
-    let currentPath = 'Notepad++';
-    let history = [];
-    let sortBy = 'name';
-    let sortAsc = true;
-    let searchTerm = '';
-    let sortMenuOpen = false;
-    let detailNode = null;
+// ── Shared state ────────────────────────────────────────────────────
+let mode = 'vanilla';        // 'vanilla' | 'lit'
+let currentPath = 'Notepad++';
+let history = [];
+let sortBy = 'name';
+let sortAsc = true;
+let searchTerm = '';
+let sortMenuOpen = false;
+let detailNode = null;
 
-    // ── DOM mount points ─────────────────────────────────────────────────
-    const navbarEl = document.getElementById('iosNavbar');
-    const searchBarEl = document.getElementById('iosSearchBar');
-    const breadcrumbsEl = document.getElementById('iosBreadcrumbs');
-    const sortOverlayEl = document.getElementById('iosSortOverlay');
-    const sortMenuEl = document.getElementById('iosSortMenu');
-    const fileListEl = document.getElementById('iosFileList');
-    const footerEl = document.getElementById('iosFooter');
-    const sheetOverlayEl = document.getElementById('iosSheetOverlay');
-    const detailSheetEl = document.getElementById('iosDetailSheet');
+// ── DOM mount points ─────────────────────────────────────────────────
+const navbarEl = document.getElementById('iosNavbar');
+const searchBarEl = document.getElementById('iosSearchBar');
+const breadcrumbsEl = document.getElementById('iosBreadcrumbs');
+const sortOverlayEl = document.getElementById('iosSortOverlay');
+const sortMenuEl = document.getElementById('iosSortMenu');
+const fileListEl = document.getElementById('iosFileList');
+const footerEl = document.getElementById('iosFooter');
+const sheetOverlayEl = document.getElementById('iosSheetOverlay');
+const detailSheetEl = document.getElementById('iosDetailSheet');
 
-    // ── Shared helpers ────────────────────────────────────────────────────
-    function getFileIcon(node) {
-      if (node.data?.isDirectory) return '\u{1F4C1}';
-      const ext = (node.data?.extension || '').toLowerCase();
-      const map = {
-        '.xml': '\u{1F4C4}', '.exe': '⚙️', '.dll': '\u{1F527}',
-        '.msix': '\u{1F4E6}', '.log': '\u{1F4DD}', '.txt': '\u{1F4C3}',
-        '.md': '\u{1F4C3}', '.ico': '\u{1F5BC}️',
-      };
-      return map[ext] || '\u{1F4C4}';
+// ── Shared helpers ────────────────────────────────────────────────────
+function getFileIcon(node) {
+  if (node.data?.isDirectory) return '\u{1F4C1}';
+  const ext = (node.data?.extension || '').toLowerCase();
+  const map = {
+    '.xml': '\u{1F4C4}', '.exe': '⚙️', '.dll': '\u{1F527}',
+    '.msix': '\u{1F4E6}', '.log': '\u{1F4DD}', '.txt': '\u{1F4C3}',
+    '.md': '\u{1F4C3}', '.ico': '\u{1F5BC}️',
+  };
+  return map[ext] || '\u{1F4C4}';
+}
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function sortNodes(nodes) {
+  const sorted = [...nodes];
+  sorted.sort((a, b) => {
+    const aDir = a.data?.isDirectory ? 0 : 1;
+    const bDir = b.data?.isDirectory ? 0 : 1;
+    if (aDir !== bDir) return aDir - bDir;
+    let cmp = 0;
+    switch (sortBy) {
+      case 'name': cmp = (a.data?.name || '').localeCompare(b.data?.name || ''); break;
+      case 'date': cmp = new Date(a.data?.modified || 0).getTime() - new Date(b.data?.modified || 0).getTime(); break;
+      case 'size': cmp = (a.data?.size || 0) - (b.data?.size || 0); break;
+      case 'kind': cmp = (a.data?.extension || '').localeCompare(b.data?.extension || ''); break;
     }
-    function formatSize(bytes) {
-      if (!bytes) return '';
-      if (bytes < 1024) return bytes + ' B';
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    return sortAsc ? cmp : -cmp;
+  });
+  return sorted;
+}
+function getMeta(node) {
+  if (searchTerm) {
+    const relPath = node.path.slice(currentPath.length + 1);
+    const parentPath = relPath.includes('/') ? relPath.slice(0, relPath.lastIndexOf('/')) : '';
+    const sizePart = node.data?.size ? formatSize(node.data.size) : '';
+    return [parentPath, sizePart].filter(Boolean).join(' · ');
+  }
+  if (node.data?.isDirectory) {
+    const items = ctrl.getChildren(node.path);
+    return items.length + ' item' + (items.length !== 1 ? 's' : '');
+  }
+  const parts = [];
+  if (node.data?.size) parts.push(formatSize(node.data.size));
+  if (node.data?.modified) parts.push(formatDate(node.data.modified));
+  return parts.join(' · ');
+}
+
+// ── Shared actions ──────────────────────────────────────────────────
+function navigateTo(path, fromBreadcrumb) {
+  if (fromBreadcrumb) {
+    const idx = history.indexOf(path);
+    if (idx >= 0) history = history.slice(0, idx);
+    else history.push(currentPath);
+  } else {
+    history.push(currentPath);
+  }
+  currentPath = path;
+  searchTerm = '';
+  render();
+}
+function goBack() {
+  if (history.length > 0) { currentPath = history.pop(); searchTerm = ''; render(); }
+}
+function onSearch(e) { searchTerm = e.target.value; render(); }
+function clearSearch() { searchTerm = ''; render(); }
+function toggleSort() { sortMenuOpen = !sortMenuOpen; render(); }
+function closeSort() { sortMenuOpen = false; render(); }
+function setSort(field) {
+  if (field === sortBy) sortAsc = !sortAsc;
+  else { sortBy = field; sortAsc = true; }
+  sortMenuOpen = false;
+  render();
+}
+function showDetail(node) { detailNode = node; render(); }
+function closeDetail() { detailNode = null; render(); }
+
+const sortOptions = [
+  { key: 'name', label: 'Name' },
+  { key: 'date', label: 'Date Modified' },
+  { key: 'size', label: 'Size' },
+  { key: 'kind', label: 'Kind' },
+];
+
+// Compute the currently-visible, sorted children (shared by both renderers)
+function currentChildren() {
+  let children;
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    const prefix = currentPath + '/';
+    children = ctrl.flatNodesToRender
+      .filter(n => n.path.startsWith(prefix) && (n.data?.name || '').toLowerCase().includes(q));
+  } else {
+    children = ctrl.getChildren(currentPath);
+  }
+  return sortNodes(children);
+}
+
+// ── Overlays (shared; outside the per-mode render regions) ──────────
+function applyOverlays() {
+  sortOverlayEl.classList.toggle('open', sortMenuOpen);
+  sortOverlayEl.onclick = closeSort;
+  sheetOverlayEl.classList.toggle('open', !!detailNode);
+  sheetOverlayEl.onclick = closeDetail;
+}
+
+// ── VANILLA renderer ─────────────────────────────────────────────────
+function renderVanilla(children) {
+  // Navbar
+  const segs = currentPath.split('/');
+  navbarEl.innerHTML = '';
+  const nav = document.createElement('div');
+  nav.className = 'ios-navbar';
+  const back = document.createElement('button');
+  back.className = 'ios-nav-btn';
+  back.innerHTML = '‹ Back';
+  back.disabled = history.length === 0;
+  back.onclick = goBack;
+  const title = document.createElement('span');
+  title.className = 'ios-nav-title';
+  title.textContent = segs[segs.length - 1];
+  const sortToggle = document.createElement('button');
+  sortToggle.className = 'ios-nav-btn right';
+  sortToggle.innerHTML = '&#8693;';
+  sortToggle.onclick = toggleSort;
+  nav.append(back, title, sortToggle);
+  navbarEl.appendChild(nav);
+
+  // Search
+  searchBarEl.innerHTML = '';
+  const sb = document.createElement('div');
+  sb.className = 'ios-search-bar';
+  const field = document.createElement('div');
+  field.className = 'ios-search-field';
+  const sicon = document.createElement('span');
+  sicon.className = 'ios-search-icon';
+  sicon.innerHTML = '&#128269;';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ios-search-input';
+  input.placeholder = 'Search';
+  input.value = searchTerm;
+  input.oninput = onSearch;
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'ios-search-clear' + (searchTerm ? ' visible' : '');
+  clearBtn.innerHTML = '&times;';
+  clearBtn.onclick = clearSearch;
+  field.append(sicon, input, clearBtn);
+  sb.appendChild(field);
+  searchBarEl.appendChild(sb);
+  if (searchTerm) { input.focus(); input.setSelectionRange(searchTerm.length, searchTerm.length); }
+
+  // Breadcrumbs
+  breadcrumbsEl.innerHTML = '';
+  const bc = document.createElement('div');
+  bc.className = 'ios-breadcrumbs';
+  let accumulated = '';
+  segs.forEach((part, i) => {
+    if (i > 0) accumulated += '/';
+    accumulated += part;
+    const pathCopy = accumulated;
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'ios-crumb-sep';
+      sep.textContent = '›';
+      bc.appendChild(sep);
     }
-    function formatDate(iso) {
-      if (!iso) return '';
-      const d = new Date(iso);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-    function sortNodes(nodes) {
-      const sorted = [...nodes];
-      sorted.sort((a, b) => {
-        const aDir = a.data?.isDirectory ? 0 : 1;
-        const bDir = b.data?.isDirectory ? 0 : 1;
-        if (aDir !== bDir) return aDir - bDir;
-        let cmp = 0;
-        switch (sortBy) {
-          case 'name': cmp = (a.data?.name || '').localeCompare(b.data?.name || ''); break;
-          case 'date': cmp = new Date(a.data?.modified || 0).getTime() - new Date(b.data?.modified || 0).getTime(); break;
-          case 'size': cmp = (a.data?.size || 0) - (b.data?.size || 0); break;
-          case 'kind': cmp = (a.data?.extension || '').localeCompare(b.data?.extension || ''); break;
-        }
-        return sortAsc ? cmp : -cmp;
-      });
-      return sorted;
-    }
-    function getMeta(node) {
-      if (searchTerm) {
-        const relPath = node.path.slice(currentPath.length + 1);
-        const parentPath = relPath.includes('/') ? relPath.slice(0, relPath.lastIndexOf('/')) : '';
-        const sizePart = node.data?.size ? formatSize(node.data.size) : '';
-        return [parentPath, sizePart].filter(Boolean).join(' · ');
-      }
+    const btn = document.createElement('button');
+    const isLast = i === segs.length - 1;
+    btn.className = 'ios-crumb' + (isLast ? ' current' : '');
+    btn.textContent = part;
+    if (!isLast) btn.onclick = () => navigateTo(pathCopy, true);
+    bc.appendChild(btn);
+  });
+  breadcrumbsEl.appendChild(bc);
+  bc.scrollLeft = bc.scrollWidth;
+
+  // Sort menu
+  sortMenuEl.className = 'ios-sort-menu' + (sortMenuOpen ? ' open' : '');
+  sortMenuEl.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'sort-label';
+  label.textContent = 'Sort By';
+  sortMenuEl.appendChild(label);
+  for (const opt of sortOptions) {
+    const btn = document.createElement('button');
+    btn.className = 'ios-sort-option' + (sortBy === opt.key ? ' active' : '');
+    btn.onclick = () => setSort(opt.key);
+    btn.innerHTML = `${opt.label} <span class="sort-check">${sortBy === opt.key ? (sortAsc ? '↑' : '↓') : ''}</span>`;
+    sortMenuEl.appendChild(btn);
+  }
+
+  // File list
+  fileListEl.innerHTML = '';
+  if (children.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'ios-empty';
+    empty.innerHTML = '<div class="ios-empty-icon">\u{1F4C2}</div>' + (searchTerm ? 'No results' : 'This folder is empty');
+    fileListEl.appendChild(empty);
+  } else {
+    for (const node of children) {
+      const row = document.createElement('button');
+      row.className = 'ios-file-row';
+      const icon = document.createElement('span');
+      icon.className = 'ios-file-icon';
+      icon.textContent = getFileIcon(node);
+      const info = document.createElement('div');
+      info.className = 'ios-file-info';
+      const name = document.createElement('span');
+      name.className = 'ios-file-name';
+      name.textContent = node.data?.name || '';
+      const meta = document.createElement('span');
+      meta.className = 'ios-file-meta';
+      meta.textContent = getMeta(node);
+      info.append(name, meta);
+      row.append(icon, info);
       if (node.data?.isDirectory) {
-        const items = ctrl.getChildren(node.path);
-        return items.length + ' item' + (items.length !== 1 ? 's' : '');
-      }
-      const parts = [];
-      if (node.data?.size) parts.push(formatSize(node.data.size));
-      if (node.data?.modified) parts.push(formatDate(node.data.modified));
-      return parts.join(' · ');
-    }
-
-    // ── Shared actions ──────────────────────────────────────────────────
-    function navigateTo(path, fromBreadcrumb) {
-      if (fromBreadcrumb) {
-        const idx = history.indexOf(path);
-        if (idx >= 0) history = history.slice(0, idx);
-        else history.push(currentPath);
+        const chev = document.createElement('span');
+        chev.className = 'ios-file-chevron';
+        chev.textContent = '›';
+        row.appendChild(chev);
+        row.onclick = () => navigateTo(node.path);
       } else {
-        history.push(currentPath);
+        row.onclick = () => showDetail(node);
       }
-      currentPath = path;
-      searchTerm = '';
-      render();
+      fileListEl.appendChild(row);
     }
-    function goBack() {
-      if (history.length > 0) { currentPath = history.pop(); searchTerm = ''; render(); }
-    }
-    function onSearch(e) { searchTerm = e.target.value; render(); }
-    function clearSearch() { searchTerm = ''; render(); }
-    function toggleSort() { sortMenuOpen = !sortMenuOpen; render(); }
-    function closeSort() { sortMenuOpen = false; render(); }
-    function setSort(field) {
-      if (field === sortBy) sortAsc = !sortAsc;
-      else { sortBy = field; sortAsc = true; }
-      sortMenuOpen = false;
-      render();
-    }
-    function showDetail(node) { detailNode = node; render(); }
-    function closeDetail() { detailNode = null; render(); }
+  }
 
-    const sortOptions = [
-      { key: 'name', label: 'Name' },
-      { key: 'date', label: 'Date Modified' },
-      { key: 'size', label: 'Size' },
-      { key: 'kind', label: 'Kind' },
+  // Footer
+  footerEl.innerHTML = '';
+  const foot = document.createElement('div');
+  foot.className = 'ios-footer';
+  foot.textContent = children.length + ' item' + (children.length !== 1 ? 's' : '');
+  footerEl.appendChild(foot);
+
+  // Detail sheet
+  detailSheetEl.innerHTML = '';
+  if (detailNode) {
+    const sheet = document.createElement('div');
+    sheet.className = 'ios-detail-sheet open';
+    const fields = [
+      ['Kind', detailNode.data?.extension || 'Document'],
+      ['Size', formatSize(detailNode.data?.size) || '0 B'],
+      ['Modified', formatDate(detailNode.data?.modified)],
+      ['Path', detailNode.path],
     ];
-
-    // Compute the currently-visible, sorted children (shared by both renderers)
-    function currentChildren() {
-      let children;
-      if (searchTerm) {
-        const q = searchTerm.toLowerCase();
-        const prefix = currentPath + '/';
-        children = ctrl.flatNodesToRender
-          .filter(n => n.path.startsWith(prefix) && (n.data?.name || '').toLowerCase().includes(q));
-      } else {
-        children = ctrl.getChildren(currentPath);
-      }
-      return sortNodes(children);
+    let rowsHtml = '';
+    for (const [l, v] of fields) {
+      rowsHtml += `<div class="ios-detail-row"><span class="label">${l}</span><span class="value">${v}</span></div>`;
     }
+    sheet.innerHTML = `
+      <div class="ios-detail-handle"></div>
+      <div class="ios-detail-header">
+        <span class="ios-detail-header-icon">${getFileIcon(detailNode)}</span>
+        <span class="ios-detail-header-name">${detailNode.data?.name || ''}</span>
+      </div>
+      <div class="ios-detail-rows">${rowsHtml}</div>
+      <button class="ios-detail-done">Done</button>`;
+    sheet.querySelector('.ios-detail-done').onclick = closeDetail;
+    detailSheetEl.appendChild(sheet);
+  }
+}
 
-    // ── Overlays (shared; outside the per-mode render regions) ──────────
-    function applyOverlays() {
-      sortOverlayEl.classList.toggle('open', sortMenuOpen);
-      sortOverlayEl.onclick = closeSort;
-      sheetOverlayEl.classList.toggle('open', !!detailNode);
-      sheetOverlayEl.onclick = closeDetail;
-    }
-
-    // ── VANILLA renderer ─────────────────────────────────────────────────
-    function renderVanilla(children) {
-      // Navbar
-      const segs = currentPath.split('/');
-      navbarEl.innerHTML = '';
-      const nav = document.createElement('div');
-      nav.className = 'ios-navbar';
-      const back = document.createElement('button');
-      back.className = 'ios-nav-btn';
-      back.innerHTML = '‹ Back';
-      back.disabled = history.length === 0;
-      back.onclick = goBack;
-      const title = document.createElement('span');
-      title.className = 'ios-nav-title';
-      title.textContent = segs[segs.length - 1];
-      const sortToggle = document.createElement('button');
-      sortToggle.className = 'ios-nav-btn right';
-      sortToggle.innerHTML = '&#8693;';
-      sortToggle.onclick = toggleSort;
-      nav.append(back, title, sortToggle);
-      navbarEl.appendChild(nav);
-
-      // Search
-      searchBarEl.innerHTML = '';
-      const sb = document.createElement('div');
-      sb.className = 'ios-search-bar';
-      const field = document.createElement('div');
-      field.className = 'ios-search-field';
-      const sicon = document.createElement('span');
-      sicon.className = 'ios-search-icon';
-      sicon.innerHTML = '&#128269;';
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'ios-search-input';
-      input.placeholder = 'Search';
-      input.value = searchTerm;
-      input.oninput = onSearch;
-      const clearBtn = document.createElement('button');
-      clearBtn.className = 'ios-search-clear' + (searchTerm ? ' visible' : '');
-      clearBtn.innerHTML = '&times;';
-      clearBtn.onclick = clearSearch;
-      field.append(sicon, input, clearBtn);
-      sb.appendChild(field);
-      searchBarEl.appendChild(sb);
-      if (searchTerm) { input.focus(); input.setSelectionRange(searchTerm.length, searchTerm.length); }
-
-      // Breadcrumbs
-      breadcrumbsEl.innerHTML = '';
-      const bc = document.createElement('div');
-      bc.className = 'ios-breadcrumbs';
-      let accumulated = '';
-      segs.forEach((part, i) => {
+// ── LIT-HTML renderer ──────────────────────────────────────────────
+const navbarTemplate = () => {
+  const segs = currentPath.split('/');
+  return html`
+    <div class="ios-navbar">
+      <button class="ios-nav-btn" ?disabled=${history.length === 0} @click=${goBack}>&lsaquo; Back</button>
+      <span class="ios-nav-title">${segs[segs.length - 1]}</span>
+      <button class="ios-nav-btn right" @click=${toggleSort}>&#8693;</button>
+    </div>`;
+};
+const searchBarTemplate = () => html`
+  <div class="ios-search-bar">
+    <div class="ios-search-field">
+      <span class="ios-search-icon">&#128269;</span>
+      <input type="text" class="ios-search-input" placeholder="Search" .value=${searchTerm} @input=${onSearch}>
+      <button class="ios-search-clear ${searchTerm ? 'visible' : ''}" @click=${clearSearch}>&times;</button>
+    </div>
+  </div>`;
+const breadcrumbsTemplate = () => {
+  const parts = currentPath.split('/');
+  let accumulated = '';
+  return html`
+    <div class="ios-breadcrumbs">
+      ${parts.map((part, i) => {
         if (i > 0) accumulated += '/';
         accumulated += part;
         const pathCopy = accumulated;
-        if (i > 0) {
-          const sep = document.createElement('span');
-          sep.className = 'ios-crumb-sep';
-          sep.textContent = '›';
-          bc.appendChild(sep);
-        }
-        const btn = document.createElement('button');
-        const isLast = i === segs.length - 1;
-        btn.className = 'ios-crumb' + (isLast ? ' current' : '');
-        btn.textContent = part;
-        if (!isLast) btn.onclick = () => navigateTo(pathCopy, true);
-        bc.appendChild(btn);
-      });
-      breadcrumbsEl.appendChild(bc);
-      bc.scrollLeft = bc.scrollWidth;
+        const isLast = i === parts.length - 1;
+        return html`
+          ${i > 0 ? html`<span class="ios-crumb-sep">&rsaquo;</span>` : ''}
+          <button class="ios-crumb ${isLast ? 'current' : ''}" @click=${isLast ? null : () => navigateTo(pathCopy, true)}>${part}</button>`;
+      })}
+    </div>`;
+};
+const sortMenuTemplate = () => html`
+  <div class="ios-sort-menu ${sortMenuOpen ? 'open' : ''}">
+    <div class="sort-label">Sort By</div>
+    ${sortOptions.map(opt => html`
+      <button class="ios-sort-option ${sortBy === opt.key ? 'active' : ''}" @click=${() => setSort(opt.key)}>
+        ${opt.label}
+        <span class="sort-check">${sortBy === opt.key ? (sortAsc ? '↑' : '↓') : ''}</span>
+      </button>`)}
+  </div>`;
+const fileRowTemplate = (node) => html`
+  <button class="ios-file-row" @click=${() => node.data?.isDirectory ? navigateTo(node.path) : showDetail(node)}>
+    <span class="ios-file-icon">${getFileIcon(node)}</span>
+    <div class="ios-file-info">
+      <span class="ios-file-name">${node.data?.name || ''}</span>
+      <span class="ios-file-meta">${getMeta(node)}</span>
+    </div>
+    ${node.data?.isDirectory ? html`<span class="ios-file-chevron">&rsaquo;</span>` : ''}
+  </button>`;
+const fileListTemplate = (children) => children.length === 0
+  ? html`<div class="ios-empty"><div class="ios-empty-icon">\u{1F4C2}</div>${searchTerm ? 'No results' : 'This folder is empty'}</div>`
+  : html`${children.map(fileRowTemplate)}`;
+const footerTemplate = (count) => html`<div class="ios-footer">${count} item${count !== 1 ? 's' : ''}</div>`;
+const detailSheetTemplate = () => {
+  if (!detailNode) return html``;
+  const fields = [
+    ['Kind', detailNode.data?.extension || 'Document'],
+    ['Size', formatSize(detailNode.data?.size) || '0 B'],
+    ['Modified', formatDate(detailNode.data?.modified)],
+    ['Path', detailNode.path],
+  ];
+  return html`
+    <div class="ios-detail-sheet open">
+      <div class="ios-detail-handle"></div>
+      <div class="ios-detail-header">
+        <span class="ios-detail-header-icon">${getFileIcon(detailNode)}</span>
+        <span class="ios-detail-header-name">${detailNode.data?.name || ''}</span>
+      </div>
+      <div class="ios-detail-rows">
+        ${fields.map(([l, v]) => html`<div class="ios-detail-row"><span class="label">${l}</span><span class="value">${v}</span></div>`)}
+      </div>
+      <button class="ios-detail-done" @click=${closeDetail}>Done</button>
+    </div>`;
+};
 
-      // Sort menu
-      sortMenuEl.className = 'ios-sort-menu' + (sortMenuOpen ? ' open' : '');
-      sortMenuEl.innerHTML = '';
-      const label = document.createElement('div');
-      label.className = 'sort-label';
-      label.textContent = 'Sort By';
-      sortMenuEl.appendChild(label);
-      for (const opt of sortOptions) {
-        const btn = document.createElement('button');
-        btn.className = 'ios-sort-option' + (sortBy === opt.key ? ' active' : '');
-        btn.onclick = () => setSort(opt.key);
-        btn.innerHTML = `${opt.label} <span class="sort-check">${sortBy === opt.key ? (sortAsc ? '↑' : '↓') : ''}</span>`;
-        sortMenuEl.appendChild(btn);
-      }
+function renderLit(children) {
+  litRender(navbarTemplate(), navbarEl);
+  litRender(searchBarTemplate(), searchBarEl);
+  litRender(breadcrumbsTemplate(), breadcrumbsEl);
+  litRender(sortMenuTemplate(), sortMenuEl);
+  litRender(fileListTemplate(children), fileListEl);
+  litRender(footerTemplate(children.length), footerEl);
+  litRender(detailSheetTemplate(), detailSheetEl);
+  const bc = breadcrumbsEl.querySelector('.ios-breadcrumbs');
+  if (bc) bc.scrollLeft = bc.scrollWidth;
+}
 
-      // File list
-      fileListEl.innerHTML = '';
-      if (children.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'ios-empty';
-        empty.innerHTML = '<div class="ios-empty-icon">\u{1F4C2}</div>' + (searchTerm ? 'No results' : 'This folder is empty');
-        fileListEl.appendChild(empty);
-      } else {
-        for (const node of children) {
-          const row = document.createElement('button');
-          row.className = 'ios-file-row';
-          const icon = document.createElement('span');
-          icon.className = 'ios-file-icon';
-          icon.textContent = getFileIcon(node);
-          const info = document.createElement('div');
-          info.className = 'ios-file-info';
-          const name = document.createElement('span');
-          name.className = 'ios-file-name';
-          name.textContent = node.data?.name || '';
-          const meta = document.createElement('span');
-          meta.className = 'ios-file-meta';
-          meta.textContent = getMeta(node);
-          info.append(name, meta);
-          row.append(icon, info);
-          if (node.data?.isDirectory) {
-            const chev = document.createElement('span');
-            chev.className = 'ios-file-chevron';
-            chev.textContent = '›';
-            row.appendChild(chev);
-            row.onclick = () => navigateTo(node.path);
-          } else {
-            row.onclick = () => showDetail(node);
-          }
-          fileListEl.appendChild(row);
-        }
-      }
+// ── Dispatch ───────────────────────────────────────────────────────
+function render() {
+  const children = currentChildren();
+  if (mode === 'lit') renderLit(children);
+  else renderVanilla(children);
+  applyOverlays();
+}
 
-      // Footer
-      footerEl.innerHTML = '';
-      const foot = document.createElement('div');
-      foot.className = 'ios-footer';
-      foot.textContent = children.length + ' item' + (children.length !== 1 ? 's' : '');
-      footerEl.appendChild(foot);
+// When switching modes, clear the mount points so the other renderer's
+// DOM / lit-html markers don't collide.
+function clearMounts() {
+  [navbarEl, searchBarEl, breadcrumbsEl, sortMenuEl, fileListEl, footerEl, detailSheetEl]
+    .forEach(el => { el.innerHTML = ''; });
+}
 
-      // Detail sheet
-      detailSheetEl.innerHTML = '';
-      if (detailNode) {
-        const sheet = document.createElement('div');
-        sheet.className = 'ios-detail-sheet open';
-        const fields = [
-          ['Kind', detailNode.data?.extension || 'Document'],
-          ['Size', formatSize(detailNode.data?.size) || '0 B'],
-          ['Modified', formatDate(detailNode.data?.modified)],
-          ['Path', detailNode.path],
-        ];
-        let rowsHtml = '';
-        for (const [l, v] of fields) {
-          rowsHtml += `<div class="ios-detail-row"><span class="label">${l}</span><span class="value">${v}</span></div>`;
-        }
-        sheet.innerHTML = `
-          <div class="ios-detail-handle"></div>
-          <div class="ios-detail-header">
-            <span class="ios-detail-header-icon">${getFileIcon(detailNode)}</span>
-            <span class="ios-detail-header-name">${detailNode.data?.name || ''}</span>
-          </div>
-          <div class="ios-detail-rows">${rowsHtml}</div>
-          <button class="ios-detail-done">Done</button>`;
-        sheet.querySelector('.ios-detail-done').onclick = closeDetail;
-        detailSheetEl.appendChild(sheet);
-      }
-    }
+const rtVanilla = document.getElementById('rtVanilla');
+const rtLit = document.getElementById('rtLit');
+function setMode(next) {
+  if (mode === next) return;
+  mode = next;
+  rtVanilla.classList.toggle('active', mode === 'vanilla');
+  rtLit.classList.toggle('active', mode === 'lit');
+  clearMounts();
+  render();
+}
+rtVanilla.onclick = () => setMode('vanilla');
+rtLit.onclick = () => setMode('lit');
 
-    // ── LIT-HTML renderer ──────────────────────────────────────────────
-    const navbarTemplate = () => {
-      const segs = currentPath.split('/');
-      return html`
-        <div class="ios-navbar">
-          <button class="ios-nav-btn" ?disabled=${history.length === 0} @click=${goBack}>&lsaquo; Back</button>
-          <span class="ios-nav-title">${segs[segs.length - 1]}</span>
-          <button class="ios-nav-btn right" @click=${toggleSort}>&#8693;</button>
-        </div>`;
-    };
-    const searchBarTemplate = () => html`
-      <div class="ios-search-bar">
-        <div class="ios-search-field">
-          <span class="ios-search-icon">&#128269;</span>
-          <input type="text" class="ios-search-input" placeholder="Search" .value=${searchTerm} @input=${onSearch}>
-          <button class="ios-search-clear ${searchTerm ? 'visible' : ''}" @click=${clearSearch}>&times;</button>
-        </div>
-      </div>`;
-    const breadcrumbsTemplate = () => {
-      const parts = currentPath.split('/');
-      let accumulated = '';
-      return html`
-        <div class="ios-breadcrumbs">
-          ${parts.map((part, i) => {
-            if (i > 0) accumulated += '/';
-            accumulated += part;
-            const pathCopy = accumulated;
-            const isLast = i === parts.length - 1;
-            return html`
-              ${i > 0 ? html`<span class="ios-crumb-sep">&rsaquo;</span>` : ''}
-              <button class="ios-crumb ${isLast ? 'current' : ''}" @click=${isLast ? null : () => navigateTo(pathCopy, true)}>${part}</button>`;
-          })}
-        </div>`;
-    };
-    const sortMenuTemplate = () => html`
-      <div class="ios-sort-menu ${sortMenuOpen ? 'open' : ''}">
-        <div class="sort-label">Sort By</div>
-        ${sortOptions.map(opt => html`
-          <button class="ios-sort-option ${sortBy === opt.key ? 'active' : ''}" @click=${() => setSort(opt.key)}>
-            ${opt.label}
-            <span class="sort-check">${sortBy === opt.key ? (sortAsc ? '↑' : '↓') : ''}</span>
-          </button>`)}
-      </div>`;
-    const fileRowTemplate = (node) => html`
-      <button class="ios-file-row" @click=${() => node.data?.isDirectory ? navigateTo(node.path) : showDetail(node)}>
-        <span class="ios-file-icon">${getFileIcon(node)}</span>
-        <div class="ios-file-info">
-          <span class="ios-file-name">${node.data?.name || ''}</span>
-          <span class="ios-file-meta">${getMeta(node)}</span>
-        </div>
-        ${node.data?.isDirectory ? html`<span class="ios-file-chevron">&rsaquo;</span>` : ''}
-      </button>`;
-    const fileListTemplate = (children) => children.length === 0
-      ? html`<div class="ios-empty"><div class="ios-empty-icon">\u{1F4C2}</div>${searchTerm ? 'No results' : 'This folder is empty'}</div>`
-      : html`${children.map(fileRowTemplate)}`;
-    const footerTemplate = (count) => html`<div class="ios-footer">${count} item${count !== 1 ? 's' : ''}</div>`;
-    const detailSheetTemplate = () => {
-      if (!detailNode) return html``;
-      const fields = [
-        ['Kind', detailNode.data?.extension || 'Document'],
-        ['Size', formatSize(detailNode.data?.size) || '0 B'],
-        ['Modified', formatDate(detailNode.data?.modified)],
-        ['Path', detailNode.path],
-      ];
-      return html`
-        <div class="ios-detail-sheet open">
-          <div class="ios-detail-handle"></div>
-          <div class="ios-detail-header">
-            <span class="ios-detail-header-icon">${getFileIcon(detailNode)}</span>
-            <span class="ios-detail-header-name">${detailNode.data?.name || ''}</span>
-          </div>
-          <div class="ios-detail-rows">
-            ${fields.map(([l, v]) => html`<div class="ios-detail-row"><span class="label">${l}</span><span class="value">${v}</span></div>`)}
-          </div>
-          <button class="ios-detail-done" @click=${closeDetail}>Done</button>
-        </div>`;
-    };
-
-    function renderLit(children) {
-      litRender(navbarTemplate(), navbarEl);
-      litRender(searchBarTemplate(), searchBarEl);
-      litRender(breadcrumbsTemplate(), breadcrumbsEl);
-      litRender(sortMenuTemplate(), sortMenuEl);
-      litRender(fileListTemplate(children), fileListEl);
-      litRender(footerTemplate(children.length), footerEl);
-      litRender(detailSheetTemplate(), detailSheetEl);
-      const bc = breadcrumbsEl.querySelector('.ios-breadcrumbs');
-      if (bc) bc.scrollLeft = bc.scrollWidth;
-    }
-
-    // ── Dispatch ───────────────────────────────────────────────────────
-    function render() {
-      const children = currentChildren();
-      if (mode === 'lit') renderLit(children);
-      else renderVanilla(children);
-      applyOverlays();
-    }
-
-    // When switching modes, clear the mount points so the other renderer's
-    // DOM / lit-html markers don't collide.
-    function clearMounts() {
-      [navbarEl, searchBarEl, breadcrumbsEl, sortMenuEl, fileListEl, footerEl, detailSheetEl]
-        .forEach(el => { el.innerHTML = ''; });
-    }
-
-    const rtVanilla = document.getElementById('rtVanilla');
-    const rtLit = document.getElementById('rtLit');
-    function setMode(next) {
-      if (mode === next) return;
-      mode = next;
-      rtVanilla.classList.toggle('active', mode === 'vanilla');
-      rtLit.classList.toggle('active', mode === 'lit');
-      clearMounts();
-      render();
-    }
-    rtVanilla.onclick = () => setMode('vanilla');
-    rtLit.onclick = () => setMode('lit');
-
-    // ── Init ─────────────────────────────────────────────────────────────
-    render();
+// ── Init ─────────────────────────────────────────────────────────────
+render();
 </script>
-
-<script type="module" src="examples-copy-link.js"></script>
-<script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>

@@ -1,781 +1,760 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TreeView - Performance & Virtual Scrolling</title>
-    <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        /* Page-specific: rendering-mode toggle cards */
-        .mode-toggle {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .toggle-option {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .toggle-option:hover { border-color: #059669; }
-        .toggle-option.active {
-            border-color: #059669;
-            background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(6, 95, 70, 0.1) 100%);
-        }
-        .toggle-option input { display: none; }
-        .toggle-option .toggle-title {
-            display: block;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 0.25rem;
-        }
-        .toggle-desc {
-            display: block;
-            font-size: 0.875rem;
-            color: #718096;
-        }
+<meta name="kmwc:title" content="Performance &amp; Virtual Scrolling">
+<meta name="kmwc:subtitle" content="Compare flat vs virtual scroll rendering with large datasets, and benchmark expand, update, and search timings">
 
-        /* Page-specific: mode-specific options row */
-        .mode-options {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            margin-top: 0.75rem;
-            background: #f7fafc;
-            border-radius: 6px;
-            font-size: 0.875rem;
-        }
-        .mode-options label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-        .mode-options input[type="number"],
-        .mode-options input[type="text"] {
-            width: 80px; padding: 0.3rem 0.5rem; border: 1px solid #cbd5e0;
-            border-radius: 4px; font-size: 0.875rem;
-        }
+<link rel="stylesheet" href="examples-local.css">
 
-        /* Page-specific: performance metric readouts */
-        .metrics { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .metric {
-            background: #f7fafc;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-            min-width: 120px;
-        }
-        .metric.total {
-            background: linear-gradient(135deg, #059669 0%, #065f46 100%);
-            color: white;
-        }
-        .metric.expand-time { background: #48bb78; color: white; }
-        .metric.search-time { background: #059669; color: white; }
-        .metric.rendering {
-            background: #f6e05e;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .metric .value { display: block; font-size: 1.5rem; font-weight: 600; }
-        .metric .label { display: block; font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; }
+<style>
+    /* Page-specific: rendering-mode toggle cards */
+    .mode-toggle {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .toggle-option {
+        flex: 1;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .toggle-option:hover { border-color: #059669; }
+    .toggle-option.active {
+        border-color: #059669;
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(6, 95, 70, 0.1) 100%);
+    }
+    .toggle-option input { display: none; }
+    .toggle-option .toggle-title {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+    }
+    .toggle-desc {
+        display: block;
+        font-size: 0.875rem;
+        color: #718096;
+    }
 
-        /* Page-specific: tree controls + timed-update readouts */
-        .tree-controls {
-            margin-bottom: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .control-divider { color: #cbd5e0; margin: 0 0.25rem; }
-        .path-input {
-            padding: 0.4rem 0.6rem;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            width: 220px;
-            font-family: monospace;
-        }
-        .update-time { font-weight: 600; color: #48bb78; }
-        .node-path { color: #a0aec0; font-size: 0.8em; font-family: monospace; }
-        button.active { background: #48bb78; }
-        button.active:hover { background: #38a169; }
+    /* Page-specific: mode-specific options row */
+    .mode-options {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        margin-top: 0.75rem;
+        background: #f7fafc;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+    .mode-options label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .mode-options input[type="number"],
+    .mode-options input[type="text"] {
+        width: 80px; padding: 0.3rem 0.5rem; border: 1px solid #cbd5e0;
+        border-radius: 4px; font-size: 0.875rem;
+    }
 
-        /* Page-specific: search bar */
-        .search-bar {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 0 0.5rem;
-            margin-bottom: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .search-bar:focus-within {
-            border-color: #059669;
-            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
-        }
-        .search-mode-btn {
-            display: flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border: none; background: transparent;
-            cursor: pointer; color: #718096; border-radius: 4px;
-            padding: 0; flex-shrink: 0;
-        }
-        .search-mode-btn:hover { background: #edf2f7; color: #059669; }
-        .search-input {
-            padding: 0.4rem 0.5rem; border: none; background: transparent;
-            font-size: 0.875rem; flex: 1; outline: none; min-width: 0;
-        }
-        .search-counter {
-            font-size: 0.75rem; color: #4a5568; font-weight: 600;
-            white-space: nowrap; padding: 0 0.5rem;
-        }
-        .search-counter.no-results { color: #e53e3e; }
-        .search-nav-btn {
-            display: flex; align-items: center; justify-content: center;
-            width: 28px; height: 28px; border: none; background: transparent;
-            cursor: pointer; color: #718096; border-radius: 4px;
-            padding: 0; flex-shrink: 0;
-        }
-        .search-nav-btn:hover { background: #edf2f7; color: #059669; }
+    /* Page-specific: performance metric readouts */
+    .metrics { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .metric {
+        background: #f7fafc;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        min-width: 120px;
+    }
+    .metric.total {
+        background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+        color: white;
+    }
+    .metric.expand-time { background: #48bb78; color: white; }
+    .metric.search-time { background: #059669; color: white; }
+    .metric.rendering {
+        background: #f6e05e;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .metric .value { display: block; font-size: 1.5rem; font-weight: 600; }
+    .metric .label { display: block; font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; }
 
-        /* Page-specific: virtual-scroll container overrides */
-        .tree-container-vs {
-            max-height: none;
-            overflow: visible;
-        }
-        .tree-container-tall {
-            min-height: 400px;
-            max-height: 500px;
-            overflow-x: visible;
-            overflow-y: auto;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">&larr; Back to Examples</a>
-            <h1>Performance & Virtual Scrolling</h1>
-            <p class="subtitle">Compare flat vs virtual scroll rendering with large datasets, and benchmark expand, update, and search timings</p>
-        </header>
+    /* Page-specific: tree controls + timed-update readouts */
+    .tree-controls {
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .control-divider { color: #cbd5e0; margin: 0 0.25rem; }
+    .path-input {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        width: 220px;
+        font-family: monospace;
+    }
+    .update-time { font-weight: 600; color: #48bb78; }
+    .node-path { color: #a0aec0; font-size: 0.8em; font-family: monospace; }
+    button.active { background: #48bb78; }
+    button.active:hover { background: #38a169; }
 
-        <!-- Rendering Mode -->
-        <div class="card">
-            <h2>PF01 · Rendering Mode</h2>
-            <div class="mode-toggle" id="mode-toggle">
-                <label class="toggle-option" data-mode="flat">
-                    <input type="radio" name="renderMode" value="flat">
-                    <span class="toggle-title">Flat</span>
-                    <span class="toggle-desc">Centralized loop, per-node keyed reconciliation</span>
-                </label>
-                <label class="toggle-option" data-mode="virtual">
-                    <input type="radio" name="renderMode" value="virtual">
-                    <span class="toggle-title">Virtual Scroll</span>
-                    <span class="toggle-desc">Flat + only renders visible nodes (~50 in DOM)</span>
-                </label>
-            </div>
+    /* Page-specific: search bar */
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0 0.5rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-bar:focus-within {
+        border-color: #059669;
+        box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+    }
+    .search-mode-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border: none; background: transparent;
+        cursor: pointer; color: #718096; border-radius: 4px;
+        padding: 0; flex-shrink: 0;
+    }
+    .search-mode-btn:hover { background: #edf2f7; color: #059669; }
+    .search-input {
+        padding: 0.4rem 0.5rem; border: none; background: transparent;
+        font-size: 0.875rem; flex: 1; outline: none; min-width: 0;
+    }
+    .search-counter {
+        font-size: 0.75rem; color: #4a5568; font-weight: 600;
+        white-space: nowrap; padding: 0 0.5rem;
+    }
+    .search-counter.no-results { color: #e53e3e; }
+    .search-nav-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border: none; background: transparent;
+        cursor: pointer; color: #718096; border-radius: 4px;
+        padding: 0; flex-shrink: 0;
+    }
+    .search-nav-btn:hover { background: #edf2f7; color: #059669; }
 
-            <!-- Virtual-specific options -->
-            <div class="mode-options" id="virtual-options" style="display:none">
-                <label>Container Height: <input type="text" id="opt-container-height" value="500px"></label>
-                <label title="Extra rows rendered above/below viewport to prevent flicker">Overscan: <input type="number" id="opt-overscan" value="5" min="0" max="50"></label>
-            </div>
-            <!-- Flat-specific options -->
-            <div class="mode-options" id="flat-options">
-                <label><input type="checkbox" id="opt-progressive"> Progressive Render</label>
-                <span id="progressive-opts" style="display:none">
-                    <label>Initial Batch: <input type="number" id="opt-initial-batch" value="20" min="5" max="200" step="5"></label>
-                    <label>Max Batch: <input type="number" id="opt-max-batch" value="500" min="100" max="2000" step="100"></label>
-                </span>
-            </div>
-        </div>
+    /* Page-specific: virtual-scroll container overrides */
+    .tree-container-vs {
+        max-height: none;
+        overflow: visible;
+    }
+    .tree-container-tall {
+        min-height: 400px;
+        max-height: 500px;
+        overflow-x: visible;
+        overflow-y: auto;
+    }
+</style>
 
-        <!-- Configuration -->
-        <div class="card">
-            <h2>PF02 · Configuration</h2>
-            <div class="controls">
-                <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
-                <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
-                <label title="sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (sorted)</label>
-                <label><input type="checkbox" id="cfg-search-index" checked> Search Index</label>
-                <span id="indexer-opts">
-                    <label>Index Batch: <input type="number" id="cfg-indexer-batch" value="25" min="5" max="500" step="5"></label>
-                </span>
-            </div>
-            <div class="controls">
-                <button id="btn-generate" onclick="generateTestData()">Generate 5,000 Nodes</button>
-                <button id="btn-countries" onclick="loadCountriesTestData()">Load Countries + States (~5K nodes)</button>
-                <button class="secondary" id="btn-redraw" onclick="redraw()" disabled>Redraw</button>
-                <button class="secondary" id="btn-clear" onclick="clearData()" disabled>Clear</button>
-                <button class="secondary" onclick="resetConfig()">Reset Config</button>
-            </div>
-        </div>
-
-        <!-- Metrics -->
-        <div class="card">
-            <h2>PF03 · Performance Metrics</h2>
-            <div class="metrics" id="metrics">
-                <div class="metric"><span class="value" id="m-nodes">0</span><span class="label">Nodes</span></div>
-                <div class="metric"><span class="value" id="m-generate">-</span><span class="label">Generate</span></div>
-                <div class="metric"><span class="value" id="m-render">-</span><span class="label">Render</span></div>
-                <div class="metric total"><span class="value" id="m-total">-</span><span class="label">Total</span></div>
-            </div>
-            <div class="metrics" id="metrics-extra" style="margin-top:0.5rem"></div>
-        </div>
-
-        <!-- Tree -->
-        <div class="card" id="tree-card" style="display:none">
-            <h2 id="tree-title">PF04 · Results</h2>
-
-            <div class="tree-controls">
-                <button onclick="timedExpandOneNode()">Expand One (timed)</button>
-                <button onclick="timedCollapseOneNode()">Collapse One (timed)</button>
-                <span class="control-divider">|</span>
-                <button class="secondary" onclick="timedExpandAll()">Expand All (timed)</button>
-                <button class="secondary" onclick="timedCollapseAll()">Collapse All (timed)</button>
-                <button class="secondary" onclick="document.getElementById('perf-tree').expandAll()">Expand All</button>
-                <button class="secondary" onclick="document.getElementById('perf-tree').collapseAll()">Collapse All</button>
-            </div>
-
-            <div class="tree-controls">
-                <input type="text" id="update-path" placeholder="Node path (empty = random)" class="path-input">
-                <button onclick="timedUpdateNode()">Update Node (timed)</button>
-                <span class="update-time" id="update-time-display"></span>
-            </div>
-
-            <!-- Search bar -->
-            <div class="search-bar">
-                <button class="search-mode-btn" id="search-mode-btn" title="Filter mode" onclick="toggleSearchMode()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                </button>
-                <input type="text" class="search-input" id="search-input" placeholder="Filter nodes..." oninput="onSearchInput()" onkeydown="onSearchKeydown(event)">
-                <span class="search-counter" id="search-counter" style="display:none"></span>
-                <button class="search-nav-btn" id="search-prev" title="Previous (Shift+Enter)" onclick="searchPrev()" style="display:none">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                </button>
-                <button class="search-nav-btn" id="search-next" title="Next (Enter)" onclick="searchNext()" style="display:none">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <button class="search-nav-btn" id="search-clear" title="Clear" onclick="clearSearch()" style="display:none">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-                <span class="update-time" id="search-time-display"></span>
-            </div>
-
-            <div id="tree-wrapper" class="tree-container tree-container-tall">
-                <web-treeview id="perf-tree"></web-treeview>
-            </div>
-        </div>
-
-        <!-- What to Test -->
-        <div class="card">
-            <h2>PF05 · What to Test</h2>
-            <div class="description">
-                <ol>
-                    <li><strong>Initial render:</strong> Generate data with different node counts and expand levels. Compare render times between modes.</li>
-                    <li><strong>Expand/Collapse ONE node:</strong> The key test! Use "Expand One" and "Collapse One" buttons. This is the typical user interaction.</li>
-                    <li><strong>Expand/Collapse ALL:</strong> Bulk operations - compare performance between flat and virtual scroll.</li>
-                    <li><strong>Search/Filter:</strong> Toggle between filter mode (live) and search mode (Enter to navigate between matches).</li>
-                </ol>
-            </div>
-            <div class="note">
-                <div class="note-title">Expected Results</div>
-                <ul>
-                    <li><strong>Flat mode:</strong> All visible nodes rendered to the DOM. Fast expand/collapse for single nodes.</li>
-                    <li><strong>Virtual Scroll:</strong> Only ~50 nodes in the DOM regardless of tree size. Near-instant rendering for any dataset size.</li>
-                    <li>Virtual scroll should shine on initial render and expand all. Single-node expand may be similar.</li>
-                </ul>
-            </div>
-        </div>
-
-        <footer>
-            <p><a href="index.html">&larr; Back to Examples</a></p>
-        </footer>
+<!-- Rendering Mode -->
+<div class="card">
+    <h2>PF01 · Rendering Mode</h2>
+    <div class="mode-toggle" id="mode-toggle">
+        <label class="toggle-option" data-mode="flat">
+            <input type="radio" name="renderMode" value="flat">
+            <span class="toggle-title">Flat</span>
+            <span class="toggle-desc">Centralized loop, per-node keyed reconciliation</span>
+        </label>
+        <label class="toggle-option" data-mode="virtual">
+            <input type="radio" name="renderMode" value="virtual">
+            <span class="toggle-title">Virtual Scroll</span>
+            <span class="toggle-desc">Flat + only renders visible nodes (~50 in DOM)</span>
+        </label>
     </div>
 
-    <script type="module">
-        import './src/index.ts';
+    <!-- Virtual-specific options -->
+    <div class="mode-options" id="virtual-options" style="display:none">
+        <label>Container Height: <input type="text" id="opt-container-height" value="500px"></label>
+        <label title="Extra rows rendered above/below viewport to prevent flicker">Overscan: <input type="number" id="opt-overscan" value="5" min="0" max="50"></label>
+    </div>
+    <!-- Flat-specific options -->
+    <div class="mode-options" id="flat-options">
+        <label><input type="checkbox" id="opt-progressive"> Progressive Render</label>
+        <span id="progressive-opts" style="display:none">
+            <label>Initial Batch: <input type="number" id="opt-initial-batch" value="20" min="5" max="200" step="5"></label>
+            <label>Max Batch: <input type="number" id="opt-max-batch" value="500" min="100" max="2000" step="100"></label>
+        </span>
+    </div>
+</div>
 
-        // ─── State ───────────────────────────────────────────────────────────
-        const STORAGE_KEY = 'web-treeview-perf-config';
-        let renderMode = 'flat'; // 'flat' | 'virtual'
-        let treeData = [];
-        let dataSource = null;
-        let tree;                // the <web-treeview> element
-        let metrics = { generateTime: null, renderStart: null, renderTime: null, nodeCount: 0 };
-        let updateCounter = 0;
+<!-- Configuration -->
+<div class="card">
+    <h2>PF02 · Configuration</h2>
+    <div class="controls">
+        <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
+        <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
+        <label title="sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (sorted)</label>
+        <label><input type="checkbox" id="cfg-search-index" checked> Search Index</label>
+        <span id="indexer-opts">
+            <label>Index Batch: <input type="number" id="cfg-indexer-batch" value="25" min="5" max="500" step="5"></label>
+        </span>
+    </div>
+    <div class="controls">
+        <button id="btn-generate" onclick="generateTestData()">Generate 5,000 Nodes</button>
+        <button id="btn-countries" onclick="loadCountriesTestData()">Load Countries + States (~5K nodes)</button>
+        <button class="secondary" id="btn-redraw" onclick="redraw()" disabled>Redraw</button>
+        <button class="secondary" id="btn-clear" onclick="clearData()" disabled>Clear</button>
+        <button class="secondary" onclick="resetConfig()">Reset Config</button>
+    </div>
+</div>
 
-        // Search state
-        let searchMode = 'filter'; // 'filter' | 'search'
-        let searchResults = [];
-        let currentSearchIdx = -1;
+<!-- Metrics -->
+<div class="card">
+    <h2>PF03 · Performance Metrics</h2>
+    <div class="metrics" id="metrics">
+        <div class="metric"><span class="value" id="m-nodes">0</span><span class="label">Nodes</span></div>
+        <div class="metric"><span class="value" id="m-generate">-</span><span class="label">Generate</span></div>
+        <div class="metric"><span class="value" id="m-render">-</span><span class="label">Render</span></div>
+        <div class="metric total"><span class="value" id="m-total">-</span><span class="label">Total</span></div>
+    </div>
+    <div class="metrics" id="metrics-extra" style="margin-top:0.5rem"></div>
+</div>
 
-        // ─── Config persistence ──────────────────────────────────────────────
-        function loadConfig() {
-            try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
-            return {};
+<!-- Tree -->
+<div class="card" id="tree-card" style="display:none">
+    <h2 id="tree-title">PF04 · Results</h2>
+
+    <div class="tree-controls">
+        <button onclick="timedExpandOneNode()">Expand One (timed)</button>
+        <button onclick="timedCollapseOneNode()">Collapse One (timed)</button>
+        <span class="control-divider">|</span>
+        <button class="secondary" onclick="timedExpandAll()">Expand All (timed)</button>
+        <button class="secondary" onclick="timedCollapseAll()">Collapse All (timed)</button>
+        <button class="secondary" onclick="document.getElementById('perf-tree').expandAll()">Expand All</button>
+        <button class="secondary" onclick="document.getElementById('perf-tree').collapseAll()">Collapse All</button>
+    </div>
+
+    <div class="tree-controls">
+        <input type="text" id="update-path" placeholder="Node path (empty = random)" class="path-input">
+        <button onclick="timedUpdateNode()">Update Node (timed)</button>
+        <span class="update-time" id="update-time-display"></span>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-bar">
+        <button class="search-mode-btn" id="search-mode-btn" title="Filter mode" onclick="toggleSearchMode()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </button>
+        <input type="text" class="search-input" id="search-input" placeholder="Filter nodes..." oninput="onSearchInput()" onkeydown="onSearchKeydown(event)">
+        <span class="search-counter" id="search-counter" style="display:none"></span>
+        <button class="search-nav-btn" id="search-prev" title="Previous (Shift+Enter)" onclick="searchPrev()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+        <button class="search-nav-btn" id="search-next" title="Next (Enter)" onclick="searchNext()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="search-nav-btn" id="search-clear" title="Clear" onclick="clearSearch()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <span class="update-time" id="search-time-display"></span>
+    </div>
+
+    <div id="tree-wrapper" class="tree-container tree-container-tall">
+        <web-treeview id="perf-tree"></web-treeview>
+    </div>
+</div>
+
+<!-- What to Test -->
+<div class="card">
+    <h2>PF05 · What to Test</h2>
+    <div class="description">
+        <ol>
+            <li><strong>Initial render:</strong> Generate data with different node counts and expand levels. Compare render times between modes.</li>
+            <li><strong>Expand/Collapse ONE node:</strong> The key test! Use "Expand One" and "Collapse One" buttons. This is the typical user interaction.</li>
+            <li><strong>Expand/Collapse ALL:</strong> Bulk operations - compare performance between flat and virtual scroll.</li>
+            <li><strong>Search/Filter:</strong> Toggle between filter mode (live) and search mode (Enter to navigate between matches).</li>
+        </ol>
+    </div>
+    <div class="note">
+        <div class="note-title">Expected Results</div>
+        <ul>
+            <li><strong>Flat mode:</strong> All visible nodes rendered to the DOM. Fast expand/collapse for single nodes.</li>
+            <li><strong>Virtual Scroll:</strong> Only ~50 nodes in the DOM regardless of tree size. Near-instant rendering for any dataset size.</li>
+            <li>Virtual scroll should shine on initial render and expand all. Single-node expand may be similar.</li>
+        </ul>
+    </div>
+</div>
+
+<script type="module">
+
+    // ─── State ───────────────────────────────────────────────────────────
+    const STORAGE_KEY = 'web-treeview-perf-config';
+    let renderMode = 'flat'; // 'flat' | 'virtual'
+    let treeData = [];
+    let dataSource = null;
+    let tree;                // the <web-treeview> element
+    let metrics = { generateTime: null, renderStart: null, renderTime: null, nodeCount: 0 };
+    let updateCounter = 0;
+
+    // Search state
+    let searchMode = 'filter'; // 'filter' | 'search'
+    let searchResults = [];
+    let currentSearchIdx = -1;
+
+    // ─── Config persistence ──────────────────────────────────────────────
+    function loadConfig() {
+        try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
+        return {};
+    }
+    function saveConfig() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            renderMode,
+            expandLevel: +$('cfg-expand-level').value,
+            isSorted: $('cfg-sorted').checked,
+            nodeCountTarget: +$('cfg-node-count').value,
+            shouldUseInternalSearchIndex: $('cfg-search-index').checked,
+            indexerBatchSize: +$('cfg-indexer-batch').value,
+            isProgressiveRenderEnabled: $('opt-progressive').checked,
+            initialBatchSize: +$('opt-initial-batch').value,
+            maxBatchSize: +$('opt-max-batch').value,
+            virtualScrollContainerHeight: $('opt-container-height').value,
+            virtualScrollOverscan: +$('opt-overscan').value,
+        }));
+    }
+    function applyConfig() {
+        const c = loadConfig();
+        if (c.renderMode) renderMode = c.renderMode;
+        if (c.expandLevel !== undefined) $('cfg-expand-level').value = c.expandLevel;
+        if (c.isSorted !== undefined) $('cfg-sorted').checked = c.isSorted;
+        if (c.nodeCountTarget !== undefined) $('cfg-node-count').value = c.nodeCountTarget;
+        if (c.shouldUseInternalSearchIndex !== undefined) $('cfg-search-index').checked = c.shouldUseInternalSearchIndex;
+        if (c.indexerBatchSize !== undefined) $('cfg-indexer-batch').value = c.indexerBatchSize;
+        if (c.isProgressiveRenderEnabled !== undefined) $('opt-progressive').checked = c.isProgressiveRenderEnabled;
+        if (c.initialBatchSize !== undefined) $('opt-initial-batch').value = c.initialBatchSize;
+        if (c.maxBatchSize !== undefined) $('opt-max-batch').value = c.maxBatchSize;
+        if (c.virtualScrollContainerHeight) $('opt-container-height').value = c.virtualScrollContainerHeight;
+        if (c.virtualScrollOverscan !== undefined) $('opt-overscan').value = c.virtualScrollOverscan;
+        updateModeUI();
+        updateGenerateLabel();
+        updateProgressiveUI();
+        updateIndexerUI();
+    }
+    window.resetConfig = function() {
+        localStorage.removeItem(STORAGE_KEY);
+        renderMode = 'flat';
+        $('cfg-expand-level').value = 1;
+        $('cfg-sorted').checked = true;
+        $('cfg-node-count').value = 5000;
+        $('cfg-search-index').checked = true;
+        $('cfg-indexer-batch').value = 25;
+        $('opt-progressive').checked = false;
+        $('opt-initial-batch').value = 20;
+        $('opt-max-batch').value = 500;
+        $('opt-container-height').value = '500px';
+        $('opt-overscan').value = 5;
+        updateModeUI();
+        updateGenerateLabel();
+        updateProgressiveUI();
+        updateIndexerUI();
+    };
+
+    // ─── Helpers ─────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+
+    function updateModeUI() {
+        document.querySelectorAll('.toggle-option').forEach(el => {
+            el.classList.toggle('active', el.dataset.mode === renderMode);
+            el.querySelector('input').checked = el.dataset.mode === renderMode;
+        });
+        $('virtual-options').style.display = renderMode === 'virtual' ? '' : 'none';
+        $('flat-options').style.display = renderMode !== 'virtual' ? '' : 'none';
+        const wrapper = $('tree-wrapper');
+        if (renderMode === 'virtual') {
+            wrapper.classList.add('tree-container-vs');
+            wrapper.classList.remove('tree-container-tall');
+        } else {
+            wrapper.classList.remove('tree-container-vs');
+            wrapper.classList.add('tree-container-tall');
         }
-        function saveConfig() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                renderMode,
-                expandLevel: +$('cfg-expand-level').value,
-                isSorted: $('cfg-sorted').checked,
-                nodeCountTarget: +$('cfg-node-count').value,
-                shouldUseInternalSearchIndex: $('cfg-search-index').checked,
-                indexerBatchSize: +$('cfg-indexer-batch').value,
-                isProgressiveRenderEnabled: $('opt-progressive').checked,
-                initialBatchSize: +$('opt-initial-batch').value,
-                maxBatchSize: +$('opt-max-batch').value,
-                virtualScrollContainerHeight: $('opt-container-height').value,
-                virtualScrollOverscan: +$('opt-overscan').value,
-            }));
-        }
-        function applyConfig() {
-            const c = loadConfig();
-            if (c.renderMode) renderMode = c.renderMode;
-            if (c.expandLevel !== undefined) $('cfg-expand-level').value = c.expandLevel;
-            if (c.isSorted !== undefined) $('cfg-sorted').checked = c.isSorted;
-            if (c.nodeCountTarget !== undefined) $('cfg-node-count').value = c.nodeCountTarget;
-            if (c.shouldUseInternalSearchIndex !== undefined) $('cfg-search-index').checked = c.shouldUseInternalSearchIndex;
-            if (c.indexerBatchSize !== undefined) $('cfg-indexer-batch').value = c.indexerBatchSize;
-            if (c.isProgressiveRenderEnabled !== undefined) $('opt-progressive').checked = c.isProgressiveRenderEnabled;
-            if (c.initialBatchSize !== undefined) $('opt-initial-batch').value = c.initialBatchSize;
-            if (c.maxBatchSize !== undefined) $('opt-max-batch').value = c.maxBatchSize;
-            if (c.virtualScrollContainerHeight) $('opt-container-height').value = c.virtualScrollContainerHeight;
-            if (c.virtualScrollOverscan !== undefined) $('opt-overscan').value = c.virtualScrollOverscan;
-            updateModeUI();
-            updateGenerateLabel();
-            updateProgressiveUI();
-            updateIndexerUI();
-        }
-        window.resetConfig = function() {
-            localStorage.removeItem(STORAGE_KEY);
-            renderMode = 'flat';
-            $('cfg-expand-level').value = 1;
-            $('cfg-sorted').checked = true;
-            $('cfg-node-count').value = 5000;
-            $('cfg-search-index').checked = true;
-            $('cfg-indexer-batch').value = 25;
-            $('opt-progressive').checked = false;
-            $('opt-initial-batch').value = 20;
-            $('opt-max-batch').value = 500;
-            $('opt-container-height').value = '500px';
-            $('opt-overscan').value = 5;
-            updateModeUI();
-            updateGenerateLabel();
-            updateProgressiveUI();
-            updateIndexerUI();
-        };
+    }
 
-        // ─── Helpers ─────────────────────────────────────────────────────────
-        const $ = id => document.getElementById(id);
+    function updateGenerateLabel() {
+        const n = (+$('cfg-node-count').value).toLocaleString();
+        $('btn-generate').textContent = `Generate ${n} Nodes`;
+    }
 
-        function updateModeUI() {
-            document.querySelectorAll('.toggle-option').forEach(el => {
-                el.classList.toggle('active', el.dataset.mode === renderMode);
-                el.querySelector('input').checked = el.dataset.mode === renderMode;
-            });
-            $('virtual-options').style.display = renderMode === 'virtual' ? '' : 'none';
-            $('flat-options').style.display = renderMode !== 'virtual' ? '' : 'none';
-            const wrapper = $('tree-wrapper');
-            if (renderMode === 'virtual') {
-                wrapper.classList.add('tree-container-vs');
-                wrapper.classList.remove('tree-container-tall');
-            } else {
-                wrapper.classList.remove('tree-container-vs');
-                wrapper.classList.add('tree-container-tall');
-            }
-        }
+    function updateProgressiveUI() {
+        $('progressive-opts').style.display = $('opt-progressive').checked ? '' : 'none';
+    }
 
-        function updateGenerateLabel() {
-            const n = (+$('cfg-node-count').value).toLocaleString();
-            $('btn-generate').textContent = `Generate ${n} Nodes`;
-        }
+    function updateIndexerUI() {
+        $('indexer-opts').style.display = $('cfg-search-index').checked ? '' : 'none';
+    }
 
-        function updateProgressiveUI() {
-            $('progressive-opts').style.display = $('opt-progressive').checked ? '' : 'none';
-        }
+    function updateMetricsUI() {
+        $('m-nodes').textContent = metrics.nodeCount.toLocaleString();
+        $('m-generate').textContent = metrics.generateTime !== null ? metrics.generateTime.toFixed(2) + ' ms' : '-';
+        $('m-render').textContent = metrics.renderTime !== null ? metrics.renderTime.toFixed(2) + ' ms' : 'measuring...';
+        $('m-total').textContent = metrics.renderTime !== null
+            ? ((metrics.generateTime || 0) + metrics.renderTime).toFixed(2) + ' ms'
+            : '-';
+    }
 
-        function updateIndexerUI() {
-            $('indexer-opts').style.display = $('cfg-search-index').checked ? '' : 'none';
-        }
-
-        function updateMetricsUI() {
-            $('m-nodes').textContent = metrics.nodeCount.toLocaleString();
-            $('m-generate').textContent = metrics.generateTime !== null ? metrics.generateTime.toFixed(2) + ' ms' : '-';
-            $('m-render').textContent = metrics.renderTime !== null ? metrics.renderTime.toFixed(2) + ' ms' : 'measuring...';
-            $('m-total').textContent = metrics.renderTime !== null
-                ? ((metrics.generateTime || 0) + metrics.renderTime).toFixed(2) + ' ms'
-                : '-';
-        }
-
-        function showExtraMetric(id, label, value, cls) {
-            let el = $(id);
-            if (!el) {
-                el = document.createElement('div');
-                el.id = id;
-                el.className = 'metric ' + (cls || '');
-                $('metrics-extra').appendChild(el);
-            }
+    function showExtraMetric(id, label, value, cls) {
+        let el = $(id);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = id;
             el.className = 'metric ' + (cls || '');
-            el.innerHTML = `<span class="value">${value}</span><span class="label">${label}</span>`;
+            $('metrics-extra').appendChild(el);
         }
+        el.className = 'metric ' + (cls || '');
+        el.innerHTML = `<span class="value">${value}</span><span class="label">${label}</span>`;
+    }
 
-        function buildTreeConfig() {
-            const isVirtual = renderMode === 'virtual';
-            const cfg = {
-                nodes: treeData,
-                idMember: 'id',
-                pathMember: 'path',
-                parentPathMember: 'parentPath',
-                levelMember: 'level',
-                hasChildrenMember: 'hasChildren',
-                displayValueMember: 'name',
-                searchValueMember: 'name',
-                expandLevel: +$('cfg-expand-level').value,
-                isSorted: $('cfg-sorted').checked || undefined,
-                shouldUseInternalSearchIndex: $('cfg-search-index').checked || undefined,
-                indexerBatchSize: +$('cfg-indexer-batch').value,
-                isVirtualScrollEnabled: isVirtual,
-                isFlatRenderingEnabled: true,
-            };
-            if (isVirtual) {
-                cfg.virtualScrollContainerHeight = $('opt-container-height').value;
-                cfg.virtualScrollOverscan = +$('opt-overscan').value;
-                cfg.isProgressiveRenderEnabled = false;
-            } else {
-                cfg.isProgressiveRenderEnabled = $('opt-progressive').checked;
-                cfg.initialBatchSize = +$('opt-initial-batch').value;
-                cfg.maxBatchSize = +$('opt-max-batch').value;
+    function buildTreeConfig() {
+        const isVirtual = renderMode === 'virtual';
+        const cfg = {
+            nodes: treeData,
+            idMember: 'id',
+            pathMember: 'path',
+            parentPathMember: 'parentPath',
+            levelMember: 'level',
+            hasChildrenMember: 'hasChildren',
+            displayValueMember: 'name',
+            searchValueMember: 'name',
+            expandLevel: +$('cfg-expand-level').value,
+            isSorted: $('cfg-sorted').checked || undefined,
+            shouldUseInternalSearchIndex: $('cfg-search-index').checked || undefined,
+            indexerBatchSize: +$('cfg-indexer-batch').value,
+            isVirtualScrollEnabled: isVirtual,
+            isFlatRenderingEnabled: true,
+        };
+        if (isVirtual) {
+            cfg.virtualScrollContainerHeight = $('opt-container-height').value;
+            cfg.virtualScrollOverscan = +$('opt-overscan').value;
+            cfg.isProgressiveRenderEnabled = false;
+        } else {
+            cfg.isProgressiveRenderEnabled = $('opt-progressive').checked;
+            cfg.initialBatchSize = +$('opt-initial-batch').value;
+            cfg.maxBatchSize = +$('opt-max-batch').value;
+        }
+        cfg.renderNodeCallback = ({ node, contentElement }) => {
+            const span = document.createElement('span');
+            span.innerHTML = `<span class="node-path">[${node.path}]</span> ${node.data?.name ?? node.path}`;
+            contentElement.appendChild(span);
+        };
+        return cfg;
+    }
+
+    function initTree() {
+        tree = $('perf-tree');
+        metrics.renderStart = performance.now();
+        metrics.renderTime = null;
+        tree.update(buildTreeConfig());
+        $('tree-card').style.display = '';
+        $('btn-redraw').disabled = false;
+        $('btn-clear').disabled = false;
+        const modeLabel = renderMode === 'virtual' ? 'Virtual Scroll' : 'Flat Mode';
+        const srcLabel = dataSource === 'countries' ? 'Countries + States' : 'Synthetic Data';
+        $('tree-title').textContent = `${srcLabel} (${metrics.nodeCount.toLocaleString()} nodes) - ${modeLabel}`;
+        // Measure render time after paint
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (metrics.renderStart && metrics.renderTime === null) {
+                metrics.renderTime = performance.now() - metrics.renderStart;
+                updateMetricsUI();
+                // generateTime is null after Redraw / a mode switch (nothing was generated)
+                const generatePart = metrics.generateTime !== null ? ` | Generate: ${metrics.generateTime.toFixed(2)}ms` : '';
+                console.log(`[Perf] Mode: ${renderMode.toUpperCase()} | Nodes: ${metrics.nodeCount}${generatePart} | Render: ${metrics.renderTime.toFixed(2)}ms`);
             }
-            cfg.renderNodeCallback = ({ node, contentElement }) => {
-                const span = document.createElement('span');
-                span.innerHTML = `<span class="node-path">[${node.path}]</span> ${node.data?.name ?? node.path}`;
-                contentElement.appendChild(span);
-            };
-            return cfg;
-        }
+        }));
+        updateMetricsUI();
+    }
 
-        function initTree() {
-            tree = $('perf-tree');
-            metrics.renderStart = performance.now();
-            metrics.renderTime = null;
-            tree.update(buildTreeConfig());
-            $('tree-card').style.display = '';
-            $('btn-redraw').disabled = false;
-            $('btn-clear').disabled = false;
-            const modeLabel = renderMode === 'virtual' ? 'Virtual Scroll' : 'Flat Mode';
-            const srcLabel = dataSource === 'countries' ? 'Countries + States' : 'Synthetic Data';
-            $('tree-title').textContent = `${srcLabel} (${metrics.nodeCount.toLocaleString()} nodes) - ${modeLabel}`;
-            // Measure render time after paint
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                if (metrics.renderStart && metrics.renderTime === null) {
-                    metrics.renderTime = performance.now() - metrics.renderStart;
-                    updateMetricsUI();
-                    // generateTime is null after Redraw / a mode switch (nothing was generated)
-                    const generatePart = metrics.generateTime !== null ? ` | Generate: ${metrics.generateTime.toFixed(2)}ms` : '';
-                    console.log(`[Perf] Mode: ${renderMode.toUpperCase()} | Nodes: ${metrics.nodeCount}${generatePart} | Render: ${metrics.renderTime.toFixed(2)}ms`);
-                }
-            }));
-            updateMetricsUI();
-        }
+    // ─── Data generation ─────────────────────────────────────────────────
+    const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Operations', 'Legal', 'Support', 'Product', 'Design'];
+    const TEAM_PREFIXES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Core', 'Platform', 'Growth', 'Enterprise', 'Mobile', 'Cloud'];
+    const TEAM_SUFFIXES = ['Team', 'Squad', 'Group', 'Unit', 'Division'];
 
-        // ─── Data generation ─────────────────────────────────────────────────
-        const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Operations', 'Legal', 'Support', 'Product', 'Design'];
-        const TEAM_PREFIXES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Core', 'Platform', 'Growth', 'Enterprise', 'Mobile', 'Cloud'];
-        const TEAM_SUFFIXES = ['Team', 'Squad', 'Group', 'Unit', 'Division'];
+    function generateName(level, index) {
+        if (level === 1) return DEPARTMENTS[index % DEPARTMENTS.length];
+        if (level === 2) return `${TEAM_PREFIXES[index % TEAM_PREFIXES.length]} ${TEAM_SUFFIXES[index % TEAM_SUFFIXES.length]}`;
+        return `Member ${index + 1}`;
+    }
 
-        function generateName(level, index) {
-            if (level === 1) return DEPARTMENTS[index % DEPARTMENTS.length];
-            if (level === 2) return `${TEAM_PREFIXES[index % TEAM_PREFIXES.length]} ${TEAM_SUFFIXES[index % TEAM_SUFFIXES.length]}`;
-            return `Member ${index + 1}`;
-        }
+    function generateTreeData(targetCount) {
+        const nodes = [];
+        let id = 1;
+        const l1Count = Math.min(10, Math.ceil(targetCount / 100));
+        const l2PerL1 = Math.min(15, Math.ceil(targetCount / (l1Count * 10)));
+        const l3PerL2 = Math.max(1, Math.floor((targetCount - l1Count - l1Count * l2PerL1) / (l1Count * l2PerL1)));
 
-        function generateTreeData(targetCount) {
-            const nodes = [];
-            let id = 1;
-            const l1Count = Math.min(10, Math.ceil(targetCount / 100));
-            const l2PerL1 = Math.min(15, Math.ceil(targetCount / (l1Count * 10)));
-            const l3PerL2 = Math.max(1, Math.floor((targetCount - l1Count - l1Count * l2PerL1) / (l1Count * l2PerL1)));
-
-            for (let i = 0; i < l1Count; i++) {
-                const l1Path = String(i + 1);
-                nodes.push({ id: id++, path: l1Path, parentPath: '', level: 1, name: generateName(1, i), hasChildren: true });
-                for (let j = 0; j < l2PerL1; j++) {
-                    const l2Path = `${l1Path}.${j + 1}`;
-                    nodes.push({ id: id++, path: l2Path, parentPath: l1Path, level: 2, name: generateName(2, j), hasChildren: l3PerL2 > 0 });
-                    for (let k = 0; k < l3PerL2; k++) {
-                        const l3Path = `${l2Path}.${k + 1}`;
-                        nodes.push({ id: id++, path: l3Path, parentPath: l2Path, level: 3, name: `${generateName(2, j)} - ${generateName(3, k)}`, hasChildren: false });
-                        if (nodes.length >= targetCount) break;
-                    }
+        for (let i = 0; i < l1Count; i++) {
+            const l1Path = String(i + 1);
+            nodes.push({ id: id++, path: l1Path, parentPath: '', level: 1, name: generateName(1, i), hasChildren: true });
+            for (let j = 0; j < l2PerL1; j++) {
+                const l2Path = `${l1Path}.${j + 1}`;
+                nodes.push({ id: id++, path: l2Path, parentPath: l1Path, level: 2, name: generateName(2, j), hasChildren: l3PerL2 > 0 });
+                for (let k = 0; k < l3PerL2; k++) {
+                    const l3Path = `${l2Path}.${k + 1}`;
+                    nodes.push({ id: id++, path: l3Path, parentPath: l2Path, level: 3, name: `${generateName(2, j)} - ${generateName(3, k)}`, hasChildren: false });
                     if (nodes.length >= targetCount) break;
                 }
                 if (nodes.length >= targetCount) break;
             }
-            return nodes;
+            if (nodes.length >= targetCount) break;
         }
+        return nodes;
+    }
 
-        window.generateTestData = function() {
-            saveConfig();
-            dataSource = 'synthetic';
-            clearSearch();
+    window.generateTestData = function() {
+        saveConfig();
+        dataSource = 'synthetic';
+        clearSearch();
+        const t0 = performance.now();
+        treeData = generateTreeData(+$('cfg-node-count').value);
+        metrics.generateTime = performance.now() - t0;
+        metrics.nodeCount = treeData.length;
+        initTree();
+    };
+
+    // ─── Countries + States ──────────────────────────────────────────────
+    const COUNTRIES_URL = 'https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/json/countries%2Bstates.json';
+
+    window.loadCountriesTestData = async function() {
+        saveConfig();
+        $('btn-countries').disabled = true;
+        $('btn-countries').textContent = 'Loading...';
+        dataSource = 'countries';
+        clearSearch();
+        try {
             const t0 = performance.now();
-            treeData = generateTreeData(+$('cfg-node-count').value);
+            const resp = await fetch(COUNTRIES_URL);
+            if (!resp.ok) throw new Error('Network error');
+            const countries = await resp.json();
+            const nodes = [];
+            let id = 1;
+            countries.forEach((c, ci) => {
+                const cp = String(ci + 1);
+                const hasStates = c.states && c.states.length > 0;
+                nodes.push({ id: id++, path: cp, parentPath: '', level: 1, name: c.name, hasChildren: hasStates });
+                if (hasStates) c.states.forEach((s, si) => {
+                    nodes.push({ id: id++, path: `${cp}.${si + 1}`, parentPath: cp, level: 2, name: s.name || s, hasChildren: false });
+                });
+            });
+            treeData = nodes;
             metrics.generateTime = performance.now() - t0;
             metrics.nodeCount = treeData.length;
             initTree();
-        };
-
-        // ─── Countries + States ──────────────────────────────────────────────
-        const COUNTRIES_URL = 'https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/json/countries%2Bstates.json';
-
-        window.loadCountriesTestData = async function() {
-            saveConfig();
-            $('btn-countries').disabled = true;
-            $('btn-countries').textContent = 'Loading...';
-            dataSource = 'countries';
-            clearSearch();
-            try {
-                const t0 = performance.now();
-                const resp = await fetch(COUNTRIES_URL);
-                if (!resp.ok) throw new Error('Network error');
-                const countries = await resp.json();
-                const nodes = [];
-                let id = 1;
-                countries.forEach((c, ci) => {
-                    const cp = String(ci + 1);
-                    const hasStates = c.states && c.states.length > 0;
-                    nodes.push({ id: id++, path: cp, parentPath: '', level: 1, name: c.name, hasChildren: hasStates });
-                    if (hasStates) c.states.forEach((s, si) => {
-                        nodes.push({ id: id++, path: `${cp}.${si + 1}`, parentPath: cp, level: 2, name: s.name || s, hasChildren: false });
-                    });
-                });
-                treeData = nodes;
-                metrics.generateTime = performance.now() - t0;
-                metrics.nodeCount = treeData.length;
-                initTree();
-            } catch (e) {
-                console.error('Failed to load countries:', e);
-                alert('Failed to load countries data.');
-            }
-            $('btn-countries').disabled = false;
-            $('btn-countries').textContent = 'Load Countries + States (~5K nodes)';
-        };
-
-        window.clearData = function() {
-            treeData = [];
-            tree?.update({ nodes: [] });
-            $('tree-card').style.display = 'none';
-            $('btn-redraw').disabled = true;
-            $('btn-clear').disabled = true;
-            metrics = { generateTime: null, renderStart: null, renderTime: null, nodeCount: 0 };
-            $('metrics-extra').innerHTML = '';
-            updateMetricsUI();
-            clearSearch();
-            dataSource = null;
-        };
-
-        window.redraw = function() {
-            saveConfig();
-            metrics.generateTime = null;
-            initTree();
-        };
-
-        // ─── Timed operations ────────────────────────────────────────────────
-        window.timedExpandAll = function() {
-            const t0 = performance.now();
-            tree.expandAll();
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                showExtraMetric('m-expand', 'Expand/Collapse', (performance.now() - t0).toFixed(2) + ' ms', 'expand-time');
-            }));
-        };
-        window.timedCollapseAll = function() {
-            const t0 = performance.now();
-            tree.collapseAll();
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                showExtraMetric('m-expand', 'Expand/Collapse', (performance.now() - t0).toFixed(2) + ' ms', 'expand-time');
-            }));
-        };
-        window.timedExpandOneNode = function() {
-            const node = treeData.find(n => n.level === 2 && n.hasChildren) || treeData.find(n => n.level === 1 && n.hasChildren);
-            if (!node) return;
-            console.log(`[Perf] Expanding: ${node.path}`);
-            const t0 = performance.now();
-            tree.expandNodes(node.path);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                const ms = performance.now() - t0;
-                showExtraMetric('m-expand', 'Expand/Collapse', ms.toFixed(2) + ' ms', 'expand-time');
-                console.log(`[Perf] Expand one (${node.path}): ${ms.toFixed(2)}ms`);
-            }));
-        };
-        window.timedCollapseOneNode = function() {
-            const node = treeData.find(n => n.level === 1 && n.hasChildren);
-            if (!node) return;
-            console.log(`[Perf] Collapsing: ${node.path}`);
-            const t0 = performance.now();
-            tree.collapseNodes(node.path);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                const ms = performance.now() - t0;
-                showExtraMetric('m-expand', 'Expand/Collapse', ms.toFixed(2) + ' ms', 'expand-time');
-                console.log(`[Perf] Collapse one (${node.path}): ${ms.toFixed(2)}ms`);
-            }));
-        };
-
-        // ─── Update node ─────────────────────────────────────────────────────
-        window.timedUpdateNode = function() {
-            let path = $('update-path').value.trim();
-            if (!path) {
-                const candidates = treeData.filter(n => n.level === 1 || n.level === 2);
-                if (!candidates.length) return;
-                path = candidates[Math.floor(Math.random() * candidates.length)].path;
-            }
-            updateCounter++;
-            const newName = `UPDATED #${updateCounter} (${new Date().toLocaleTimeString()})`;
-            console.log(`[Perf] Updating: ${path} -> "${newName}"`);
-            const t0 = performance.now();
-            tree.updateNode(path, { name: newName });
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                const ms = performance.now() - t0;
-                showExtraMetric('m-update', 'Update Node', ms.toFixed(2) + ' ms', 'expand-time');
-                $('update-time-display').textContent = ms.toFixed(2) + ' ms';
-            }));
-        };
-
-        // ─── Search ──────────────────────────────────────────────────────────
-        window.toggleSearchMode = function() {
-            clearSearch();
-            searchMode = searchMode === 'filter' ? 'search' : 'filter';
-            const btn = $('search-mode-btn');
-            if (searchMode === 'filter') {
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
-                btn.title = 'Filter mode';
-                $('search-input').placeholder = 'Filter nodes...';
-            } else {
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-                btn.title = 'Search mode';
-                $('search-input').placeholder = 'Search nodes... (Enter to find)';
-            }
-        };
-
-        function updateSearchUI() {
-            const hasResults = searchResults.length > 0;
-            const hasInput = $('search-input').value.trim().length > 0;
-            $('search-counter').style.display = hasResults || hasInput ? '' : 'none';
-            $('search-prev').style.display = hasResults ? '' : 'none';
-            $('search-next').style.display = hasResults ? '' : 'none';
-            $('search-clear').style.display = hasInput ? '' : 'none';
-            if (hasResults) {
-                $('search-counter').textContent = `${currentSearchIdx + 1}/${searchResults.length}`;
-                $('search-counter').classList.remove('no-results');
-            } else if (hasInput) {
-                $('search-counter').textContent = '0 results';
-                $('search-counter').classList.add('no-results');
-            }
+        } catch (e) {
+            console.error('Failed to load countries:', e);
+            alert('Failed to load countries data.');
         }
+        $('btn-countries').disabled = false;
+        $('btn-countries').textContent = 'Load Countries + States (~5K nodes)';
+    };
 
-        let _filterTimer = null;
-        window.onSearchInput = function() {
-            const val = $('search-input').value;
-            if (searchMode === 'filter') {
-                // Debounce filter to avoid heavy rebuilds on every keystroke
-                clearTimeout(_filterTimer);
-                _filterTimer = setTimeout(() => {
-                    const t0 = performance.now();
-                    tree.filterNodes(val);
-                    searchResults = tree.searchNodes(val) || [];
-                    currentSearchIdx = searchResults.length > 0 ? 0 : -1;
-                    requestAnimationFrame(() => requestAnimationFrame(() => {
-                        const ms = performance.now() - t0;
-                        showExtraMetric('m-search', 'Search/Filter', ms.toFixed(2) + ' ms', 'search-time');
-                        $('search-time-display').textContent = ms.toFixed(2) + ' ms';
-                    }));
-                    updateSearchUI();
-                }, 150);
-            } else {
-                searchResults = [];
-                currentSearchIdx = -1;
-                updateSearchUI();
-            }
-        };
+    window.clearData = function() {
+        treeData = [];
+        tree?.update({ nodes: [] });
+        $('tree-card').style.display = 'none';
+        $('btn-redraw').disabled = true;
+        $('btn-clear').disabled = true;
+        metrics = { generateTime: null, renderStart: null, renderTime: null, nodeCount: 0 };
+        $('metrics-extra').innerHTML = '';
+        updateMetricsUI();
+        clearSearch();
+        dataSource = null;
+    };
 
-        window.onSearchKeydown = function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.shiftKey ? searchPrev() : searchNext();
-            } else if (e.key === 'Escape') {
-                clearSearch();
-            }
-        };
+    window.redraw = function() {
+        saveConfig();
+        metrics.generateTime = null;
+        initTree();
+    };
 
-        function executeSearch() {
-            const val = $('search-input').value.trim();
-            if (!val) { searchResults = []; currentSearchIdx = -1; updateSearchUI(); return; }
-            const t0 = performance.now();
-            searchResults = tree.searchNodes(val) || [];
+    // ─── Timed operations ────────────────────────────────────────────────
+    window.timedExpandAll = function() {
+        const t0 = performance.now();
+        tree.expandAll();
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            showExtraMetric('m-expand', 'Expand/Collapse', (performance.now() - t0).toFixed(2) + ' ms', 'expand-time');
+        }));
+    };
+    window.timedCollapseAll = function() {
+        const t0 = performance.now();
+        tree.collapseAll();
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            showExtraMetric('m-expand', 'Expand/Collapse', (performance.now() - t0).toFixed(2) + ' ms', 'expand-time');
+        }));
+    };
+    window.timedExpandOneNode = function() {
+        const node = treeData.find(n => n.level === 2 && n.hasChildren) || treeData.find(n => n.level === 1 && n.hasChildren);
+        if (!node) return;
+        console.log(`[Perf] Expanding: ${node.path}`);
+        const t0 = performance.now();
+        tree.expandNodes(node.path);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
             const ms = performance.now() - t0;
-            showExtraMetric('m-search', 'Search/Filter', ms.toFixed(2) + ' ms', 'search-time');
-            $('search-time-display').textContent = ms.toFixed(2) + ' ms';
-            currentSearchIdx = searchResults.length > 0 ? 0 : -1;
-            if (currentSearchIdx >= 0) navigateToResult(0);
-            updateSearchUI();
-        }
+            showExtraMetric('m-expand', 'Expand/Collapse', ms.toFixed(2) + ' ms', 'expand-time');
+            console.log(`[Perf] Expand one (${node.path}): ${ms.toFixed(2)}ms`);
+        }));
+    };
+    window.timedCollapseOneNode = function() {
+        const node = treeData.find(n => n.level === 1 && n.hasChildren);
+        if (!node) return;
+        console.log(`[Perf] Collapsing: ${node.path}`);
+        const t0 = performance.now();
+        tree.collapseNodes(node.path);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const ms = performance.now() - t0;
+            showExtraMetric('m-expand', 'Expand/Collapse', ms.toFixed(2) + ' ms', 'expand-time');
+            console.log(`[Perf] Collapse one (${node.path}): ${ms.toFixed(2)}ms`);
+        }));
+    };
 
-        function navigateToResult(idx) {
-            if (!searchResults.length) return;
-            currentSearchIdx = idx;
-            const node = searchResults[idx];
-            if (node?.path) {
-                tree.scrollToPath(node.path, { shouldHighlight: true });
-            }
-            updateSearchUI();
+    // ─── Update node ─────────────────────────────────────────────────────
+    window.timedUpdateNode = function() {
+        let path = $('update-path').value.trim();
+        if (!path) {
+            const candidates = treeData.filter(n => n.level === 1 || n.level === 2);
+            if (!candidates.length) return;
+            path = candidates[Math.floor(Math.random() * candidates.length)].path;
         }
+        updateCounter++;
+        const newName = `UPDATED #${updateCounter} (${new Date().toLocaleTimeString()})`;
+        console.log(`[Perf] Updating: ${path} -> "${newName}"`);
+        const t0 = performance.now();
+        tree.updateNode(path, { name: newName });
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const ms = performance.now() - t0;
+            showExtraMetric('m-update', 'Update Node', ms.toFixed(2) + ' ms', 'expand-time');
+            $('update-time-display').textContent = ms.toFixed(2) + ' ms';
+        }));
+    };
 
-        window.searchNext = function() {
-            if (!searchResults.length) { executeSearch(); return; }
-            navigateToResult((currentSearchIdx + 1) % searchResults.length);
-        };
-        window.searchPrev = function() {
-            if (!searchResults.length) return;
-            navigateToResult((currentSearchIdx - 1 + searchResults.length) % searchResults.length);
-        };
-        window.clearSearch = function() {
-            $('search-input').value = '';
+    // ─── Search ──────────────────────────────────────────────────────────
+    window.toggleSearchMode = function() {
+        clearSearch();
+        searchMode = searchMode === 'filter' ? 'search' : 'filter';
+        const btn = $('search-mode-btn');
+        if (searchMode === 'filter') {
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+            btn.title = 'Filter mode';
+            $('search-input').placeholder = 'Filter nodes...';
+        } else {
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+            btn.title = 'Search mode';
+            $('search-input').placeholder = 'Search nodes... (Enter to find)';
+        }
+    };
+
+    function updateSearchUI() {
+        const hasResults = searchResults.length > 0;
+        const hasInput = $('search-input').value.trim().length > 0;
+        $('search-counter').style.display = hasResults || hasInput ? '' : 'none';
+        $('search-prev').style.display = hasResults ? '' : 'none';
+        $('search-next').style.display = hasResults ? '' : 'none';
+        $('search-clear').style.display = hasInput ? '' : 'none';
+        if (hasResults) {
+            $('search-counter').textContent = `${currentSearchIdx + 1}/${searchResults.length}`;
+            $('search-counter').classList.remove('no-results');
+        } else if (hasInput) {
+            $('search-counter').textContent = '0 results';
+            $('search-counter').classList.add('no-results');
+        }
+    }
+
+    let _filterTimer = null;
+    window.onSearchInput = function() {
+        const val = $('search-input').value;
+        if (searchMode === 'filter') {
+            // Debounce filter to avoid heavy rebuilds on every keystroke
+            clearTimeout(_filterTimer);
+            _filterTimer = setTimeout(() => {
+                const t0 = performance.now();
+                tree.filterNodes(val);
+                searchResults = tree.searchNodes(val) || [];
+                currentSearchIdx = searchResults.length > 0 ? 0 : -1;
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const ms = performance.now() - t0;
+                    showExtraMetric('m-search', 'Search/Filter', ms.toFixed(2) + ' ms', 'search-time');
+                    $('search-time-display').textContent = ms.toFixed(2) + ' ms';
+                }));
+                updateSearchUI();
+            }, 150);
+        } else {
             searchResults = [];
             currentSearchIdx = -1;
-            tree?.filterNodes('');
-            $('search-time-display').textContent = '';
             updateSearchUI();
-        };
+        }
+    };
 
-        // ─── Mode toggle ────────────────────────────────────────────────────
-        document.querySelectorAll('.toggle-option').forEach(el => {
-            el.addEventListener('click', () => {
-                renderMode = el.dataset.mode;
-                updateModeUI();
-                saveConfig();
-                if (treeData.length > 0) {
-                    metrics.generateTime = null;
-                    initTree();
-                }
-            });
+    window.onSearchKeydown = function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.shiftKey ? searchPrev() : searchNext();
+        } else if (e.key === 'Escape') {
+            clearSearch();
+        }
+    };
+
+    function executeSearch() {
+        const val = $('search-input').value.trim();
+        if (!val) { searchResults = []; currentSearchIdx = -1; updateSearchUI(); return; }
+        const t0 = performance.now();
+        searchResults = tree.searchNodes(val) || [];
+        const ms = performance.now() - t0;
+        showExtraMetric('m-search', 'Search/Filter', ms.toFixed(2) + ' ms', 'search-time');
+        $('search-time-display').textContent = ms.toFixed(2) + ' ms';
+        currentSearchIdx = searchResults.length > 0 ? 0 : -1;
+        if (currentSearchIdx >= 0) navigateToResult(0);
+        updateSearchUI();
+    }
+
+    function navigateToResult(idx) {
+        if (!searchResults.length) return;
+        currentSearchIdx = idx;
+        const node = searchResults[idx];
+        if (node?.path) {
+            tree.scrollToPath(node.path, { shouldHighlight: true });
+        }
+        updateSearchUI();
+    }
+
+    window.searchNext = function() {
+        if (!searchResults.length) { executeSearch(); return; }
+        navigateToResult((currentSearchIdx + 1) % searchResults.length);
+    };
+    window.searchPrev = function() {
+        if (!searchResults.length) return;
+        navigateToResult((currentSearchIdx - 1 + searchResults.length) % searchResults.length);
+    };
+    window.clearSearch = function() {
+        $('search-input').value = '';
+        searchResults = [];
+        currentSearchIdx = -1;
+        tree?.filterNodes('');
+        $('search-time-display').textContent = '';
+        updateSearchUI();
+    };
+
+    // ─── Mode toggle ────────────────────────────────────────────────────
+    document.querySelectorAll('.toggle-option').forEach(el => {
+        el.addEventListener('click', () => {
+            renderMode = el.dataset.mode;
+            updateModeUI();
+            saveConfig();
+            if (treeData.length > 0) {
+                metrics.generateTime = null;
+                initTree();
+            }
         });
+    });
 
-        // Config change listeners
-        $('cfg-node-count').addEventListener('input', updateGenerateLabel);
-        $('opt-progressive').addEventListener('change', updateProgressiveUI);
-        $('cfg-search-index').addEventListener('change', updateIndexerUI);
+    // Config change listeners
+    $('cfg-node-count').addEventListener('input', updateGenerateLabel);
+    $('opt-progressive').addEventListener('change', updateProgressiveUI);
+    $('cfg-search-index').addEventListener('change', updateIndexerUI);
 
-        // ─── Init ────────────────────────────────────────────────────────────
-        applyConfig();
-    </script>
-
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+    // ─── Init ────────────────────────────────────────────────────────────
+    applyConfig();
+</script>

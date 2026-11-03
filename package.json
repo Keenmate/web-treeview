@@ -38,6 +38,35 @@
     "vscode.css-custom-data.json",
     "CHANGELOG.md"
   ],
+  "kmwc": {
+    "title": "Web TreeView",
+    "tag": "web-treeview",
+    "prefix": "wtv",
+    "library": {
+      "globalName": "WebTreeView",
+      "fileName": "web-treeview",
+      "cssFileName": "web-treeview",
+      "shouldEmitSourcemap": true
+    },
+    "ports": {
+      "dev": 12300,
+      "image": 12310
+    },
+    "theme": {
+      "accentColor": "#059669",
+      "accentEndColor": "#065f46"
+    },
+    "examples": {
+      "canonicalOrigin": "https://examples.web-treeview.keenmate.dev"
+    },
+    "analytics": {
+      "plausibleSiteId": "pa-RDHwg8IIJaVGkQuUsM0t0"
+    },
+    "image": {
+      "name": "registry.km8.es/web-treeview-examples:prod",
+      "runner": "podman"
+    }
+  },
   "scripts": {
     "dev": "vite --port 21111",
     "analyze": "cem analyze",
@@ -58,6 +87,8 @@
   "keywords": [
     "web-component",
     "custom-element",
+    "custom-elements",
+    "web-components",
     "treeview",
     "tree",
     "hierarchical",
@@ -86,6 +117,7 @@
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
     "@keenmate/base-css-variables": "^2.0.0-rc08",
+    "@keenmate/web-components-devkit": "^1.0.0-rc06",
     "@playwright/test": "^1.61.0",
     "@types/node": "^24.3.1",
     "custom-element-jet-brains-integration": "^1.7.0",

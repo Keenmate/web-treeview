@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
  * tests see warm caches.
  */
 export default async function globalSetup(config: FullConfig) {
-  const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:21111';
+  const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:12300';
 
   // Every fixture page under test/ — read from disk so new fixtures are warmed
   // without editing this list.

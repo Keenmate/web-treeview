@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: help setup dev build package publish publish-dry clean clean-dist preview lint test test-e2e test-e2e-all test-e2e-ui test-e2e-headed test-e2e-install check-version update-deps install-dev image-build image-run image-stop image-clean
+.PHONY: help setup dev build package publish publish-rc publish-dry clean clean-dist preview lint test test-e2e test-e2e-all test-e2e-ui test-e2e-headed test-e2e-install check-version update-deps install-dev image-build image-run image-stop image-clean
 
 # Per-developer overrides (container runner, image name, port). Optional: the
 # leading `-` means it's fine if the file is absent. Defaults below apply when a
@@ -13,7 +13,7 @@ IMAGE_PORT     ?= 12210
 
 help: ## Show this help message
 	@echo "Available targets:"
-	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
 
 setup: ## Install dependencies and prepare project
 	@echo "Installing dependencies..."
@@ -41,11 +41,23 @@ publish-dry: ## Publish to npm (dry run) (TAG=rc for pre-release)
 
 publish: ## Publish to npm (TAG=rc for pre-release)
 	@echo "WARNING: This will publish to npm registry"
+	@echo "Use 'make publish-rc' instead if you're shipping a pre-release version."
 	@echo "Press Ctrl+C to cancel, or Enter to continue..."
 	@powershell -Command "Read-Host | Out-Null"
 	@echo "Publishing to npm..."
 	npm publish $(if $(TAG),--tag $(TAG))
 	@echo "Published successfully"
+
+publish-rc: ## Publish to npm under the 'rc' dist-tag (does NOT touch 'latest')
+	@echo "WARNING: This will publish to npm registry under the 'rc' dist-tag"
+	@echo "The 'latest' tag will be untouched - consumers must opt in with @rc or @<version>."
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@powershell -Command "Read-Host | Out-Null"
+	@echo "Publishing to npm under 'rc' tag..."
+	npm run clean:dist
+	npm run build
+	npm publish --tag rc
+	@echo "Published successfully under 'rc' tag"
 
 clean: ## Clean build artifacts and node_modules
 	@echo "Cleaning build artifacts..."

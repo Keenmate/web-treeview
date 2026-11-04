@@ -5,7 +5,7 @@
 # redefined there wins, with a make "overriding recipe" warning). Per-developer
 # overrides (container runner, image name, port) go in .makefile.env.
 
-.PHONY: help setup dev kill-port build build-examples preview-examples package publish-dry publish publish-rc clean check-version check-vars doctor sync test test-e2e test-e2e-ui test-e2e-headed test-e2e-install image-build image-run image-stop image-clean
+.PHONY: help setup dev kill-port build build-examples preview-examples package publish-dry publish publish-rc clean check-version check-vars doctor check-pages sync test test-e2e test-e2e-ui test-e2e-headed test-e2e-install image-build image-run image-stop image-clean
 
 -include .makefile.env
 DOCKER_RUNNER  ?= podman
@@ -91,6 +91,9 @@ check-vars: ## Validate component-variables.manifest.json against the CSS
 
 doctor: ## Check this repo against the Keenmate component standard
 	npx kmwc doctor
+
+check-pages: ## Load every example page at 1440/390/320px: errors, undefined elements, overflow
+	npx kmwc check-pages
 
 sync: ## Regenerate devkit-owned files (Dockerfile, nginx.conf, Makefile, …)
 	npx kmwc sync

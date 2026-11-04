@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — devkit 1.0.0-rc09 (2026-11-04)
+- `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and
+  `make check-pages`, and the CLAUDE.md devkit block's notes on page colours and `check-pages`.
+
 ### Changed — rulebook pass (2026-11-03)
 - **The expanded toggle's state class is `.wtv__toggle-icon--expanded`** (was the bare `.expanded`). Custom
   styles injected through `getCustomStylesCallback` that targeted `.wtv__toggle-icon.expanded` must follow.

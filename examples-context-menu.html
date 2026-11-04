@@ -42,7 +42,7 @@
 <!-- CM01 · Callback Approach -->
 <div class="card">
     <h2>CM01 · Callback Approach</h2>
-    <p>Right-click any node. web-treeview builds the menu with <code>getContextMenuItemsCallback(ctx) =&gt; TreeMenuEntry[]</code> — <code>ctx</code> is <code>{ node, path, parent, siblings, controller, element }</code> and the entries are core action items. This demo shows shortcuts, a nested submenu, a named divider (<code>menuDivider(text)</code>), an <code>isDanger</code> item, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item. An enabled leaf closes the menu after its <code>onClick</code> — no <code>close()</code> needed.</p>
+    <p>Right-click any node. web-treeview builds the menu with <code>getContextMenuItemsCallback(ctx) =&gt; TreeMenuEntry[]</code> — <code>ctx</code> is <code>{ node, path, parent, siblings, controller, element }</code> and the entries are core action items. This demo shows shortcuts, a nested submenu, a named divider (<code>createMenuDivider(text)</code>), an <code>isDanger</code> item, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item. An enabled leaf closes the menu after its <code>onClick</code> — no <code>close()</code> needed.</p>
 
     <div class="controls">
         <div class="offset-inputs">
@@ -62,7 +62,7 @@
     </div>
 
     <div class="code-block mt-1">
-<pre><code>import { menuDivider } from '@keenmate/web-treeview';
+<pre><code>import { createMenuDivider } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }) =&gt; {
     const isFolder = node.data?.type === 'folder';
@@ -72,7 +72,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
     if (isFolder) {
         entries.push({ id: 'new-file',   icon: '📄', text: 'New File',   shortcut: 'N',       onClick: () =&gt; log(`New file in "${node.data.name}"`) });
         entries.push({ id: 'new-folder', icon: '📁', text: 'New Folder', shortcut: 'Shift+N', onClick: () =&gt; log(`New folder in "${node.data.name}"`) });
-        entries.push(menuDivider());
+        entries.push(createMenuDivider());
     }
 
     entries.push({ id: 'copy',  icon: '📋', text: 'Copy',  shortcut: 'C', onClick: () =&gt; log(`Copied "${node.data.name}"`) });
@@ -85,7 +85,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
         { id: 'csv',  text: 'CSV',  shortcut: 'C', onClick: () =&gt; log('…as CSV') },
     ]});
 
-    entries.push(menuDivider('Danger zone'));
+    entries.push(createMenuDivider('Danger zone'));
     entries.push({ id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onClick: () =&gt; log('rename') });
     entries.push({ id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly, onClick: () =&gt; log('delete') });
     entries.push({ id: 'readonly', icon: '🔒', text: 'Read-only file', isDisabled: true, isVisible: isReadonly });
@@ -193,7 +193,7 @@ tree.addEventListener('action', ({ detail }) =&gt; log(detail.id, detail.node));
     </table>
 
     <div class="code-block mt-1">
-<pre><code>import { menuDivider, type TreeMenuEntry } from '@keenmate/web-treeview';
+<pre><code>import { createMenuDivider, type TreeMenuEntry } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }): TreeMenuEntry[] =&gt; [
     'copy', 'cut', 'paste',               // built-ins: act on the node (or the selection it's in)
@@ -204,7 +204,7 @@ tree.getContextMenuItemsCallback = ({ node }): TreeMenuEntry[] =&gt; [
         { id: 'xml',  text: 'XML',  shortcut: 'X', onClick: () =&gt; exportAs(node, 'xml') },
     ]},
     { id: 'recent', text: 'Recent', getChildrenCallback: async () =&gt; loadRecent(node) },  // lazy submenu
-    menuDivider('Danger zone'),
+    createMenuDivider('Danger zone'),
     { id: 'delete', text: 'Delete', isDanger: true, isDisabled: node.data.readonly,
       onClick: () =&gt; del(node) },
 ];
@@ -283,14 +283,14 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
         </thead>
         <tbody>
             <tr><td><code>divider</code></td><td><code>true</code></td><td>Type discriminator for divider entries.</td></tr>
-            <tr><td><code>text</code></td><td><code>string</code></td><td>Optional named divider: <code>──── [text] ────</code>. Or build one with <code>menuDivider(text?)</code> (exported).</td></tr>
+            <tr><td><code>text</code></td><td><code>string</code></td><td>Optional named divider: <code>──── [text] ────</code>. Or build one with <code>createMenuDivider(text?)</code> (exported).</td></tr>
         </tbody>
     </table>
 
     <div class="code-block mt-1">
 <pre><code>interface MenuDivider {
   divider: true;
-  text?: string;             // named: ──── [text] ────   (menuDivider(text))
+  text?: string;             // named: ──── [text] ────   (createMenuDivider(text))
 }
 
 interface TreeMenuItem {
@@ -472,7 +472,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
 </div>
 
 <script type="module">
-    import { menuDivider } from '/src/index.ts';
+    import { createMenuDivider } from '/src/index.ts';
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
     // ── Sample Data ─────────────────────────────────────────────────
@@ -533,7 +533,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
         });
 
         // Core action items: `text`, `onClick(detail)`, `isDanger`, `children`; dividers via
-        // menuDivider(text?). An enabled leaf closes the menu after its onClick.
+        // createMenuDivider(text?). An enabled leaf closes the menu after its onClick.
         cm1.getContextMenuItemsCallback = ({ node }) => {
             const d = node.data || {};
             const isFolder = d.type === 'folder';
@@ -543,7 +543,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             if (isFolder) {
                 entries.push({ id: 'new-file',   icon: '📄', text: 'New File',   shortcut: 'N',       onClick: () => cm1Log(`New file in "${d.name}"`) });
                 entries.push({ id: 'new-folder', icon: '📁', text: 'New Folder', shortcut: 'Shift+N', onClick: () => cm1Log(`New folder in "${d.name}"`) });
-                entries.push(menuDivider());
+                entries.push(createMenuDivider());
             }
 
             entries.push({ id: 'copy',  icon: '📋', text: 'Copy',  shortcut: 'C', onClick: () => cm1Log(`Copied "${d.name}"`) });
@@ -556,7 +556,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 { id: 'csv',  text: 'CSV',  shortcut: 'C', onClick: () => cm1Log(`Export "${d.name}" as CSV`) },
             ]});
 
-            entries.push(menuDivider('Danger zone'));
+            entries.push(createMenuDivider('Danger zone'));
             entries.push({ id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2', isDisabled: isReadonly, onClick: () => cm1Log(`Rename "${d.name}"`) });
             entries.push({ id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly, onClick: () => cm1Log(`Delete "${d.name}"`) });
             entries.push({ id: 'readonly', icon: '🔒', text: 'Read-only file', isDisabled: true, isVisible: isReadonly });
@@ -599,7 +599,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     items.push({ id: 'promote', icon: '⬆️', text: 'Promote' });
                 }
                 items.push(
-                    menuDivider('Danger zone'),
+                    createMenuDivider('Danger zone'),
                     { id: 'remove', icon: '🗑️', text: `Remove ${d.name}`, isDanger: true },
                 );
             }
@@ -654,7 +654,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
         cm6.getContextMenuItemsCallback = () => [
             { id: 'open',   icon: '📂', text: 'Open',   shortcut: 'O' },
             { id: 'rename', icon: '✏️', text: 'Rename', shortcut: 'F2' },
-            menuDivider(),
+            createMenuDivider(),
             { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true },
         ];
         document.getElementById('cm6-x').addEventListener('input', (e) => {
@@ -682,7 +682,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                     { id: 'json', text: 'JSON' },
                     { id: 'xml',  text: 'XML' },
                 ]},
-                menuDivider('Danger zone'),
+                createMenuDivider('Danger zone'),
                 { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, isDisabled: isReadonly },
             ];
         };

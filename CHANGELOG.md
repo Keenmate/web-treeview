@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — BREAKING — core 1.0.0-rc18 (2026-11-04)
+- `@keenmate/web-components-core` ^1.0.0-rc17 → ^1.0.0-rc18.
+- **The re-exported menu-divider factory is `createMenuDivider(text?)`** (was `menuDivider`) — core's `create`
+  = factory prefix. App code building `getContextMenuItemsCallback` entries with it renames the import; the
+  plain `{ divider: true, text? }` form is unchanged.
+
+### Internal — core 1.0.0-rc18 (2026-11-04)
+- The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),
+  `renderItemCallback` / `renderMenuCallback` (were `renderItem` / `renderMenu`). The element's
+  `renderContextMenuItemCallback` / `renderContextMenuCallback` are unchanged.
+- `theme` uses `toEnum(…, { isNullable: true })` (was `shouldNullOnInvalid`); same behaviour.
+
 ### Internal — devkit 1.0.0-rc09 (2026-11-04)
 - `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and
   `make check-pages`, and the CLAUDE.md devkit block's notes on page colours and `check-pages`.

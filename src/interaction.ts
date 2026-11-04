@@ -219,7 +219,7 @@ export type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'c
 
 /** A context-menu item (core `MenuItem`): text, icon, shortcut, `get*Callback(ctx)`, `onClick(detail)`, children. */
 export type TreeMenuItem<T = any> = MenuItem<TreeMenuContext<T>, TreeViewAction>;
-/** A menu item, a divider (`menuDivider(text?)`) or a built-in action name. */
+/** A menu item, a divider (`createMenuDivider(text?)`) or a built-in action name. */
 export type TreeMenuEntry<T = any> = MenuEntry<TreeMenuContext<T>, TreeViewAction> | TreeViewAction;
 
 /** ctx of `renderContextMenuCallback` — take over the whole menu. */

@@ -256,7 +256,7 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
 - Context menu: `getContextMenuItemsCallback({ node, path, parent, siblings, controller, element })`
   returns core action items (`{ id, text, icon, shortcut, cssClass, isDanger, isDisabled,
   isVisible, isToggled, tooltip, onClick(detail), children, getChildrenCallback, shouldCloseOnClick }`),
-  dividers (`{ divider: true, text }` / `menuDivider(text)`), or built-in names
+  dividers (`{ divider: true, text }` / `createMenuDivider(text)`), or built-in names
   `'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'`. Activation:
   `beforeActionCallback(detail)` (false cancels) → `onClick(detail)` → built-in → `action` event
   (a notification after the fact — listeners see the built-in's result).

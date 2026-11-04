@@ -257,13 +257,13 @@ tree.renderLoadingCallback = ({ containerElement }) => {
 Right-click context menus are defined via `getContextMenuItemsCallback`. It receives one ctx — `{ node, path, parent, siblings, controller, element }` — and returns core action items, dividers, or built-in names:
 
 ```javascript
-import { menuDivider } from '@keenmate/web-treeview';
+import { createMenuDivider } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }) => [
   { id: 'edit', text: 'Edit', icon: 'fa fa-edit', shortcut: 'E', onClick: () => editNode(node) },
   { id: 'duplicate', text: 'Duplicate', icon: 'fa fa-copy', onClick: () => duplicateNode(node) },
   'copy', 'cut', 'paste',                       // built-ins (act on the node or the selection)
-  menuDivider('Danger zone'),                   // or { divider: true, text: 'Danger zone' }
+  createMenuDivider('Danger zone'),                   // or { divider: true, text: 'Danger zone' }
   { id: 'delete', text: 'Delete', isDanger: true, shortcut: 'Delete', onClick: () => deleteNode(node) },
 ];
 ```

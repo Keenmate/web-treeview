@@ -1995,15 +1995,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       shouldFocusFirst: isFromKeyboard,
       returnFocusTo: this.bodyEl,
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
-      renderItem: config.renderContextMenuItemCallback
+      renderItemCallback: config.renderContextMenuItemCallback
         ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)
         : undefined,
-      renderMenu: renderMenu
+      renderMenuCallback: renderMenu
         ? (el) => renderMenu(node, () => this.controller?.closeContextMenu(), el)
         : undefined,
       runAction: (item, { triggerElement, sourceEvent }) =>
         config.activateContextMenuItem?.(item as TreeMenuItem<T>, ctx, triggerElement, sourceEvent),
-      closeCallback: () => {
+      onClose: () => {
         if (this._menu !== menu) return; // replaced by a newer open
         this._menu = null;
         this._menuKey = null;

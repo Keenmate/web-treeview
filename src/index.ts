@@ -109,9 +109,9 @@ export type {
 
 // The interaction model: controller facade, callback contexts, menu items, event details.
 export type * from './interaction';
-// Menu dividers for getContextMenuItemsCallback: `menuDivider('Group')`; submenu entries for a
+// Menu dividers for getContextMenuItemsCallback: `createMenuDivider('Group')`; submenu entries for a
 // renderContextMenuCallback (`getMenuChildren(item, ctx)`).
-export { menuDivider, getMenuChildren } from '@keenmate/web-components-core/actions';
+export { createMenuDivider, getMenuChildren } from '@keenmate/web-components-core/actions';
 export type { ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
 // The shared loader hook (renderLoadingCallback / window.components.renderLoaderCallback, core SPEC §12.14).
 export type { LoaderRenderContext, RenderLoaderCallback } from '@keenmate/web-components-core';

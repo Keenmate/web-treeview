@@ -335,7 +335,7 @@ export interface TreeViewConfig<T = any> {
   /**
    * The context-menu entries for the node right-clicked (`ctx.node`, with `parent` /
    * `siblings`): core action items (`{ id, text, icon, shortcut, onClick(detail) }`,
-   * `get*Callback(ctx)`, `children` / `getChildrenCallback`), `menuDivider(text?)`, or a
+   * `get*Callback(ctx)`, `children` / `getChildrenCallback`), `createMenuDivider(text?)`, or a
    * built-in name (`'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'`). Every
    * activation fires the `action` event.
    */

@@ -258,11 +258,11 @@ let nextId = 9000;
 tree.pasteNodes(targetPath, ({ data }) =&gt; ({ ...data, id: nextId++ }), 'child');
 
 // Right-click menu
-import { menuDivider } from '@keenmate/web-treeview';
+import { createMenuDivider } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }) =&gt; [
   { id: 'rename', icon: '✏️', text: 'Rename', onClick: () =&gt; renameNode(node.path) },
-  menuDivider(),
+  createMenuDivider(),
   { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true,
     onClick: () =&gt; tree.removeNode(node.path) },
 ];</code></pre>
@@ -323,7 +323,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
 </div>
 
 <script type="module">
-    import { menuDivider } from '/src/index.ts';
+    import { createMenuDivider } from '/src/index.ts';
 
     // ── Sample data ──────────────────────────────────────────────────
 
@@ -540,10 +540,10 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 }
             } },
             { id: 'rename', icon: '✏️', text: 'Rename…', shortcut: 'F2', onClick: () => window.renameNode(node.path) },
-            menuDivider(),
+            createMenuDivider(),
             { id: 'up', icon: '⬆️', text: 'Move up', onClick: () => { tree.focusNode(node.path); move(-1); } },
             { id: 'down', icon: '⬇️', text: 'Move down', onClick: () => { tree.focusNode(node.path); move(1); } },
-            menuDivider(),
+            createMenuDivider(),
             { id: 'delete', icon: '🗑️', text: 'Delete', isDanger: true, onClick: () => window.deleteFocused(node.path) },
         ];
 

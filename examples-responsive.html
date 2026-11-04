@@ -8,10 +8,10 @@
    is what the NodeRenderContext reports as ctx.container. The native resize
    handle (bottom-right) lets you drag across the breakpoints live. */
 .resize-box {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid var(--kmwc-border-color);
+    border-radius: var(--kmwc-radius-md);
     padding: 0.5rem;
-    background: #fff;
+    background: var(--kmwc-main-bg);
     overflow: auto;
     resize: horizontal;
     height: 360px;
@@ -21,47 +21,9 @@
 }
 .resize-box web-treeview { display: block; }
 
-/* RS01 / RS02 custom row markup injected by renderNodeCallback. */
-.isco-row {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    min-width: 0;
-}
-.isco-code {
-    flex: none;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.72rem;
-    color: #fff;
-    background: #6366f1;
-    border-radius: 4px;
-    padding: 0.05rem 0.4rem;
-}
-.isco-label { min-width: 0; }
-
-/* A small per-row device badge (RS01) — driven by ctx.deviceClass. */
-.dev-badge {
-    flex: none;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    border-radius: 4px;
-    padding: 0.02rem 0.3rem;
-    color: #fff;
-}
-.dev-badge.mobile  { background: #ef4444; }
-.dev-badge.tablet  { background: #f59e0b; }
-.dev-badge.desktop { background: #10b981; }
-
-/* RS03 — label overflow behaviours applied to the custom label span. */
-.ov-label { display: inline-block; max-width: 100%; vertical-align: bottom; }
-.ov-wrap .ov-label     { white-space: normal; }
-.ov-ellipsis .ov-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
 .hint {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--kmwc-text-color-3);
     margin: 0.4rem 0 0;
 }
 </style>
@@ -308,7 +270,47 @@ const data = [
     { value: '351', path: '3.5.1', label: 'Information and Communications Technology Operations Technicians' }
 ];
 
-const baseConfig = { idMember: 'value', pathMember: 'path', displayValueMember: 'label', nodes: data };
+// The rows renderNodeCallback draws live in the tree's shadow root, so page CSS can't
+// reach them — their rules go in through getCustomStylesCallback. The kit's --kmwc-*
+// tokens inherit into the shadow root, so the chips follow the page theme.
+const ROW_CSS = `
+    /* RS01 / RS02 custom row markup. */
+    .isco-row { display: inline-flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+    .isco-code {
+        flex: none;
+        font-family: var(--kmwc-mono-font-family);
+        font-size: 0.72rem;
+        color: var(--kmwc-text-color-on-accent);
+        background: var(--kmwc-accent-color);
+        border-radius: 4px;
+        padding: 0.05rem 0.4rem;
+    }
+    .isco-label { min-width: 0; }
+    /* A small per-row device badge (RS01) — driven by ctx.deviceClass. */
+    .dev-badge {
+        --tone: var(--kmwc-success-color);
+        flex: none;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        padding: 0.02rem 0.3rem;
+        color: var(--tone);
+        background: color-mix(in srgb, var(--tone) 16%, transparent);
+    }
+    .dev-badge.mobile { --tone: var(--kmwc-danger-color); }
+    .dev-badge.tablet { --tone: var(--kmwc-warning-color); }
+    /* RS03 — label overflow behaviours applied to the custom label span. */
+    .ov-label { display: inline-block; max-width: 100%; vertical-align: bottom; }
+    .ov-wrap .ov-label { white-space: normal; }
+    .ov-ellipsis .ov-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+`;
+
+const baseConfig = {
+    idMember: 'value', pathMember: 'path', displayValueMember: 'label', nodes: data,
+    getCustomStylesCallback: () => ROW_CSS,
+};
 
 customElements.whenDefined('web-treeview').then(() => {
     // Expose button handlers (inline onclick) once the element is defined.

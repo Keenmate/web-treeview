@@ -755,14 +755,16 @@
 
             // Reject moving locked nodes
             if (draggedNode?.data?.name?.includes('[locked]')) {
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot move locked node: ${draggedNode.data.name}`;
+                entry.classList.add('log-line--err');
+                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">REJECTED</span> Cannot move locked node: ${draggedNode.data.name}`;
                 log5.prepend(entry);
                 return false;
             }
 
             // Reject dropping directly on Archive root
             if (dropNode?.data?.name === 'Archive' && position === 'child') {
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name" style="color: #fc8181">REJECTED</span> Cannot drop into Archive root directly`;
+                entry.classList.add('log-line--err');
+                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">REJECTED</span> Cannot drop into Archive root directly`;
                 log5.prepend(entry);
                 return false;
             }

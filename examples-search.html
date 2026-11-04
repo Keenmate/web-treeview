@@ -3,58 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Page-specific: compact search bar with inline mode toggle, counter + nav */
-    .search-bar {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0 0.5rem;
-        margin-bottom: 1rem;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .search-bar:focus-within {
-        border-color: #059669;
-        box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
-    }
-    .search-mode-btn {
-        display: flex; align-items: center; justify-content: center;
-        width: 32px; height: 32px; border: none; background: transparent;
-        cursor: pointer; color: #718096; border-radius: 4px;
-        padding: 0; flex-shrink: 0;
-    }
-    .search-mode-btn:hover { background: #edf2f7; color: #059669; }
-    .search-mode-label {
-        font-size: 0.72rem; font-weight: 700; color: #059669;
-        text-transform: uppercase; letter-spacing: 0.05em;
-        min-width: 46px; padding: 0 0.25rem;
-    }
-    .search-input {
-        padding: 0.45rem 0.5rem; border: none; background: transparent;
-        font-size: 0.9rem; flex: 1; outline: none; min-width: 0;
-    }
-    .search-counter {
-        font-size: 0.75rem; color: #4a5568; font-weight: 600;
-        white-space: nowrap; padding: 0 0.5rem;
-    }
-    .search-counter.no-results { color: #e53e3e; }
-    .search-nav-btn {
-        display: flex; align-items: center; justify-content: center;
-        width: 28px; height: 28px; border: none; background: transparent;
-        cursor: pointer; color: #718096; border-radius: 4px;
-        padding: 0; flex-shrink: 0;
-    }
-    .search-nav-btn:hover { background: #edf2f7; color: #059669; }
-    kbd {
-        background: #edf2f7; color: #2d3748; border: 1px solid #cbd5e0;
-        border-radius: 3px; padding: 0.1em 0.4em; font-size: 0.85em;
-        font-family: inherit;
-    }
-</style>
-
 <!-- SF01 · Search & Navigate -->
 <div class="card">
     <h2>SF01 · Search &amp; Navigate</h2>

@@ -4,38 +4,6 @@
 <link rel="stylesheet" href="examples-local.css">
 
 <style>
-    /* Page-specific: compact live-status bar with an inline count badge. */
-    .status-bar {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        color: #475569;
-        margin-bottom: 1rem;
-    }
-    .status-bar .badge {
-        padding: 0.1rem 0.5rem;
-        border-radius: 10px;
-        background: #e0e7ff;
-        color: #3730a3;
-        font-size: 0.8em;
-    }
-    /* Page-specific: transient warning banner (shown/hidden via JS). */
-    .drop-warning {
-        margin-top: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        color: #991b1b;
-        display: none;
-    }
     /* Editor layout: tree on the left, toolbar + state on the right. */
     .editor-grid {
         display: grid;
@@ -50,23 +18,23 @@
         flex-direction: column;
         gap: 1rem;
     }
-    .control-group {
+    .editor-panel {
         padding: 0.75rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: #fafafa;
+        border: 1px solid var(--kmwc-border-color);
+        border-radius: var(--kmwc-radius-sm);
+        background: var(--kmwc-elevated-bg);
     }
-    .control-group h3 {
+    .editor-panel h3 {
         margin: 0 0 0.5rem;
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.03em;
-        color: #64748b;
+        color: var(--kmwc-text-color-3);
     }
-    .control-group .help-text {
+    .editor-panel .help-text {
         margin: 0 0 0.5rem;
         font-size: 0.8rem;
-        color: #94a3b8;
+        color: var(--kmwc-text-color-3);
     }
     .input-row {
         display: flex;
@@ -110,7 +78,7 @@
                     drag-drop-mode="both"
                     selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-            <div class="drop-warning" id="te-warning"></div>
+            <div class="result-banner result-banner--err" id="te-warning"></div>
 
             <div class="output mt-1">
                 <p class="output-label">Activity log:</p>
@@ -119,7 +87,7 @@
         </div>
 
         <div class="editor-toolbar">
-            <div class="control-group">
+            <div class="editor-panel">
                 <h3>Add Node</h3>
                 <p class="help-text" id="te-add-help">Adding at root level</p>
                 <div class="input-row">
@@ -140,7 +108,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="editor-panel">
                 <h3>Edit Node</h3>
                 <p class="help-text">Acts on the focused node</p>
                 <div class="button-row">
@@ -149,7 +117,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="editor-panel">
                 <h3>Reorder</h3>
                 <p class="help-text">Move the focused node among its siblings</p>
                 <div class="button-row">
@@ -158,7 +126,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="editor-panel">
                 <h3>Tree</h3>
                 <div class="button-row">
                     <button class="btn-outline" onclick="exportConsole()">Export to console</button>

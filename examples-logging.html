@@ -4,48 +4,28 @@
 <link rel="stylesheet" href="examples-local.css">
 
 <style>
-    /* Page-specific: live registry inspector (dark console dump of the
-       window.components entry) + its pills/badges. */
+    /* Page-specific: live registry inspector (the window.components entry as a
+       term / value grid). Pills and the count badge are the kit's .pill / .badge. */
     .registry {
         display: grid;
         grid-template-columns: max-content 1fr;
         gap: 0.4rem 1rem;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-family: var(--kmwc-mono-font-family);
         font-size: 0.85rem;
-        background: #0f172a;
-        color: #e2e8f0;
+        background: var(--kmwc-elevated-bg);
+        color: var(--kmwc-text-color-1);
+        border: 1px solid var(--kmwc-border-color);
         padding: 1rem 1.25rem;
-        border-radius: 8px;
+        border-radius: var(--kmwc-radius-md);
         overflow-x: auto;
     }
-    .registry dt { color: #7dd3fc; white-space: nowrap; }
-    .registry dd { margin: 0; color: #e2e8f0; word-break: break-word; }
-    .registry .muted { color: #94a3b8; }
-    .pill {
-        display: inline-block;
-        background: #1e293b;
-        color: #7dd3fc;
-        border: 1px solid #334155;
-        border-radius: 999px;
-        padding: 0.05rem 0.5rem;
-        margin: 0 0.2rem 0.2rem 0;
-        font-size: 0.78rem;
-    }
-    .pill.on { color: #86efac; border-color: #166534; background: #052e16; }
-    .count-badge {
-        display: inline-block;
-        min-width: 1.4rem;
-        text-align: center;
-        background: #2563eb;
-        color: #fff;
-        border-radius: 999px;
-        padding: 0.05rem 0.5rem;
-        font-weight: 700;
-    }
+    .registry dt { color: var(--kmwc-info-color); white-space: nowrap; }
+    .registry dd { margin: 0; word-break: break-word; }
+    .registry .pill { margin: 0 0.2rem 0.2rem 0; }
     #dynamic-hosts { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
     #dynamic-hosts:empty::after {
         content: "No dynamic instances yet — click \"Add a tree\".";
-        color: #6b7280; font-style: italic;
+        color: var(--kmwc-text-color-3); font-style: italic;
     }
 </style>
 
@@ -278,7 +258,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             // Reflect each category's effective level from what we last set.
             const lvl = window.__catLevel?.[c];
             const on = lvl && lvl !== 'silent';
-            return `<span class="pill ${on ? 'on' : ''}">${esc(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
+            return `<span class="pill ${on ? 'pill--ok' : ''}">${esc(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
         }).join('');
         const instPills = instances.length
             ? instances.map((el, i) => `<span class="pill">${esc(el.id || `#${i}`)}</span>`).join('')
@@ -290,7 +270,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             <dt>config.author</dt><dd>${esc(cfg.author ?? '—')}</dd>
             <dt>config.license</dt><dd>${esc(cfg.license ?? '—')}</dd>
             <dt>logging</dt><dd>${cats.length ? catPills : '<span class="muted">no bundle</span>'}</dd>
-            <dt>getInstances()</dt><dd><span class="count-badge">${instances.length}</span> &nbsp; ${instPills}</dd>
+            <dt>getInstances()</dt><dd><span class="badge">${instances.length}</span> &nbsp; ${instPills}</dd>
         `;
     };
 

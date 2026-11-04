@@ -3,39 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Page-specific: compact live-status bar with an inline count badge. */
-    .status-bar {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        color: #475569;
-        margin-bottom: 1rem;
-    }
-    .status-bar .badge {
-        padding: 0.1rem 0.5rem;
-        border-radius: 10px;
-        font-size: 0.8em;
-    }
-    /* Transient activity-log result toast (IN05). */
-    .bulk-result {
-        margin-top: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        background: #ecfdf5;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        color: #065f46;
-        display: none;
-    }
-    .bulk-result.error { background: #fef2f2; color: #991b1b; }
-</style>
-
 <!-- IN01 · Click Behavior & Multi-Select -->
 <div class="card">
     <h2>IN01 · Click Behavior &amp; Multi-Select</h2>
@@ -393,7 +360,7 @@ function restoreFromUrl(nodePath) {
         <button class="btn-outline" id="in6-reset">Reset tree</button>
     </div>
 
-    <div class="bulk-result" id="in6-bulk-result"></div>
+    <div class="result-banner" id="in6-bulk-result"></div>
 
     <div class="output">
         <p class="output-label">Tree data (live):</p>
@@ -701,7 +668,7 @@ function restoreFromUrl(nodePath) {
         function showBulkResult(result, isError) {
             const el = document.getElementById('in6-bulk-result');
             el.textContent = JSON.stringify({ ...result, parentNode: result.parentNode?.path, failed: result.failed?.map((f) => f.error) });
-            el.className = 'bulk-result' + (isError ? ' error' : '');
+            el.className = 'result-banner' + (isError ? ' result-banner--err' : '');
             el.style.display = 'block';
             setTimeout(() => { el.style.display = 'none'; }, 4000);
         }

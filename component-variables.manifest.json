@@ -18,6 +18,7 @@
     { "name": "base-dropdown-box-shadow", "required": false, "usage": "Context menu shadow" },
     { "name": "base-dropdown-bg", "required": false, "usage": "Context menu background" },
     { "name": "base-dropdown-border", "required": false, "usage": "Context menu border" },
+    { "name": "base-line-height-normal", "required": false, "usage": "Context menu line height (core menu)" },
     { "name": "base-tooltip-bg", "required": false, "usage": "Node tooltip background" },
     { "name": "base-tooltip-text-color", "required": false, "usage": "Node tooltip text color" },
     { "name": "base-shadow-md", "required": false, "usage": "Node tooltip shadow" },

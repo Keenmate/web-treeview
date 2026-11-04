@@ -65,6 +65,9 @@
     "image": {
       "name": "registry.km8.es/web-treeview-examples:prod",
       "runner": "podman"
+    },
+    "cssVariables": {
+      "sources": ["src/css", "@keenmate/web-components-core/dist/menu/styles.js"]
     }
   },
   "scripts": {

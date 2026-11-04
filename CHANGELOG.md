@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `kmwc.rulebook.skippedChecks: ["responsive-overlay"]` is gone: the rulebook's overlay gate (fixed
   2026-11-04) no longer reads the tooltip / drag ghost / `::after` glyph as panels and skips the suite
   itself. `VALIDATION-NOTES.md` keeps D-RO-1 = B and drops the stale C-NC-3 script-bug remark.
+- `check:vars` reads core's menu styles too (`kmwc.cssVariables.sources` lists
+  `@keenmate/web-components-core/dist/menu/styles.js`): the context menu core renders inside the tree reads
+  `--base-dropdown-bg` / `-border` / `-box-shadow`, which the manifest already listed, and
+  `--base-line-height-normal`, now listed. It also reads `--base-accent-color`, which isn't in the
+  `--base-*` contract. That one is core's to fix, so check:vars still reports it.
 
 ### Changed — rulebook pass (2026-11-03)
 - **The expanded toggle's state class is `.wtv__toggle-icon--expanded`** (was the bare `.expanded`). Custom

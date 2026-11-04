@@ -46,7 +46,7 @@ export interface RendererConfig<T> {
   /** Built-in label overflow (`data-node-title-overflow` on `.wtv__container`). Default `'ellipsis'`. */
   nodeTitleOverflow?: NodeTitleOverflow | null;
   /** The tree container was resized (also once when observing starts). */
-  containerResizeCallback?: (size: ContainerSize, deviceClass: import('@keenmate/web-components-core').DeviceClass) => void;
+  onContainerResize?: (size: ContainerSize, deviceClass: import('@keenmate/web-components-core').DeviceClass) => void;
   /** Custom node content renderer. Receives the node, a container element to populate,
    *  and the NodeRenderContext (device + container + live node state). */
   renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement, ctx: NodeRenderContext) => void;

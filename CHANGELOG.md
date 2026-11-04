@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — rulebook pass (2026-11-03)
+- **The expanded toggle's state class is `.wtv__toggle-icon--expanded`** (was the bare `.expanded`). Custom
+  styles injected through `getCustomStylesCallback` that targeted `.wtv__toggle-icon.expanded` must follow.
+- New tokens: `--wtv-node-info-reveal-box-shadow` (the full-label popover, ← `--base-shadow-lg`) and
+  `--wtv-drag-over-glow-bg` (the drag-over row overlay); `--wtv-icon-info` is now declared on `:host` in
+  `variables.css` instead of on `.wtv__node-info`. The popover's `max-width` uses `90dvw`.
+- Engine / renderer config (exported types, not the element surface): `renderStartCallback` /
+  `renderProgressCallback` / `renderCompleteCallback` → `onRenderStart` / `onRenderProgress` /
+  `onRenderComplete`, `containerResizeCallback` → `onContainerResize`, and `TreeEngineSnapshot.contextMenuVisible`
+  → `isContextMenuVisible`. The element / facade options were already `on*`.
+- `VALIDATION-NOTES.md` records `SelectionModifiers.ctrl/shift`, core's `.wtv-loader` and the
+  not-applicable responsive-overlay suite (`kmwc.rulebook.skippedChecks`).
+
 ### Internal — examples site on @keenmate/web-components-devkit (2026-11-03)
 - The 14 example pages are devkit fragment pages and `index.html` renders from the page registry
   (`renderExamplesIndex`); the devkit adds the header, chapter nav, copy-links, theme switch (light / dark /

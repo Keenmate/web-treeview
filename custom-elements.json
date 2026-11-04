@@ -202,7 +202,7 @@
               "description": "Formats the n-th alternative; defaults to `${base} Copy ${n}`."
             }
           ],
-          "description": "Pick a name that doesn't collide with `taken`, appending a suffix until free.\r\nConvenience for collision-aware paste naming inside a\r\npasteNodeTransformationCallback:\r\n  `name: uniqueName(data.name, ctx.target.siblings.map(s => s.data?.name))`.\r\nBecause the transform reads the pristine clipboard snapshot every paste, `base`\r\nis never pre-suffixed — no \"Copy 1 Copy 1\"."
+          "description": "Pick a name that doesn't collide with `taken`, appending a suffix until free.\nConvenience for collision-aware paste naming inside a\npasteNodeTransformationCallback:\n  `name: uniqueName(data.name, ctx.target.siblings.map(s => s.data?.name))`.\nBecause the transform reads the pristine clipboard snapshot every paste, `base`\nis never pre-suffixed — no \"Copy 1 Copy 1\"."
         }
       ],
       "exports": [
@@ -380,7 +380,7 @@
         {
           "kind": "variable",
           "name": "logging",
-          "description": "The single core logger bundle for this component. Exported so the element\r\nregistration (`index.ts` → `registerComponent`) can expose its controls on\r\n`window.components['web-treeview'].logging` and `BlissElement` can build the\r\nper-instance `this.log` loggers from it."
+          "description": "The single core logger bundle for this component. Exported so the element\nregistration (`index.ts` → `registerComponent`) can expose its controls on\n`window.components['web-treeview'].logging` and `BlissElement` can build the\nper-instance `this.log` loggers from it."
         },
         {
           "kind": "variable",
@@ -490,7 +490,7 @@
               }
             }
           ],
-          "description": "Set the level of one category. Accepts the full prefixed name\r\n(`TREEVIEW:INDEX`) or the bare suffix (`INDEX`) — both normalize to the\r\ncategory key the core bundle expects."
+          "description": "Set the level of one category. Accepts the full prefixed name\n(`TREEVIEW:INDEX`) or the bare suffix (`INDEX`) — both normalize to the\ncategory key the core bundle expects."
         },
         {
           "kind": "variable",
@@ -1052,11 +1052,11 @@
               }
             }
           ],
-          "description": "Build the public facade over whatever `getTarget()` returns now — the element passes\r\nits current WebTreeView (so the facade survives rebuilds), a standalone\r\nWebTreeView passes itself."
+          "description": "Build the public facade over whatever `getTarget()` returns now — the element passes\nits current WebTreeView (so the facade survives rebuilds), a standalone\nWebTreeView passes itself."
         },
         {
           "kind": "class",
-          "description": "WebTreeView<T> — wraps the TreeEngine + a TreeViewRenderer. Used by\r\n`<web-treeview>` and standalone. It owns the PUBLIC config shape (single-ctx\r\ncallbacks, events with the component context) and adapts it to the engine's\r\ninternal callbacks — memoized per source function, so an unchanged callback keeps\r\nits identity across updates (the engine rebuilds the tree when one changes).",
+          "description": "WebTreeView<T> — wraps the TreeEngine + a TreeViewRenderer. Used by\n`<web-treeview>` and standalone. It owns the PUBLIC config shape (single-ctx\ncallbacks, events with the component context) and adapts it to the engine's\ninternal callbacks — memoized per source function, so an unchanged callback keeps\nits identity across updates (the engine rebuilds the tree when one changes).",
           "name": "WebTreeView",
           "members": [
             {
@@ -1263,7 +1263,7 @@
               },
               "privacy": "private",
               "default": "null",
-              "description": "The overlay loader drawer: core `renderLoader` with the instance hook (else the page\r\nhook, else the default `.wtv-loader`). Stable identity per hook (the renderer redraws on change)."
+              "description": "The overlay loader drawer: core `renderLoader` with the instance hook (else the page\nhook, else the default `.wtv-loader`). Stable identity per hook (the renderer redraws on change)."
             },
             {
               "kind": "method",
@@ -1426,7 +1426,7 @@
                   }
                 }
               ],
-              "description": "Activate a menu item exactly like the built-in menu (core `runAction`):\r\n`beforeActionCallback` (`false` cancels — nothing else runs) → item `onClick(detail)` →\r\nthe built-in action (on the selection when `ctx.node` is in it, else on `ctx.node`) →\r\n`action` event / `onAction(detail)`. `detail.source` is `'context-menu'`; `trigger` gets\r\n`aria-busy` while it runs (a second activation of the same item meanwhile is ignored).\r\nResolves `false` when cancelled or ignored. Public for `renderContextMenuCallback` —\r\nclosing the menu is the caller's job (honour `item.shouldCloseOnClick !== false`)."
+              "description": "Activate a menu item exactly like the built-in menu (core `runAction`):\n`beforeActionCallback` (`false` cancels — nothing else runs) → item `onClick(detail)` →\nthe built-in action (on the selection when `ctx.node` is in it, else on `ctx.node`) →\n`action` event / `onAction(detail)`. `detail.source` is `'context-menu'`; `trigger` gets\n`aria-busy` while it runs (a second activation of the same item meanwhile is ignored).\nResolves `false` when cancelled or ignored. Public for `renderContextMenuCallback` —\nclosing the menu is the caller's job (honour `item.shouldCloseOnClick !== false`)."
             },
             {
               "kind": "method",
@@ -1560,7 +1560,7 @@
                   }
                 }
               ],
-              "description": "Toggle the expand state of a node as if the user had clicked its toggle\r\nicon. Honors `shouldExpandAsAccordion`."
+              "description": "Toggle the expand state of a node as if the user had clicked its toggle\nicon. Honors `shouldExpandAsAccordion`."
             },
             {
               "kind": "method",
@@ -2203,7 +2203,7 @@
                   }
                 }
               ],
-              "description": "Batch-duplicate a complete manifest under a target — the copy-side twin of\r\nmoveNodes. `sourceTree` defaults to this tree (cross-tree copy otherwise)."
+              "description": "Batch-duplicate a complete manifest under a target — the copy-side twin of\nmoveNodes. `sourceTree` defaults to this tree (cross-tree copy otherwise)."
             },
             {
               "kind": "method",
@@ -2327,7 +2327,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The expanded set; assigning replaces it (branches not listed collapse) silently — no\r\n`expanded-change` (use `expandNodes` / `collapseNodes` for an announced change)."
+              "description": "The expanded set; assigning replaces it (branches not listed collapse) silently — no\n`expanded-change` (use `expandNodes` / `collapseNodes` for an announced change)."
             },
             {
               "kind": "field",
@@ -2335,7 +2335,7 @@
               "type": {
                 "text": "T[]"
               },
-              "description": "The node objects: assigning replaces the tree (input); reading returns every node's\r\ndata in tree order — the current state, mutations included."
+              "description": "The node objects: assigning replaces the tree (input); reading returns every node's\ndata in tree order — the current state, mutations included."
             },
             {
               "kind": "method",
@@ -2467,7 +2467,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The selected set (snapshot); assigning replaces it silently — no `selection-change` /\r\n`checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce)."
+              "description": "The selected set (snapshot); assigning replaces it silently — no `selection-change` /\n`checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce)."
             },
             {
               "kind": "method",
@@ -2633,7 +2633,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it\r\nsilently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce)."
+              "description": "The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it\nsilently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce)."
             },
             {
               "kind": "method",
@@ -3018,7 +3018,7 @@
                   "text": "void"
                 }
               },
-              "description": "The host was detached (a DOM move or a removal): stop live resources only\r\n(document listeners, observers, autoUpdate, open popups). Tree state, the\r\nrendered rows and the scroll offset survive; activate resumes.\r\nIdempotent."
+              "description": "The host was detached (a DOM move or a removal): stop live resources only\n(document listeners, observers, autoUpdate, open popups). Tree state, the\nrendered rows and the scroll offset survive; activate resumes.\nIdempotent."
             },
             {
               "kind": "method",
@@ -4076,7 +4076,7 @@
               },
               "readonly": true,
               "default": "{ onNodeClick: (d) => this.emit('node-click', d), onNodeDoubleClick: (d) => this.emit('node-double-click', d), onNodeExpand: (d) => this.emit('node-expand', d), onNodeCollapse: (d) => this.emit('node-collapse', d), onNodeCopy: (d) => this.emit('node-copy', d), onNodeCut: (d) => this.emit('node-cut', d), onNodePaste: (d) => this.emit('node-paste', d), onNodeDelete: (d) => this.emit('node-delete', d), onNodeDragStart: (d) => this.emit('node-drag-start', d), onNodeDragOver: (d) => this.emit('node-drag-over', d), onNodeDrop: (d) => this.emit('node-drop', d), onNodeDragReject: (d) => this.emit('node-drag-reject', d), onNodeDropReject: (d) => this.emit('node-drop-reject', d), onSelectionChange: (d) => this.emit('selection-change', d), onCheckedChange: (d) => this.emit('checked-change', d), onFocusChange: (d) => this.emit('focus-change', d), onExpandedChange: (d) => this.emit('expanded-change', d), onNodesReorder: (d) => this.emit('nodes-reorder', d), onTreeChange: (d) => this.emit('tree-change', d), onAction: (d) => this.emit('action', d), onRenderStart: (d) => { this.#isRendering = true; this.emit('render-start', d); }, onRenderProgress: (d) => this.emit('render-progress', d), onRenderComplete: (d) => { this.#isRendering = false; this.emit('render-complete', d); }, onContainerResize: (d) => this.emit('container-resize', d), }",
-              "description": "The tree's notifications → `emit()` (which calls the twin, then dispatches). Built\r\nonce, so WebTreeView's memoized adapters keep their identity across updates."
+              "description": "The tree's notifications → `emit()` (which calls the twin, then dispatches). Built\nonce, so WebTreeView's memoized adapters keep their identity across updates."
             },
             {
               "kind": "field",
@@ -4182,7 +4182,7 @@
                   }
                 }
               ],
-              "description": "Cosmetic/structural change — patch the live engine. Also serves as the\r\nPUBLIC imperative `el.update(props)` method (the old API).\r\n\r\nSends the FULL assembled engine config on every call, exactly like the old\r\n`_scheduleUpdate` → `treeview.update(buildConfig())` did. This matters:\r\n`controller.updateProps` is a merge, and several derived behaviors (e.g.\r\n`expandLevel` auto-expansion when `data` arrives) only fire when the relevant\r\nkeys are present together. A changed-keys-only partial would drop them.\r\nAny explicit `partial` (imperative caller) is folded over the assembled config."
+              "description": "Cosmetic/structural change — patch the live engine. Also serves as the\nPUBLIC imperative `el.update(props)` method (the old API).\n\nSends the FULL assembled engine config on every call, exactly like the old\n`_scheduleUpdate` → `treeview.update(buildConfig())` did. This matters:\n`controller.updateProps` is a merge, and several derived behaviors (e.g.\n`expandLevel` auto-expansion when `data` arrives) only fire when the relevant\nkeys are present together. A changed-keys-only partial would drop them.\nAny explicit `partial` (imperative caller) is folded over the assembled config."
             },
             {
               "kind": "method",
@@ -4193,7 +4193,7 @@
                   "text": "void"
                 }
               },
-              "description": "Activate (every connect, after any reinit()/update()): re-attach the live\r\nresources. The tree is built once (reinit) and survives a DOM move with all\r\nits state; build only if it doesn't exist yet."
+              "description": "Activate (every connect, after any reinit()/update()): re-attach the live\nresources. The tree is built once (reinit) and survives a DOM move with all\nits state; build only if it doesn't exist yet."
             },
             {
               "kind": "method",
@@ -4204,7 +4204,7 @@
                   "text": "void"
                 }
               },
-              "description": "Deactivate (every disconnect — a DOM move or a removal): stop ONLY the live\r\nresources (document listeners, observers, autoUpdate, open popups). The\r\nengine + renderer are kept, so expansion, selection, checks, focus, search\r\nand the scroll offset survive a move (D1)."
+              "description": "Deactivate (every disconnect — a DOM move or a removal): stop ONLY the live\nresources (document listeners, observers, autoUpdate, open popups). The\nengine + renderer are kept, so expansion, selection, checks, focus, search\nand the scroll offset survive a move (D1)."
             },
             {
               "kind": "field",
@@ -4230,7 +4230,7 @@
               "type": {
                 "text": "boolean"
               },
-              "description": "True while the tree is armed (`highlight-on-page-drag` + a node is dragged over\r\nthe page + it accepts drops). Mirrors the `armed` attribute / `:state(armed)`.",
+              "description": "True while the tree is armed (`highlight-on-page-drag` + a node is dragged over\nthe page + it accepts drops). Mirrors the `armed` attribute / `:state(armed)`.",
               "readonly": true
             },
             {
@@ -4242,7 +4242,7 @@
                   "text": "void"
                 }
               },
-              "description": "Join / leave the shared page-drag tracker per `highlight-on-page-drag` and the\r\nconnection state (one page listener set for every instance), then re-derive\r\nthe armed state."
+              "description": "Join / leave the shared page-drag tracker per `highlight-on-page-drag` and the\nconnection state (one page listener set for every instance), then re-derive\nthe armed state."
             },
             {
               "kind": "method",
@@ -4264,7 +4264,7 @@
                   "text": "void"
                 }
               },
-              "description": "Final teardown (core `destroy()`): release what `disconnect()` keeps — the\r\nengine, renderer, search index and clipboard registration."
+              "description": "Final teardown (core `destroy()`): release what `disconnect()` keeps — the\nengine, renderer, search index and clipboard registration."
             },
             {
               "kind": "method",
@@ -4295,7 +4295,7 @@
                   "text": "TreeLoggers"
                 }
               },
-              "description": "The element's instance loggers for the engine / LTree / renderer, resolved\r\nper access: `this.log` changes when the tag's logging bundle is registered\r\nafter the element was built (it is the CORE fallback before that)."
+              "description": "The element's instance loggers for the engine / LTree / renderer, resolved\nper access: `this.log` changes when the tag's logging bundle is registered\nafter the element was built (it is the CORE fallback before that)."
             },
             {
               "kind": "method",
@@ -4316,7 +4316,7 @@
                   "text": "Partial<TreeViewConfig<T>>"
                 }
               },
-              "description": "Build the tree config from the merged `this.config`: drop element-only\r\nkeys (NON_ENGINE_KEYS) via core's `engineConfig`, which **preserves `null`**\r\nas the clear signal (SPEC §6.1 — the engine resolves it per field), then\r\nadd the event bridges and the context (this element + its rebuild-proof\r\ncontroller, so every ctx / detail carries them)."
+              "description": "Build the tree config from the merged `this.config`: drop element-only\nkeys (NON_ENGINE_KEYS) via core's `engineConfig`, which **preserves `null`**\nas the clear signal (SPEC §6.1 — the engine resolves it per field), then\nadd the event bridges and the context (this element + its rebuild-proof\ncontroller, so every ctx / detail carries them)."
             },
             {
               "kind": "method",
@@ -4342,7 +4342,7 @@
               "type": {
                 "text": "WebTreeView<T> | undefined"
               },
-              "description": "The live tree after applying pending property writes (`flush()`), so\r\n`el.prop = x; el.method()` sees `x` (core rule; NOTES #13).",
+              "description": "The live tree after applying pending property writes (`flush()`), so\n`el.prop = x; el.method()` sees `x` (core rule; NOTES #13).",
               "readonly": true
             },
             {
@@ -4587,7 +4587,7 @@
                   }
                 }
               ],
-              "description": "Run a menu item exactly like the built-in menu: `beforeActionCallback` (`false` cancels) →\r\nitem `onClick(detail)` → built-in action → `action` event. For `renderContextMenuCallback`:\r\n`ctx.controller.activateMenuItem(entry.item, ctx, button, event)`. Resolves `false` when\r\ncancelled; closing the menu is the caller's job."
+              "description": "Run a menu item exactly like the built-in menu: `beforeActionCallback` (`false` cancels) →\nitem `onClick(detail)` → built-in action → `action` event. For `renderContextMenuCallback`:\n`ctx.controller.activateMenuItem(entry.item, ctx, button, event)`. Resolves `false` when\ncancelled; closing the menu is the caller's job."
             },
             {
               "kind": "field",
@@ -4595,7 +4595,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The expanded set. Assigning replaces it (branches not listed collapse) silently — no\r\n`expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce); before\r\nthe first build the value is held and applied once the tree exists."
+              "description": "The expanded set. Assigning replaces it (branches not listed collapse) silently — no\n`expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce); before\nthe first build the value is held and applied once the tree exists."
             },
             {
               "kind": "method",
@@ -5279,7 +5279,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The selected set (a snapshot). Assigning replaces it silently — no `selection-change` /\r\n`checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce)."
+              "description": "The selected set (a snapshot). Assigning replaces it silently — no `selection-change` /\n`checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce)."
             },
             {
               "kind": "method",
@@ -5304,7 +5304,7 @@
               "type": {
                 "text": "string | null"
               },
-              "description": "The Shift-range anchor (Shift+click / Shift+Arrow extend from it); `null` = none.\r\nWritable — e.g. an alternative renderer keeping its own range selection in sync."
+              "description": "The Shift-range anchor (Shift+click / Shift+Arrow extend from it); `null` = none.\nWritable — e.g. an alternative renderer keeping its own range selection in sync."
             },
             {
               "kind": "method",
@@ -5463,7 +5463,7 @@
               "type": {
                 "text": "string[]"
               },
-              "description": "The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning\r\nreplaces it silently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce)."
+              "description": "The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning\nreplaces it silently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce)."
             },
             {
               "kind": "method",
@@ -5571,7 +5571,7 @@
                   }
                 }
               ],
-              "description": "Sort the children of each node (one level; `''` = the roots) by the tree's rule\r\n(`sortCallback` → `orderMember` → display value, numeric-aware) or `options.compareCallback`;\r\n`direction: 'desc'` reverses it. Fires `nodes-reorder` when `orderMember` values were\r\nrewritten (unless `isSilent`). Works with `isSortingEnabled` off too."
+              "description": "Sort the children of each node (one level; `''` = the roots) by the tree's rule\n(`sortCallback` → `orderMember` → display value, numeric-aware) or `options.compareCallback`;\n`direction: 'desc'` reverses it. Fires `nodes-reorder` when `orderMember` values were\nrewritten (unless `isSilent`). Works with `isSortingEnabled` off too."
             },
             {
               "kind": "method",
@@ -5597,7 +5597,7 @@
                   }
                 }
               ],
-              "description": "Sort whole subtrees — the nodes' children at every depth; `null` / omitted = the whole\r\ntree. Same rule / options / event as sortNodes."
+              "description": "Sort whole subtrees — the nodes' children at every depth; `null` / omitted = the whole\ntree. Same rule / options / event as sortNodes."
             },
             {
               "kind": "field",
@@ -5906,7 +5906,7 @@
                   "text": "TreeViewController<T>"
                 }
               },
-              "description": "The public facade (`el.controller`, and `controller` on every callback ctx and event\r\ndetail). Delegates to the current tree, so it survives rebuilds; applies pending\r\nproperty writes first (`flush`). Reads return empty values before the first build."
+              "description": "The public facade (`el.controller`, and `controller` on every callback ctx and event\ndetail). Delegates to the current tree, so it survives rebuilds; applies pending\nproperty writes first (`flush`). Reads return empty values before the first build."
             },
             {
               "kind": "field",
@@ -8103,6 +8103,10 @@
               "description": "Full-label popover border color"
             },
             {
+              "name": "--wtv-node-info-reveal-box-shadow",
+              "description": "Full-label popover shadow (← --base-shadow-lg)"
+            },
+            {
               "name": "--wtv-border-color",
               "description": "Divider / spinner track color (reads --base-border-color)"
             },
@@ -8527,6 +8531,10 @@
               "description": "Drag-over glow (box-shadow)"
             },
             {
+              "name": "--wtv-drag-over-glow-bg",
+              "description": "Drag-over row overlay gradient (::before, tinted by --base-drop-target-border-color)"
+            },
+            {
               "name": "--wtv-drop-valid-bg",
               "description": "Valid drop target background"
             },
@@ -8621,6 +8629,30 @@
             {
               "name": "--wtv-drop-placeholder-scale-hover",
               "description": "Engaged placeholder scale (default 1)"
+            },
+            {
+              "name": "--wtv-drop-placeholder-border-style-hover",
+              "description": "Engaged placeholder border style (default solid)"
+            },
+            {
+              "name": "--wtv-drop-placeholder-accent",
+              "description": "One accent driving the empty zone's border, text and icon; reads --base-drop-target-border-color"
+            },
+            {
+              "name": "--wtv-drop-placeholder-bg-armed",
+              "description": "Armed placeholder background (a node is dragged anywhere on the page); = drag-over-bg"
+            },
+            {
+              "name": "--wtv-drop-placeholder-border-color-armed",
+              "description": "Armed placeholder border color"
+            },
+            {
+              "name": "--wtv-drop-placeholder-icon",
+              "description": "Icon above the label (a mask filled with the accent); none drops it"
+            },
+            {
+              "name": "--wtv-drop-placeholder-icon-size",
+              "description": "Placeholder icon size"
             },
             {
               "name": "--wtv-tooltip-bg",
@@ -8832,6 +8864,214 @@
           "declaration": {
             "name": "WebTreeViewElement",
             "module": "src/web-component.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/ltree-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "getParentPath",
+          "return": {
+            "type": {
+              "text": "string | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getRelativePath",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "parentPath",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getPathSegments",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "start",
+              "default": "0",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "count",
+              "default": "1",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "default": "'.'",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "getLevel",
+          "return": {
+            "type": {
+              "text": "number"
+            }
+          },
+          "parameters": [
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "pathSeparator",
+              "type": {
+                "text": "string"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "getParentPath",
+          "declaration": {
+            "name": "getParentPath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getRelativePath",
+          "declaration": {
+            "name": "getRelativePath",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getPathSegments",
+          "declaration": {
+            "name": "getPathSegments",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "getLevel",
+          "declaration": {
+            "name": "getLevel",
+            "module": "src/helpers/ltree-helpers.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/helpers/string-helpers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "isEmptyString",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "isNotEmptyString",
+          "parameters": [
+            {
+              "name": "str",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "isEmptyString",
+          "declaration": {
+            "name": "isEmptyString",
+            "module": "src/helpers/string-helpers.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isNotEmptyString",
+          "declaration": {
+            "name": "isNotEmptyString",
+            "module": "src/helpers/string-helpers.ts"
           }
         }
       ]
@@ -10577,7 +10817,7 @@
             },
             {
               "kind": "field",
-              "name": "contextMenuVisible",
+              "name": "isContextMenuVisible",
               "readonly": true
             },
             {
@@ -14507,1555 +14747,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "src/helpers/ltree-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "getParentPath",
-          "return": {
-            "type": {
-              "text": "string | null"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getRelativePath",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "parentPath",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getPathSegments",
-          "return": {
-            "type": {
-              "text": "string"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "start",
-              "default": "0",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "count",
-              "default": "1",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "default": "'.'",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "getLevel",
-          "return": {
-            "type": {
-              "text": "number"
-            }
-          },
-          "parameters": [
-            {
-              "name": "path",
-              "type": {
-                "text": "string"
-              }
-            },
-            {
-              "name": "pathSeparator",
-              "type": {
-                "text": "string"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "getParentPath",
-          "declaration": {
-            "name": "getParentPath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getRelativePath",
-          "declaration": {
-            "name": "getRelativePath",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getPathSegments",
-          "declaration": {
-            "name": "getPathSegments",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "getLevel",
-          "declaration": {
-            "name": "getLevel",
-            "module": "src/helpers/ltree-helpers.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/helpers/string-helpers.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "isEmptyString",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        },
-        {
-          "kind": "function",
-          "name": "isNotEmptyString",
-          "parameters": [
-            {
-              "name": "str",
-              "type": {
-                "text": "string | null | undefined"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "isEmptyString",
-          "declaration": {
-            "name": "isEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "isNotEmptyString",
-          "declaration": {
-            "name": "isNotEmptyString",
-            "module": "src/helpers/string-helpers.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/renderer/dom-renderer.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "",
-          "name": "DomRenderer",
-          "members": [
-            {
-              "kind": "field",
-              "name": "container",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "controller",
-              "type": {
-                "text": "TreeEngine<T> | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "config",
-              "type": {
-                "text": "RendererConfig<T>"
-              },
-              "privacy": "private",
-              "default": "{}"
-            },
-            {
-              "kind": "field",
-              "name": "headerEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "bodyEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "footerEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_menu",
-              "type": {
-                "text": "MenuHandle | null"
-              },
-              "privacy": "private",
-              "default": "null",
-              "description": "The open context menu (core `/menu`) and what it was opened for."
-            },
-            {
-              "kind": "field",
-              "name": "_menuKey",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_isMenuOpeningFromKeyboard",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false",
-              "description": "The next menu open came from the keyboard (Shift+F10 / ContextMenu) → focus its first item."
-            },
-            {
-              "kind": "field",
-              "name": "loadingEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "log",
-              "type": {
-                "text": "TreeLoggers"
-              },
-              "privacy": "private",
-              "description": "The engine's loggers (the element's instance loggers when hosted).",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "vsSpacerEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "vsContentEl",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_vsRafPending",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_vsMeasured",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_vsLastStartIndex",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "-1"
-            },
-            {
-              "kind": "field",
-              "name": "_vsLastEndIndex",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "-1"
-            },
-            {
-              "kind": "field",
-              "name": "nodeElements",
-              "privacy": "private",
-              "default": "new Map<string, HTMLElement>()",
-              "description": "Row elements keyed by node PATH (unique by construction — ids may repeat,\r\ne.g. a pasted copy keeps its source id; NOTES #8)."
-            },
-            {
-              "kind": "field",
-              "name": "nodeOfElement",
-              "privacy": "private",
-              "default": "new WeakMap<HTMLElement, LTreeNode<T>>()",
-              "description": "The node object each row was rendered for — a path can be taken over by a\r\ndifferent node (move away + move/insert into the same slot)."
-            },
-            {
-              "kind": "field",
-              "name": "unsubState",
-              "type": {
-                "text": "(() => void) | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "unsubConfig",
-              "type": {
-                "text": "(() => void) | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "lastSnapshot",
-              "type": {
-                "text": "TreeEngineSnapshot<T> | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "lastNodeConfig",
-              "type": {
-                "text": "NodeConfig | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "tooltips",
-              "privacy": "private",
-              "default": "new Map<string, TooltipHandle>()"
-            },
-            {
-              "kind": "field",
-              "name": "tooltipRevs",
-              "privacy": "private",
-              "default": "new Map<string, number>()"
-            },
-            {
-              "kind": "field",
-              "name": "_lastDragOverTarget",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "''"
-            },
-            {
-              "kind": "field",
-              "name": "_lastEmptyState",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "''"
-            },
-            {
-              "kind": "field",
-              "name": "_deviceClass",
-              "type": {
-                "text": "DeviceClass"
-              },
-              "privacy": "private",
-              "default": "'desktop'"
-            },
-            {
-              "kind": "field",
-              "name": "_containerBox",
-              "type": {
-                "text": "ElementSize"
-              },
-              "privacy": "private",
-              "default": "{ width: 0, height: 0 }"
-            },
-            {
-              "kind": "field",
-              "name": "_stopEnvObserve",
-              "type": {
-                "text": "(() => void) | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_stopSizeObserve",
-              "type": {
-                "text": "(() => void) | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_isActive",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_lastScroll",
-              "type": {
-                "text": "object"
-              },
-              "privacy": "private",
-              "default": "{ top: 0, left: 0 }"
-            },
-            {
-              "kind": "method",
-              "name": "mount",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "container",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "controller",
-                  "type": {
-                    "text": "TreeEngine<T>"
-                  }
-                },
-                {
-                  "name": "config",
-                  "type": {
-                    "text": "RendererConfig<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "_removeLoader",
-              "type": {
-                "text": "(() => void) | null"
-              },
-              "privacy": "private",
-              "default": "null",
-              "description": "The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while\r\n`isLoading`, removed after; redrawn when the drawer (instance `renderLoadingCallback`)\r\nor the `labels.loading` text changes."
-            },
-            {
-              "kind": "field",
-              "name": "_loaderDrawer",
-              "type": {
-                "text": "unknown"
-              },
-              "privacy": "private",
-              "default": "undefined"
-            },
-            {
-              "kind": "field",
-              "name": "_loaderLabel",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "''"
-            },
-            {
-              "kind": "method",
-              "name": "_syncLoader",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "isLoading",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "_emptyLabelKey",
-              "type": {
-                "text": "'noData' | 'noResults'"
-              },
-              "privacy": "private",
-              "default": "'noData'",
-              "description": "Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing)."
-            },
-            {
-              "kind": "field",
-              "name": "_emptyZoneCb",
-              "type": {
-                "text": "unknown"
-              },
-              "privacy": "private",
-              "default": "undefined",
-              "description": "The callback the current `.wtv__empty-zone` was built with (NOTES #20)."
-            },
-            {
-              "kind": "method",
-              "name": "_refreshLabels",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "Re-apply the built-in UI strings to the live empty state / empty drop zone (custom render callbacks own theirs)."
-            },
-            {
-              "kind": "method",
-              "name": "updateConfig",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "config",
-                  "type": {
-                    "text": "Partial<RendererConfig<T>>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "destroy",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "deactivate",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "The host was detached (a DOM move or a removal). Stop the LIVE resources —\r\nenvironment / size observers, the document `dragend` listener, the open\r\ncontext menu (its positioning + document listeners), shown tooltips — and keep\r\nthe rendered rows and all state. The body listeners live on elements inside\r\nthe shadow root, so they move with it and stay attached (no duplicates on\r\nreconnect). The body scroll offset is tracked while connected (a detached\r\nelement reads 0 and the browser resets it on re-insert); activate() restores\r\nit. Idempotent."
-            },
-            {
-              "kind": "method",
-              "name": "activate",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "The host was re-attached: restart what deactivate stopped and restore the scroll offset. Idempotent."
-            },
-            {
-              "kind": "method",
-              "name": "_startObservers",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "Start the environment + container-size observers (mount / activate)."
-            },
-            {
-              "kind": "field",
-              "name": "_titleOverflow",
-              "type": {
-                "text": "NodeTitleOverflow"
-              },
-              "privacy": "private",
-              "default": "'ellipsis'",
-              "description": "Forward the `theme` prop onto `.wtv__container` as `data-theme=\"...\"`.\r\nThe dark-mode partial keys off this attribute for per-instance overrides."
-            },
-            {
-              "kind": "field",
-              "name": "_labelObserver",
-              "type": {
-                "text": "ResizeObserver | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_reveal",
-              "type": {
-                "text": "{ handle: PopoverHandle; button: HTMLElement; stop: () => void } | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "method",
-              "name": "_applyTitleOverflow",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "mode",
-                  "type": {
-                    "text": "NodeTitleOverflow | null | undefined"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_trackLabel",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "label",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ],
-              "description": "A freshly built default label: watch it in `info` mode."
-            },
-            {
-              "kind": "method",
-              "name": "_measureLabel",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "label",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ],
-              "description": "`info` mode: show / drop the info button by whether the label is clipped."
-            },
-            {
-              "kind": "method",
-              "name": "_setLabelTruncated",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "label",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "isTruncated",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_toggleReveal",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "button",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "text",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ],
-              "description": "Open (or close, on a second click) the full-label popover for an info button."
-            },
-            {
-              "kind": "method",
-              "name": "_closeReveal",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "_applyTheme",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "theme",
-                  "type": {
-                    "text": "'dark' | 'light' | null | undefined"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyClick",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyKeydown",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyContextMenu",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDragStart",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDragOver",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDragLeave",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDrop",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDragEnter",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyDragEnd",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onDocumentDragEnd",
-              "privacy": "private",
-              "description": "Catches dragend from OTHER trees (cross-tree) and Esc cancellations.\r\ndragend fires on the source element; when that element lives in a\r\ndifferent shadow root the event never reaches our bodyEl."
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyTouchStart",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onContainerDragOver",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onContainerDrop",
-              "privacy": "private"
-            },
-            {
-              "kind": "field",
-              "name": "_onBodyScrollTrack",
-              "privacy": "private",
-              "description": "Remember the body scroll offset while connected (restored by activate())."
-            },
-            {
-              "kind": "field",
-              "name": "_onVirtualScroll",
-              "privacy": "private"
-            },
-            {
-              "kind": "method",
-              "name": "_performScrollUpdate",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "Fast synchronous virtual scroll update.\r\nBypasses the controller's queueMicrotask + state-change event pipeline.\r\nComputes the visible window, updates DOM positioning, and reconciles\r\nonly the node list — skips drag/drop/context-menu updates."
-            },
-            {
-              "kind": "method",
-              "name": "_attachBodyListeners",
-              "privacy": "private"
-            },
-            {
-              "kind": "method",
-              "name": "_detachBodyListeners",
-              "privacy": "private"
-            },
-            {
-              "kind": "method",
-              "name": "_ensureVirtualScrollStructure",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_updateVirtualScrollPositioning",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_autoMeasureRowHeight",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "_onStateChange",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_onConfigChange",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "nodeConfig",
-                  "type": {
-                    "text": "NodeConfig"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "_renderTarget",
-              "type": {
-                "text": "HTMLElement | null"
-              },
-              "privacy": "private",
-              "description": "Get the element where node elements are rendered (vsContentEl in virtual scroll, bodyEl otherwise)",
-              "readonly": true
-            },
-            {
-              "kind": "method",
-              "name": "_reconcileNodes",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_renderEmpty",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_applyExpandPending",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "el",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                }
-              ],
-              "description": "Row-level loading state while an async beforeExpandCallback is pending: `aria-busy` +\r\n`data-loading` on the row (the toggle shows the spinner, see _applyToggleClasses)."
-            },
-            {
-              "kind": "method",
-              "name": "_applyToggleClasses",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "toggle",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_applyNodeIcon",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "row",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "ctx",
-                  "type": {
-                    "text": "NodeRenderContext"
-                  }
-                }
-              ],
-              "description": "Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a\r\nrow, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an\r\n<i> (`<i class=\"wtv__node-icon {value}\">`, FontAwesome-friendly), overridable via\r\nrenderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.\r\nReserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content."
-            },
-            {
-              "kind": "method",
-              "name": "_buildCheckbox",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "HTMLInputElement"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "checked",
-                  "type": {
-                    "text": "boolean"
-                  }
-                },
-                {
-                  "name": "indeterminate",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ],
-              "description": "Build the canonical checkbox: a single styled native <input class=\"wtv__checkbox\">\r\nwhose ::after renders the checkmark/dash mask (see tree.css). The <input> IS the\r\nbox (appearance:none) — the same single-element contract as web-multiselect's\r\n.ms__checkbox and svelte-treeview's .stv__checkbox, themeable via --base-icon-check\r\n/ --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked=\"mixed\"\r\n(NOT the native .indeterminate DOM property) so it survives the diff reconciler +\r\nvirtual-scroll recycling. The delegated click handler preventDefaults so only the\r\ncontroller toggles the state."
-            },
-            {
-              "kind": "method",
-              "name": "_syncCheckboxState",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "input",
-                  "type": {
-                    "text": "HTMLInputElement"
-                  }
-                },
-                {
-                  "name": "checked",
-                  "type": {
-                    "text": "boolean"
-                  }
-                },
-                {
-                  "name": "indeterminate",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ],
-              "description": "Apply checked / indeterminate to a .wtv__checkbox <input>. Indeterminate wins:\r\nit shows the dash (modifier class + aria-checked=\"mixed\") and leaves the native\r\n`checked` false so the dash glyph, not the tick, renders."
-            },
-            {
-              "kind": "method",
-              "name": "_createNodeElement",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "HTMLElement"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_applyCustomNodeClasses",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "el",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "content",
-                  "type": {
-                    "text": "HTMLElement | null"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                }
-              ],
-              "description": "Apply the data-driven nodeClass / nodeContentClass hooks to a row.\r\nTracks the previously-applied classes in `data-*` attributes so a\r\nre-render removes stale classes before adding the new ones (the diff\r\nreconciler reuses row elements rather than recreating them)."
-            },
-            {
-              "kind": "method",
-              "name": "_nodeKey",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                }
-              ],
-              "description": "Row key: the node's path (unique by construction; ids may repeat — NOTES #8)."
-            },
-            {
-              "kind": "method",
-              "name": "_buildRenderContext",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "NodeRenderContext"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ],
-              "description": "Build the NodeRenderContext for the render callbacks: device + container + live state."
-            },
-            {
-              "kind": "method",
-              "name": "_applyTooltip",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "triggerEl",
-                  "type": {
-                    "text": "HTMLElement | null"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                }
-              ],
-              "description": "Create / refresh / tear down the hover-focus tooltip for a row. The direct\r\nanalog of web-multiselect's attachOptionTooltips, built on the shared core\r\ncreateTooltip (portal, autoUpdate, shouldFollowCursor, data-theme inherit). Recreated\r\non every node update so content tracks data (rename / _rev bump); a no-op +\r\nteardown when disabled, no callback, or empty content. Mounts into the shadow\r\ncontainer so it inherits the injected --wtv-tooltip-* tokens + data-theme."
-            },
-            {
-              "kind": "method",
-              "name": "_destroyTooltip",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "key",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_destroyAllTooltips",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "_updateNodeElement",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "el",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                },
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_updateDragClasses",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_updateDropZones",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_updateContextMenu",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ],
-              "description": "Reflect the engine's context-menu state. The menu itself — rendering, submenus,\r\npositioning, dismiss, keyboard — is core `openMenu()`; it opens once per\r\n(node, point) and reports its own close back to the engine."
-            },
-            {
-              "kind": "method",
-              "name": "_closeMenu",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "Close the open menu without echoing it back to the engine."
-            },
-            {
-              "kind": "method",
-              "name": "_openContextMenuFromKeyboard",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              },
-              "description": "Shift+F10 / the ContextMenu key: open the menu for the focused node, below its\r\nrow, with the first item focused. Returns `false` when there is no menu to open."
-            },
-            {
-              "kind": "method",
-              "name": "_fullRender",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "snapshot",
-                  "type": {
-                    "text": "TreeEngineSnapshot<T>"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "_findKeyByPath",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "path",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "DomRenderer",
-          "declaration": {
-            "name": "DomRenderer",
-            "module": "src/renderer/dom-renderer.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/renderer/render-coordinator.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "createRenderCoordinator",
-          "return": {
-            "type": {
-              "text": "RenderCoordinator"
-            }
-          },
-          "parameters": [
-            {
-              "name": "batchSize",
-              "default": "100",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "callbacks",
-              "optional": true,
-              "type": {
-                "text": "RenderCoordinatorCallbacks"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "createRenderCoordinator",
-          "declaration": {
-            "name": "createRenderCoordinator",
-            "module": "src/renderer/render-coordinator.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "src/renderer/types.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
       "path": "src/ltree/flex.ts",
       "declarations": [
         {
@@ -16341,7 +15032,7 @@
               "name": "getStatus",
               "return": {
                 "type": {
-                  "text": "{\r\n\t\tqueueSize: number;\r\n\t\tisProcessing: boolean;\r\n\t\tprocessed: number;\r\n\t\ttotal: number;\r\n\t\tbatchSize: number;\r\n\t}"
+                  "text": "{\n\t\tqueueSize: number;\n\t\tisProcessing: boolean;\n\t\tprocessed: number;\n\t\ttotal: number;\n\t\tbatchSize: number;\n\t}"
                 }
               }
             },
@@ -16361,7 +15052,7 @@
                   }
                 }
               ],
-              "description": "Forget the given flat-list positions: drop them from the pending queue and\r\nremove them from the search index, so a later search can't map a hit to a\r\nposition whose node was removed (positions are the index keys)."
+              "description": "Forget the given flat-list positions: drop them from the pending queue and\nremove them from the search index, so a later search can't map a hit to a\nposition whose node was removed (positions are the index keys)."
             },
             {
               "kind": "method",
@@ -16709,6 +15400,1347 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/renderer/dom-renderer.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "DomRenderer",
+          "members": [
+            {
+              "kind": "field",
+              "name": "container",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "controller",
+              "type": {
+                "text": "TreeEngine<T> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "config",
+              "type": {
+                "text": "RendererConfig<T>"
+              },
+              "privacy": "private",
+              "default": "{}"
+            },
+            {
+              "kind": "field",
+              "name": "headerEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "bodyEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "footerEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_menu",
+              "type": {
+                "text": "MenuHandle | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "The open context menu (core `/menu`) and what it was opened for."
+            },
+            {
+              "kind": "field",
+              "name": "_menuKey",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_isMenuOpeningFromKeyboard",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false",
+              "description": "The next menu open came from the keyboard (Shift+F10 / ContextMenu) → focus its first item."
+            },
+            {
+              "kind": "field",
+              "name": "loadingEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "log",
+              "type": {
+                "text": "TreeLoggers"
+              },
+              "privacy": "private",
+              "description": "The engine's loggers (the element's instance loggers when hosted).",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "vsSpacerEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "vsContentEl",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_vsRafPending",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_vsMeasured",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_vsLastStartIndex",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "-1"
+            },
+            {
+              "kind": "field",
+              "name": "_vsLastEndIndex",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "-1"
+            },
+            {
+              "kind": "field",
+              "name": "nodeElements",
+              "privacy": "private",
+              "default": "new Map<string, HTMLElement>()",
+              "description": "Row elements keyed by node PATH (unique by construction — ids may repeat,\ne.g. a pasted copy keeps its source id; NOTES #8)."
+            },
+            {
+              "kind": "field",
+              "name": "nodeOfElement",
+              "privacy": "private",
+              "default": "new WeakMap<HTMLElement, LTreeNode<T>>()",
+              "description": "The node object each row was rendered for — a path can be taken over by a\ndifferent node (move away + move/insert into the same slot)."
+            },
+            {
+              "kind": "field",
+              "name": "unsubState",
+              "type": {
+                "text": "(() => void) | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "unsubConfig",
+              "type": {
+                "text": "(() => void) | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "lastSnapshot",
+              "type": {
+                "text": "TreeEngineSnapshot<T> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "lastNodeConfig",
+              "type": {
+                "text": "NodeConfig | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "tooltips",
+              "privacy": "private",
+              "default": "new Map<string, TooltipHandle>()"
+            },
+            {
+              "kind": "field",
+              "name": "tooltipRevs",
+              "privacy": "private",
+              "default": "new Map<string, number>()"
+            },
+            {
+              "kind": "field",
+              "name": "_lastDragOverTarget",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "_lastEmptyState",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "_deviceClass",
+              "type": {
+                "text": "DeviceClass"
+              },
+              "privacy": "private",
+              "default": "'desktop'"
+            },
+            {
+              "kind": "field",
+              "name": "_containerBox",
+              "type": {
+                "text": "ElementSize"
+              },
+              "privacy": "private",
+              "default": "{ width: 0, height: 0 }"
+            },
+            {
+              "kind": "field",
+              "name": "_stopEnvObserve",
+              "type": {
+                "text": "(() => void) | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_stopSizeObserve",
+              "type": {
+                "text": "(() => void) | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_isActive",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_lastScroll",
+              "type": {
+                "text": "object"
+              },
+              "privacy": "private",
+              "default": "{ top: 0, left: 0 }"
+            },
+            {
+              "kind": "method",
+              "name": "mount",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "container",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "controller",
+                  "type": {
+                    "text": "TreeEngine<T>"
+                  }
+                },
+                {
+                  "name": "config",
+                  "type": {
+                    "text": "RendererConfig<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "_removeLoader",
+              "type": {
+                "text": "(() => void) | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while\n`isLoading`, removed after; redrawn when the drawer (instance `renderLoadingCallback`)\nor the `labels.loading` text changes."
+            },
+            {
+              "kind": "field",
+              "name": "_loaderDrawer",
+              "type": {
+                "text": "unknown"
+              },
+              "privacy": "private",
+              "default": "undefined"
+            },
+            {
+              "kind": "field",
+              "name": "_loaderLabel",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "method",
+              "name": "_syncLoader",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "isLoading",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "_emptyLabelKey",
+              "type": {
+                "text": "'noData' | 'noResults'"
+              },
+              "privacy": "private",
+              "default": "'noData'",
+              "description": "Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing)."
+            },
+            {
+              "kind": "field",
+              "name": "_emptyZoneCb",
+              "type": {
+                "text": "unknown"
+              },
+              "privacy": "private",
+              "default": "undefined",
+              "description": "The callback the current `.wtv__empty-zone` was built with (NOTES #20)."
+            },
+            {
+              "kind": "method",
+              "name": "_refreshLabels",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Re-apply the built-in UI strings to the live empty state / empty drop zone (custom render callbacks own theirs)."
+            },
+            {
+              "kind": "method",
+              "name": "updateConfig",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "config",
+                  "type": {
+                    "text": "Partial<RendererConfig<T>>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "destroy",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "deactivate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was detached (a DOM move or a removal). Stop the LIVE resources —\nenvironment / size observers, the document `dragend` listener, the open\ncontext menu (its positioning + document listeners), shown tooltips — and keep\nthe rendered rows and all state. The body listeners live on elements inside\nthe shadow root, so they move with it and stay attached (no duplicates on\nreconnect). The body scroll offset is tracked while connected (a detached\nelement reads 0 and the browser resets it on re-insert); activate() restores\nit. Idempotent."
+            },
+            {
+              "kind": "method",
+              "name": "activate",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "The host was re-attached: restart what deactivate stopped and restore the scroll offset. Idempotent."
+            },
+            {
+              "kind": "method",
+              "name": "_startObservers",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Start the environment + container-size observers (mount / activate)."
+            },
+            {
+              "kind": "field",
+              "name": "_titleOverflow",
+              "type": {
+                "text": "NodeTitleOverflow"
+              },
+              "privacy": "private",
+              "default": "'ellipsis'",
+              "description": "Forward the `theme` prop onto `.wtv__container` as `data-theme=\"...\"`.\nThe dark-mode partial keys off this attribute for per-instance overrides."
+            },
+            {
+              "kind": "field",
+              "name": "_labelObserver",
+              "type": {
+                "text": "ResizeObserver | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_reveal",
+              "type": {
+                "text": "{ handle: PopoverHandle; button: HTMLElement; stop: () => void } | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "_applyTitleOverflow",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "mode",
+                  "type": {
+                    "text": "NodeTitleOverflow | null | undefined"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_trackLabel",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ],
+              "description": "A freshly built default label: watch it in `info` mode."
+            },
+            {
+              "kind": "method",
+              "name": "_measureLabel",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ],
+              "description": "`info` mode: show / drop the info button by whether the label is clipped."
+            },
+            {
+              "kind": "method",
+              "name": "_setLabelTruncated",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "isTruncated",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_toggleReveal",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "button",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "text",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ],
+              "description": "Open (or close, on a second click) the full-label popover for an info button."
+            },
+            {
+              "kind": "method",
+              "name": "_closeReveal",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "_applyTheme",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "theme",
+                  "type": {
+                    "text": "'dark' | 'light' | null | undefined"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyClick",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyKeydown",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyContextMenu",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDragStart",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDragOver",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDragLeave",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDrop",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDragEnter",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyDragEnd",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onDocumentDragEnd",
+              "privacy": "private",
+              "description": "Catches dragend from OTHER trees (cross-tree) and Esc cancellations.\ndragend fires on the source element; when that element lives in a\ndifferent shadow root the event never reaches our bodyEl."
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyTouchStart",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onContainerDragOver",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onContainerDrop",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "_onBodyScrollTrack",
+              "privacy": "private",
+              "description": "Remember the body scroll offset while connected (restored by activate())."
+            },
+            {
+              "kind": "field",
+              "name": "_onVirtualScroll",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "_performScrollUpdate",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Fast synchronous virtual scroll update.\nBypasses the controller's queueMicrotask + state-change event pipeline.\nComputes the visible window, updates DOM positioning, and reconciles\nonly the node list — skips drag/drop/context-menu updates."
+            },
+            {
+              "kind": "method",
+              "name": "_attachBodyListeners",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "_detachBodyListeners",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "_ensureVirtualScrollStructure",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_updateVirtualScrollPositioning",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_autoMeasureRowHeight",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "_onStateChange",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_onConfigChange",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "nodeConfig",
+                  "type": {
+                    "text": "NodeConfig"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "_renderTarget",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "description": "Get the element where node elements are rendered (vsContentEl in virtual scroll, bodyEl otherwise)",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "_reconcileNodes",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_renderEmpty",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_applyExpandPending",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "el",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                }
+              ],
+              "description": "Row-level loading state while an async beforeExpandCallback is pending: `aria-busy` +\n`data-loading` on the row (the toggle shows the spinner, see _applyToggleClasses)."
+            },
+            {
+              "kind": "method",
+              "name": "_applyToggleClasses",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "toggle",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_applyNodeIcon",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                },
+                {
+                  "name": "ctx",
+                  "type": {
+                    "text": "NodeRenderContext"
+                  }
+                }
+              ],
+              "description": "Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a\nrow, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an\n<i> (`<i class=\"wtv__node-icon {value}\">`, FontAwesome-friendly), overridable via\nrenderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.\nReserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content."
+            },
+            {
+              "kind": "method",
+              "name": "_buildCheckbox",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "HTMLInputElement"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "checked",
+                  "type": {
+                    "text": "boolean"
+                  }
+                },
+                {
+                  "name": "indeterminate",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ],
+              "description": "Build the canonical checkbox: a single styled native <input class=\"wtv__checkbox\">\nwhose ::after renders the checkmark/dash mask (see tree.css). The <input> IS the\nbox (appearance:none) — the same single-element contract as web-multiselect's\n.ms__checkbox and svelte-treeview's .stv__checkbox, themeable via --base-icon-check\n/ --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked=\"mixed\"\n(NOT the native .indeterminate DOM property) so it survives the diff reconciler +\nvirtual-scroll recycling. The delegated click handler preventDefaults so only the\ncontroller toggles the state."
+            },
+            {
+              "kind": "method",
+              "name": "_syncCheckboxState",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "input",
+                  "type": {
+                    "text": "HTMLInputElement"
+                  }
+                },
+                {
+                  "name": "checked",
+                  "type": {
+                    "text": "boolean"
+                  }
+                },
+                {
+                  "name": "indeterminate",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ],
+              "description": "Apply checked / indeterminate to a .wtv__checkbox <input>. Indeterminate wins:\nit shows the dash (modifier class + aria-checked=\"mixed\") and leaves the native\n`checked` false so the dash glyph, not the tick, renders."
+            },
+            {
+              "kind": "method",
+              "name": "_createNodeElement",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "HTMLElement"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                },
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_applyCustomNodeClasses",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "el",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "content",
+                  "type": {
+                    "text": "HTMLElement | null"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                }
+              ],
+              "description": "Apply the data-driven nodeClass / nodeContentClass hooks to a row.\nTracks the previously-applied classes in `data-*` attributes so a\nre-render removes stale classes before adding the new ones (the diff\nreconciler reuses row elements rather than recreating them)."
+            },
+            {
+              "kind": "method",
+              "name": "_nodeKey",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                }
+              ],
+              "description": "Row key: the node's path (unique by construction; ids may repeat — NOTES #8)."
+            },
+            {
+              "kind": "method",
+              "name": "_buildRenderContext",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "NodeRenderContext"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                },
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ],
+              "description": "Build the NodeRenderContext for the render callbacks: device + container + live state."
+            },
+            {
+              "kind": "method",
+              "name": "_applyTooltip",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "triggerEl",
+                  "type": {
+                    "text": "HTMLElement | null"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                }
+              ],
+              "description": "Create / refresh / tear down the hover-focus tooltip for a row. The direct\nanalog of web-multiselect's attachOptionTooltips, built on the shared core\ncreateTooltip (portal, autoUpdate, shouldFollowCursor, data-theme inherit). Recreated\non every node update so content tracks data (rename / _rev bump); a no-op +\nteardown when disabled, no callback, or empty content. Mounts into the shadow\ncontainer so it inherits the injected --wtv-tooltip-* tokens + data-theme."
+            },
+            {
+              "kind": "method",
+              "name": "_destroyTooltip",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "key",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_destroyAllTooltips",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "_updateNodeElement",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "el",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "node",
+                  "type": {
+                    "text": "LTreeNode<T>"
+                  }
+                },
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_updateDragClasses",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_updateDropZones",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_updateContextMenu",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ],
+              "description": "Reflect the engine's context-menu state. The menu itself — rendering, submenus,\npositioning, dismiss, keyboard — is core `openMenu()`; it opens once per\n(node, point) and reports its own close back to the engine."
+            },
+            {
+              "kind": "method",
+              "name": "_closeMenu",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Close the open menu without echoing it back to the engine."
+            },
+            {
+              "kind": "method",
+              "name": "_openContextMenuFromKeyboard",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "description": "Shift+F10 / the ContextMenu key: open the menu for the focused node, below its\nrow, with the first item focused. Returns `false` when there is no menu to open."
+            },
+            {
+              "kind": "method",
+              "name": "_fullRender",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "snapshot",
+                  "type": {
+                    "text": "TreeEngineSnapshot<T>"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "_findKeyByPath",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DomRenderer",
+          "declaration": {
+            "name": "DomRenderer",
+            "module": "src/renderer/dom-renderer.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/renderer/render-coordinator.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "createRenderCoordinator",
+          "return": {
+            "type": {
+              "text": "RenderCoordinator"
+            }
+          },
+          "parameters": [
+            {
+              "name": "batchSize",
+              "default": "100",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "callbacks",
+              "optional": true,
+              "type": {
+                "text": "RenderCoordinatorCallbacks"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "createRenderCoordinator",
+          "declaration": {
+            "name": "createRenderCoordinator",
+            "module": "src/renderer/render-coordinator.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/renderer/types.ts",
+      "declarations": [],
+      "exports": []
     }
   ]
 }

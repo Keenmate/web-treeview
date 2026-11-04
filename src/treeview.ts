@@ -842,10 +842,10 @@ export class WebTreeView<T = any> {
       shouldIndicateUndraggable: o.shouldIndicateUndraggable,
       isTreeDropZoneEnabled: o.isTreeDropZoneEnabled,
 
-      renderStartCallback: this.wrap(o.onRenderStart, 'renderStart', (f) => () => f(this.ctx({}))),
-      renderProgressCallback: this.wrap(o.onRenderProgress, 'renderStats', (f) => (stats: RenderStats) =>
+      onRenderStart: this.wrap(o.onRenderStart, 'renderStart', (f) => () => f(this.ctx({}))),
+      onRenderProgress: this.wrap(o.onRenderProgress, 'renderStats', (f) => (stats: RenderStats) =>
         f(this.ctx({ pending: stats.pending, processed: stats.processed }))),
-      renderCompleteCallback: this.wrap(o.onRenderComplete, 'renderStats', (f) => (stats: RenderStats) =>
+      onRenderComplete: this.wrap(o.onRenderComplete, 'renderStats', (f) => (stats: RenderStats) =>
         f(this.ctx({ pending: stats.pending, processed: stats.processed }))),
 
       onNodeClick: this.event(o.onNodeClick),
@@ -959,7 +959,7 @@ export class WebTreeView<T = any> {
       contextMenuContext: (node) => this.menuCtx(node),
       contextMenuItemDefaults: (item, ctx) => this.menuItemDefaults(item, ctx),
       activateContextMenuItem: (item, ctx, trigger, event) => this.activateMenuItem(item, ctx, trigger, event),
-      containerResizeCallback: (size, deviceClass) => {
+      onContainerResize: (size, deviceClass) => {
         this.lastContainerSize = { width: size.width, height: size.height };
         this.options.onContainerResize?.(this.ctx({ size: { width: size.width, height: size.height }, deviceClass }));
       },

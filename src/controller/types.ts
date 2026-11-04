@@ -475,9 +475,9 @@ export interface TreeEngineConfig<T> {
   isProgressiveRenderEnabled?: boolean;
   initialBatchSize?: number;
   maxBatchSize?: number;
-  renderStartCallback?: () => void;
-  renderProgressCallback?: (stats: RenderStats) => void;
-  renderCompleteCallback?: (stats: RenderStats) => void;
+  onRenderStart?: () => void;
+  onRenderProgress?: (stats: RenderStats) => void;
+  onRenderComplete?: (stats: RenderStats) => void;
 
   // Flat rendering
   isFlatRenderingEnabled?: boolean;
@@ -645,7 +645,7 @@ export interface TreeEngineSnapshot<T> {
   hoveredNodeForDropPath: string | null;
   activeDropPosition: DropPosition | null;
   currentDropOperation: DropOperation;
-  contextMenuVisible: boolean;
+  isContextMenuVisible: boolean;
   contextMenuX: number;
   contextMenuY: number;
   contextMenuXOffset: number;

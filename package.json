@@ -65,6 +65,9 @@
     "image": {
       "name": "registry.km8.es/web-treeview-examples:prod",
       "runner": "podman"
+    },
+    "rulebook": {
+      "skippedChecks": ["responsive-overlay"]
     }
   },
   "scripts": {

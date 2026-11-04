@@ -269,6 +269,9 @@
   --wtv-node-info-reveal-bg: var(--wtv-elevated-bg);
   --wtv-node-info-reveal-text-color: var(--wtv-text-color-1);
   --wtv-node-info-reveal-border-color: var(--wtv-border-color);
+  --wtv-node-info-reveal-box-shadow: var(--base-shadow-lg, 0 4px 12px var(--wtv-shadow-color));
+  /* The Lucide "info" glyph, drawn as a mask so it follows `color` (any single-color SVG url). */
+  --wtv-icon-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E");
 
   /* ==========================================================================
      TOGGLE DISCLOSURE GLYPH — the ONE icon set
@@ -383,6 +386,7 @@
   --wtv-drag-over-bg: var(--base-drop-target-bg, var(--wtv-drop-valid-bg));
   --wtv-drag-over-border: 2px dashed var(--base-drop-target-border-color, var(--wtv-success-color));
   --wtv-drag-over-box-shadow: 0 0 8px color-mix(in srgb, var(--base-drop-target-border-color, var(--wtv-success-color)) 40%, transparent);
+  --wtv-drag-over-glow-bg: linear-gradient(45deg, transparent, color-mix(in srgb, var(--base-drop-target-border-color, var(--wtv-success-color)) 5%, transparent));
 
   /* Drop validation */
   --wtv-drop-valid-bg: var(--base-success-bg-subtle, light-dark(color-mix(in srgb, var(--wtv-success-color) 10%, transparent), color-mix(in srgb, var(--wtv-success-color) 20%, transparent)));

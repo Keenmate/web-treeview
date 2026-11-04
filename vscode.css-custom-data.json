@@ -108,6 +108,11 @@
       "values": []
     },
     {
+      "name": "--wtv-node-info-reveal-box-shadow",
+      "description": "Full-label popover shadow (← --base-shadow-lg)",
+      "values": []
+    },
+    {
       "name": "--wtv-border-color",
       "description": "Divider / spinner track color (reads --base-border-color)",
       "values": []
@@ -638,6 +643,11 @@
       "values": []
     },
     {
+      "name": "--wtv-drag-over-glow-bg",
+      "description": "Drag-over row overlay gradient (::before, tinted by --base-drop-target-border-color)",
+      "values": []
+    },
+    {
       "name": "--wtv-drop-valid-bg",
       "description": "Valid drop target background",
       "values": []
@@ -755,6 +765,36 @@
     {
       "name": "--wtv-drop-placeholder-scale-hover",
       "description": "Engaged placeholder scale (default 1)",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-border-style-hover",
+      "description": "Engaged placeholder border style (default solid)",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-accent",
+      "description": "One accent driving the empty zone's border, text and icon; reads --base-drop-target-border-color",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-bg-armed",
+      "description": "Armed placeholder background (a node is dragged anywhere on the page); = drag-over-bg",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-border-color-armed",
+      "description": "Armed placeholder border color",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-icon",
+      "description": "Icon above the label (a mask filled with the accent); none drops it",
+      "values": []
+    },
+    {
+      "name": "--wtv-drop-placeholder-icon-size",
+      "description": "Placeholder icon size",
       "values": []
     },
     {

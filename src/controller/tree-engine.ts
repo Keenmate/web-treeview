@@ -641,7 +641,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   // Context menu state
-  get contextMenuVisible() { return this._contextMenuVisible; }
+  get isContextMenuVisible() { return this._contextMenuVisible; }
   get contextMenuX() { return this._contextMenuX; }
   get contextMenuY() { return this._contextMenuY; }
   get contextMenuNode() { return this._contextMenuNode; }
@@ -859,9 +859,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this.onTreeKeydownCb = props.onTreeKeydown;
     this.beforeScrollCb = props.beforeScrollCallback;
     this.contextMenuCallbackCb = props.contextMenuCallback;
-    this.renderStartCb = props.renderStartCallback;
-    this.renderProgressCb = props.renderProgressCallback;
-    this.renderCompleteCb = props.renderCompleteCallback;
+    this.renderStartCb = props.onRenderStart;
+    this.renderProgressCb = props.onRenderProgress;
+    this.renderCompleteCb = props.onRenderComplete;
 
     // ── Create LTree ────────────────────────────────────────────────
     this.tree = createLTree<T>(
@@ -4137,9 +4137,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.beforeScrollCallback !== undefined) this.beforeScrollCb = updates.beforeScrollCallback;
     if (updates.contextMenuCallback !== undefined) this.contextMenuCallbackCb = updates.contextMenuCallback;
     if (updates.hasContextMenuRenderer !== undefined) this._hasContextMenuRenderer = updates.hasContextMenuRenderer;
-    if (updates.renderStartCallback !== undefined) this.renderStartCb = updates.renderStartCallback;
-    if (updates.renderProgressCallback !== undefined) this.renderProgressCb = updates.renderProgressCallback;
-    if (updates.renderCompleteCallback !== undefined) this.renderCompleteCb = updates.renderCompleteCallback;
+    if (updates.onRenderStart !== undefined) this.renderStartCb = updates.onRenderStart;
+    if (updates.onRenderProgress !== undefined) this.renderProgressCb = updates.onRenderProgress;
+    if (updates.onRenderComplete !== undefined) this.renderCompleteCb = updates.onRenderComplete;
 
     if (needsTreeRecreation || expandLevelChanged) {
       // Preserve the user's expand/collapse state across the re-insert — fresh
@@ -4255,7 +4255,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       hoveredNodeForDropPath: this._hoveredNodeForDrop?.path ?? null,
       activeDropPosition: this._activeDropPosition,
       currentDropOperation: this._currentDropOperation,
-      contextMenuVisible: this._contextMenuVisible,
+      isContextMenuVisible: this._contextMenuVisible,
       contextMenuX: this._contextMenuX,
       contextMenuY: this._contextMenuY,
       contextMenuXOffset: this._contextMenuXOffset,

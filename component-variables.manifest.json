@@ -101,6 +101,7 @@
     { "name": "wtv-node-info-reveal-bg", "category": "surface", "usage": "Full-label popover background" },
     { "name": "wtv-node-info-reveal-text-color", "category": "surface", "usage": "Full-label popover text color" },
     { "name": "wtv-node-info-reveal-border-color", "category": "surface", "usage": "Full-label popover border color" },
+    { "name": "wtv-node-info-reveal-box-shadow", "category": "surface", "usage": "Full-label popover shadow (← --base-shadow-lg)" },
 
     { "name": "wtv-border-color", "category": "border", "usage": "Divider / spinner track color (reads --base-border-color)" },
     { "name": "wtv-input-border-color", "category": "border", "usage": "Control outline — checkbox border (reads --base-input-border-color)" },
@@ -216,6 +217,7 @@
     { "name": "wtv-drag-over-bg", "category": "dnd", "usage": "Drag-over row background; reads --base-drop-target-bg" },
     { "name": "wtv-drag-over-border", "category": "dnd", "usage": "Drag-over row border shorthand" },
     { "name": "wtv-drag-over-box-shadow", "category": "dnd", "usage": "Drag-over glow (box-shadow)" },
+    { "name": "wtv-drag-over-glow-bg", "category": "dnd", "usage": "Drag-over row overlay gradient (::before, tinted by --base-drop-target-border-color)" },
     { "name": "wtv-drop-valid-bg", "category": "dnd", "usage": "Valid drop target background" },
     { "name": "wtv-drop-valid-border-color", "category": "dnd", "usage": "Valid drop target border" },
     { "name": "wtv-drop-invalid-bg", "category": "dnd", "usage": "Invalid drop target background" },

@@ -347,7 +347,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     });
     this._stopSizeObserve = observeElementSize(this.container, (size) => {
       this._containerBox = size;
-      this.config.containerResizeCallback?.({ width: size.width, height: size.height }, this._deviceClass);
+      this.config.onContainerResize?.({ width: size.width, height: size.height }, this._deviceClass);
     });
   }
 
@@ -708,7 +708,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (node) {
         this.controller.nodeCallbacks.onNodeRightClicked(node, event);
       }
-    } else if (this.controller.contextMenuVisible) {
+    } else if (this.controller.isContextMenuVisible) {
       // The browser's keyboard-initiated `contextmenu` (Shift+F10 / ContextMenu key)
       // targets the focused body — ours is already open, don't show the native one too.
       event.preventDefault();
@@ -1403,13 +1403,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const nodeConfig = this.lastNodeConfig;
     toggle.className = 'wtv__toggle-icon';
     if (node.hasChildren) {
-      // ONE canonical class (`--expand`) for every expandable node + the `.expanded`
+      // ONE canonical class (`--expand`) for every expandable node + the `--expanded`
       // state marker. Rotate vs swap is a pure-CSS concern (variables.css / tree.css):
       // rotate mode spins the glyph via --wtv-icon-rotate-*, swap mode repaints its
       // mask to --wtv-icon-collapse.
       toggle.classList.add('wtv__toggle-icon--expand');
       if (node.isExpanded) {
-        toggle.classList.add('expanded');
+        toggle.classList.add('wtv__toggle-icon--expanded');
       }
       toggle.classList.add('wtv__clickable');
       // Async beforeExpandCallback in flight (lazy load): spinner in place of the glyph.
@@ -1973,7 +1973,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _updateContextMenu(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.controller || !this.container) return;
     const node = snapshot.contextMenuNode;
-    if (!snapshot.contextMenuVisible || !node || !this._isActive) {
+    if (!snapshot.isContextMenuVisible || !node || !this._isActive) {
       this._closeMenu();
       return;
     }
@@ -2007,7 +2007,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (this._menu !== menu) return; // replaced by a newer open
         this._menu = null;
         this._menuKey = null;
-        if (this.controller?.contextMenuVisible) this.controller.closeContextMenu();
+        if (this.controller?.isContextMenuVisible) this.controller.closeContextMenu();
       },
     });
     if (!menu.isOpen) {

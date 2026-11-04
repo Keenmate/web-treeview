@@ -198,9 +198,9 @@
   transform: rotate(var(--wtv-icon-rotate-collapsed, 0deg));
 }
 
-/* Expanded orientation — the state marker `.expanded` is applied by the renderer
+/* Expanded orientation — the state marker `--expanded` is applied by the renderer
    for BOTH rotate and swap modes (swap just doesn't rotate; see below). */
-.wtv__node .wtv__toggle-icon.wtv__clickable.expanded {
+.wtv__node .wtv__toggle-icon.wtv__clickable.wtv__toggle-icon--expanded {
   transform: rotate(var(--wtv-icon-rotate-expanded, 90deg));
 }
 
@@ -258,9 +258,8 @@
 }
 
 /* The glyph is the Lucide "info" icon drawn via a CSS mask so it follows `color`;
-   replace it with --wtv-icon-info (any single-color SVG url). */
+   replace it with --wtv-icon-info (variables.css). */
 .wtv__node-info {
-  --wtv-icon-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E");
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -298,7 +297,7 @@
   left: 0;
   top: 0;
   z-index: var(--wtv-tooltip-z-index, 10000);
-  max-width: min(36rem, 90vw);
+  max-width: min(36rem, 90dvw);
   padding: 0.4em 0.6em;
   font-size: var(--wtv-font-size-sm);
   line-height: 1.4;
@@ -307,7 +306,7 @@
   background: var(--wtv-node-info-reveal-bg);
   border: var(--wtv-border-width) solid var(--wtv-node-info-reveal-border-color);
   border-radius: var(--wtv-border-radius-sm);
-  box-shadow: var(--base-shadow-lg, 0 4px 12px var(--wtv-shadow-color));
+  box-shadow: var(--wtv-node-info-reveal-box-shadow);
 }
 
 .wtv__node .wtv__node-path {
@@ -356,7 +355,7 @@
 }
 
 /* Swap mode — show the collapse glyph when expanded instead of rotating. For the
-   built-in glyph the renderer keeps the single `--expand` class + `.expanded` and
+   built-in glyph the renderer keeps the single `--expand` class + `--expanded` and
    only the pictured mask changes (below); for a custom escape-hatch glyph the
    renderer swaps the class name itself. Either way rotation is cancelled (a swapped
    glyph shouldn't also rotate). Gated on the swap host attribute so rotate sets are
@@ -364,7 +363,7 @@
 :host([toggle-icon-mode="swap"]) .wtv__toggle-icon.wtv__clickable {
   transform: none;
 }
-:host([toggle-icon-mode="swap"]) .wtv__toggle-icon--expand.expanded::before {
+:host([toggle-icon-mode="swap"]) .wtv__toggle-icon--expand.wtv__toggle-icon--expanded::before {
   -webkit-mask-image: var(--wtv-icon-collapse);
           mask-image: var(--wtv-icon-collapse);
 }
@@ -374,7 +373,7 @@
 :host([icon-set="plus-minus"]) .wtv__toggle-icon.wtv__clickable {
   transform: none;
 }
-:host([icon-set="plus-minus"]) .wtv__toggle-icon--expand.expanded::before {
+:host([icon-set="plus-minus"]) .wtv__toggle-icon--expand.wtv__toggle-icon--expanded::before {
   -webkit-mask-image: var(--wtv-icon-collapse);
           mask-image: var(--wtv-icon-collapse);
 }
@@ -712,7 +711,7 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(45deg, transparent, color-mix(in srgb, var(--base-drop-target-border-color, var(--wtv-success-color)) 5%, transparent));
+  background: var(--wtv-drag-over-glow-bg);
   pointer-events: none;
   border-radius: var(--wtv-border-radius-sm);
 }

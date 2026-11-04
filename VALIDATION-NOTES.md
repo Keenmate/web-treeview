@@ -19,7 +19,8 @@ The component's Logic class is organized across folder-scoped subsystems
 is a Side-layer base class consumed by `TreeEngine`, not a Service.
 The `flex` / `indexer` / `ltree-node` files inside `src/ltree/` are pure
 data-structure helpers composed by `ltree.ts`, not independent Service
-classes. Same shape as the date-range-picker namespace-split documented
+classes; `interaction.ts` → `clipboard.ts` is a type-only import of the
+clipboard's public result types. Same shape as the date-range-picker namespace-split documented
 in the validator spec. PASS with note; the C-CST-4 auto-script's
 import-pair regex flags these as service-to-service but they're
 single-Logic-class subsystem internals.
@@ -57,3 +58,28 @@ canonical `getIconCallback` / `getIconColorCallback`. The selectable
 canonical `is<Name>Member` + `getIs<Name>Callback` pair. PASS with
 note; D-NC-7 = C member-only is documented for the structural fields.
 
+## C-NC-3 — `SelectionModifiers.ctrl` / `.shift` (modifier-key snapshot)
+
+`SelectionModifiers { ctrl, shift }` is not configuration: it is the
+modifier-key state of one pointer gesture, handed from the renderer to the
+engine (`_nodeClickedCallback(node, modifiers)`), mirroring the DOM's own
+`ctrlKey` / `shiftKey`. An `is*` prefix would read as a setting. The other
+two C-NC-3 hits are a script false positive (`checked` is a callback
+parameter) and `isContextMenuVisible`, renamed in 2.0.0-rc07. PASS with note.
+
+## C-NC-8 / C-CSS-7 — `.wtv-loader` is core's class
+
+The default loader is drawn by core `renderLoader` (SPEC §12.14) as
+`<span class="<prefix>-loader">` — the same contract every Keenmate
+component styles (`--<prefix>-loader-*` → `--base-loader-*`). The class name
+is core's, not the component's; renaming it here would leave the default
+loader unstyled. Raised in the rulebook (core-generated class). PASS with note.
+
+## Responsive overlay — not applicable (D-RO-1 = B)
+
+The tree is inline and opens no overlay panel of its own. The suite's
+"panel" signals are the node tooltip, the touch-drag ghost and the
+label-reveal popover (small anchored bubbles, `position: fixed`), and its
+"full-screen sheet" signal is `inset: 0` on `.wtv__checkbox::after`. The
+context menu is core's `/menu`, which owns its own phone presentation.
+`package.json#kmwc.rulebook.skippedChecks` lists `responsive-overlay`.

@@ -193,6 +193,11 @@ test.describe('node-title-overflow', () => {
     expect(await prop(page, 'selectedPaths')).toEqual([]); // the button is not a node click
     await page.keyboard.press('Escape');
     await expect(reveal).toHaveCount(0);
+    // core's overlay tree: clicking the button opens it again, a press outside closes it
+    await info.click();
+    await expect(reveal).toHaveText(LONG);
+    await page.mouse.click(2, 2);
+    await expect(reveal).toHaveCount(0);
 
     // widening the container drops the button
     await page.evaluate(() => { document.getElementById('host')!.style.width = '1400px'; });

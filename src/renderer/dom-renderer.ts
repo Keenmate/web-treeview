@@ -437,26 +437,23 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     panel.className = 'wtv__node-info-reveal';
     panel.setAttribute('role', 'tooltip');
     panel.textContent = text;
-    const handle = createPopover({ reference: button, panel, container: this.container, placement: 'top-end', offset: 6 });
+    // Escape / an outside press close it through core's overlay tree (SPEC §12.9): one level per
+    // Escape (a context menu opened over it closes first), focus back on the button, and a press on
+    // the button itself is left to the click toggle.
+    const handle = createPopover({
+      reference: button, panel, container: this.container, placement: 'top-end', offset: 6,
+      shouldCloseOnEscape: true,
+      shouldCloseOnOutsideClick: true,
+      onClose: () => { if (this._reveal?.handle === handle) this._closeReveal(); },
+    });
     handle.open();
-    const onPointerDown = (e: Event) => {
-      const path = e.composedPath();
-      if (!path.includes(panel) && !path.includes(button)) this._closeReveal();
-    };
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') this._closeReveal(); };
     const onScroll = () => this._closeReveal();
     const body = this.bodyEl;
-    document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('keydown', onKeyDown, true);
     body?.addEventListener('scroll', onScroll, { passive: true });
     this._reveal = {
       handle,
       button,
-      stop: () => {
-        document.removeEventListener('pointerdown', onPointerDown, true);
-        document.removeEventListener('keydown', onKeyDown, true);
-        body?.removeEventListener('scroll', onScroll);
-      },
+      stop: () => body?.removeEventListener('scroll', onScroll),
     };
   }
 

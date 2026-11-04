@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   log lines print through `console.log`; log levels coalesce element → type → page (`el.disableLogging()` silences
   the element, `el.resetLogging()` clears it); `window.components.motion` is written once on `<html data-motion>`
   instead of on each `auto` host. See core's 1.0.0-rc18 CHANGELOG.
+- The `node-title-overflow="info"` full-label popover joins core's overlay tree (`createPopover({
+  shouldCloseOnEscape, shouldCloseOnOutsideClick, onClose })`): the renderer's own document `pointerdown` /
+  `keydown` listeners are gone. Escape closes one level at a time (a context menu opened over it closes
+  first) and puts focus back on the info button if focus was in the popover; Escape is consumed by the
+  popover, so it no longer also cancels a pending cut in the same press.
 
 ### Internal — core 1.0.0-rc18 (2026-11-04)
 - The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),
@@ -47,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `form`, `validity`, `checkValidity()`, …) and the `input-rejected` event; enum attributes without a default
   read `… | null`, boolean attributes carry their default. `docs/usage.md` lists `input-rejected` and the
   log-level precedence.
+- e2e `nav-api` scroll-behavior specs: core's `scrollIntoContainer()` with no container now scrolls the page
+  with `window.scrollTo` (only when the row is off-screen) instead of `scrollIntoView()`; the spy follows.
+  `drag-visuals` covers `drop-zone-max-width="8rem"`; `parity` covers the info popover's outside-press close.
 
 ### Internal — devkit 1.0.0-rc09 (2026-11-04)
 - `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and

@@ -102,13 +102,15 @@ test.describe('scroll highlight', () => {
 });
 
 test.describe('--wtv-scroll-behavior (→ --base-scroll-behavior)', () => {
+  // The fixture tree has no scroll container of its own, so core's scrollIntoContainer (≥ rc18)
+  // scrolls the PAGE with window.scrollTo — only when the row is off-screen. Push the tree below
+  // the fold and record the behavior without actually scrolling, so every call has to move.
   const spy = (page: Page) => page.evaluate(() => {
     const calls: (string | undefined)[] = ((window as any).scrollCalls = []);
-    const orig = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
+    document.body.style.paddingTop = '3000px';
+    window.scrollTo = function (o?: ScrollToOptions | number) {
       calls.push(typeof o === 'object' ? o.behavior : undefined);
-      return orig.call(this, o as ScrollIntoViewOptions);
-    };
+    } as typeof window.scrollTo;
   });
   const calls = (page: Page) => page.evaluate(() => (window as any).scrollCalls as (string | undefined)[]);
 

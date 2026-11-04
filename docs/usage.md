@@ -609,6 +609,7 @@ tree.navigationOverrides = null; // back to the defaults
 | `render-progress` | `{ pending, processed }` | A render batch finished (`pending` rows still queued) |
 | `render-complete` | `{ pending, processed }` | The progressive render finished — `isRendering` is `false` |
 | `container-resize` | `{ size: { width, height }, deviceClass }` | The tree container was resized (also once when observing starts); `size` = `containerSize` |
+| `input-rejected` | `{ configKey, attribute?, value, reason?, kept, source }` | Core (every KeenMate component): an attribute / property write was refused (invalid value, unknown `setAttributes()` key). Synchronous — it has fired when the write returns; the element warns and keeps `kept`. `setAttributes()` also returns the list |
 
 Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set). `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 
@@ -711,5 +712,11 @@ setCategoryLevel('TREEVIEW:DATA', 'debug');   // per-category
 enablePerfLogging();
 setPerfThreshold(5);                          // only log > 5ms
 ```
+
+Levels coalesce, closest first: one element (`el.enableLogging(level?)`, `el.disableLogging()` = silence
+this element, `el.resetLogging()` = follow its type / the page again) → the type
+(`window.components['web-treeview'].logging`, per category) → the page (`window.components.logging`) → `warn`.
+A page call does not overwrite a level set on the type. Instance `debug` / `trace` lines print through
+`console.log` (Chrome hides `console.debug` by default).
 
 Categories: `TREEVIEW:INIT`, `TREEVIEW:DATA`, `TREEVIEW:INDEX`, `TREEVIEW:UI`, `TREEVIEW:DRAG`, `TREEVIEW:RENDER`.

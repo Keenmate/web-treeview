@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `renderItemCallback` / `renderMenuCallback` (were `renderItem` / `renderMenu`). The element's
   `renderContextMenuItemCallback` / `renderContextMenuCallback` are unchanged.
 - `theme` uses `toEnum(…, { isNullable: true })` (was `shouldNullOnInvalid`); same behaviour.
+- CEM: `custom-elements-manifest.config.mjs` no longer excludes `src/index.ts` (core's `blissAnalyzerConfig()`
+  default now analyzes it — `registerComponent()` runs there). `custom-elements.json` / `web-types.json` / VS Code
+  data regenerated: they list `BlissElement`'s API on the element (`release`, `destroy`, `isDestroyed`, `whenReady`,
+  `isReady`, `whenSettled`, `flush`, `setAttributes`, `batch`, `enableLogging` / `disableLogging` / `resetLogging`,
+  `form`, `validity`, `checkValidity()`, …) and the `input-rejected` event; enum attributes without a default
+  read `… | null`, boolean attributes carry their default. `docs/usage.md` lists `input-rejected` and the
+  log-level precedence.
 
 ### Internal — devkit 1.0.0-rc09 (2026-11-04)
 - `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and

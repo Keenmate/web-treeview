@@ -63,9 +63,7 @@ note; D-NC-7 = C member-only is documented for the structural fields.
 `SelectionModifiers { ctrl, shift }` is not configuration: it is the
 modifier-key state of one pointer gesture, handed from the renderer to the
 engine (`_nodeClickedCallback(node, modifiers)`), mirroring the DOM's own
-`ctrlKey` / `shiftKey`. An `is*` prefix would read as a setting. The other
-two C-NC-3 hits are a script false positive (`checked` is a callback
-parameter) and `isContextMenuVisible`, renamed in 2.0.0-rc07. PASS with note.
+`ctrlKey` / `shiftKey`. An `is*` prefix would read as a setting. PASS with note.
 
 ## C-NC-8 / C-CSS-7 — `.wtv-loader` is core's class
 
@@ -77,9 +75,8 @@ loader unstyled. Raised in the rulebook (core-generated class). PASS with note.
 
 ## Responsive overlay — not applicable (D-RO-1 = B)
 
-The tree is inline and opens no overlay panel of its own. The suite's
-"panel" signals are the node tooltip, the touch-drag ghost and the
-label-reveal popover (small anchored bubbles, `position: fixed`), and its
-"full-screen sheet" signal is `inset: 0` on `.wtv__checkbox::after`. The
-context menu is core's `/menu`, which owns its own phone presentation.
-`package.json#kmwc.rulebook.skippedChecks` lists `responsive-overlay`.
+The tree is inline and opens no overlay panel of its own; the context menu
+is core's `/menu`, which owns its own phone presentation. The suite's gate
+agrees (SKIP, no floating-panel signals) since the rulebook stopped counting
+`position: fixed` bubbles and `::after` glyphs as panels (2026-11-04), so
+`kmwc.rulebook.skippedChecks` is no longer needed.

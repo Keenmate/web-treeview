@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed-colour demos are marked for doctor's hard-coded-colour check: the CL06 iOS-Files mockup
   (custom-layout) and the TH02 preset gallery (theming) each sit in a `<style data-kmwc-fixed-colors>` block,
   and the gallery's per-card tree frames moved from `style="…"` attributes into that block.
+- `kmwc.rulebook.skippedChecks: ["responsive-overlay"]` is gone: the rulebook's overlay gate (fixed
+  2026-11-04) no longer reads the tooltip / drag ghost / `::after` glyph as panels and skips the suite
+  itself. `VALIDATION-NOTES.md` keeps D-RO-1 = B and drops the stale C-NC-3 script-bug remark.
 
 ### Changed — rulebook pass (2026-11-03)
 - **The expanded toggle's state class is `.wtv__toggle-icon--expanded`** (was the bare `.expanded`). Custom

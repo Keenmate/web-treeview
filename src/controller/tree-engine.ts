@@ -108,7 +108,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     dropZoneMode: 'glow',
     dropZoneLayout: 'around',
     dropZoneStart: 33,
-    dropZoneMaxWidth: 120,
+    dropZoneMaxWidth: '120px',
     isCopyAllowed: false,
     iconMember: undefined,
     iconColorMember: undefined,
@@ -253,7 +253,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _dropZoneMode: 'floating' | 'glow' = 'glow';
   private _dropZoneLayout: 'around' | 'before' | 'after' | 'wave' | 'wave2' = 'around';
   private _dropZoneStart: number | string = 33;
-  private _dropZoneMaxWidth: number = 120;
+  private _dropZoneMaxWidth: string = '120px';
   private _scrollHighlightTimeout: number = 4000;
   private _scrollHighlightClass: string | null | undefined = 'wtv__node-content--scroll-highlight';
   private _contextMenuXOffset: number = 8;
@@ -582,7 +582,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   set dropZoneStart(v: number | string) { this._dropZoneStart = v; this._updateNodeConfig(); }
 
   get dropZoneMaxWidth() { return this._dropZoneMaxWidth; }
-  set dropZoneMaxWidth(v: number) { this._dropZoneMaxWidth = v; this._updateNodeConfig(); }
+  set dropZoneMaxWidth(v: string) { this._dropZoneMaxWidth = v; this._updateNodeConfig(); }
 
   get scrollHighlightTimeout() { return this._scrollHighlightTimeout; }
   set scrollHighlightTimeout(v: number) { this._scrollHighlightTimeout = v; }
@@ -817,7 +817,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._dropZoneMode = props.dropZoneMode ?? 'glow';
     this._dropZoneLayout = props.dropZoneLayout ?? 'around';
     this._dropZoneStart = props.dropZoneStart ?? 33;
-    this._dropZoneMaxWidth = props.dropZoneMaxWidth ?? 120;
+    this._dropZoneMaxWidth = props.dropZoneMaxWidth ?? '120px';
     this._scrollHighlightTimeout = props.scrollHighlightTimeout ?? 4000;
     this._scrollHighlightClass = props.scrollHighlightClass ?? 'wtv__node-content--scroll-highlight';
     this._contextMenuXOffset = props.contextMenuXOffset ?? 8;
@@ -4028,7 +4028,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.dropZoneStart !== undefined)
       this._dropZoneStart = updates.dropZoneStart ?? 33;
     if (updates.dropZoneMaxWidth !== undefined)
-      this._dropZoneMaxWidth = updates.dropZoneMaxWidth ?? 120;
+      this._dropZoneMaxWidth = updates.dropZoneMaxWidth ?? '120px';
     if (updates.isCopyAllowed !== undefined) this._isCopyAllowed = updates.isCopyAllowed ?? false;
     if (updates.shouldAutoHandleCopy !== undefined)
       this._shouldAutoHandleCopy = updates.shouldAutoHandleCopy ?? true;

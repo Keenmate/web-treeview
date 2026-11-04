@@ -389,7 +389,7 @@ export interface TreeViewConfig<T = any> {
   dropZoneMode?: 'floating' | 'glow';
   dropZoneLayout?: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart?: number | string;
-  dropZoneMaxWidth?: number;
+  dropZoneMaxWidth?: string;
   isCopyAllowed?: boolean;
   shouldAutoHandleCopy?: boolean;
   /** When `true` (default), drop operations with `move` semantics call

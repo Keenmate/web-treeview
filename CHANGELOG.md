@@ -19,6 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `.wtv-loader` deviation (the class is BEM now).
 - **The page-wide loader hook is `window.components.renderLoadingCallback`** (was `renderLoaderCallback`) —
   the same name as the instance `renderLoadingCallback`. Docs, JSDoc and e2e follow.
+- **`drop-zone-max-width` / `dropZoneMaxWidth` is a CSS length** (core `toCssLength`, was an integer): the value
+  only lands in the `--drop-zone-max-width` variable, so `8rem` / `30%` / `calc(…)` work now. A bare number
+  attribute still means pixels (`drop-zone-max-width="90"` → `90px`), but the **property** takes a string —
+  `el.dropZoneMaxWidth = 90` is refused (warn + `input-rejected`, keeps the previous value); write `'90px'`.
+  The getter / engine config reads `'120px'` by default (was `120`). `TreeViewConfig.dropZoneMaxWidth` is `string`.
+- **Pixel attributes are parsed strictly** (core `toInt` / `toFloat`): `tooltip-offset`, `context-menu-x-offset`,
+  `context-menu-y-offset` (integers) and `virtual-scroll-item-height` (a number) take a bare number of pixels —
+  the tree does arithmetic with them. `"24px"`, `"8.5"` on an integer input, `"1e3"` now warn and keep the
+  previous value instead of being truncated to a number.
+- Core behaviour that reaches the element: `el.x = undefined` resets an input to its default (it used to warn);
+  text inputs (`search-term`, `*-class`, …) accept an assigned `''` like the empty attribute; `toEnum` attributes match case-insensitively (`theme="DARK"`); every
+  refused write also fires the new **`input-rejected`** event (`onInputRejected` twin); instance `debug` / `trace`
+  log lines print through `console.log`; log levels coalesce element → type → page (`el.disableLogging()` silences
+  the element, `el.resetLogging()` clears it); `window.components.motion` is written once on `<html data-motion>`
+  instead of on each `auto` host. See core's 1.0.0-rc18 CHANGELOG.
 
 ### Internal — core 1.0.0-rc18 (2026-11-04)
 - The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),

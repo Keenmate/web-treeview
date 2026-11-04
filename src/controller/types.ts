@@ -122,7 +122,7 @@ export interface NodeConfig {
   dropZoneMode: 'floating' | 'glow';
   dropZoneLayout: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart: number | string;
-  dropZoneMaxWidth: number;
+  dropZoneMaxWidth: string;
   isCopyAllowed: boolean;
   iconMember: string | null | undefined;
   // Per-node icon color (iconColorMember / iconColorCallback resolve it; applied to the
@@ -494,7 +494,7 @@ export interface TreeEngineConfig<T> {
   dropZoneMode?: 'floating' | 'glow';
   dropZoneLayout?: 'around' | 'before' | 'after' | 'wave' | 'wave2';
   dropZoneStart?: number | string;
-  dropZoneMaxWidth?: number;
+  dropZoneMaxWidth?: string;
   isCopyAllowed?: boolean;
   shouldAutoHandleCopy?: boolean;
   shouldAutoHandleMove?: boolean;

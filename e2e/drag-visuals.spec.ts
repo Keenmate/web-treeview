@@ -64,6 +64,17 @@ test.describe('drag classes', () => {
     await step(page, 'end');
     await expect(zones).toHaveCount(0);
   });
+
+  test('drop-zone-max-width is a CSS length (toCssLength): "8rem" passes through as-is', async ({ page }) => {
+    await load(page, '?drop-zone-mode=floating&drop-zone-max-width=8rem');
+    expect(await page.evaluate(() => (document.querySelector('web-treeview') as any).dropZoneMaxWidth)).toBe('8rem');
+    await step(page, 'start', '4');
+    await step(page, 'over', '1', 0.8);
+    const zones = page.locator('.wtv__drop-zones');
+    await expect(zones).toHaveCount(1);
+    expect(await zones.evaluate((el) => el.style.getPropertyValue('--drop-zone-max-width'))).toBe('8rem');
+    await step(page, 'end');
+  });
 });
 
 test.describe('drop reject (desktop, real drag)', () => {

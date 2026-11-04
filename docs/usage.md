@@ -160,7 +160,7 @@ a child listed before its parent is dropped as an orphan and reported in
 | `drop-zone-mode` | `string` | `'glow'` | `'glow'` \| `'floating'` |
 | `drop-zone-layout` | `string` | `'around'` | `'around'` \| `'before'` (row above the node) \| `'after'` (row below the node) \| `'wave'` \| `'wave2'` |
 | `drop-zone-start` | `number\|string` | `33` | Child zone threshold (number = %, string = CSS value) |
-| `drop-zone-max-width` | `number` | — | Max drop-zone width in px |
+| `drop-zone-max-width` | `string` (CSS length) | `120px` | Max floating drop-zone width: `120px`, `8rem`, `30%`; a bare number attribute means px |
 | `allow-copy` | `boolean` | `false` | Enable Ctrl+drag copy (config key: `isCopyAllowed`) |
 | `auto-handle-copy` | `boolean` | `true` | Apply copy moves automatically (config key: `shouldAutoHandleCopy`) |
 | `auto-handle-move` | `boolean` | `true` | Apply move drops automatically (config key: `shouldAutoHandleMove`); `false` = the tree isn't mutated — `node-drop` fires and you move the nodes |

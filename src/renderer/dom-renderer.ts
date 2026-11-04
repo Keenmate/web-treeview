@@ -1938,7 +1938,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const allowedPositions = this.controller.getNodeAllowedDropPositions(node);
     const layout = this.lastNodeConfig?.dropZoneLayout || 'around';
     const start = this.lastNodeConfig?.dropZoneStart ?? 33;
-    const maxWidth = this.lastNodeConfig?.dropZoneMaxWidth ?? 120;
+    const maxWidth = this.lastNodeConfig?.dropZoneMaxWidth ?? '120px';
 
     const zones = document.createElement('div');
     zones.className = `wtv__drop-zones wtv__drop-zones--${layout}`;
@@ -1949,7 +1949,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     zones.style.width = `${rect.width}px`;
     zones.style.height = `${rect.height}px`;
     zones.style.setProperty('--drop-zone-start', typeof start === 'number' ? `${start}%` : start);
-    zones.style.setProperty('--drop-zone-max-width', `${maxWidth}px`);
+    zones.style.setProperty('--drop-zone-max-width', maxWidth);
 
     const positions: DropPosition[] = allowedPositions || ['before', 'after', 'child'];
     for (const pos of positions) {

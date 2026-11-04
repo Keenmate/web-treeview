@@ -5,10 +5,11 @@
 
 <style>
 /* ──────────────────────────────────────────────────────────────
-   Page-specific styling: custom node looks, status badges,
-   empty/loading states, header/footer slots, and the iOS-Files
-   skeuomorphic phone UI (headless-controller demo). All scoped to
-   this page; everything else uses shared classes.
+   Page-specific styling: CL05 toggle-icon labels, the CL06 renderer
+   toggle and layout, the sidebar. The iOS-Files phone UI
+   (headless-controller demo) is in the fixed-colours block below.
+   Rows a renderNodeCallback draws live in the tree's shadow root,
+   out of page CSS's reach (see getCustomStylesCallback in the script).
    ────────────────────────────────────────────────────────────── */
 
 /* ── CL05 toggle-icon demo labels ── */
@@ -42,6 +43,19 @@
     align-items: start;
 }
 @media (max-width: 960px) { .demo-layout { grid-template-columns: 1fr; } }
+
+/* ── Sidebar info ── */
+.info-sidebar h3 { margin-top: 1.5rem; }
+.info-sidebar h3:first-child { margin-top: 0; }
+.api-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+.api-list li { padding: 4px 0; font-size: 0.9rem; color: var(--kmwc-text-color-2); }
+.api-list code { font-size: 0.82rem; }
+</style>
+
+<style data-kmwc-fixed-colors>
+/* CL06 — the iOS Files mockup draws Apple's own light-mode palette (system grey
+   #f2f2f7, label #1c1c1e, tint #007aff). It is a picture of a phone, so it keeps
+   those colours when the page goes dark. */
 
 /* ── iOS Phone Frame ── */
 .ios-phone {
@@ -229,13 +243,6 @@
 
 @keyframes iosSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes iosFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-/* ── Sidebar info ── */
-.info-sidebar h3 { margin-top: 1.5rem; }
-.info-sidebar h3:first-child { margin-top: 0; }
-.api-list { list-style: none; padding: 0; margin: 0.5rem 0; }
-.api-list li { padding: 4px 0; font-size: 0.9rem; color: var(--kmwc-text-color-2); }
-.api-list code { font-size: 0.82rem; }
 </style>
 
 <!-- ================================================================ -->

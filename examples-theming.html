@@ -26,6 +26,11 @@
     .theme-card .tree-container {
         margin-bottom: 0;
     }
+</style>
+
+<style data-kmwc-fixed-colors>
+    /* TH02 theme gallery — each card shows one preset's own palette (dark, neon,
+       corporate, material, glass …), so it keeps those colours in either page theme. */
 
     /* Dark Mode Theme */
     .dark-theme {
@@ -266,8 +271,17 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
     }
 
+    /* Each card's tree frame in the preset's own colours */
+    .dark-theme .tree-container { border-color: #404040; background: #2a2a2a; }
+    .neon-theme .tree-container { border-color: #ff00ff; background: #1a0a1a; }
+    .sharp-theme .tree-container { border: 2px solid #000000; border-radius: 0; }
+    .material-theme .tree-container { border-color: transparent; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
+</style>
+
+<style>
     /* Live theme editor */
     .color-row {
         display: flex;
@@ -471,7 +485,7 @@
         <p>High contrast dark theme for low-light environments</p>
         <div class="form-group">
             <label>Project Files</label>
-            <div class="tree-container" style="border-color: #404040; background: #2a2a2a;">
+            <div class="tree-container">
                 <web-treeview id="dark-mode"></web-treeview>
             </div>
             <span class="form-text">Dark backgrounds with light text and purple accents</span>
@@ -484,7 +498,7 @@
         <p>Bright neon colors with glowing effects</p>
         <div class="form-group">
             <label>Project Files</label>
-            <div class="tree-container" style="border-color: #ff00ff; background: #1a0a1a;">
+            <div class="tree-container">
                 <web-treeview id="neon-mode"></web-treeview>
             </div>
             <span class="form-text">Cyan and magenta with glowing shadows &middot; double-chevron toggle via <code>--base-icon-chevron</code></span>
@@ -523,7 +537,7 @@
         <p>No border-radius, flat design, pure black and white</p>
         <div class="form-group">
             <label>Project Files</label>
-            <div class="tree-container" style="border: 2px solid #000000; border-radius: 0;">
+            <div class="tree-container">
                 <web-treeview id="sharp-mode"></web-treeview>
             </div>
             <span class="form-text">Brutalist design with sharp edges &middot; filled square-chevron toggle via <code>--base-icon-chevron</code></span>
@@ -536,7 +550,7 @@
         <p>Elevation shadows, vibrant colors, standard radius</p>
         <div class="form-group">
             <label>Project Files</label>
-            <div class="tree-container" style="border-color: transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
+            <div class="tree-container">
                 <web-treeview id="material-mode"></web-treeview>
             </div>
             <span class="form-text">Google Material Design principles &middot; pre-oriented down-caret with <code>--wtv-icon-rotate-*</code> re-map</span>
@@ -549,7 +563,7 @@
         <p>Frosted glass effect with backdrop blur and transparency</p>
         <div class="form-group">
             <label>Project Files</label>
-            <div class="tree-container" style="border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);">
+            <div class="tree-container">
                 <web-treeview id="glass-mode"></web-treeview>
             </div>
             <span class="form-text">Translucent with blur effect (requires modern browser)</span>

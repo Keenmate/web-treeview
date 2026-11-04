@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Internal — devkit 1.0.0-rc09 (2026-11-04)
 - `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and
   `make check-pages`, and the CLAUDE.md devkit block's notes on page colours and `check-pages`.
+- Fixed-colour demos are marked for doctor's hard-coded-colour check: the CL06 iOS-Files mockup
+  (custom-layout) and the TH02 preset gallery (theming) each sit in a `<style data-kmwc-fixed-colors>` block,
+  and the gallery's per-card tree frames moved from `style="…"` attributes into that block.
 
 ### Changed — rulebook pass (2026-11-03)
 - **The expanded toggle's state class is `.wtv__toggle-icon--expanded`** (was the bare `.expanded`). Custom

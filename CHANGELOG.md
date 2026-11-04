@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **The re-exported menu-divider factory is `createMenuDivider(text?)`** (was `menuDivider`) — core's `create`
   = factory prefix. App code building `getContextMenuItemsCallback` entries with it renames the import; the
   plain `{ divider: true, text? }` form is unchanged.
+- **The default loader's class is `.wtv__loader`** (was `.wtv-loader`) — core now draws
+  `<span class="<prefix>__loader">`. Page CSS (or `getCustomStylesCallback` styles) that targeted `.wtv-loader`
+  / `.wtv__loading-overlay .wtv-loader` stops matching; rename the selector. The `--wtv-loader-*` tokens and
+  the `wtv-loader-spin` keyframes keep their names. `VALIDATION-NOTES.md` drops the C-NC-8 / C-CSS-7
+  `.wtv-loader` deviation (the class is BEM now).
+- **The page-wide loader hook is `window.components.renderLoadingCallback`** (was `renderLoaderCallback`) —
+  the same name as the instance `renderLoadingCallback`. Docs, JSDoc and e2e follow.
 
 ### Internal — core 1.0.0-rc18 (2026-11-04)
 - The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),

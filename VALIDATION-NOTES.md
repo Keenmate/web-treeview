@@ -65,14 +65,6 @@ modifier-key state of one pointer gesture, handed from the renderer to the
 engine (`_nodeClickedCallback(node, modifiers)`), mirroring the DOM's own
 `ctrlKey` / `shiftKey`. An `is*` prefix would read as a setting. PASS with note.
 
-## C-NC-8 / C-CSS-7 — `.wtv-loader` is core's class
-
-The default loader is drawn by core `renderLoader` (SPEC §12.14) as
-`<span class="<prefix>-loader">` — the same contract every Keenmate
-component styles (`--<prefix>-loader-*` → `--base-loader-*`). The class name
-is core's, not the component's; renaming it here would leave the default
-loader unstyled. Raised in the rulebook (core-generated class). PASS with note.
-
 ## Responsive overlay — not applicable (D-RO-1 = B)
 
 The tree is inline and opens no overlay panel of its own; the context menu

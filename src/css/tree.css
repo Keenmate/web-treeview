@@ -1133,14 +1133,14 @@
 }
 
 /* The shared loader (core renderLoader default element, base-css-variables drawing contract). */
-.wtv-loader {
+.wtv__loader {
   display: inline-block;
   inline-size: var(--wtv-loader-size); block-size: var(--wtv-loader-size);
   mask: var(--wtv-loader-icon) center / contain no-repeat;
   background: currentColor;
   animation: wtv-loader-spin var(--wtv-loader-duration) linear infinite;
 }
-.wtv__loading-overlay .wtv-loader {
+.wtv__loading-overlay .wtv__loader {
   inline-size: var(--wtv-loader-overlay-size); block-size: var(--wtv-loader-overlay-size);
 }
 @keyframes wtv-loader-spin { to { transform: rotate(var(--wtv-loader-rotate)); } }

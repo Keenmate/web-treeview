@@ -277,7 +277,7 @@ applied right after it. For a silent replace use `clearSelection(undefined, { is
 | `renderIconCallback` | `({ node, value, iconElement, …renderState }) => void` | Custom per-node icon (SVG / unicode / markup) into `iconElement` |
 | `renderEmptyStateCallback` | `({ containerElement }) => void` | "No items to display" rendering |
 | `renderEmptyZoneCallback` | `({ containerElement }) => void` | Drop zone in an empty tree |
-| `renderLoadingCallback` | `({ component, context, containerElement, element, label }) => void \| (() => void)` | The `isLoading` overlay (core `LoaderRenderContext`, `context: 'overlay'`); may return a cleanup. Beats the page-wide `window.components.renderLoaderCallback`; neither → the default `.wtv-loader` |
+| `renderLoadingCallback` | `({ component, context, containerElement, element, label }) => void \| (() => void)` | The `isLoading` overlay (core `LoaderRenderContext`, `context: 'overlay'`); may return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; neither → the default `.wtv__loader` |
 | `renderHeaderCallback` | `({ containerElement }) => void` | Tree header rendering |
 | `renderFooterCallback` | `({ containerElement }) => void` | Tree footer rendering |
 | `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, entries, controller }) => void` | Take over the whole context menu (see [Custom menu renderer](#custom-menu-renderer)); close via `controller.closeContextMenu()` |

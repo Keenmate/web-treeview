@@ -89,11 +89,11 @@ test.describe('loading', () => {
     expect(await page.evaluate(() => (window as any).loaderCtx)).toEqual({
       component: 'web-treeview', context: 'overlay', label: 'Loading…', isHost: true, role: 'status',
     });
-    await expect(tree(page, 'loading-cb').locator('.wtv-loader')).toHaveCount(0);
+    await expect(tree(page, 'loading-cb').locator('.wtv__loader')).toHaveCount(0);
   });
 
-  test('default loader: core renderLoader draws .wtv-loader (aria-hidden) from the --wtv-loader-* tokens', async ({ page }) => {
-    const loader = tree(page, 'loading').locator('.wtv__loading-overlay .wtv-loader');
+  test('default loader: core renderLoader draws .wtv__loader (aria-hidden) from the --wtv-loader-* tokens', async ({ page }) => {
+    const loader = tree(page, 'loading').locator('.wtv__loading-overlay .wtv__loader');
     await expect(loader).toHaveCount(1);
     await expect(loader).toHaveAttribute('aria-hidden', 'true');
     const anim = await loader.evaluate((el) => getComputedStyle(el).animationName);
@@ -104,16 +104,16 @@ test.describe('loading', () => {
     const t = tree(page, 'loading');
     await t.evaluate((el) => (el as HTMLElement).style.setProperty('--wtv-loader-size', '10px'));
     // computed size, not boundingBox (the loader is rotating)
-    const size = await t.locator('.wtv__loading-overlay .wtv-loader').evaluate((el) => {
+    const size = await t.locator('.wtv__loading-overlay .wtv__loader').evaluate((el) => {
       const cs = getComputedStyle(el);
       return [cs.width, cs.height];
     });
     expect(size).toEqual(['20px', '20px']);
   });
 
-  test('page hook window.components.renderLoaderCallback replaces the default; the instance hook beats it', async ({ page }) => {
+  test('page hook window.components.renderLoadingCallback replaces the default; the instance hook beats it', async ({ page }) => {
     await page.evaluate(() => {
-      (window as any).components.renderLoaderCallback = ({ component, containerElement }: any) => {
+      (window as any).components.renderLoadingCallback = ({ component, containerElement }: any) => {
         containerElement.insertAdjacentHTML('beforeend', `<i class="page-loader">${component}</i>`);
       };
     });
@@ -121,12 +121,12 @@ test.describe('loading', () => {
     // Redraw: loading off → on.
     await t.evaluate(async (el: any) => { el.removeAttribute('loading'); await el.whenSettled(); el.setAttribute('loading', 'true'); });
     await expect(t.locator('.wtv__loading-overlay .page-loader')).toHaveText('web-treeview');
-    await expect(t.locator('.wtv-loader')).toHaveCount(0);
+    await expect(t.locator('.wtv__loader')).toHaveCount(0);
     const cb = tree(page, 'loading-cb');
     await cb.evaluate(async (el: any) => { el.removeAttribute('loading'); await el.whenSettled(); el.setAttribute('loading', 'true'); });
     await expect(cb.locator('.custom-loading')).toHaveCount(1);
     await expect(cb.locator('.page-loader')).toHaveCount(0);
-    await page.evaluate(() => { (window as any).components.renderLoaderCallback = null; });
+    await page.evaluate(() => { (window as any).components.renderLoadingCallback = null; });
   });
 
   test('loading off removes the loader: its nodes, role / aria-label, and runs the hook cleanup', async ({ page }) => {
@@ -148,7 +148,7 @@ test.describe('loading', () => {
     await expect(t.locator('.custom-loading')).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).loaderCleanups)).toBe(1);
     await t.evaluate((el: any) => { el.renderLoadingCallback = null; });
-    await expect(t.locator('.wtv__loading-overlay .wtv-loader')).toHaveCount(1);
+    await expect(t.locator('.wtv__loading-overlay .wtv__loader')).toHaveCount(1);
   });
 });
 

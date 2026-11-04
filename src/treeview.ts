@@ -217,7 +217,7 @@ export class WebTreeView<T = any> {
   }
 
   /** The overlay loader drawer: core `renderLoader` with the instance hook (else the page
-   *  hook, else the default `.wtv-loader`). Stable identity per hook (the renderer redraws on change). */
+   *  hook, else the default `.wtv__loader`). Stable identity per hook (the renderer redraws on change). */
   private defaultLoaderDrawer: ((container: HTMLElement, label: string) => () => void) | null = null;
   private loaderDrawer(src: RenderLoaderCallback | null | undefined): (container: HTMLElement, label: string) => () => void {
     const make = (hook: RenderLoaderCallback | null) => (container: HTMLElement, label: string) =>

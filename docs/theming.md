@@ -265,8 +265,8 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 | `--wtv-loading-color` | `= --wtv-text-color-3` | "Loading more…" text |
 
 The `isLoading` overlay draws through web-components-core's shared loader (`renderLoader`):
-the instance `renderLoadingCallback`, else the page-wide `window.components.renderLoaderCallback`,
-else the default `<span class="wtv-loader">` drawn from the tokens above. One page-wide change
+the instance `renderLoadingCallback`, else the page-wide `window.components.renderLoadingCallback`,
+else the default `<span class="wtv__loader">` drawn from the tokens above. One page-wide change
 (`--base-loader-*` or the page hook) restyles the loader of every KeenMate component.
 
 ### Tooltip

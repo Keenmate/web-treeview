@@ -527,7 +527,7 @@ export interface TreeViewConfig<T = any> {
    *  Element-level (same option as web-dropzone). */
   shouldHighlightOnPageDrag?: boolean | null;
   /** Draw the loading state (`isLoading` overlay) into `ctx.containerElement` — core's shared
-   *  loader hook (SPEC §12.14): beats the page-wide `window.components.renderLoaderCallback`;
+   *  loader hook (SPEC §12.14): beats the page-wide `window.components.renderLoadingCallback`;
    *  `ctx.context` is `'overlay'`; may return a cleanup. */
   renderLoadingCallback?: RenderLoaderCallback | null;
   renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => void;

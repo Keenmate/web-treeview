@@ -614,7 +614,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
             if (menuItem.id === 'profile') {
                 const initials = d.name.split(' ').map(w => w[0]).join('');
                 buttonElement.innerHTML = `
-                    <span style="width: 28px; height: 28px; border-radius: 50%; background: ${color}; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 600; flex-shrink: 0;">${initials}</span>
+                    <span data-kmwc-fixed-colors style="width: 28px; height: 28px; border-radius: 50%; background: ${color}; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 600; flex-shrink: 0;">${initials}</span>
                     <span style="display: flex; flex-direction: column; gap: 1px;">
                         <span>${d.name}</span>
                         <span style="font-size: 0.75em; color: ${color}; font-weight: 500;">${d.role}</span>
@@ -627,7 +627,7 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
                 buttonElement.innerHTML = `
                     <span class="km-menu__icon">🧾</span>
                     <span class="km-menu__label">Invoices</span>
-                    <span style="background: ${chipColor}; color: white; font-size: 0.7em; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;">${count}</span>`;
+                    <span data-kmwc-fixed-colors style="background: ${chipColor}; color: white; font-size: 0.7em; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;">${count}</span>`;
                 return;
             }
             // everything else: leave buttonElement empty → default rendering

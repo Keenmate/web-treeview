@@ -67,6 +67,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   with `window.scrollTo` (only when the row is off-screen) instead of `scrollIntoView()`; the spy follows.
   `drag-visuals` covers `drop-zone-max-width="8rem"`; `parity` covers the info popover's outside-press close.
 
+### Internal — devkit 1.0.0-rc10 (2026-11-05)
+- `@keenmate/web-components-devkit` ^1.0.0-rc09 → ^1.0.0-rc10; `kmwc sync` refreshes the CLAUDE.md devkit
+  block. Doctor now runs the variable-manifest check itself, so the core `--base-accent-color` read below
+  shows in `kmwc doctor` too, until a core release with core's fix (d3e2e52).
+- CM02's context-menu chips (the role avatar on "Profile", the invoice count) carry `data-kmwc-fixed-colors`:
+  `renderContextMenuItemCallback` draws them inside the tree's shadow root, where page CSS can't reach, so
+  their white-on-role-colour `style="…"` is fixed on purpose.
+
 ### Internal — devkit 1.0.0-rc09 (2026-11-04)
 - `@keenmate/web-components-devkit` ^1.0.0-rc06 → ^1.0.0-rc09; `kmwc sync` adds the `check:pages` script and
   `make check-pages`, and the CLAUDE.md devkit block's notes on page colours and `check-pages`.

@@ -702,13 +702,14 @@ console. Lines carry the instance: `[TREEVIEW:DATA] #my-tree 2 of 40 items faile
 
 ```javascript
 import {
-  enableLogging, disableLogging,
+  enableLogging, disableLogging, resetLogging,
   setLogLevel, setCategoryLevel,
   enablePerfLogging, setPerfThreshold,
 } from '@keenmate/web-treeview';
 
 enableLogging();                              // global on
-setCategoryLevel('TREEVIEW:DATA', 'debug');   // per-category
+setCategoryLevel('TREEVIEW:DATA', 'debug');   // per-category (null clears it)
+resetLogging();                               // drop the tree's own levels
 enablePerfLogging();
 setPerfThreshold(5);                          // only log > 5ms
 ```

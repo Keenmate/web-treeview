@@ -120,6 +120,7 @@ export type { LoaderRenderContext, RenderLoaderCallback } from '@keenmate/web-co
 export {
   enableLogging,
   disableLogging,
+  resetLogging,
   setLogLevel,
   setCategoryLevel,
   LOGGING_CATEGORIES,

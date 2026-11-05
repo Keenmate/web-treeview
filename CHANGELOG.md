@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `snappy` / `smooth` speed it up / slow it down like every other transition.
 - **A lazy context-menu submenu's loading row shows `labels.loading`** — the tree passes its label to core's
   `openMenu({ labels: { loading } })` (was core's default `…`).
+- **`resetLogging()` is exported** (core rc18) and `setCategoryLevel(category, null)` clears one category: the
+  tree's own levels go away and it follows the page-wide level (else `warn`).
 
 ### Internal — core 1.0.0-rc18 (2026-11-04)
 - The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),

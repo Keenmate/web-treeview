@@ -23,6 +23,7 @@
  * enableLogging();                              // all categories → debug
  * setLogLevel('info');                          // all categories → info
  * setCategoryLevel('TREEVIEW:INDEX', 'debug');  // one category (bare or 'TREEVIEW:INDEX')
+ * resetLogging();                               // back to the page level (else warn)
  * ```
  */
 import { createLoggers, type Logger, type LogLevelDesc } from '@keenmate/web-components-core';
@@ -60,6 +61,11 @@ export function disableLogging(): void {
   logging.disableLogging();
 }
 
+/** Clear the tree's own levels (and persisted copies): it follows the page-wide level, else `warn`. */
+export function resetLogging(): void {
+  logging.resetLogging();
+}
+
 /** Set the same level on every category. */
 export function setLogLevel(level: LogLevelDesc): void {
   logging.setLogLevel(level);
@@ -68,9 +74,9 @@ export function setLogLevel(level: LogLevelDesc): void {
 /**
  * Set the level of one category. Accepts the full prefixed name
  * (`TREEVIEW:INDEX`) or the bare suffix (`INDEX`) — both normalize to the
- * category key the core bundle expects.
+ * category key the core bundle expects. `null` clears it (back to the type / page level).
  */
-export function setCategoryLevel(category: string, level: LogLevelDesc = 'debug'): void {
+export function setCategoryLevel(category: string, level: LogLevelDesc | null = 'debug'): void {
   const bare = (category.includes(':') ? category.split(':').pop()! : category) as Category;
   logging.setCategoryLevel(bare, level);
 }

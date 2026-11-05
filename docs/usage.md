@@ -534,8 +534,8 @@ declares it on every KeenMate element), the page-wide `window.components.motion`
 `data-motion` attribute on any ancestor (`<html>`, a section) sets the tree's speeds: core maps the
 level onto `--base-duration-*` / `--base-scroll-behavior`, which every `--wtv-transition-*` and
 `--wtv-scroll-behavior` reads. `none` = no transitions + instant `scrollToPath` (the drop-zone icon
-stops bobbing too); `snappy` / `smooth` = faster / slower presets; `auto` (default) follows the
-page / section / OS. The OS reduced-motion setting always wins, even over `motion="smooth"`.
+stops bobbing too — its loop follows `--wtv-transition-slow`); `snappy` / `smooth` = faster / slower presets; `auto` (default) follows the
+closest `data-motion` (a section, then the page) and the OS. The OS reduced-motion setting always wins, even over `motion="smooth"`.
 Keyboard moves scroll instantly at every level. The loader keeps its own speed.
 
 **Ready / defer (core).** Add the `defer` attribute to hold the first build (set data and

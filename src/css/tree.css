@@ -638,16 +638,16 @@
 .wtv__empty-zone--active .wtv__empty-zone-content {
   opacity: 1;
 }
-/* A drag over the zone: the icon bobs toward the drop (paint-only; off under reduced motion and
-   motion="none" — a loop, so not driven by the duration tokens). */
+/* A drag over the zone: the icon bobs toward the drop (paint-only). The loop length follows
+   --wtv-transition-slow (0.3s → 1.1s), so motion="none" on the tree, a data-motion section, the
+   page level and the OS reduced-motion setting all stop it (0s = no movement). */
 .wtv__empty-zone--active .wtv__empty-zone-content::before {
-  animation: wtv-drop-placeholder-bob 1.1s var(--wtv-ease-standard) infinite;
+  animation: wtv-drop-placeholder-bob calc(var(--wtv-transition-slow) * 3.667) var(--wtv-ease-standard) infinite;
 }
 @keyframes wtv-drop-placeholder-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
-:host([data-motion="none"]) .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
 }

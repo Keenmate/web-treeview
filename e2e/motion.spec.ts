@@ -37,22 +37,44 @@ test('page-wide window.components.motion, and a data-motion section', async ({ p
   await expect.poll(() => tokens(page)).toEqual({ normal: '0.25s', slow: '0.45s', scroll: 'smooth' });
 });
 
-test('motion="none": scrollToPath jumps instantly; the drop-zone icon does not bob', async ({ page }) => {
-  await load(page);
-  await page.evaluate(() => {
-    const tree = document.getElementById('tree')!;
-    tree.setAttribute('motion', 'none');
+/** The drop-zone icon's bob loop length (the ::before of an active empty zone). */
+async function bobDuration(page: Page, id: string) {
+  await page.evaluate((i) => {
+    const tree = document.getElementById(i)!;
     tree.setAttribute('show-empty-drop-placeholder', '');
     (tree as any).nodes = [];
-  });
-  const icon = page.locator('#tree .wtv__empty-zone-content');
-  await expect(icon).toBeVisible();
-  const anim = await page.evaluate(() => {
-    const zone = document.getElementById('tree')!.shadowRoot!.querySelector('.wtv__empty-zone')!;
+  }, id);
+  await expect(page.locator(`#${id} .wtv__empty-zone-content`)).toBeVisible();
+  return page.evaluate((i) => {
+    const zone = document.getElementById(i)!.shadowRoot!.querySelector('.wtv__empty-zone')!;
     zone.classList.add('wtv__empty-zone--active');
-    return getComputedStyle(zone.querySelector('.wtv__empty-zone-content')!, '::before').animationName;
-  });
-  expect(anim).toBe('none');
+    const style = getComputedStyle(zone.querySelector('.wtv__empty-zone-content')!, '::before');
+    return { name: style.animationName, duration: parseFloat(style.animationDuration) };
+  }, id);
+}
+
+test('the drop-zone icon bobs by default', async ({ page }) => {
+  await load(page);
+  const bob = await bobDuration(page, 'tree');
+  expect(bob.name).toBe('wtv-drop-placeholder-bob');
+  expect(bob.duration).toBeCloseTo(1.1, 1);
+});
+
+test('motion="none" on the element: the drop-zone icon does not bob', async ({ page }) => {
+  await load(page);
+  await page.evaluate(() => document.getElementById('tree')!.setAttribute('motion', 'none'));
+  expect((await bobDuration(page, 'tree')).duration).toBe(0);
+});
+
+test('a data-motion="none" section: the drop-zone icon does not bob', async ({ page }) => {
+  await load(page);
+  expect((await bobDuration(page, 'inSection')).duration).toBe(0);
+});
+
+test('page-wide window.components.motion = "none": the drop-zone icon does not bob', async ({ page }) => {
+  await load(page);
+  await page.evaluate(() => { (window as any).components.motion = 'none'; });
+  await expect.poll(async () => (await bobDuration(page, 'tree')).duration).toBe(0);
 });
 
 test.describe('the OS reduced-motion setting wins', () => {

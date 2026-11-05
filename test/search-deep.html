@@ -86,10 +86,9 @@
                 const results = tree.searchNodes(q);
                 resultCount.textContent = String(results.length);
                 if (results.length > 0) {
-                    // Default scrollIntoView behavior — browser scrolls every
-                    // ancestor (including the .tree-scroll wrapper) to bring
-                    // the row into view, which works across the Shadow DOM
-                    // boundary without us having to pass containerElement.
+                    // scrollToPath scrolls the nearest scrollable ancestor
+                    // (the .tree-scroll wrapper, found across the Shadow DOM
+                    // boundary) without us having to pass containerElement.
                     tree.scrollToPath(results[0].path, { shouldHighlight: true });
                 }
             });

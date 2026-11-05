@@ -1991,6 +1991,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       host: this.container,
       shouldFocusFirst: isFromKeyboard,
       returnFocusTo: this.bodyEl,
+      // A lazy submenu's loading row speaks the tree's own `labels.loading`.
+      labels: { loading: resolveLabel(config.labels, 'loading') },
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
       renderItemCallback: config.renderContextMenuItemCallback
         ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)

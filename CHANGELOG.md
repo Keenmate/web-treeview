@@ -40,6 +40,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   first) and puts focus back on the info button if focus was in the popover; Escape is consumed by the
   popover, so it no longer also cancels a pending cut in the same press.
 
+### Fixed — core 1.0.0-rc18 review (2026-11-05)
+- **The drop-zone icon stops bobbing under a page-wide or section `motion="none"`** — core rc18 writes the page
+  level on `<html data-motion>` instead of each host, so the old `:host([data-motion="none"])` rule only caught
+  the tree's own `motion`. The bob's loop length now follows `--wtv-transition-slow` (0.3s → 1.1s), so the
+  element, a `data-motion` section, `window.components.motion` and the OS reduced-motion setting all stop it;
+  `snappy` / `smooth` speed it up / slow it down like every other transition.
+- **A lazy context-menu submenu's loading row shows `labels.loading`** — the tree passes its label to core's
+  `openMenu({ labels: { loading } })` (was core's default `…`).
+
 ### Internal — core 1.0.0-rc18 (2026-11-04)
 - The context menu passes core's renamed `openMenu` options: `onClose` (was `closeCallback`),
   `renderItemCallback` / `renderMenuCallback` (were `renderItem` / `renderMenu`). The element's

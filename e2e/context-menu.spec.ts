@@ -191,6 +191,22 @@ test.describe('Callback approach', () => {
     await expect(activityLog(card)).toContainText('Export "Documents" as JSON');
   });
 
+  test("a lazy submenu shows the tree's labels.loading while its children load", async ({ page }) => {
+    await gotoContextMenu(page);
+    const card = callbackCard(page);
+    await page.evaluate(() => {
+      const tree = document.getElementById('tree-1') as any;
+      tree.labels = { loading: 'Načítám…' };
+      tree.getContextMenuItemsCallback = () => [
+        { id: 'lazy', text: 'Lazy', getChildrenCallback: () => new Promise(() => {}) },
+      ];
+    });
+
+    await rightClick(card, '1');
+    await menuItem(card, 'Lazy').hover();
+    await expect(page.locator('.km-menu--submenu .km-menu__loading').first()).toHaveText('Načítám…');
+  });
+
   test('clicking outside the menu closes it', async ({ page }) => {
     await gotoContextMenu(page);
     const card = callbackCard(page);

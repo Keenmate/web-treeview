@@ -115,20 +115,20 @@ test.describe('virtual scroll', () => {
 });
 
 test.describe('keyboard moves always scroll instantly (--wtv-scroll-behavior is for programmatic jumps only)', () => {
-  // Rows scroll via the container's scrollTo (container scroll) or scrollIntoView (no
-  // container) — record the behavior of either.
+  // Rows scroll through core's scrollIntoContainer: the container's scrollTo (container scroll)
+  // or window.scrollTo (no container: the page) — record the behavior of either.
   const spy = (page: Page) => page.evaluate(() => {
     const calls: (string | undefined)[] = ((window as any).scrollCalls = []);
-    const origIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function (this: Element, o?: boolean | ScrollIntoViewOptions) {
-      calls.push(typeof o === 'object' ? o.behavior : undefined);
-      return origIntoView.call(this, o as ScrollIntoViewOptions);
-    };
     const origScrollTo = Element.prototype.scrollTo;
     Element.prototype.scrollTo = function (this: Element, ...args: any[]) {
       calls.push(typeof args[0] === 'object' ? args[0].behavior : undefined);
       return (origScrollTo as any).apply(this, args);
     };
+    const origWindowScrollTo = window.scrollTo;
+    window.scrollTo = function (...args: any[]) {
+      calls.push(typeof args[0] === 'object' ? args[0].behavior : undefined);
+      return (origWindowScrollTo as any).apply(window, args);
+    } as typeof window.scrollTo;
   });
   const calls = (page: Page) => page.evaluate(() => (window as any).scrollCalls as (string | undefined)[]);
 

@@ -6,9 +6,9 @@ import { test, expect, Page } from './fixtures';
  *
  * Fixture (/test/search-deep.html): 10×10×10 = 1000 leaves over 3 levels,
  * expandLevel=1 so levels 2 and 3 start collapsed. The tree lives inside a
- * fixed-height (240 px) overflow-auto container; scrollToPath's native
- * scrollIntoView must scroll that light-DOM wrapper (across the shadow boundary)
- * for the target row to reach the viewport.
+ * fixed-height (240 px) overflow-auto container; scrollToPath (core
+ * scrollIntoContainer) must find and scroll that light-DOM wrapper (across the
+ * shadow boundary) for the target row to reach the viewport.
  *
  * The internal FlexSearch index builds via requestIdleCallback. Poll on the
  * result-count testid until the indexer has caught up.

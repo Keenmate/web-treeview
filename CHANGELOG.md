@@ -67,6 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   with `window.scrollTo` (only when the row is off-screen) instead of `scrollIntoView()`; the spy follows.
   `drag-visuals` covers `drop-zone-max-width="8rem"`; `parity` covers the info popover's outside-press close.
 
+### Internal — devkit 1.0.0-rc11 (2026-11-07)
+- `@keenmate/web-components-devkit` ^1.0.0-rc10 → ^1.0.0-rc11: every example page now ends with the devkit
+  footer (Keenmate | GitHub | devkit version), as the index did. No generated file changes.
+
 ### Internal — devkit 1.0.0-rc10 (2026-11-05)
 - `@keenmate/web-components-devkit` ^1.0.0-rc09 → ^1.0.0-rc10; `kmwc sync` refreshes the CLAUDE.md devkit
   block. Doctor now runs the variable-manifest check itself, so the core `--base-accent-color` read below

@@ -17,7 +17,7 @@ import { customElementJetBrainsPlugin } from 'custom-element-jet-brains-integrat
  * CSS custom-data file and `web-types.json` carry the theming variables.
  */
 /**
- * Line endings: a Windows checkout (core.autocrlf) hands the analyzer CRLF sources, so JSDoc and
+ * Deterministic output. Line endings: a Windows checkout (core.autocrlf) hands the analyzer CRLF sources, so JSDoc and
  * input-row descriptions came out with CRLF and a build on another checkout rewrote the manifests.
  * Fold CRLF / CR to LF in every manifest string before the generators below read it, so the output
  * is the same whatever the checkout's line endings.
@@ -35,6 +35,9 @@ function normalizeLineEndingsPlugin() {
     name: 'wtv-normalize-line-endings',
     packageLinkPhase({ customElementsManifest }) {
       fold(customElementsManifest);
+      // The analyzer's module order varies from run to run (src/helpers/* moved around), so sort
+      // the modules by path: the same sources always give the same file.
+      customElementsManifest.modules?.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
     },
   };
 }

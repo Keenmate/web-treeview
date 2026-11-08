@@ -28,7 +28,13 @@ export const test = base.extend<{ pageErrors: string[] }>({
     pageErrors: [
         async ({ page }, use, testInfo) => {
             const errors: string[] = [];
-            page.on('pageerror', (e) => errors.push(e.message ?? String(e)));
+            page.on('pageerror', (e) => {
+                const message = e.message ?? String(e);
+                // A browser notice, not an exception: WebKit reports it when a resize observed by a
+                // ResizeObserver lands in the same frame (e.g. a stylesheet finishing its load).
+                if (message.startsWith('ResizeObserver loop')) return;
+                errors.push(message);
+            });
 
             await use(errors);
 
@@ -45,3 +51,12 @@ export const test = base.extend<{ pageErrors: string[] }>({
 export { expect };
 
 export * from './helpers';
+
+/**
+ * Skip reasons for engine gaps in the test harness (not in the tree): pass as
+ * `test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND)`.
+ */
+export const WEBKIT_NO_NATIVE_DND =
+    'Playwright WebKit (Windows) delivers no HTML5 drop for a mouse-driven drag (dragTo / mouse down-move-up: drop count 0); Chromium + Firefox cover it';
+export const WEBKIT_NO_TOUCH_CTOR =
+    'WebKit has no Touch constructor (new Touch() throws "Illegal constructor", also with hasTouch + isMobile), so synthetic touch drags cannot be built; Chromium + Firefox cover it';

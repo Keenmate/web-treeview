@@ -161,19 +161,72 @@ test.describe('header / footer / styles', () => {
 
   test('getCustomStylesCallback CSS lands in the shadow root and applies', async ({ page }) => {
     const t = tree(page, 'chrome');
-    expect(await t.evaluate((el) => !!el.shadowRoot?.querySelector('style.tv-custom-styles'))).toBe(true);
+    expect(await t.evaluate((el) => !!el.shadowRoot?.querySelector('style.wtv-custom-styles'))).toBe(true);
     // not leaked to the document
-    expect(await page.evaluate(() => document.head.querySelector('style.tv-custom-styles'))).toBeNull();
+    expect(await page.evaluate(() => document.head.querySelector('style.wtv-custom-styles'))).toBeNull();
     const ls = await nodeByPath(t, '1.1').locator('.wtv__node-label').evaluate((el) => getComputedStyle(el).letterSpacing);
     expect(ls).toBe('3px');
   });
-
   test('body-class lands on the tree body; leaf-icon-class on leaf toggles only', async ({ page }) => {
     const t = tree(page, 'chrome');
     await expect(t.locator('.wtv__tree')).toHaveClass(/\bmy-body\b/);
     await expect(nodeByPath(t, '1.1').locator('.wtv__toggle-icon').first()).toHaveClass(/\bmy-leaf\b/);
     await expect(nodeByPath(t, '1').locator('> .wtv__node-row .wtv__toggle-icon').first()).not.toHaveClass(/\bmy-leaf\b/);
   });
+});
+
+test.describe('custom styles (core createCustomStyles)', () => {
+  const wordSpacing = (page: Page, id: string) =>
+    nodeByPath(tree(page, id), '1.1').locator('.wtv__node-label').evaluate((el) => getComputedStyle(el).wordSpacing);
+
+  test('custom-styles (attribute / property) applies; getCustomStylesCallback wins over it', async ({ page }) => {
+    const t = tree(page, 'icons');
+    await t.evaluate((el) => el.setAttribute('custom-styles', '.wtv__node-label { word-spacing: 5px; }'));
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('5px');
+    await t.evaluate((el: any) => { el.getCustomStylesCallback = () => '.wtv__node-label { word-spacing: 9px; }'; });
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('9px');
+    await t.evaluate((el: any) => { el.getCustomStylesCallback = null; el.customStyles = null; });
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('0px');
+  });
+
+  test('page-wide customStyles styles every tree; an instance overrides it', async ({ page }) => {
+    await page.evaluate(() => { (window as any).components['web-treeview'].customStyles = '.wtv__node-label { word-spacing: 7px; }'; });
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('7px');
+    await expect.poll(() => wordSpacing(page, 'icons-aligned')).toBe('7px');
+    await tree(page, 'icons').evaluate((el: any) => { el.customStyles = '.wtv__node-label { word-spacing: 2px; }'; });
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('2px');
+    // the page <style> sits before the instance one
+    expect(await tree(page, 'icons').evaluate((el) =>
+      [...el.shadowRoot!.querySelectorAll('style')].map((s) => s.className).filter((c) => c.startsWith('wtv-custom-styles'))))
+      .toEqual(['wtv-custom-styles--page', 'wtv-custom-styles']);
+    expect(await wordSpacing(page, 'icons-aligned')).toBe('7px');
+    await page.evaluate(() => { (window as any).components['web-treeview'].customStyles = null; });
+    await expect.poll(() => wordSpacing(page, 'icons-aligned')).toBe('0px');
+  });
+
+  test('page-wide getCustomStylesCallback runs per instance with the tree context', async ({ page }) => {
+    await page.evaluate(() => {
+      (window as any).components['web-treeview'].getCustomStylesCallback = (ctx: any) =>
+        ctx.element.id === 'icons' ? '.wtv__node-label { word-spacing: 4px; }' : '.wtv__node-label { word-spacing: 6px; }';
+    });
+    await expect.poll(() => wordSpacing(page, 'icons')).toBe('4px');
+    await expect.poll(() => wordSpacing(page, 'icons-aligned')).toBe('6px');
+  });
+
+  test('an @import is linked in the shadow root and once in the document head; destroy() releases it', async ({ page }) => {
+    const css = "@import url('/test/custom-import.css');";
+    await tree(page, 'icons').evaluate((el: any, c) => { el.customStyles = c; }, css);
+    await tree(page, 'icons-aligned').evaluate((el: any, c) => { el.customStyles = c; }, css);
+    await expect.poll(() => nodeByPath(tree(page, 'icons'), '1.1').locator('.wtv__node-label')
+      .evaluate((el) => getComputedStyle(el).textDecorationLine)).toBe('underline');
+    const headLinks = () => page.evaluate(() => document.head.querySelectorAll('link[data-km-custom-styles]').length);
+    expect(await headLinks()).toBe(1);
+    await tree(page, 'icons').evaluate((el: any) => el.destroy());
+    expect(await headLinks()).toBe(1);
+    await tree(page, 'icons-aligned').evaluate((el: any) => el.destroy());
+    expect(await headLinks()).toBe(0);
+  });
+
 });
 
 test.describe('align-node-icons (default on)', () => {

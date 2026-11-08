@@ -832,7 +832,7 @@ export class WebTreeView<T = any> {
       dropZoneMode: o.dropZoneMode,
       dropZoneLayout: o.dropZoneLayout,
       dropZoneStart: o.dropZoneStart,
-      dropZoneMaxWidth: o.dropZoneMaxWidth,
+      dropZoneMaxWidth: typeof o.dropZoneMaxWidth === 'number' ? `${o.dropZoneMaxWidth}px` : o.dropZoneMaxWidth,
       isCopyAllowed: o.isCopyAllowed,
       shouldAutoHandleCopy: o.shouldAutoHandleCopy,
       shouldAutoHandleMove: o.shouldAutoHandleMove,

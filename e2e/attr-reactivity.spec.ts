@@ -112,6 +112,87 @@ test('setAttributes applies a batch at once (settled on return)', async ({ page 
   await expect(nodeByPath(page, '1.1').locator('.wtv__checkbox').first()).not.toBeChecked();
 });
 
+test('setAttributes({ nodes }) goes through the inputs: a later write keeps the new nodes (the old public update() lost them)', async ({ page }) => {
+  await load(page);
+  expect(await page.evaluate(() => typeof (window as any).tree.setAttributes)).toBe('function');
+  await page.evaluate(() => {
+    const t = (window as any).tree;
+    t.setAttributes({ nodes: [{ id: 9, path: '9', name: 'Nine' }] });
+  });
+  await expect(nodeByPath(page, '9')).toBeVisible();
+  await page.evaluate(() => { (window as any).tree.searchTerm = ''; });
+  await page.evaluate(() => (window as any).tree.whenSettled());
+  await expect(nodeByPath(page, '9')).toBeVisible();
+  await expect(nodeByPath(page, '1')).toHaveCount(0);
+});
+
+test.describe('enum inputs', () => {
+  test('unset enum getters read the engine default (not null)', async ({ page }) => {
+    await load(page);
+    const values = await page.evaluate(() => {
+      const t = (window as any).tree;
+      return ['clickBehavior', 'tooltipPlacement', 'iconSet', 'toggleIconMode', 'dragDropMode', 'dropZoneMode', 'dropZoneLayout',
+        'rangeSelectionMode', 'selectionMode', 'cascadeCheckPolicy'].map((k) => t[k]);
+    });
+    expect(values).toEqual(['expand-and-focus', 'top-start', 'chevron', 'rotate', 'none', 'glow', 'around', 'visual', 'single', 'rolled-up']);
+    // set in the markup
+    expect(await page.evaluate(() => (window as any).tree.checkboxMode)).toBe('cascade');
+    // a default is not reflected
+    expect(await page.evaluate(() => (window as any).tree.hasAttribute('icon-set'))).toBe(false);
+  });
+
+  test('drag-drop-mode takes only none | self | cross | both: "sideways" warns, fires input-rejected and keeps the value', async ({ page }) => {
+    await load(page);
+    const result = await page.evaluate(() => {
+      const t = (window as any).tree;
+      const seen: string[] = [];
+      t.addEventListener('input-rejected', (e: CustomEvent) => seen.push(e.detail.configKey));
+      t.setAttribute('drag-drop-mode', 'both');
+      t.setAttribute('drag-drop-mode', 'sideways');
+      return { seen, value: t.dragDropMode };
+    });
+    expect(result).toEqual({ seen: ['dragDropMode'], value: 'both' });
+  });
+});
+
+test.describe('treeview converters (toTooltipDelay, toDropZoneStart)', () => {
+  test('tooltip-delay: a non-negative integer attribute or a { show, hide } property; anything else is refused', async ({ page }) => {
+    await load(page);
+    const result = await page.evaluate(() => {
+      const t = (window as any).tree;
+      const seen: string[] = [];
+      t.addEventListener('input-rejected', (e: CustomEvent) => seen.push(e.detail.configKey));
+      t.setAttribute('tooltip-delay', '250');
+      const fromAttr = t.tooltipDelay;
+      t.setAttribute('tooltip-delay', '-5');
+      const afterBadAttr = t.tooltipDelay;
+      t.tooltipDelay = { show: 0, hide: 300 };
+      const fromProp = t.tooltipDelay;
+      t.tooltipDelay = { show: 'soon' };
+      t.tooltipDelay = { wait: 10 };
+      return { seen, fromAttr, afterBadAttr, fromProp, kept: t.tooltipDelay };
+    });
+    expect(result).toEqual({
+      seen: ['tooltipDelay', 'tooltipDelay', 'tooltipDelay'],
+      fromAttr: 250, afterBadAttr: 250, fromProp: { show: 0, hide: 300 }, kept: { show: 0, hide: 300 },
+    });
+  });
+
+  test('drop-zone-start: a bare number is a percentage (number), any other string stays as-is', async ({ page }) => {
+    await load(page);
+    const values = await page.evaluate(() => {
+      const t = (window as any).tree;
+      t.setAttribute('drop-zone-start', '40');
+      const a = t.dropZoneStart;
+      t.setAttribute('drop-zone-start', '50px');
+      const b = t.dropZoneStart;
+      t.dropZoneStart = 25;
+      return [a, b, t.dropZoneStart];
+    });
+    expect(values).toEqual([40, '50px', 25]);
+  });
+});
+
 test.describe('el.prop = x; el.method() sees x (no await in between)', () => {
   test('data assignment then getNodeByPath', async ({ page }) => {
     await load(page);

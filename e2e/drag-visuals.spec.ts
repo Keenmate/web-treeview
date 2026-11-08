@@ -1,4 +1,4 @@
-import { test, expect, type Page, nodeByPath, nodeContent, logLines } from './fixtures';
+import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, WEBKIT_NO_TOUCH_CTOR } from './fixtures';
 
 /**
  * Drag visuals, reject feedback and the tree drop zone (/test/drag-visuals.html).
@@ -75,9 +75,29 @@ test.describe('drag classes', () => {
     expect(await zones.evaluate((el) => el.style.getPropertyValue('--drop-zone-max-width'))).toBe('8rem');
     await step(page, 'end');
   });
+
+  test('dropZoneMaxWidth = 90 (a number on the property path) means pixels, no input-rejected (core rc19)', async ({ page }) => {
+    await load(page, '?drop-zone-mode=floating');
+    const result = await page.evaluate(async () => {
+      const el = document.querySelector('web-treeview') as any;
+      const rejected: unknown[] = [];
+      el.addEventListener('input-rejected', (e: CustomEvent) => rejected.push(e.detail));
+      el.dropZoneMaxWidth = 90;
+      await el.whenSettled();
+      return { value: el.dropZoneMaxWidth, rejected: rejected.length };
+    });
+    expect(result).toEqual({ value: '90px', rejected: 0 });
+    await step(page, 'start', '4');
+    await step(page, 'over', '1', 0.8);
+    const zones = page.locator('.wtv__drop-zones');
+    await expect(zones).toHaveCount(1);
+    expect(await zones.evaluate((el) => el.style.getPropertyValue('--drop-zone-max-width'))).toBe('90px');
+    await step(page, 'end');
+  });
 });
 
 test.describe('drop reject (desktop, real drag)', () => {
+  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
   /** Real Playwright drag onto the right half (child) of the target row. */
   async function realDrag(page: Page, from: string, to: string) {
     const box = (await content(page, to).boundingBox())!;
@@ -149,6 +169,7 @@ test.describe('drop cursor over a refusing node (NOTES #22)', () => {
 });
 
 test.describe('touch: drag reject + touch-drag-delay', () => {
+  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_TOUCH_CTOR);
   test.use({ hasTouch: true });
 
   async function touch(page: Page, type: 'touchstart' | 'touchend', path: string) {

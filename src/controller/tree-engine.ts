@@ -349,6 +349,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _vsScrollTop: number = 0;
   private _vsMeasuredRowHeight: number | null = null;
   private _vsDetectedHeight: string | null = null;
+  /** The virtual viewport's measured height (px), reported by the renderer — the window maths
+   *  can't parse a CSS length such as `30rem` or `50vh` itself. */
+  private _vsViewportHeight: number | null = null;
 
   // Skip insertArray flag
   private _skipInsertArray = false;
@@ -697,6 +700,22 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
   }
 
+  /** Called by renderer with the virtual viewport's measured height (px). */
+  setVirtualViewportHeight(height: number): void {
+    const next = height > 0 ? height : null;
+    if (this._vsViewportHeight !== next) {
+      this._vsViewportHeight = next;
+      this._scheduleNotify();
+    }
+  }
+
+  /** Viewport height (px) for the virtual window: measured > a px / bare-number length > 400. */
+  get virtualViewportHeightPx(): number {
+    if (this._vsViewportHeight) return this._vsViewportHeight;
+    const css = this.resolvedContainerHeight.trim();
+    return /^\d+(\.\d+)?(px)?$/.test(css) ? parseFloat(css) : 400;
+  }
+
   /** Called by renderer to report detected container height. */
   setDetectedContainerHeight(height: string): void {
     if (this._vsDetectedHeight !== height) {
@@ -735,7 +754,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (!this._isVirtualScrollEnabled) return all;
 
     const rowHeight = this.resolvedRowHeight;
-    const containerHeightPx = parseFloat(this.resolvedContainerHeight) || 400;
+    const containerHeightPx = this.virtualViewportHeightPx;
     const startIndex = Math.max(0, Math.floor(this._vsScrollTop / rowHeight) - this._virtualOverscan);
     const endIndex = Math.min(all.length, Math.ceil((this._vsScrollTop + containerHeightPx) / rowHeight) + this._virtualOverscan);
     return all.slice(startIndex, endIndex);
@@ -2849,7 +2868,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const rowHeight = this.resolvedRowHeight;
     const top = index * rowHeight;
     const bottom = top + rowHeight;
-    const viewHeight = scrollEl.clientHeight || parseFloat(this.resolvedContainerHeight) || 400;
+    const viewHeight = scrollEl.clientHeight || this.virtualViewportHeightPx;
     const current = scrollEl.scrollTop;
     switch (block) {
       case 'start': return Math.max(0, top);
@@ -3833,6 +3852,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (scroll === null) return true;
       this.log.UI.warn(`scrollToPath: no rendered row for ${path} (${elementId})`);
       return false;
+    }
+
+    // Let a running progressive render finish first (bounded, ~1 s): rows it still inserts move
+    // the target, and WebKit cancels a smooth scroll whose content changes mid-glide, so the jump
+    // stopped short (the row stayed off-screen). The scroll then starts against the final layout.
+    if (!vsScrollEl && (this.flatRenderQueue.length > 0 || this.flatRenderAnimationFrame !== null)) {
+      for (let i = 0; i < 60 && (this.flatRenderQueue.length > 0 || this.flatRenderAnimationFrame !== null); i++) {
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      }
+      await new Promise<void>(resolve => queueMicrotask(resolve));
+      contentDiv = findContent() ?? contentDiv;
     }
 
     if (scroll === undefined) scroll = this._resolveScroll(node, 'scroll-to-path', findScrollContainer(contentDiv), defaults);

@@ -203,6 +203,61 @@ test.describe('node-title-overflow', () => {
     await page.evaluate(() => { document.getElementById('host')!.style.width = '1400px'; });
     await expect(info).toHaveCount(0);
   });
+
+  test('info: a click on a node checkbox closes the popover (the tree stops that click; core rc20)', async ({ page }) => {
+    await make(page, { nodes: longNodes, attrs: { 'node-title-overflow': 'info', 'show-checkboxes': '' } });
+    const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');
+    await nodeByPath(page, '1').locator('.wtv__node-info').click();
+    await expect(reveal).toHaveText(LONG);
+    await nodeByPath(page, '2').locator('.wtv__checkbox').click();
+    expect(await prop(page, 'checkedPaths')).toEqual(['2']);
+    await expect(reveal).toHaveCount(0);
+  });
+
+  test('info: a tree-body scroll that moves the row closes the popover (core shouldCloseOnScroll)', async ({ page }) => {
+    const many = [...longNodes, ...Array.from({ length: 60 }, (_, i) => ({ id: 100 + i, path: String(100 + i), name: `Row ${i}` }))];
+    await make(page, {
+      nodes: many,
+      attrs: { 'node-title-overflow': 'info', 'enable-virtual-scroll': '', 'virtual-scroll-container-height': '200px' },
+    });
+    const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');
+    await nodeByPath(page, '1').locator('.wtv__node-info').click();
+    await expect(reveal).toHaveText(LONG);
+    await page.evaluate(() => { (window as any).tree.shadowRoot.querySelector('.wtv__tree').scrollTop = 40; });
+    await expect(reveal).toHaveCount(0);
+  });
+
+  test('info: a page scroll that moves the row closes the popover', async ({ page }) => {
+    await make(page, { nodes: longNodes, attrs: { 'node-title-overflow': 'info' } });
+    await page.evaluate(() => { document.body.style.minHeight = '4000px'; });
+    const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');
+    await nodeByPath(page, '1').locator('.wtv__node-info').click();
+    await expect(reveal).toHaveText(LONG);
+    await page.evaluate(() => window.scrollBy(0, 60));
+    await expect(reveal).toHaveCount(0);
+  });
+
+  test('info: a scroll inside the popover does not close it', async ({ page }) => {
+    await make(page, { nodes: longNodes, attrs: { 'node-title-overflow': 'info' } });
+    const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');
+    await nodeByPath(page, '1').locator('.wtv__node-info').click();
+    await expect(reveal).toHaveText(LONG);
+    // A scrollable popover (a very long label capped by app CSS): scrolling it moves nothing else.
+    await page.evaluate(() => {
+      const panel = (window as any).tree.shadowRoot.querySelector('.wtv__node-info-reveal') as HTMLElement;
+      panel.style.width = '6em';
+      panel.style.maxHeight = '2em';
+      panel.style.overflowY = 'auto';
+    });
+    await page.evaluate(() => {
+      const panel = (window as any).tree.shadowRoot.querySelector('.wtv__node-info-reveal') as HTMLElement;
+      panel.scrollTop = 20;
+    });
+    await expect.poll(() => page.evaluate(() =>
+      ((window as any).tree.shadowRoot.querySelector('.wtv__node-info-reveal') as HTMLElement).scrollTop)).toBeGreaterThan(0);
+    await page.waitForTimeout(150);
+    await expect(reveal).toHaveText(LONG);
+  });
 });
 
 test.describe('scrollToPath options', () => {

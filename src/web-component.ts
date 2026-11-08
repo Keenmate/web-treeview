@@ -11,7 +11,7 @@
  * keeps only what is genuinely treeview-specific: the bridge from the merged
  * `config` to the tree (`WebTreeView` in `treeview.ts`, which adapts the public
  * single-ctx callbacks to the internal `TreeEngine`), the public `el.controller`
- * facade, the event bridges, and the custom-styles injection.
+ * facade and the event bridges. Custom CSS goes through core's `createCustomStyles()`.
  *
  * Reactivity model: the tree (`WebTreeView` → engine + renderer) applies every
  * config change in place via `update()`; it is built once (first connect) and
@@ -34,6 +34,8 @@ import {
   toCustom,
   toFunction,
   adoptStyles,
+  createCustomStyles,
+  type CustomStylesHandle,
   type InputDef,
   type EventDef,
 } from '@keenmate/web-components-core';
@@ -159,7 +161,7 @@ const INPUTS: readonly InputDef[] = [
   // ── Behavior ───────────────────────────────────────────────────────────────
   { configKey: 'expandLevel', attribute: 'expand-level', converter: toInt({ default: 0 }), on: 'update', description: 'Depth to auto-expand on load (0 = roots only, the default).' },
   { configKey: 'treePathSeparator', attribute: 'tree-path-separator', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Separator between segments in a materialized tree path.' },
-  { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus.' },
+  { configKey: 'clickBehavior', attribute: 'click-behavior', converter: toEnum(['select', 'expand', 'expand-and-focus'] as const, { default: 'expand-and-focus' }), on: 'update', description: 'What a node click does: select, expand, or expand-and-focus (default).' },
   { configKey: 'shouldExpandAsAccordion', attribute: 'expand-as-accordion', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Accordion mode: expanding a node collapses its siblings.' },
   { configKey: 'isSortingEnabled', attribute: 'enable-sorting', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Automatic sorting of siblings (default on). Off: the input order is kept, `addNode` appends, `insertNode` / `insertBranch` / `moveNode` / drop keep the exact position (with `orderMember` the order values are still computed). `sortNodes` / `sortAll` still sort; switching it back on re-sorts the tree.' },
   { configKey: 'isSorted', attribute: 'sorted', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Hint: data is already in insert order (parents first, siblings ordered) — skips sorting the input; faster on big data.' },
@@ -182,13 +184,13 @@ const INPUTS: readonly InputDef[] = [
 
   // ── Node tooltips (hover/focus) ─────────────────────────────────────────────
   { configKey: 'isNodeTooltipsShown', attribute: 'show-node-tooltips', converter: toBool('default-false'), on: 'update', description: 'Enable hover/focus tooltips on node rows (content from getNodeTooltipCallback).' },
-  { configKey: 'tooltipPlacement', attribute: 'tooltip-placement', converter: toEnum(['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'] as const), on: 'update', description: 'Tooltip placement relative to the row. Default top-start.' },
+  { configKey: 'tooltipPlacement', attribute: 'tooltip-placement', converter: toEnum(['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'] as const, { default: 'top-start' }), on: 'update', description: 'Tooltip placement relative to the row. Default top-start.' },
   { configKey: 'tooltipDelay', attribute: 'tooltip-delay', converter: toTooltipDelay(), on: 'update', type: 'number | { show?: number; hide?: number }', description: 'Show/hide delay (ms). The attribute sets both; the JS property also accepts { show, hide }. Default { show: 400, hide: 100 }.' },
   { configKey: 'tooltipOffset', attribute: 'tooltip-offset', converter: toInt(), default: 8, on: 'update', description: 'Gap from the row (or cursor), px. Default 8.' },
   { configKey: 'shouldTooltipFollowCursor', attribute: 'tooltip-follow-cursor', converter: toBool('default-false'), on: 'update', description: 'Anchor the tooltip to the pointer instead of the row.' },
-  { configKey: 'iconSet', attribute: 'icon-set', converter: toEnum(['chevron', 'triangle', 'plus-minus', 'arrow'] as const), on: 'update', shouldReflect: true, description: 'Disclosure glyph set: chevron (default) | triangle | plus-minus | arrow. Re-points the --wtv-icon-* variables via a :host([icon-set]) rule; reflected to the attribute so the CSS matches when set via the JS property.' },
+  { configKey: 'iconSet', attribute: 'icon-set', converter: toEnum(['chevron', 'triangle', 'plus-minus', 'arrow'] as const, { default: 'chevron' }), on: 'update', shouldReflect: true, description: 'Disclosure glyph set: chevron (default) | triangle | plus-minus | arrow. Re-points the --wtv-icon-* variables via a :host([icon-set]) rule; reflected to the attribute so the CSS matches when set via the JS property.' },
   { configKey: 'leafIconClass', attribute: 'leaf-icon-class', converter: toText({ isNullable: true }), on: 'update', description: 'Icon class for leaf nodes.' },
-  { configKey: 'toggleIconMode', attribute: 'toggle-icon-mode', converter: toEnum(['rotate', 'swap'] as const), on: 'update', shouldReflect: true, description: 'Whether the toggle glyph rotates (single glyph) or swaps (expand↔collapse glyph). Reflected to the attribute so the :host([toggle-icon-mode="swap"]) CSS matches via the JS property.' },
+  { configKey: 'toggleIconMode', attribute: 'toggle-icon-mode', converter: toEnum(['rotate', 'swap'] as const, { default: 'rotate' }), on: 'update', shouldReflect: true, description: 'Whether the toggle glyph rotates (single glyph, default) or swaps (expand↔collapse glyph). Reflected to the attribute so the :host([toggle-icon-mode="swap"]) CSS matches via the JS property.' },
   { configKey: 'scrollHighlightClass', attribute: 'scroll-highlight-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class flashed on a node after scrollToPath().' },
   { configKey: 'scrollHighlightTimeout', attribute: 'scroll-highlight-timeout', converter: toInt(), default: 4000, on: 'update', description: 'How long (ms) the scroll highlight stays before clearing.' },
   { configKey: 'nodeTitleOverflow', attribute: 'node-title-overflow', converter: toEnum(['wrap', 'ellipsis', 'info'] as const), default: 'ellipsis', on: 'update', type: "'wrap' | 'ellipsis' | 'info'", description: 'A too-long built-in label: `wrap` (multi-line; rows grow — avoid with virtual scroll), `ellipsis` (single-line clip, default) or `info` (ellipsis + a trailing info button on clipped rows that reveals the full label). renderNodeCallback content owns its layout.' },
@@ -204,11 +206,11 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isLoading', attribute: 'loading', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show the loading state.' },
 
   // ── Drag and drop ──────────────────────────────────────────────────────────
-  { configKey: 'dragDropMode', attribute: 'drag-drop-mode', converter: toText({ isNullable: true }), on: 'update', description: 'Drag-drop mode: `none` (off), `self` (within this tree), `cross` (between trees), or `both`.' },
-  { configKey: 'dropZoneMode', attribute: 'drop-zone-mode', converter: toEnum(['floating', 'glow'] as const), on: 'update', description: 'Drop-zone visual style: floating indicator or glow.' },
-  { configKey: 'dropZoneLayout', attribute: 'drop-zone-layout', converter: toEnum(['around', 'before', 'after', 'wave', 'wave2'] as const), on: 'update', description: 'Where drop zones render relative to a node.' },
+  { configKey: 'dragDropMode', attribute: 'drag-drop-mode', converter: toEnum(['none', 'self', 'cross', 'both'] as const, { default: 'none' }), on: 'update', description: 'Drag-drop mode: `none` (off, default), `self` (within this tree), `cross` (between trees), or `both`.' },
+  { configKey: 'dropZoneMode', attribute: 'drop-zone-mode', converter: toEnum(['floating', 'glow'] as const, { default: 'glow' }), on: 'update', description: 'Drop-zone visual style: floating indicator or glow (default).' },
+  { configKey: 'dropZoneLayout', attribute: 'drop-zone-layout', converter: toEnum(['around', 'before', 'after', 'wave', 'wave2'] as const, { default: 'around' }), on: 'update', description: 'Where drop zones render relative to a node (default `around`).' },
   { configKey: 'dropZoneStart', attribute: 'drop-zone-start', converter: toDropZoneStart(), on: 'update', type: 'number | string', description: 'Where drop zones begin. A number is a percentage of node width; a string is used as-is (`px` or `%`, e.g. "50px").' },
-  { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toCssLength({ default: '120px' }), on: 'update', description: 'Maximum floating drop-zone width, a CSS length (`120px`, `8rem`, `30%`); a bare number attribute means pixels (`drop-zone-max-width="90"` → `90px`). Default `120px`.' },
+  { configKey: 'dropZoneMaxWidth', attribute: 'drop-zone-max-width', converter: toCssLength({ default: '120px' }), on: 'update', type: 'string | number', description: 'Maximum floating drop-zone width, a CSS length (`120px`, `8rem`, `30%`); a number means pixels on both paths (`drop-zone-max-width="90"` / `el.dropZoneMaxWidth = 90` → `90px`). Default `120px`.' },
   { configKey: 'isCopyAllowed', attribute: 'allow-copy', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Allow the copy clipboard operation.' },
   { configKey: 'shouldAutoHandleCopy', attribute: 'auto-handle-copy', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform the copy itself (vs delegating to onCopy).' },
   { configKey: 'shouldAutoHandleMove', attribute: 'auto-handle-move', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Let the tree perform a move drop itself (default). `false`: the tree is not mutated — `node-drop` fires and the consumer moves the nodes.' },
@@ -223,7 +225,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
-  { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toText({ isNullable: true }), on: 'update', description: 'Indent size (CSS length) per level in flat rendering.' },
+  { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toCssLength({ default: 'var(--wtv-indent-size)' }), on: 'update', description: 'Indent per level in flat rendering, a CSS length (`20px`, `1.5rem`); a bare number means pixels (`flat-indent-size="20"` → `20px`). Default `var(--wtv-indent-size)`.' },
   { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
   { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), default: 20, on: 'update', description: 'Rows rendered in the first progressive batch.' },
   { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), default: 500, on: 'update', description: 'Maximum rows per progressive batch.' },
@@ -232,11 +234,11 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isVirtualScrollEnabled', attribute: 'enable-virtual-scroll', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Enable virtual scrolling.' },
   { configKey: 'virtualScrollItemHeight', attribute: 'virtual-scroll-item-height', converter: toFloat(), on: 'update', description: 'Fixed row height (px) used by virtual scrolling.' },
   { configKey: 'virtualScrollOverscan', attribute: 'virtual-scroll-overscan', converter: toInt(), default: 5, on: 'update', description: 'Extra rows rendered above/below the viewport when virtualizing.' },
-  { configKey: 'virtualScrollContainerHeight', attribute: 'virtual-scroll-container-height', converter: toText({ isNullable: true }), on: 'update', description: 'Height (CSS length) of the virtual-scroll viewport.' },
+  { configKey: 'virtualScrollContainerHeight', attribute: 'virtual-scroll-container-height', converter: toCssLength(), on: 'update', description: 'Height of the virtual-scroll viewport, a CSS length (`400px`, `30rem`, `50vh`); a bare number means pixels. Unset: the measured tree height (else 400px).' },
 
   // ── Selection model ────────────────────────────────────────────────────────
-  { configKey: 'rangeSelectionMode', attribute: 'range-selection-mode', converter: toEnum(['visual', 'logical'] as const), on: 'update', description: 'How Shift+click range selection walks the tree.' },
-  { configKey: 'selectionMode', attribute: 'selection-mode', converter: toEnum(['single', 'multiple'] as const), on: 'update', description: 'Single- or multi-node selection.' },
+  { configKey: 'rangeSelectionMode', attribute: 'range-selection-mode', converter: toEnum(['visual', 'logical'] as const, { default: 'visual' }), on: 'update', description: 'How Shift+click range selection walks the tree (default `visual`).' },
+  { configKey: 'selectionMode', attribute: 'selection-mode', converter: toEnum(['single', 'multiple'] as const, { default: 'single' }), on: 'update', description: 'Single- (default) or multi-node selection.' },
   /**
    * Replace individual keyboard-navigation methods. Merged over the built-in
    * defaults (`{ ...defaults, ...navigationOverrides }`) — a method you leave out
@@ -247,15 +249,16 @@ const INPUTS: readonly InputDef[] = [
    */
   { configKey: 'navigationOverrides', converter: toValue({ validate: (v): v is object | null => v === null || (typeof v === 'object' && !Array.isArray(v)) }), default: null, on: 'update', type: 'TreeNavigationOverrides | null', description: 'Replace individual keyboard-navigation methods (navNextSibling, navPageDown, navSelectNext, …), merged over the defaults. JS property only; `null` restores the defaults.' },
   { configKey: 'isCheckboxesShown', attribute: 'show-checkboxes', converter: toBool('default-false'), on: 'update', description: 'Show a checkbox on each node.' },
-  { configKey: 'checkboxMode', attribute: 'checkbox-mode', converter: toEnum(['independent', 'cascade'] as const), on: 'update', description: 'Checkbox interaction: `independent` toggles one node; `cascade` toggles the subtree with a tristate box on branches.' },
-  { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
+  { configKey: 'checkboxMode', attribute: 'checkbox-mode', converter: toEnum(['independent', 'cascade'] as const, { default: 'independent' }), on: 'update', description: 'Checkbox interaction: `independent` (default) toggles one node; `cascade` toggles the subtree with a tristate box on branches.' },
+  { configKey: 'cascadeCheckPolicy', attribute: 'cascade-check-policy', converter: toEnum(['rolled-up', 'leaves', 'all'] as const, { default: 'rolled-up' }), on: 'update', description: 'Which paths the checked set EMITS in cascade mode: `rolled-up` (minimal cover), `leaves`, or `all`. Default rolled-up.' },
   { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggle-checkbox', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
   // ── Complex property (nodes; too large for an attribute) ───────────────────
   { configKey: 'nodes', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', getLiveValue: (el) => readLiveNodes(el), type: 'ReadonlyArray<Record<string, unknown>>', description: 'The node objects. Assigning replaces the tree (JS API); reading returns the current state once built — every node data object in tree order, mutations included (also `el.controller.nodes`).' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
-  { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string', description: 'Returns a CSS string injected into the component shadow root (supports @import).' },
+  { configKey: 'customStyles', attribute: 'custom-styles', converter: toText({ isNullable: true }), on: 'update', description: 'CSS injected into the shadow root (a full stylesheet; `@import url(…)` works) — the declarative alternative to `getCustomStylesCallback`, which wins when both are set. Comes after the page-wide `window.components["web-treeview"].customStyles`, so it overrides it.' },
+  { configKey: 'getCustomStylesCallback', converter: cb(), on: 'update', type: '(ctx: TreeViewContext) => string | null', description: 'Returns a CSS string injected into the shadow root (`@import url(…)` works; an imported font is also linked in the document head). Wins over `customStyles`; comes after the page-wide layer, so it overrides it.' },
 
   // ── Callbacks — every one takes ONE ctx (`ctx.node` for the per-node ones) ──
   { configKey: 'getDisplayValueCallback', converter: cb(), on: 'update', type: '(ctx: NodeContext) => string', description: 'Compute a node display label (overrides displayValueMember).' },
@@ -368,7 +371,7 @@ const EVENTS: readonly EventDef[] = [
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. */
-const NON_ENGINE_KEYS = new Set(['getCustomStylesCallback', 'shouldHighlightOnPageDrag']);
+const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag']);
 
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
@@ -443,10 +446,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   #container?: HTMLDivElement;
   #renderer?: TreeViewRenderer<T>;
 
-  // Custom-styles injection state (mirrors the old _applyCustomStyles fields).
-  #customStyleSheet?: HTMLStyleElement;
-  #customStyleLinks?: HTMLLinkElement[];
-  #customDocLinks?: HTMLLinkElement[];
+  /** Core custom CSS (SPEC §12.8): the page layer for the tag, then this instance's. */
+  #customStyles: CustomStylesHandle | null = null;
 
   /** State assigned before the first build (`expandedPaths` / `selectedPaths` / `checkedPaths`), applied right after it. */
   #pendingState: { expandedPaths?: string[]; selectedPaths?: string[]; checkedPaths?: string[] } = {};
@@ -469,29 +470,20 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /**
-   * Cosmetic/structural change — patch the live engine. Also serves as the
-   * PUBLIC imperative `el.update(props)` method (the old API).
+   * A batch of input changes — patch the live engine in place (core hook; protected, C-CA-14:
+   * the public batch write is core's `el.setAttributes(props)`).
    *
-   * Sends the FULL assembled engine config on every call, exactly like the old
-   * `_scheduleUpdate` → `treeview.update(buildConfig())` did. This matters:
+   * Sends the FULL assembled engine config on every call. This matters:
    * `controller.updateProps` is a merge, and several derived behaviors (e.g.
    * `expandLevel` auto-expansion when `data` arrives) only fire when the relevant
    * keys are present together. A changed-keys-only partial would drop them.
-   * Any explicit `partial` (imperative caller) is folded over the assembled config.
+   * `this.config` already holds every value in `partial`.
    */
-  override update(partial: Partial<TreeViewConfig<T>> = {}): void {
-    if ('getCustomStylesCallback' in partial) this.#applyCustomStyles();
+  protected override update(partial: Record<string, unknown>): void {
+    if ('getCustomStylesCallback' in partial || 'customStyles' in partial) this.#customStyles?.refresh();
     if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
-    const cfg = this.#assembleConfig() as Record<string, unknown>;
-    for (const [key, value] of Object.entries(partial)) {
-      if (NON_ENGINE_KEYS.has(key)) continue;
-      // Forward `null` verbatim — it is the "clear/reset" signal (SPEC §6.1).
-      // The engine resolves it per field: defaulted props via `?? default`,
-      // clearable props (node classes, focusedNode, theme) by assigning null.
-      cfg[key] = value;
-    }
-    this.#treeview.update(cfg as Partial<TreeViewConfig<T>>);
+    this.#treeview.update(this.#assembleConfig());
   }
 
   /**
@@ -564,6 +556,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   protected override destroyCallback(): void {
     this.#treeview?.destroy();
     this.#treeview = undefined;
+    this.#customStyles?.destroy();
+    this.#customStyles = null;
   }
 
   // ── engine lifecycle ──────────────────────────────────────────────────────
@@ -610,7 +604,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     const container = document.createElement('div');
     this.#shadow.appendChild(container);
     this.#container = container;
-    this.#applyCustomStyles();
   }
 
   /**
@@ -628,75 +621,24 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return cfg;
   }
 
-  // ── custom styles injection (ported verbatim; component-specific @import /
-  //    @font-face handling that core's createStyleSlot does not cover) ─────────
+  // ── custom styles (core createCustomStyles, SPEC §12.8) ─────────────────
 
+  /**
+   * Write both custom-CSS layers: the page one (`window.components['web-treeview'].customStyles`
+   * / `.getCustomStylesCallback`) and this instance's (`getCustomStylesCallback` > `customStyles`),
+   * which comes after it and overrides. Core links each `@import` in the document head too, so an
+   * imported icon font's `@font-face` registers (Chromium ignores it inside a shadow root).
+   */
   #applyCustomStyles(): void {
-    // Remove previous custom elements
-    if (this.#customStyleSheet) {
-      this.#customStyleSheet.remove();
-      this.#customStyleSheet = undefined;
-    }
-    if (this.#customStyleLinks) {
-      for (const link of this.#customStyleLinks) link.remove();
-      this.#customStyleLinks = undefined;
-    }
-    if (this.#customDocLinks) {
-      for (const link of this.#customDocLinks) link.remove();
-      this.#customDocLinks = undefined;
-    }
-
-    const callback = this.config.getCustomStylesCallback as ((ctx: TreeViewContext<T>) => string) | null | undefined;
-    if (typeof callback !== 'function') return;
-
-    const css = callback(this.withContext({}) as unknown as TreeViewContext<T>);
-    if (!css) return;
-
-    // Extract @import url(...) rules and inject as <link> elements (@import in a
-    // dynamically-set <style>.textContent is ignored by the CSS parser).
-    const importRegex = /@import\s+url\(\s*['"]?([^'")]+)['"]?\s*\)\s*;?/g;
-    let remaining = css;
-    let match: RegExpExecArray | null;
-    const links: HTMLLinkElement[] = [];
-
-    while ((match = importRegex.exec(css)) !== null) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = match[1];
-      link.className = 'tv-custom-styles';
-      this.#shadow.appendChild(link);
-      links.push(link);
-      remaining = remaining.replace(match[0], '');
-    }
-
-    if (links.length > 0) {
-      this.#customStyleLinks = links;
-
-      // Also inject into document <head> for @font-face registration (Shadow DOM
-      // @font-face doesn't always register fonts globally).
-      const docLinks: HTMLLinkElement[] = [];
-      for (const shadowLink of links) {
-        const href = shadowLink.href;
-        if (!document.querySelector(`link[href="${href}"]`)) {
-          const docLink = document.createElement('link');
-          docLink.rel = 'stylesheet';
-          docLink.href = href;
-          docLink.setAttribute('data-tv-injected', '');
-          document.head.appendChild(docLink);
-          docLinks.push(docLink);
-        }
-      }
-      if (docLinks.length > 0) this.#customDocLinks = docLinks;
-    }
-
-    // Inject remaining CSS (non-@import rules) as <style>.
-    remaining = remaining.trim();
-    if (remaining) {
-      this.#customStyleSheet = document.createElement('style');
-      this.#customStyleSheet.className = 'tv-custom-styles';
-      this.#customStyleSheet.textContent = remaining;
-      this.#shadow.appendChild(this.#customStyleSheet);
-    }
+    this.#customStyles ??= createCustomStyles<TreeViewContext<T>>(this, this.#shadow, {
+      cssClass: 'wtv-custom-styles',
+      getContext: () => this.withContext({}) as unknown as TreeViewContext<T>,
+      getInstanceStyles: () => ({
+        css: this.config.customStyles as string | null | undefined,
+        callback: this.config.getCustomStylesCallback as ((ctx: TreeViewContext<T>) => string | null | undefined) | null | undefined,
+      }),
+    });
+    this.#customStyles.refresh();
   }
 
   // ── non-input property: renderer (special — swaps live without a rebuild) ──
@@ -1119,9 +1061,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 }
 
-// Importing this module registers the element (back-compat contract). The full
-// global-API publish + logger wiring happens in index.ts via registerComponent();
-// both defines are idempotent, so importing either works.
+// The package entry (index.ts) defines the tag through core's registerComponent(), which also
+// publishes the global API, the tag-level `responsive` / `customStyles` hooks and the logging
+// bundle — always import the package (its `exports` expose only the entry). This guarded define
+// runs first on that import; registerComponent() then finds the tag defined and adds the rest.
 if (typeof customElements !== 'undefined' && !customElements.get('web-treeview')) {
   customElements.define('web-treeview', WebTreeViewElement);
 }

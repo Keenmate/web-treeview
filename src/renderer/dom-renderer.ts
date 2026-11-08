@@ -347,6 +347,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     });
     this._stopSizeObserve = observeElementSize(this.container, (size) => {
       this._containerBox = size;
+      if (this.vsSpacerEl && this.bodyEl) this.controller?.setVirtualViewportHeight(this.bodyEl.clientHeight);
       this.config.onContainerResize?.({ width: size.width, height: size.height }, this._deviceClass);
     });
   }
@@ -364,7 +365,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _titleOverflow: NodeTitleOverflow = 'ellipsis';
   private _labelObserver: ResizeObserver | null = null;
-  private _reveal: { handle: PopoverHandle; button: HTMLElement; stop: () => void } | null = null;
+  private _reveal: { handle: PopoverHandle; button: HTMLElement } | null = null;
 
   private _applyTitleOverflow(mode: NodeTitleOverflow | null | undefined): void {
     this._titleOverflow = mode ?? 'ellipsis';
@@ -437,31 +438,25 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     panel.className = 'wtv__node-info-reveal';
     panel.setAttribute('role', 'tooltip');
     panel.textContent = text;
-    // Escape / an outside press close it through core's overlay tree (SPEC §12.9): one level per
+    // Escape / an outside click close it through core's overlay tree (SPEC §12.9): one level per
     // Escape (a context menu opened over it closes first), focus back on the button, and a press on
-    // the button itself is left to the click toggle.
+    // the button itself is left to the click toggle. A scroll that moves the row (the tree body, an
+    // outer scroller, the page) closes it too; a scroll inside the popover doesn't.
     const handle = createPopover({
       reference: button, panel, container: this.container, placement: 'top-end', offset: 6,
       shouldCloseOnEscape: true,
       shouldCloseOnOutsideClick: true,
+      shouldCloseOnScroll: true,
       onClose: () => { if (this._reveal?.handle === handle) this._closeReveal(); },
     });
     handle.open();
-    const onScroll = () => this._closeReveal();
-    const body = this.bodyEl;
-    body?.addEventListener('scroll', onScroll, { passive: true });
-    this._reveal = {
-      handle,
-      button,
-      stop: () => body?.removeEventListener('scroll', onScroll),
-    };
+    this._reveal = { handle, button };
   }
 
   private _closeReveal(): void {
     const reveal = this._reveal;
     if (!reveal) return;
     this._reveal = null;
-    reveal.stop();
     reveal.handle.destroy();
   }
 
@@ -950,7 +945,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const scrollTop = this.bodyEl.scrollTop;
     const ctrl = this.controller;
     const rowHeight = ctrl.resolvedRowHeight;
-    const containerHeightPx = parseFloat(ctrl.resolvedContainerHeight) || 400;
+    const containerHeightPx = this.bodyEl.clientHeight || ctrl.virtualViewportHeightPx;
     const overscan = ctrl.virtualScrollOverscan;
     const allNodes = ctrl.allVisibleFlatNodes;
 
@@ -1094,6 +1089,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.bodyEl.style.height !== snapshot.virtualScrollContainerHeight) {
       this.bodyEl.style.height = snapshot.virtualScrollContainerHeight;
     }
+    // The window maths needs pixels; the height is any CSS length (`30rem`, `50vh`).
+    this.controller?.setVirtualViewportHeight(this.bodyEl.clientHeight);
 
     // Update spacer height (creates the correct scrollbar size)
     this.vsSpacerEl.style.height = `${snapshot.virtualTotalHeight}px`;

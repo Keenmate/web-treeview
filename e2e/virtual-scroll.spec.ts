@@ -19,6 +19,18 @@ async function loadVirtual(page: Page) {
 }
 
 test.describe('virtual-scroll', () => {
+  test('a non-px container height (25rem = 400px) renders the same viewport + overscan window', async ({ page }) => {
+    await page.goto(`${PAGE}?mode=virtual&height=25rem`);
+    await expect(nodeByPath(page, '1')).toBeVisible();
+    const rowH = await nodeByPath(page, '1').evaluate((el) => el.getBoundingClientRect().height);
+    const viewport = await body(page).evaluate((el) => el.clientHeight);
+    expect(viewport).toBeGreaterThan(300);
+    // the window maths uses the measured height, not parseFloat('25rem') = 25 px
+    const expected = Math.ceil(viewport / rowH) + 5;
+    await expect.poll(async () => (await rowPaths(page)).length).toBeGreaterThanOrEqual(expected - 2);
+    expect((await rowPaths(page)).length).toBeLessThanOrEqual(expected + 2);
+  });
+
   test('only ≈ viewport + overscan rows are in the DOM out of 5000', async ({ page }) => {
     await loadVirtual(page);
     await expect.poll(async () => (await rowPaths(page)).length).toBeGreaterThan(5);
@@ -84,6 +96,25 @@ test.describe('enable-flat-rendering', () => {
     await expect
       .poll(() => nodeByPath(page, '1.1.1').evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft)))
       .toBeCloseTo(20, 0);
+  });
+
+  test('flat-indent-size is a CSS length: a bare number means pixels; an invalid value is refused', async ({ page }) => {
+    await page.goto(`${PAGE}?mode=flat`);
+    await expect(nodeByPath(page, '1.1.1')).toBeVisible();
+    await page.evaluate(() => (window as any).tree.setAttribute('flat-indent-size', '20'));
+    expect(await page.evaluate(() => (window as any).tree.flatIndentSize)).toBe('20px');
+    await expect
+      .poll(() => nodeByPath(page, '1.1.1').evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft)))
+      .toBeCloseTo(40, 0);
+    const rejected = await page.evaluate(() => {
+      const el = (window as any).tree;
+      const seen: string[] = [];
+      el.addEventListener('input-rejected', (e: CustomEvent) => seen.push(e.detail.configKey));
+      el.flatIndentSize = 'wide';
+      return seen;
+    });
+    expect(rejected).toEqual(['flatIndentSize']);
+    expect(await page.evaluate(() => (window as any).tree.flatIndentSize)).toBe('20px');
   });
 });
 

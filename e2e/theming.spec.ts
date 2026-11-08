@@ -171,6 +171,18 @@ test.describe('Theming — page signal via data-context-theme', () => {
     await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(DARK_BG);
   });
 
+  test('12b. theme-source="closest" follows a section themed after the tree connected (core rc19)', async ({ page }) => {
+    await page.goto(PAGE);
+    await page.locator('h1').first().waitFor();
+    const card = scenarioCard(page, 'baseline-light');
+    await card.evaluate((el) => { el.querySelector('web-treeview')!.setAttribute('theme-source', 'closest'); });
+    await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(LIGHT_BG);
+    await card.evaluate((el) => { el.setAttribute('data-theme', 'dark'); });
+    await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(DARK_BG);
+    await card.evaluate((el) => { el.removeAttribute('data-theme'); });
+    await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(LIGHT_BG);
+  });
+
   test('13. Per-instance theme="light" wins over page dark', async ({ page }) => {
     await page.goto(PAGE);
     await page.locator('h1').first().waitFor();

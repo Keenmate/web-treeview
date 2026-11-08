@@ -1,9 +1,10 @@
 /**
  * Categorized loggers for @keenmate/web-treeview — now a thin shim over the core
  * logging module (`@keenmate/web-components-core`, SPEC §12.1). Core owns the
- * `loglevel` dependency and the colour-coded `%c` prefix (built in a
- * `methodFactory`, ordering-safe), so the previously vendored `loglevel` +
- * `loglevel-plugin-prefix` copies under `src/vendor/` are gone.
+ * logging engine (its own vendored port of `loglevel`, no package dependency) and
+ * the colour-coded `%c` prefix (built in a `methodFactory`, ordering-safe), so the
+ * previously vendored `loglevel` + `loglevel-plugin-prefix` copies under
+ * `src/vendor/` are gone.
  *
  * The engine (`treeview.ts`, `controller/`, `renderer/`, `ltree/`) imports the
  * category loggers by name, so this module keeps that surface:

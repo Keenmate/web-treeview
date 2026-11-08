@@ -86,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   engine config.
 - The tag is defined only by core's `registerComponent()` in the package entry; `src/web-component.ts` drops its
   guarded self-`define` (the rulebook's component detection reads `registerComponent(` now).
-- `custom-elements-manifest.config.mjs` folds CRLF to LF in every manifest string, so a Windows checkout
+- `custom-elements-manifest.config.mjs` folds CRLF to LF in every manifest string and sorts the modules by path (the analyzer's order varied between runs), so a Windows checkout
   (`core.autocrlf`) and a Linux one generate the same `custom-elements.json` / `web-types.json` / VS Code data;
   `npm run build` leaves the tree clean. The manifests are regenerated (descriptions lose their `\r\n` escapes).
 - IC01 (examples-icons) demos both custom-CSS layers: the page-wide `window.components['web-treeview'].customStyles`

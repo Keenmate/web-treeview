@@ -14,6 +14,12 @@ are numbered in `test/NOTES.md` (`#N`); tests pinning them are `test.fail`.
 
 Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --workers=2`.
 
+**WebKit skips** (reason strings in `e2e/fixtures.ts`): the native HTML5 drag-and-drop specs
+(`drag-drop`, `drag-hooks`, `highlight-on-page-drag`, `drag-visuals` "drop reject (desktop, real drag)") —
+Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag — and the synthetic touch specs
+(`touch-drag`, `drag-visuals` "touch: …") — WebKit has no `Touch` constructor, also with `hasTouch` + `isMobile`.
+Chromium and Firefox run them.
+
 ---
 
 ## 1. Rendering & data
@@ -40,9 +46,10 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `renderLoadingCallback` (NOTES #19; core `LoaderRenderContext`, cleanup, redraw on change), default `.wtv__loader`, page hook `window.components.renderLoadingCallback` (instance beats it), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `labels` (`noData`, `''` = nothing, `dropHere`, `loading` aria-label, menu built-ins; JSON attr + live), `loading` on/off; `noResults` after a no-match search (`search-config.spec.ts`) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| Custom CSS (core `createCustomStyles`): `custom-styles` / `customStyles` (callback wins), page-wide `window.components['web-treeview'].customStyles` on every tree + instance override (page `<style>` first), page `getCustomStylesCallback(ctx)` per tree, `@import` linked once in the document head and released on `destroy()` | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` (+ `custom-import.css`) |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| `enable-flat-rendering` + `flat-indent-size`, runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`; a `25rem` container height sizes the window by the measured height) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `enable-flat-rendering` + `flat-indent-size` (CSS length: bare number = px, invalid refused), runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `enable-progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | Lazy load via `beforeExpandCallback` (async load → `addBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
@@ -147,7 +154,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | Cross-tree move (consumer-owned, `dropped=null`), Ctrl-drag copy same/cross tree, `allow-copy` | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
 | `nodeOutputTransformationCallback` on copy-drop, same tree + cross-tree (NOTES #21) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
-| Drag classes (`--dragged`, `dragged-node-class`, glow), floating `drop-zone-*` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
+| Drag classes (`--dragged`, `dragged-node-class`, glow), floating `drop-zone-*`, `dropZoneMaxWidth = 90` → `90px` (no `input-rejected`) | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Touch: `node-drag-reject` + 🚫, `indicate-undraggable=false`, `touch-drag-delay` | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: drop on no-drop node refused | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | Desktop: `node-drop-reject` + `enable-tree-drop-zone` routing (NOTES #22) | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
@@ -171,7 +178,7 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | `getContextMenuItemsCallback` items, submenu, disabled, divider | ✓ | `context-menu.spec.ts` | `context-menu.html` |
 | Core action items, built-ins (incl. expand / collapse -subtree / -all, selection targeting), `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | Sorting: numeric display sort, sortCallback > orderMember, `isSortingEnabled` / `enable-sorting` (input order, addNode appends, exact insert / move positions, re-enable re-sorts), `sortNodes` / `sortAll` + `SortOptions`, `nodes-reorder` (orderMember rewrite), `sort*` menu built-ins | ✓ | `sorting.spec.ts` | `sorting.html` |
-| svelte parity: search-index default on, `initializeIndexCallback`, `filterNodes` / `searchNodes` `searchOptions`, `refreshNode` / `refreshSiblings`, `isNodeDropAllowed`, `render-start/progress/complete` + `isRendering`, `containerSize` + `container-resize`, `selectionAnchor`, `toggleFocusedSelect`, `auto-handle-move`, `node-title-overflow` (wrap / ellipsis / info reveal), `scrollToPath` options | ✓ | `parity.spec.ts` | `parity.html` |
+| svelte parity: search-index default on, `initializeIndexCallback`, `filterNodes` / `searchNodes` `searchOptions`, `refreshNode` / `refreshSiblings`, `isNodeDropAllowed`, `render-start/progress/complete` + `isRendering`, `containerSize` + `container-resize`, `selectionAnchor`, `toggleFocusedSelect`, `auto-handle-move`, `node-title-overflow` (wrap / ellipsis / info reveal; the reveal closes on a checkbox click, a tree-body scroll and a page scroll, not on a scroll inside it), `scrollToPath` options | ✓ | `parity.spec.ts` | `parity.html` |
 | event semantics: silent `expandedPaths` / `selectedPaths` / `checkedPaths` assignment (incl. pre-build replay), synchronous `expanded-change` from methods, `tree-change` = structure only (one per mutation), WAI-ARIA `Space` (checkbox / multiple toggle / single select) | ✓ | `events.spec.ts` | `events.html` |
 | `el.nodes` = input before the build, live state after (core `getLiveValue`) | ✓ | `lifecycle.spec.ts` | (inline) |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
@@ -186,11 +193,13 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 | Node tooltips (text, rich, follow-cursor, toggle off) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
 | `tooltip-placement` / `-offset`, `tooltip-delay` attribute | ✓ | `tooltip.spec.ts` | `tooltip.html` |
 | `tooltipDelay = { show, hide }` property (NOTES #23) | ✓ | `tooltip.spec.ts` | `tooltip.html` |
-| Theming (library defaults, brand light-dark, page signals, `theme`) | ✓ | `theming.spec.ts` | `theming.html` |
+| Theming (library defaults, brand light-dark, page signals, `theme`, `theme-source="closest"` incl. a section themed later) | ✓ | `theming.spec.ts` | `theming.html` |
 | Attribute removal resets to default (`show-checkboxes`, `selected-node-class`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing `expand-level` resets to roots only (NOTES #14) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Removing number / boolean attributes resets to the engine default (loading, virtual-scroll, virtual-scroll-overscan, context-menu-x-offset; NOTES #14 follow-up) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
-| `setAttributes` batch | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| `setAttributes` batch; `setAttributes({ nodes })` survives a later write (the old public `update()` lost it) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Enum getters read the engine default when unset; `drag-drop-mode` refuses an unknown mode (`input-rejected`) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
+| Treeview converters: `tooltip-delay` (integer attr / `{ show, hide }` prop, invalid refused), `drop-zone-start` (bare number = %, string as-is) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | `el.prop = x; el.method()` sees x (NOTES #13; element methods flush first) | ✓ | `attr-reactivity.spec.ts` | `attr-reactivity.html` |
 | Lifecycle: listeners survive a move, fire once; detached config applied on reconnect | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Lifecycle: re-parent / remove + re-append keeps expansion, selection, checks, focus, search (NOTES #15, D1) | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |

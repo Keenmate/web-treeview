@@ -36,6 +36,35 @@ web-treeview {
 > `<div>` does not recompute them there — add `class="base-scope"` to that wrapper, or set the
 > `--wtv-*` variable directly.
 
+## Custom CSS (shadow root)
+
+CSS variables reach into the shadow root; selectors don't. To restyle internal parts (`.wtv__node-label`,
+`.wtv__toggle-icon`, …) inject CSS into the shadow root (core `createCustomStyles()`). Two layers, each its
+own `<style>`, the page one first so an instance overrides it:
+
+```js
+// Page-wide — every <web-treeview> on the page (one file, fetched once); assigning it updates live trees.
+window.components['web-treeview'].customStyles = "@import url('/css/tree-tweaks.css');";
+// …or computed per tree from its context (wins over customStyles on the same layer)
+window.components['web-treeview'].getCustomStylesCallback = (ctx) =>
+  ctx.element.dataset.dense ? '.wtv__node-content { padding-block: 0; }' : null;
+
+// Per instance — the attribute / property, or the callback (wins over customStyles)
+tree.customStyles = '.wtv__node-label { letter-spacing: 0.02em; }';
+tree.getCustomStylesCallback = (ctx) => '.wtv__node-label { font-weight: 600; }';
+```
+
+```html
+<web-treeview custom-styles=".wtv__node-label { font-style: italic; }"></web-treeview>
+```
+
+The instance `<style>` has the class `wtv-custom-styles`, the page one `wtv-custom-styles--page`. The component's
+own CSS sits in `@layer component`, so injected rules win without specificity tricks. An `@import` is also linked
+once in the document `<head>` (`<link data-km-custom-styles>`, shared by every tree, removed when the last one stops
+importing it): Chromium ignores `@font-face` inside a shadow root, so an icon font such as FontAwesome would
+otherwise draw boxes. The imported rules then reach the page too. The CSS is injected as-is — never pass
+untrusted input.
+
 ## Dark mode — how it flips
 
 Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The active branch follows the `color-scheme` the tree inherits from the page. With no signal at all the tree matches the page: light by default, and following the OS — live — when the page declares `html { color-scheme: light dark }`. There is deliberately no `prefers-color-scheme` rule in the component (same as web-multiselect), so a tree never turns dark on a light page. `dark-mode.css` sets `color-scheme: dark` (or `light`) on these signal selectors, in increasing specificity:

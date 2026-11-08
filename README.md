@@ -47,6 +47,13 @@ Same logical tree, different DOM strategy — neither is "more mature", they tar
 
 svelte-treeview is broader (two rendering modes, easier vertical guide lines via `.stv__children`); web-treeview is purpose-built for virtual scrolling over large datasets with a flatter DOM.
 
+## What's New in v2.0.0-rc07
+
+- **Batch writes go through core — `el.update()` is gone** (breaking within the RC) — The element's `update()` is now core's protected hook. Write several inputs at once with core's `el.setAttributes({ nodes, expandLevel, … })`: one validated batch, one engine update, and it returns the refused values (each also fires `input-rejected`). The old public `update(props)` skipped validation and was forgotten by the element, so the next unrelated write could bring the previous `nodes` back. `WebTreeView.update()` (the engine wrapper) is unchanged.
+- **Custom CSS — page-wide, per instance, and icon fonts** — `window.components['web-treeview'].customStyles` (or `.getCustomStylesCallback(ctx)`) styles every tree on the page; a tree's own `custom-styles` attribute / `customStyles` property or `getCustomStylesCallback` comes after it and overrides it. An `@import` is also linked once in the document head, so an imported icon font (FontAwesome) registers. Core `createCustomStyles()`; the `<style>` class is now `wtv-custom-styles`.
+- **Core 1.0.0-rc18 → rc20** — Every refused write fires `input-rejected`; `drop-zone-max-width` / `dropZoneMaxWidth` takes a CSS length or a number of pixels; `flat-indent-size` and `virtual-scroll-container-height` are CSS lengths too (a bare number means px, `30rem` sizes the virtual window correctly); `drag-drop-mode` refuses unknown modes; enum getters read their real default. The full-label popover (`node-title-overflow="info"`) closes on any scroll that moves its row and on a click the tree stops (a checkbox). The context-menu divider factory is `createMenuDivider(text?)` and the default loader is `.wtv__loader`.
+- **Safari** — A search jump (`scrollToPath`) into a branch that is still rendering progressively now reaches its row: WebKit cancelled the smooth scroll when rows were inserted mid-glide.
+
 ## What's New in v2.0.0-rc06
 
 - **Names — one vocabulary with `@keenmate/base-css-variables` 2.0 and svelte-treeview** (breaking within the RC) — The click / Ctrl / Shift-click set is now **selected** (`selectedPaths`, `selectNode`, `selection-change`, `.wtv__node-content--selected`) and the checkbox state is **checked** (`checkedPaths`, `checkNode` / `uncheckNode`, `checked-change`), the words web-multiselect and the shared `--base-selected-*` tokens use. A wider naming pass followed: booleans read `is*` / `should*` / `show-*` / `enable-*`, state is a property (`expandedPaths`, `selectedPaths`, `checkedPaths`, `focusedNode` — no `get*` / `set*` twins), *remove* is programmatic (`removeNode(s)`) and *delete* is the user command (Delete key, `beforeDeleteCallback`, `node-delete`). There are no deprecated aliases, so search your code for the old names; the CHANGELOG lists every rename.
@@ -57,14 +64,6 @@ svelte-treeview is broader (two rendering modes, easier vertical guide lines via
 - **Core platform — `BlissElement`, responsive rules, motion level, the shared loader** — The element runs on `@keenmate/web-components-core` (^1.0.0-rc17): one `static inputs` table, `defer` / `release()` / `ready` with a FOUC guard, and generated `custom-elements.json` / `web-types.json` / VS Code data. Responsive rules (`responsive` / `responsiveCallback`, keyed by device or breakpoint) swap in a partial config per device class or window width. `motion="auto | none | snappy | smooth"`, `window.components.motion` or a `data-motion` ancestor sets every transition speed and the scroll behaviour; the OS reduced-motion setting always wins. Loading states draw the shared KeenMate loader (`renderLoadingCallback`, `--wtv-loader-*`).
 - **Theming — one token list with svelte-treeview on the base-css-variables 2.0 contract** — Every `--wtv-*` token falls back to a `--base-*` token (^2.0.0-rc08), and the list matches svelte-treeview's `--stv-*` one for one, so one theme drives both packages and every KeenMate component. Drop targets use the contract's green `--base-drop-target-*` tokens, the indent reads `--base-tree-indent`, and `icon-set` (`chevron`, `triangle`, `plus-minus`, `arrow`) points the disclosure glyph at the shared `--base-icon-*` masks. The checkbox is the canonical single styled `<input>`, and its indeterminate state survives virtual-scroll row recycling.
 - **Icons, tooltips and render context** — `iconMember` / `getIconCallback` put a dedicated `.wtv__node-icon` on every node, branch and leaf, with per-node colour and a `renderIconCallback` hook for SVG or custom markup. `show-node-tooltips` + `getNodeTooltipCallback({ node })` add hover / focus tooltips (text or a rich element) on core's shared `createTooltip`, styled by the shared `--base-tooltip-*` tokens. The render callbacks receive the device class, the container size and the live node state in their ctx. UI strings are configurable through `labels`.
-
-## What's New in v2.0.0-rc05
-
-- **Theming — Strategy B dark mode** — `dark-mode.css` collapses from ~100 lines of variable redeclarations to ~50 lines of conditional `color-scheme: dark` / `color-scheme: light` flips. Every colour fallback in `variables.css` uses `light-dark(<light>, <dark>)`, so the variables follow the inherited `color-scheme`. The subtree-theming bug is fixed (the `:root` co-selector is gone from `variables.css`), hover / active / selected moved to `color-mix` chains so they stay visible at any base luminance, and `:host([data-theme])` joins `.wtv__container[data-theme]`.
-- **API — renames per BlissFramework `naming-conventions.md`** (breaking within the RC) — Callback props that were `on*` (the Svelte idiom) became `*Callback`, and boolean config props gained `is*` / `should*` prefixes. HTML attribute names stayed kebab-case as written; only the JS surface moved. The attribute table in `src/web-component.ts` became the single source of truth for the attribute ⇄ config wiring. (rc06 renames several of these again — see its section above.)
-- **Node states — three symmetric method families** — The imperative surface became three verb families mirroring svelte-treeview: highlight, selection / checkboxes and focus, sharing the `TreeMutationOptions` type. `Ctrl+A` highlights every node and `Escape` clears the highlight set rather than the checkboxes. (rc06 renames highlight → *selected* and selection → *checked*.)
-- **CSS — `@layer` cascade, BEM cleanup, a glow marker** — `main.css` declares `@layer variables, component, overrides;` so consumer overrides need no specificity tricks, the duplicate non-BEM `.web-treeview` class is gone, and the CSS files dropped their SASS-partial `_` prefix. A `--highlight-glow` row style (tinted background plus an accent glow ring) joins bold / border / brackets, and the built-in marker now paints only when no custom class is configured.
-- **Docs — repaired manifest and a split README** — `component-variables.manifest.json` uses the `wtv` prefix (it still said `tv`), with stale entries renamed and the missing `wtv-cut-opacity` / `wtv-font-family` added. Most README prose moved into `docs/`, leaving this file as the landing page.
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
@@ -96,6 +95,13 @@ npm install @keenmate/web-treeview
 ```
 
 Map your own data shape with `idMember` / `pathMember` / `displayValueMember` (or `parentPathMember` for window trees). See [docs/usage.md](./docs/usage.md) for the full API and [docs/examples.md](./docs/examples.md) for end-to-end recipes.
+
+## Styling
+
+Theme the tree with CSS variables (`--wtv-*`, falling back to the shared `--base-*` tokens) — see
+[docs/theming.md](./docs/theming.md). To restyle internal parts, inject CSS into the shadow root: per tree with
+`custom-styles` / `getCustomStylesCallback`, or for every tree on the page with
+`window.components['web-treeview'].customStyles` ([Custom CSS](./docs/theming.md#custom-css-shadow-root)).
 
 ## Responsive rules
 
@@ -172,7 +178,7 @@ Sanitize any untrusted text before passing it in:
 | Input | Output used in |
 |---|---|
 | Context-menu item `icon` | The menu item's icon slot (innerHTML — meant for an `<svg>` / `<i class>` / glyph) |
-| `getCustomStylesCallback` | CSS injected into the shadow root |
+| `customStyles` / `getCustomStylesCallback`, page-wide `window.components['web-treeview'].customStyles` / `.getCustomStylesCallback` | CSS injected into the shadow root |
 
 The render callbacks (`renderNodeCallback`, `renderIconCallback`, `renderContextMenuCallback`,
 `renderContextMenuItemCallback`, `render{EmptyState,EmptyZone,Loading,Header,Footer}Callback`) and a

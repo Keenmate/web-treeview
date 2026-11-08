@@ -26,10 +26,10 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `iconSet`, `leafIconClass`, `toggleIconMode` | same | same |
 | — (`expandIconClass` / `collapseIconClass` removed) | — (removed) | same |
 | `scrollHighlightClass` (null → built-in `wtv__…`), `scrollHighlightTimeout` | `scrollHighlightClass` (`'stv__…'`), same | intentional — class prefix |
-| `nodeTitleOverflow` (`node-title-overflow`: `wrap` \| `ellipsis` \| `info`, default `ellipsis`) | `nodeTitleOverflow` (default `ellipsis`) | same |
+| `nodeTitleOverflow` (`node-title-overflow`: `wrap` \| `ellipsis` \| `info`, default `ellipsis`) | `nodeTitleOverflow` (default `ellipsis`) | same. The `info` popover closes on a scroll: web (2026-11-08, core `createPopover({ shouldCloseOnScroll })`) on one that moves its row — the tree body, an outer scroller or the page — but not on a scroll inside the popover or of an unrelated scroller; svelte on any scroll on the page (window capture). **to mirror**: svelte keeps it open for a scroll that doesn't move the row |
 | `flatIndentSize` | `flatIndentSize` | same |
 | `contextMenuXOffset`, `contextMenuYOffset`, `isLoading` | same | same |
-| `dragDropMode`, `dropZoneMode`, `dropZoneLayout`, `dropZoneStart`, `dropZoneMaxWidth`, `isCopyAllowed`, `touchDragDelay`, `shouldIndicateUndraggable`, `isTreeDropZoneEnabled` | same | same |
+| `dragDropMode`, `dropZoneMode`, `dropZoneLayout`, `dropZoneStart`, `dropZoneMaxWidth`, `isCopyAllowed`, `touchDragDelay`, `shouldIndicateUndraggable`, `isTreeDropZoneEnabled` | same | same. `dropZoneMaxWidth`: web takes a number (pixels) or any CSS length string (default `'120px'`), svelte a number (default `120`) |
 | `shouldAutoHandleCopy`, `shouldAutoHandleMove` (`auto-handle-move`), `shouldAutoHandlePaste` | same | same |
 | `labels` | `labels` | same (keys: §7) |
 | `isEmptyDropPlaceholderShown`, `isFlatRenderingEnabled`, `isProgressiveRenderEnabled`, `initialBatchSize`, `maxBatchSize` | same | same |
@@ -38,7 +38,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `isVirtualScrollEnabled`, `virtualScrollItemHeight`, `virtualScrollOverscan`, `virtualScrollContainerHeight` | same | same |
 | `selectionMode`, `rangeSelectionMode`, `navigationOverrides`, `isCheckboxesShown`, `checkboxMode`, `cascadeCheckPolicy`, `shouldClickToggleCheckbox` | same | same |
 | `sortCallback`, `nodeOutputTransformationCallback`, `nodeInputTransformationCallback` | same | same |
-| `getCustomStylesCallback` | — | intentional — shadow-DOM style injection; svelte styles are global CSS |
+| `customStyles` (`custom-styles`), `getCustomStylesCallback` (wins) + page-wide `window.components['web-treeview'].customStyles` / `.getCustomStylesCallback(ctx)` (core `createCustomStyles()`, before the instance layer) | — | intentional — shadow-DOM style injection; svelte styles are global CSS |
 | `renderer` (pluggable `TreeViewRenderer`) | — | intentional — web-only DOM renderer swap |
 | core element plumbing: `defer` / `release()` / `whenReady()` / `whenSettled()` / `flush()` / `destroy()` / `isDisabled` | — | intentional — `BlissElement` lifecycle |
 | `motion="auto \| none \| snappy \| smooth"` (core rc17, SPEC §12.16) + `window.components.motion` + `data-motion` ancestors | `data-motion` ancestors only, through base-css-variables ≥ 2.0.0-rc08 presets (its `--stv-transition-*` read `--base-duration-*`) | **to mirror** (2026-11-03): a `motion` prop setting `data-motion` on `.stv__container` (no core dependency — copy core's `MOTION_PRESETS`), drop-zone bob off under `none` |
@@ -115,7 +115,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `activateMenuItem(item, ctx, trigger?, event?)` (element + controller) — for `renderContextMenuCallback`, whose ctx carries the resolved `entries` | `controller.activateMenuItem(item, ctx, trigger?, event?)` + `controller.menuContext(node \| null)`, `controller.menuItemDefaults(item, ctx)` — activation = the built-in menu's path (`beforeActionCallback` veto → `onClick` → built-in → `onAction`); a node-less ctx (`menuContext(null)`, menus over empty space) runs only the node-free built-ins | same activator. Intentional svelte-only: `menuContext` / `menuItemDefaults` and node-less menus (headless controller + custom renderers, e.g. svelte-treeview-canvas); web hands its renderer pre-resolved `ctx.entries` |
 | `navTo`, `navNext`, `navPrev`, `navNextSibling`, `navPrevSibling`, `navInto`, `navOut`, `navBackOut`, `navToggle`, `navFirst`, `navLast`, `navPageDown`, `navPageUp`, `navSelectNext`, `navSelectPrev`, `navSelectFirst`, `navSelectLast`, `navSelectPageDown`, `navSelectPageUp` | same | same |
 | `copyNodes`, `cutNodes`, `pasteNodes`, `cancelCut`, `hasClipboardContent`, `getClipboardOperation` | same | same |
-| `update(props)` (element) / `WebTreeView.update` | `<Tree>` `update(partial)` | same |
+| `setAttributes(props)` (element, core: one validated batch) / `WebTreeView.update(props)` | `<Tree>` `update(partial)` | intentional (2026-11-08) — the element's `update()` is core's protected hook (rulebook C-CA-14); the public batch write is core's `setAttributes()`, which validates and fires `input-rejected`. `WebTreeView.update` (engine wrapper) = svelte's `update` |
 | `release`, `whenReady`, `whenSettled`, `flush`, `destroy` (core) | — (`destroy` on the controller) | intentional — core element lifecycle |
 
 ## 7. Labels (`labels` input, partial, English defaults)

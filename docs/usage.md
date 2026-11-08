@@ -125,6 +125,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
 | `search-term` | `string` | — | Current search/filter text |
 | `theme` | `'dark' \| 'light'` | — | Per-instance theme override |
+| `custom-styles` | `string` | — | CSS injected into the shadow root (a full stylesheet, `@import url(…)` works) — the declarative twin of `getCustomStylesCallback`, which wins when both are set (config key: `customStyles`). See [Custom CSS](./theming.md#custom-css-shadow-root) |
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `handle-keyboard-shortcuts` | `boolean` | `true` | Opt out of built-in Ctrl/Cmd+C/X/V + Delete/Shift+Delete + Esc shortcuts (config key: `shouldHandleKeyboardShortcuts`) |
 | `auto-handle-paste` | `boolean` | `true` | Apply pastes automatically; set `false` to forward cleaned entries via `PasteResult.entries` for manual insert (config key: `shouldAutoHandlePaste`) |
@@ -156,11 +157,11 @@ a child listed before its parent is dropped as an orphan and reported in
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `drag-drop-mode` | `string` | `'none'` | `'none'` \| `'internal'` \| `'cross'` \| `'both'` |
+| `drag-drop-mode` | `string` | `'none'` | `'none'` \| `'self'` (within this tree) \| `'cross'` (between trees) \| `'both'`; any other value is refused (warn + `input-rejected`) |
 | `drop-zone-mode` | `string` | `'glow'` | `'glow'` \| `'floating'` |
 | `drop-zone-layout` | `string` | `'around'` | `'around'` \| `'before'` (row above the node) \| `'after'` (row below the node) \| `'wave'` \| `'wave2'` |
 | `drop-zone-start` | `number\|string` | `33` | Child zone threshold (number = %, string = CSS value) |
-| `drop-zone-max-width` | `string` (CSS length) | `120px` | Max floating drop-zone width: `120px`, `8rem`, `30%`; a bare number attribute means px |
+| `drop-zone-max-width` | `string` (CSS length) \| `number` | `120px` | Max floating drop-zone width: `120px`, `8rem`, `30%`; a number means px on both paths (`"90"` / `el.dropZoneMaxWidth = 90` → `90px`) |
 | `allow-copy` | `boolean` | `false` | Enable Ctrl+drag copy (config key: `isCopyAllowed`) |
 | `auto-handle-copy` | `boolean` | `true` | Apply copy moves automatically (config key: `shouldAutoHandleCopy`) |
 | `auto-handle-move` | `boolean` | `true` | Apply move drops automatically (config key: `shouldAutoHandleMove`); `false` = the tree isn't mutated — `node-drop` fires and you move the nodes |
@@ -202,14 +203,14 @@ a child listed before its parent is dropped as an orphan and reported in
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
-| `flat-indent-size` | `string` | `'1.5rem'` | Per-level indent step in flat mode |
+| `flat-indent-size` | `string` (CSS length) | `var(--wtv-indent-size)` | Per-level indent step in flat mode; a bare number means px (`"20"` → `20px`) |
 | `enable-progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRenderEnabled`) |
 | `initial-batch-size` | `number` | — | First batch size |
 | `max-batch-size` | `number` | — | Subsequent batch ceiling |
 | `enable-virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
 | `virtual-scroll-item-height` | `number` | auto | Row height in px (auto-measured if omitted) |
 | `virtual-scroll-overscan` | `number` | `5` | Extra rows above/below viewport |
-| `virtual-scroll-container-height` | `string` | `'400px'` | Viewport height |
+| `virtual-scroll-container-height` | `string` (CSS length) | measured, else `'400px'` | Viewport height: any CSS length (`30rem`, `50vh`), a bare number means px; the window maths uses the measured height |
 
 ## Properties (JS only)
 
@@ -267,7 +268,7 @@ applied right after it. For a silent replace use `clearSelection(undefined, { is
 | Property | Signature | Description |
 |----------|-----------|-------------|
 | `sortCallback` | `({ nodes }) => LTreeNode[]` | Orders the children of one parent: `nodes` are siblings — return them in the new order. Parents-first insert order is internal; not called on the input under `sorted` (the per-parent re-sorts still use it) |
-| `getCustomStylesCallback` | `(ctx) => string` | CSS injected into the shadow root (supports `@import`) |
+| `getCustomStylesCallback` | `(ctx) => string \| null` | CSS injected into the shadow root (supports `@import`); wins over `customStyles`. See [Custom CSS](./theming.md#custom-css-shadow-root) |
 
 ### Render callbacks
 
@@ -484,7 +485,7 @@ All methods are available on the element **and** on `el.controller`.
 | `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `addBranch`); adds `removed` / `added` |
 | `removeBranch` | `(path, keepParent?): RemoveBranchResult` | Remove a node and its descendants (or only the descendants with `keepParent`); `{ success, count, error? }` |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
-| `update` | `(props: Partial<TreeViewConfig<T>>)` | Update multiple properties at once (element only) |
+| `setAttributes` | `(props: Partial<TreeViewConfig<T>>): InputRejection[]` | Core (element only): write many inputs (by config key or attribute name) as one validated batch — one engine update; returns the refused values (each also fires `input-rejected`). Replaces the old public `el.update(props)` (2.0.0-rc07) |
 | `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |
 | `destroy` | `()` | Core final teardown (element only): releases the tree engine, renderer and clipboard registration; `isDestroyed` turns `true` |
 

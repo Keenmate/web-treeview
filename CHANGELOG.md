@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — BREAKING — core 1.0.0-rc20 (2026-11-08)
+- `@keenmate/web-components-core` ^1.0.0-rc18 → 1.0.0-rc20 (rc19 + the rc20 fixes below).
+- **The element's `update(props)` is gone from the public API** — it is core's protected hook now (rulebook
+  C-CA-14), with no alias. Write several inputs at once with core's **`el.setAttributes(props)`** (config keys or
+  attribute names; one validated batch, one engine update; returns the refused values, each also fires
+  `input-rejected`). The old public `update()` bypassed the input pipeline — no validation, and `this.config` never
+  saw the values, so the next unrelated write (or a responsive re-run) sent the previous `nodes` again and the tree
+  reloaded them. `WebTreeView.update()` (the engine wrapper) is unchanged. `examples-performance.html`,
+  `docs/usage.md` and `docs/parity.md` follow.
+- **The custom-CSS `<style>` class is `wtv-custom-styles`** (was `tv-custom-styles`; the page layer's is
+  `wtv-custom-styles--page`) — core `createCustomStyles()` writes it. Page code that queried the old class renames
+  the selector.
+- **`drag-drop-mode` takes only `none | self | cross | both`** (core `toEnum`, was free text): another value warns,
+  fires `input-rejected` and keeps the previous mode (it was accepted silently and acted as `none`).
+- **Enum getters read their real default when unset** (they read `null`): `clickBehavior` `'expand-and-focus'`,
+  `tooltipPlacement` `'top-start'`, `iconSet` `'chevron'`, `toggleIconMode` `'rotate'`, `dragDropMode` `'none'`,
+  `dropZoneMode` `'glow'`, `dropZoneLayout` `'around'`, `rangeSelectionMode` `'visual'`, `selectionMode` `'single'`,
+  `checkboxMode` `'independent'`, `cascadeCheckPolicy` `'rolled-up'` — the values the engine already applied; the CEM
+  documents them. A default is never reflected (no `icon-set="chevron"` appears on the host).
+
+### Added — core 1.0.0-rc20 (2026-11-08)
+- **Page-wide custom CSS** (core rc19 `createCustomStyles()`): `window.components['web-treeview'].customStyles =
+  "@import url('/css/tree.css');"` styles every tree on the page, `.getCustomStylesCallback(ctx)` computes it per
+  tree from its context; assigning either updates live trees. It sits in its own `<style>` before the instance's,
+  so a tree still overrides it.
+- **`custom-styles` attribute / `customStyles` property** — a CSS string for the instance layer, the declarative twin
+  of `getCustomStylesCallback` (which wins when both are set), as in web-multiselect.
+- `docs/theming.md` "Custom CSS (shadow root)", a README "Styling" paragraph.
+
+### Changed — core 1.0.0-rc20 (2026-11-08)
+- **The full-label popover (`node-title-overflow="info"`) closes on a scroll that moves its row** — core
+  `createPopover({ shouldCloseOnScroll: true })` replaces the renderer's own tree-body scroll listener: a scroll of
+  the tree body, of a wrapper around the tree or of the page closes it; a scroll inside the popover (or of an
+  unrelated scroller) doesn't. Before, only a tree-body scroll closed it.
+- **An outside click closes the popover when the click ends** (core rc19 overlay tree), not at `pointerdown`; a
+  keyboard "click" closes nothing. Its `onClose` also reports `'api'` for a programmatic close, which the
+  renderer ignores (it cleared its state first).
+- **`flat-indent-size` and `virtual-scroll-container-height` are CSS lengths** (core `toCssLength`, were free text):
+  a bare number means pixels (`flat-indent-size="20"` → `20px`; it produced an invalid `calc()`, so the indent was
+  lost), an invalid value warns + `input-rejected`. `flatIndentSize` reads `var(--wtv-indent-size)` by default.
+- `theme-source="closest"` follows a section that gets its theme after the tree connected (core rc19).
+
+### Fixed — core 1.0.0-rc20 review (2026-11-08)
+- **A click on a node checkbox closes the full-label popover again** — the tree stops that click's propagation,
+  so on core rc19 the outside-click router never saw it and the popover stayed open (core rc20 also sees the
+  click on the way down).
+- **`virtual-scroll-container-height` in `rem` / `vh` renders a full window** — the window maths used
+  `parseFloat('30rem')` = 30 px, so only a row or two plus overscan were rendered in a ~480 px viewport. The
+  renderer now reports the measured viewport height (also on resize); a bare px value is still read before the
+  first measurement.
+- **Safari: a search jump into a branch that is still rendering reaches its row** — `scrollToPath` (search
+  navigation) waits for a running progressive render (up to ~1 s) before it scrolls: WebKit cancels a smooth
+  scroll whose content changes mid-glide, so the container stopped short and the row stayed off-screen.
+- An `@import` in the custom CSS whose URL contains a `"` no longer throws (core compares hrefs instead of
+  building a selector from the URL), and the head `<link>` it adds is removed when the last tree stops importing it (it leaked on
+  `destroy()`).
+
+### Internal — core 1.0.0-rc20 (2026-11-08)
+- The hand-rolled custom-style slot and its document-head `<link>` hoist (`#applyCustomStyles`) are replaced by core
+  `createCustomStyles()` (refreshed once per build and on a `customStyles` / `getCustomStylesCallback` change,
+  destroyed in `destroyCallback()`); core links each `@import` in the head itself, so IC01's FontAwesome icons
+  still render in Chromium.
+- `src/web-component.ts` documents that the package entry defines the tag through `registerComponent()`; the
+  guarded self-`define` stays for a bare module import (and the rulebook's component detection).
+- `VALIDATION-NOTES.md` records the doctor false positives C-CSS-8 / C-BV-1 (relative colour syntax) and
+  C-BV-3 / C-BV-6 (input variables, `--base-*` read by core's menu); `kmwc doctor` is down to the three `[ports]`
+  errors of another repo (web-component-framework-test sits on 12300).
+- e2e: `dropZoneMaxWidth = 90`, the popover closing on a checkbox click / a tree-body scroll / a page scroll and
+  staying open on a scroll inside it, page-wide and instance custom CSS (+ the shared head `<link>`), enum
+  defaults, `drag-drop-mode` rejection, the `tooltip-delay` / `drop-zone-start` converters, `setAttributes({ nodes })`, CSS-length `flat-indent-size`, a `25rem`
+  virtual viewport and `theme-source="closest"` following a section themed later. WebKit skips the native HTML5 drag-and-drop specs (Playwright WebKit on Windows delivers no
+  `drop` for a mouse-driven drag) and the synthetic touch specs (WebKit has no `Touch` constructor, also with
+  `hasTouch` + `isMobile`); Chromium and Firefox run them. The e2e fixture ignores WebKit's benign
+  "ResizeObserver loop" notice.
+- The dev server and the e2e `baseURL` use `127.0.0.1` (as base-css-variables): Vite's `localhost` can bind `::1`
+  only, and Firefox then sometimes got `NS_ERROR_CONNECTION_REFUSED`.
+- `src/logger.ts` header: core vendors its own `loglevel` port (no package dependency).
+
 ### Changed — BREAKING — core 1.0.0-rc18 (2026-11-04)
 - `@keenmate/web-components-core` ^1.0.0-rc17 → ^1.0.0-rc18.
 - **The re-exported menu-divider factory is `createMenuDivider(text?)`** (was `menuDivider`) — core's `create`
@@ -20,10 +98,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **The page-wide loader hook is `window.components.renderLoadingCallback`** (was `renderLoaderCallback`) —
   the same name as the instance `renderLoadingCallback`. Docs, JSDoc and e2e follow.
 - **`drop-zone-max-width` / `dropZoneMaxWidth` is a CSS length** (core `toCssLength`, was an integer): the value
-  only lands in the `--drop-zone-max-width` variable, so `8rem` / `30%` / `calc(…)` work now. A bare number
-  attribute still means pixels (`drop-zone-max-width="90"` → `90px`), but the **property** takes a string —
-  `el.dropZoneMaxWidth = 90` is refused (warn + `input-rejected`, keeps the previous value); write `'90px'`.
-  The getter / engine config reads `'120px'` by default (was `120`). `TreeViewConfig.dropZoneMaxWidth` is `string`.
+  only lands in the `--drop-zone-max-width` variable, so `8rem` / `30%` / `calc(…)` work now. A number means
+  pixels on both paths (`drop-zone-max-width="90"` / `el.dropZoneMaxWidth = 90` → `'90px'`; the property path
+  takes numbers again since core rc19); a string is any CSS length. The getter / engine config reads `'120px'`
+  by default (was `120`). `TreeViewConfig.dropZoneMaxWidth` is `string | number`.
 - **Pixel attributes are parsed strictly** (core `toInt` / `toFloat`): `tooltip-offset`, `context-menu-x-offset`,
   `context-menu-y-offset` (integers) and `virtual-scroll-item-height` (a number) take a bare number of pixels —
   the tree does arithmetic with them. `"24px"`, `"8.5"` on an integer input, `"1e3"` now warn and keep the

@@ -1,4 +1,4 @@
-import { test, expect, Page } from './fixtures';
+import { test, expect, Page, WEBKIT_NO_TOUCH_CTOR } from './fixtures';
 
 /**
  * Touch drag inside the shadow root. The ghost, the drop-target lookup and the
@@ -12,6 +12,8 @@ import { test, expect, Page } from './fixtures';
 const PAGE = '/test/drag-drop.html';
 
 test.use({ hasTouch: true });
+
+test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_TOUCH_CTOR);
 
 /** Dispatch a single-finger touch event at the centre of a node's content pill. */
 async function touchAt(page: Page, type: 'touchstart' | 'touchmove' | 'touchend', path: string, dx = 0.5) {

@@ -1,4 +1,5 @@
 import { definePlaywrightConfig, devices } from '@keenmate/web-components-devkit/playwright';
+import { getKmwcConfig } from '@keenmate/web-components-devkit';
 
 /**
  * Playwright config for end-to-end tests against the dev server.
@@ -15,8 +16,13 @@ import { definePlaywrightConfig, devices } from '@keenmate/web-components-devkit
  *   npm run test:e2e:headed    # watch the browser do its thing
  */
 const viewport = { width: 1440, height: 1024 };
+// IPv4, like vite.config.ts: Vite's "localhost" can bind ::1 only, and Firefox then
+// sometimes gets connection refused (NS_ERROR_CONNECTION_REFUSED).
+const DEV_URL = `http://127.0.0.1:${getKmwcConfig().ports.dev}`;
 
 export default definePlaywrightConfig({
+  use: { baseURL: DEV_URL },
+  webServer: { url: DEV_URL },
   // Warm every fixture page first — Vite compiles on first request.
   globalSetup: './e2e/global-setup.ts',
   timeout: 45_000,

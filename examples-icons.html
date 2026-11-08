@@ -9,12 +9,29 @@
     <p>
         <code>icon-member</code> resolves a class string; it renders as
         <code>&lt;i class="wtv__node-icon {value}"&gt;</code> on every node. The chevron stays on
-        branches — the icon is its own element beside it. Because web-treeview uses Shadow DOM,
-        FontAwesome's CSS is injected into the shadow root via <code>getCustomStylesCallback</code>
-        (the classes wouldn't resolve from the document otherwise). <code>icon-color-member</code>
+        branches — the icon is its own element beside it. <code>icon-color-member</code>
         colors each icon.
     </p>
-    <div class="tree-container" id="c1"><web-treeview id="tree1" expand-level="4" icon-member="icon" icon-color-member="color" align-node-icons></web-treeview></div>
+    <p>
+        Because web-treeview uses Shadow DOM, page CSS doesn't reach the <code>fa-*</code> classes:
+        FontAwesome goes in through custom CSS, which has two layers. The <strong>page layer</strong>
+        <code>window.components['web-treeview'].customStyles</code> (or
+        <code>.getCustomStylesCallback(ctx)</code>) styles every tree on this page &mdash; it holds the
+        FontAwesome <code>@import</code>, which core also links once in the document head so the icon
+        font registers. The <strong>instance layer</strong> comes after it and overrides it: this tree's
+        <code>custom-styles</code> attribute (<code>customStyles</code> property) enlarges its icons;
+        <code>getCustomStylesCallback</code> wins over it when both are set.
+    </p>
+    <div class="tree-container" id="c1"><web-treeview id="tree1" expand-level="4" icon-member="icon" icon-color-member="color" align-node-icons
+        custom-styles=".wtv__node-icon { font-size: 1.1em; }"></web-treeview></div>
+    <div class="code-block mt-1">
+        <pre><code>// page layer: every &lt;web-treeview&gt; on the page
+window.components['web-treeview'].customStyles =
+    '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css");';
+
+&lt;!-- instance layer: this tree only, after the page layer --&gt;
+&lt;web-treeview icon-member="icon" custom-styles=".wtv__node-icon { font-size: 1.1em; }"&gt;</code></pre>
+    </div>
 </div>
 
 <!-- IC02 · Emoji via getIconCallback -->
@@ -76,12 +93,12 @@
     customElements.whenDefined('web-treeview').then(() => {
         const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data };
 
-        // IC01 — FA classes. Inject FontAwesome into the shadow root so `fa-*` resolves there.
-        Object.assign(document.getElementById('tree1'), common, {
-            iconMember: 'icon',
-            getCustomStylesCallback: () =>
-                '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css");'
-        });
+        // IC01 — FA classes. The page layer of custom CSS puts FontAwesome into every tree's shadow
+        // root (core also links the @import in <head> so the font registers); tree1's own
+        // `custom-styles` attribute is the instance layer, after it.
+        window.components['web-treeview'].customStyles =
+            '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css");';
+        Object.assign(document.getElementById('tree1'), common, { iconMember: 'icon' });
 
         // IC02 — emoji via callback.
         Object.assign(document.getElementById('tree2'), common, {

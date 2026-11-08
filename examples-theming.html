@@ -5,14 +5,6 @@
 
 <!-- Page-specific styles: theme presets (demo content) + gallery/editor layout -->
 <style>
-    /* Theme grid layout */
-    .theme-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(500px, 100%), 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
     /* Theme card base styling */
     .theme-card {
         padding: 1.5rem;
@@ -282,31 +274,6 @@
 </style>
 
 <style>
-    /* Live theme editor */
-    .color-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
-    }
-    .color-row label {
-        min-width: 140px;
-        font-size: 0.875rem;
-        color: var(--kmwc-text-color-2);
-    }
-    .color-row input[type="color"] {
-        width: 40px;
-        height: 30px;
-        border: 1px solid var(--kmwc-input-border);
-        border-radius: 4px;
-        cursor: pointer;
-        padding: 2px;
-    }
-    .color-row code {
-        font-size: 0.75rem;
-    }
-
     /* ──────────────────────────────────────────────────────────────────
        TC01 · Shared --base-* contract (theme comparison)
        Each .tc-theme-* class is a full --base-* token set extracted
@@ -315,13 +282,6 @@
        Shadow DOM — nothing is styled per-component, only the shared token
        layer changes. (Token names verified against src/css/variables.css.)
        ────────────────────────────────────────────────────────────────── */
-    .tc-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.25rem;
-        margin: 1rem 0;
-    }
-
     .tc-panel {
         /* Page tokens: the contract's values, its defaults / formulas as the fallback
            (base-contract-check C2 / C3) — the page doesn't load base-css-variables. */
@@ -448,7 +408,7 @@
         </span>
     </div>
 
-    <div class="theme-grid" style="margin-bottom: 0;">
+    <div class="grid-2">
         <div class="theme-card" style="padding: 0;">
             <div class="tree-container" style="padding: 0; border: none;">
                 <web-treeview id="rc03-tree-a" theme="dark" expand-level="2"></web-treeview>
@@ -465,7 +425,7 @@
 <!-- Theme Examples -->
 <h2>TH02 · Theme Examples</h2>
 
-<div class="theme-grid">
+<div class="grid-2">
     <!-- Default Theme -->
     <div class="theme-card" style="background: var(--kmwc-main-bg); box-shadow: 0 2px 4px var(--kmwc-shadow-color);">
         <h3>Default</h3>
@@ -578,36 +538,37 @@
 
     <div class="grid-2">
         <div>
-            <div class="color-row">
-                <label>Accent color</label>
-                <input type="color" id="cp-accent" value="#3b82f6">
-                <code>--wtv-accent-color</code>
-            </div>
-            <div class="color-row">
-                <label>Text color</label>
-                <input type="color" id="cp-text" value="#1e293b">
-                <code>--wtv-text-color-1</code>
-            </div>
-            <div class="color-row">
-                <label>Secondary text</label>
-                <input type="color" id="cp-text2" value="#64748b">
-                <code>--wtv-text-color-3</code>
-            </div>
-            <div class="color-row">
-                <label>Hover background</label>
-                <input type="color" id="cp-hover" value="#f1f5f9">
-                <code>--wtv-node-bg-hover</code>
-            </div>
-            <div class="color-row">
-                <label>Border color</label>
-                <input type="color" id="cp-border" value="#e2e8f0">
-                <code>--wtv-border-color</code>
-            </div>
-            <div class="color-row">
-                <label>Transition time</label>
-                <input type="range" id="cp-transition" min="0" max="500" step="10" value="150" class="w-sm">
-                <span id="cp-transition-value">150ms</span>
-                <code>--wtv-node-transition</code>
+            <div class="control-row">
+                <div class="control-group">
+                    <label for="cp-accent">Accent color</label>
+                    <input type="color" id="cp-accent" value="#3b82f6">
+                    <code>--wtv-accent-color</code>
+                </div>
+                <div class="control-group">
+                    <label for="cp-text">Text color</label>
+                    <input type="color" id="cp-text" value="#1e293b">
+                    <code>--wtv-text-color-1</code>
+                </div>
+                <div class="control-group">
+                    <label for="cp-text2">Secondary text</label>
+                    <input type="color" id="cp-text2" value="#64748b">
+                    <code>--wtv-text-color-3</code>
+                </div>
+                <div class="control-group">
+                    <label for="cp-hover">Hover background</label>
+                    <input type="color" id="cp-hover" value="#f1f5f9">
+                    <code>--wtv-node-bg-hover</code>
+                </div>
+                <div class="control-group">
+                    <label for="cp-border">Border color</label>
+                    <input type="color" id="cp-border" value="#e2e8f0">
+                    <code>--wtv-border-color</code>
+                </div>
+                <div class="control-group">
+                    <label for="cp-transition">Transition time <span id="cp-transition-value">150ms</span></label>
+                    <input type="range" id="cp-transition" min="0" max="500" step="10" value="150" class="w-sm">
+                    <code>--wtv-node-transition</code>
+                </div>
             </div>
             <button onclick="resetLiveTheme()" class="btn-outline" style="margin-top: 0.5rem">Reset to defaults</button>
         </div>
@@ -690,7 +651,7 @@
     <h2>TC01 · Shared <code>--base-*</code> contract</h2>
     <p>Three <code>&lt;web-treeview&gt;</code> instances, <strong>identical markup and data</strong>, reskinned purely by swapping the shared <code>--base-*</code> design tokens &mdash; the same contract every Keenmate component reads (<code>web-multiselect</code>, <code>web-daterangepicker</code>, <code>svelte-treeview</code>&hellip;). Nothing below is styled per-component: only the token layer on the wrapper changes, so accent, surfaces, text hierarchy, borders, hover and the checkbox/chevron glyphs all track together. Each theme is a <code>--base-*</code> set extracted verbatim from a <code>@keenmate/pure-admin-theme-*</code> package.</p>
 
-    <div class="tc-grid">
+    <div class="card-grid">
         <div class="tc-panel">
             <header class="tc-panel-head">Component defaults <span class="tc-panel-badge">light</span></header>
             <div class="tc-panel-body">

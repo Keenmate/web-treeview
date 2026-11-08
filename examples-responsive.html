@@ -20,12 +20,6 @@
     margin-bottom: 1rem;
 }
 .resize-box web-treeview { display: block; }
-
-.hint {
-    font-size: 0.85rem;
-    color: var(--kmwc-text-color-3);
-    margin: 0.4rem 0 0;
-}
 </style>
 
 <div class="card">
@@ -76,7 +70,7 @@
 <div class="resize-box" id="rs01-box" style="width:620px">
     <web-treeview id="rs01-tree" expand-level="2"></web-treeview>
 </div>
-<p class="hint">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
+<p class="form-text">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
 
 <div class="code-block"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
   const narrow = container.width &lt; 460;            // the tree's OWN box
@@ -126,7 +120,7 @@
 <div class="resize-box" id="rs02-box" style="width:620px">
     <web-treeview id="rs02-tree" expand-level="2"></web-treeview>
 </div>
-<p class="hint">&harr; Drag the handle below ~380px to collapse to major groups only.</p>
+<p class="form-text">&harr; Drag the handle below ~380px to collapse to major groups only.</p>
 
 <div class="code-block"><pre><code>// ctx tells each row the device + box; your app picks the depth from the
 // derived breakpoint and reassigns expandLevel (capability first, then width):
@@ -171,7 +165,7 @@ new ResizeObserver(([e]) =&gt; {
 <div class="resize-box" id="rs03-box" style="width:340px">
     <web-treeview id="rs03-tree" expand-level="3"></web-treeview>
 </div>
-<p class="hint">In <code>ellipsis</code> mode, hover a clipped occupation title to see the full text.</p>
+<p class="form-text">In <code>ellipsis</code> mode, hover a clipped occupation title to see the full text.</p>
 
 <div class="code-block"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
 

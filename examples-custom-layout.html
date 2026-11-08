@@ -412,7 +412,9 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
         <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
         <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
         <tr><td><code>renderLoadingCallback</code></td><td><code>({ component, context, containerElement, element, label }) =&gt; void | (() =&gt; void)</code></td><td>the loading state (<code>isLoading=true</code>) — core's shared loader hook (beats the page-wide <code>window.components.renderLoadingCallback</code>); may return a cleanup</td></tr>
-        <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string</code></td><td>CSS injected into the shadow root (supports <code>@import</code>)</td></tr>
+        <tr><td><code>customStyles</code> (<code>custom-styles</code>)</td><td><code>string | null</code></td><td>CSS injected into the shadow root (supports <code>@import</code>, also linked once in the document head so an icon font registers) &mdash; the instance layer</td></tr>
+        <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string | null</code></td><td>the same, computed per tree; wins over <code>customStyles</code></td></tr>
+        <tr><td><code>window.components['web-treeview'].customStyles</code> / <code>.getCustomStylesCallback(ctx)</code></td><td><code>string | null</code> / <code>(ctx) =&gt; string | null</code></td><td>the page layer: every tree on the page, before the instance layer (an instance overrides it); assigning it updates live trees</td></tr>
     </tbody>
 </table>
 

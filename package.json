@@ -122,7 +122,7 @@
     "url": "https://github.com/KeenMate/web-treeview/issues"
   },
   "dependencies": {
-    "@keenmate/web-components-core": "file:../web-components-core",
+    "@keenmate/web-components-core": "^1.0.0-rc20",
     "flexsearch": "^0.8.212"
   },
   "devDependencies": {

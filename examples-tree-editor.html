@@ -3,53 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Editor layout: tree on the left, toolbar + state on the right. */
-    .editor-grid {
-        display: grid;
-        grid-template-columns: 1.4fr 1fr;
-        gap: 1rem;
-    }
-    @media (max-width: 760px) {
-        .editor-grid { grid-template-columns: 1fr; }
-    }
-    .editor-toolbar {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    .editor-panel {
-        padding: 0.75rem;
-        border: 1px solid var(--kmwc-border-color);
-        border-radius: var(--kmwc-radius-sm);
-        background: var(--kmwc-elevated-bg);
-    }
-    .editor-panel h3 {
-        margin: 0 0 0.5rem;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: var(--kmwc-text-color-3);
-    }
-    .editor-panel .help-text {
-        margin: 0 0 0.5rem;
-        font-size: 0.8rem;
-        color: var(--kmwc-text-color-3);
-    }
-    .input-row {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        flex-wrap: wrap;
-    }
-    .input-row input[type="text"] { flex: 1; min-width: 120px; }
-    .button-row {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-</style>
-
 <!-- TE01 · Interactive Tree Editor -->
 <div class="card">
     <h2>TE01 · Interactive Tree Editor</h2>
@@ -62,12 +15,12 @@
         every mutation.
     </p>
 
-    <div class="status-bar">
-        Focused: <strong id="te-focused">(none)</strong>
-        <span class="badge" id="te-count">0 nodes</span>
+    <div class="controls">
+        <span>Focused: <strong id="te-focused">(none)</strong></span>
+        <span class="pill pill--info" id="te-count">0 nodes</span>
     </div>
 
-    <div class="editor-grid">
+    <div class="grid" style="--grid-min: 300px; --grid-gap: 1rem">
         <div>
             <div class="tree-container" id="te-tree-container">
                 <web-treeview id="te-tree"
@@ -78,7 +31,7 @@
                     drag-drop-mode="both"
                     selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-            <div class="result-banner result-banner--err" id="te-warning"></div>
+            <div class="note error" id="te-warning" style="display: none"></div>
 
             <div class="output mt-1">
                 <p class="output-label">Activity log:</p>
@@ -86,12 +39,12 @@
             </div>
         </div>
 
-        <div class="editor-toolbar">
-            <div class="editor-panel">
+        <div class="card-grid" style="--grid-min: 220px; --grid-gap: 1rem">
+            <div class="demo-card">
                 <h3>Add Node</h3>
-                <p class="help-text" id="te-add-help">Adding at root level</p>
-                <div class="input-row">
-                    <input type="text" id="te-name" placeholder="Node name"
+                <p id="te-add-help">Adding at root level</p>
+                <div class="field-row">
+                    <input type="text" id="te-name" class="field-grow" placeholder="Node name"
                            onkeydown="if(event.key==='Enter')addChild()">
                     <select id="te-icon">
                         <option value="&#128196;">&#128196; File</option>
@@ -102,39 +55,39 @@
                         <option value="&#128221;">&#128221; Note</option>
                     </select>
                 </div>
-                <div class="button-row">
+                <div class="field-row mt-1">
                     <button onclick="addChild()">Add child</button>
                     <button class="secondary" onclick="addSibling()">Add sibling</button>
                 </div>
             </div>
 
-            <div class="editor-panel">
+            <div class="demo-card">
                 <h3>Edit Node</h3>
-                <p class="help-text">Acts on the focused node</p>
-                <div class="button-row">
+                <p>Acts on the focused node</p>
+                <div class="field-row">
                     <button onclick="renameNode()">Rename&hellip;</button>
                     <button class="btn-danger" onclick="deleteFocused()">Delete</button>
                 </div>
             </div>
 
-            <div class="editor-panel">
+            <div class="demo-card">
                 <h3>Reorder</h3>
-                <p class="help-text">Move the focused node among its siblings</p>
-                <div class="button-row">
+                <p>Move the focused node among its siblings</p>
+                <div class="field-row">
                     <button class="secondary" onclick="moveUp()">Move up</button>
                     <button class="secondary" onclick="moveDown()">Move down</button>
                 </div>
             </div>
 
-            <div class="editor-panel">
+            <div class="demo-card">
                 <h3>Tree</h3>
-                <div class="button-row">
+                <div class="field-row">
                     <button class="btn-outline" onclick="exportConsole()">Export to console</button>
                     <button class="btn-outline" onclick="resetEditor()">Reset tree</button>
                 </div>
             </div>
 
-            <div class="output">
+            <div class="output col-span-full">
                 <p class="output-label">Tree data (live):</p>
                 <pre id="te-json" style="max-height: 320px; overflow:auto;"></pre>
             </div>
@@ -153,8 +106,8 @@
         Cut nodes dim until pasted; <kbd>Esc</kbd> cancels a pending cut.
     </p>
 
-    <div class="status-bar">
-        Clipboard: <strong id="cb-op">empty</strong>
+    <div class="controls">
+        <span>Clipboard: <strong id="cb-op">empty</strong></span>
         <span id="cb-info"></span>
     </div>
 
@@ -170,7 +123,7 @@
                     drag-drop-mode="both"
                     selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-            <div class="button-row mt-1">
+            <div class="field-row mt-1">
                 <button onclick="document.getElementById('cb-source').copyNodes()">Copy</button>
                 <button class="secondary" onclick="document.getElementById('cb-source').cutNodes()">Cut</button>
                 <button class="btn-outline" onclick="document.getElementById('cb-source').cancelCut()">Cancel cut</button>
@@ -187,7 +140,7 @@
                     drag-drop-mode="both"
                     selected-node-class="wtv__node-content--selected-border"></web-treeview>
             </div>
-            <div class="button-row mt-1">
+            <div class="field-row mt-1">
                 <button onclick="pasteIntoTarget()">Paste here</button>
             </div>
         </div>
@@ -284,7 +237,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 <web-treeview id="sc-org" expand-level="3" click-behavior="select"
                     order-member="sortOrder" drag-drop-mode="self"></web-treeview>
             </div>
-            <div class="button-row mt-1">
+            <div class="field-row mt-1">
                 <button onclick="scAdd('sc-org', 'Report', '&#128100;')">Add report</button>
                 <button class="btn-danger" onclick="scRemove('sc-org')">Remove</button>
             </div>
@@ -298,7 +251,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 <web-treeview id="sc-files" expand-level="2" click-behavior="select"
                     order-member="sortOrder" drag-drop-mode="both"></web-treeview>
             </div>
-            <div class="button-row mt-1">
+            <div class="field-row mt-1">
                 <button onclick="scAdd('sc-files', 'New File', '&#128196;')">New file</button>
                 <button class="secondary" onclick="scAdd('sc-files', 'New Folder', '&#128193;')">New folder</button>
                 <button class="btn-danger" onclick="scRemove('sc-files')">Delete</button>
@@ -313,7 +266,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
                 <web-treeview id="sc-cats" expand-level="2" click-behavior="select"
                     order-member="sortOrder" drag-drop-mode="both"></web-treeview>
             </div>
-            <div class="button-row mt-1">
+            <div class="field-row mt-1">
                 <button onclick="scAdd('sc-cats', 'Subcategory', '&#127991;&#65039;')">Add subcategory</button>
                 <button class="secondary" onclick="scRename('sc-cats')">Rename</button>
                 <button class="btn-danger" onclick="scRemove('sc-cats')">Remove</button>

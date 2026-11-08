@@ -172,9 +172,7 @@
                     <li><kbd>Escape</kbd> &mdash; Deselect all</li>
                 </ul>
             </div>
-            <div class="status-bar">
-                Current node: <strong id="in3-current">none</strong>
-            </div>
+            <p class="mt-1">Current node: <strong id="in3-current">none</strong></p>
         </div>
     </div>
 </div>
@@ -308,8 +306,8 @@ function restoreFromUrl(nodePath) {
         cancelled with <kbd>Escape</kbd>.
     </p>
 
-    <div class="status-bar">
-        Clipboard: <strong id="in6-op">empty</strong>
+    <div class="controls">
+        <span>Clipboard: <strong id="in6-op">empty</strong></span>
         <span id="in6-info"></span>
     </div>
 
@@ -360,7 +358,7 @@ function restoreFromUrl(nodePath) {
         <button class="btn-outline" id="in6-reset">Reset tree</button>
     </div>
 
-    <div class="result-banner" id="in6-bulk-result"></div>
+    <div class="note success" id="in6-bulk-result" style="display: none"></div>
 
     <div class="output">
         <p class="output-label">Tree data (live):</p>
@@ -668,7 +666,7 @@ function restoreFromUrl(nodePath) {
         function showBulkResult(result, isError) {
             const el = document.getElementById('in6-bulk-result');
             el.textContent = JSON.stringify({ ...result, parentNode: result.parentNode?.path, failed: result.failed?.map((f) => f.error) });
-            el.className = 'result-banner' + (isError ? ' result-banner--err' : '');
+            el.className = 'note ' + (isError ? 'error' : 'success');
             el.style.display = 'block';
             setTimeout(() => { el.style.display = 'none'; }, 4000);
         }

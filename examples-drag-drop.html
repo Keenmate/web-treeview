@@ -3,20 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Page-specific: field widths for the DnD settings panel. Base padding /
-       border / radius now come from the shared `.controls select|input` rule. */
-    .controls select {
-        min-width: 160px;
-    }
-    .controls input[type="text"] {
-        width: 80px;
-    }
-    .controls input[type="number"] {
-        width: 70px;
-    }
-</style>
-
 <!-- Main DnD Example with Control Panel -->
 <div class="card">
     <h2>DD01 · Drag Between Trees</h2>
@@ -61,11 +47,11 @@
             </label>
             <label>
                 Zone Start:
-                <input type="text" id="ctrl-zone-start" value="33%" placeholder="33% or 50px" onchange="applySettings()">
+                <input type="text" id="ctrl-zone-start" class="w-sm" value="33%" placeholder="33% or 50px" onchange="applySettings()">
             </label>
             <label>
                 Max Width (px):
-                <input type="number" id="ctrl-max-width" value="120" min="50" max="300" onchange="applySettings()">
+                <input type="number" id="ctrl-max-width" class="w-xs" value="120" min="50" max="300" onchange="applySettings()">
             </label>
         </span>
         <label>

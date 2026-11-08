@@ -3,37 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Context-menu CSS-variable control grid (two-line labels) */
-    .ctx-config {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 1rem;
-        align-items: end;
-    }
-    .ctx-config label {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 0.85rem;
-    }
-    .ctx-config label.inline {
-        flex-direction: row;
-        align-items: center;
-        gap: 6px;
-    }
-    .ctx-config .val {
-        font-size: 0.75rem;
-        color: var(--kmwc-text-color-3);
-    }
-    .ctx-config select { padding: 4px; }
-
-    /* Offset number inputs (CM01 + CM06) */
-    .offset-inputs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
-    .offset-inputs label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
-    .offset-inputs input[type="number"] { width: 72px; padding: 4px; }
-</style>
-
 <div class="note">
     <p class="note-title">Positioning is handled by Floating UI</p>
     <p>The menu and its submenus are web-components-core's shared <code>openMenu()</code>, placed by core's <code>/positioning</code> <code>anchor()</code> (over <a href="https://floating-ui.com/" target="_blank" rel="noopener"><code>@floating-ui/dom</code></a>, which core brings in): <code>offset</code>, <code>flip</code> and <code>shift</code> keep the menu inside the viewport — submenus flip to the left edge when there's no room on the right, and <code>autoUpdate</code> keeps everything anchored on scroll/resize. The <code>contextMenuXOffset</code>/<code>contextMenuYOffset</code> props feed into the root menu's offset from the cursor.</p>
@@ -45,10 +14,8 @@
     <p>Right-click any node. web-treeview builds the menu with <code>getContextMenuItemsCallback(ctx) =&gt; TreeMenuEntry[]</code> — <code>ctx</code> is <code>{ node, path, parent, siblings, controller, element }</code> and the entries are core action items. This demo shows shortcuts, a nested submenu, a named divider (<code>createMenuDivider(text)</code>), an <code>isDanger</code> item, an <code>isDisabled</code> item, and an <code>isVisible</code>-gated item. An enabled leaf closes the menu after its <code>onClick</code> — no <code>close()</code> needed.</p>
 
     <div class="controls">
-        <div class="offset-inputs">
-            <label>X Offset <input type="number" id="cm1-x" value="8"> <span class="muted">px</span></label>
-            <label>Y Offset <input type="number" id="cm1-y" value="0"> <span class="muted">px</span></label>
-        </div>
+        <label>X Offset <input type="number" id="cm1-x" class="w-xs" value="8"> <span class="muted">px</span></label>
+        <label>Y Offset <input type="number" id="cm1-y" class="w-xs" value="0"> <span class="muted">px</span></label>
         <button class="secondary" id="cm1-clear">Clear Log</button>
     </div>
 
@@ -99,16 +66,16 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
     <h2>CM02 · Custom Item Render</h2>
     <p>Where svelte-treeview offers a <code>contextMenu</code> snippet with <code>ContextMenuItemC</code>/<code>ContextMenuDividerC</code> components, web-treeview offers <code>renderContextMenuItemCallback({ node, menuItem, buttonElement, … })</code> — a <strong>fill-or-fall-through</strong> hook. Populate <code>buttonElement</code> to take over an item's inner markup; leave it empty and the component renders the default icon + label + shortcut. The outer item element (classes, ARIA, <code>data-*</code> attrs, disabled state, submenu hover, keyboard) stays component-managed. Right-click a node to preview the controls below.</p>
 
-    <div class="controls ctx-config">
+    <div class="controls">
         <label>
             <code>--wtv-context-menu-min-width</code>
             <input type="range" id="cm2-min-width" min="8" max="30" step="0.5" value="22">
-            <span id="cm2-min-width-val" class="val">22rem</span>
+            <span id="cm2-min-width-val" class="muted">22rem</span>
         </label>
         <label>
             <code>--wtv-context-menu-item-gap</code>
             <input type="range" id="cm2-gap" min="0" max="16" step="1" value="8">
-            <span id="cm2-gap-val" class="val">8px</span>
+            <span id="cm2-gap-val" class="muted">8px</span>
         </label>
         <label>
             <code>--wtv-context-menu-item-padding</code>
@@ -322,16 +289,16 @@ type TreeMenuEntry  = TreeMenuItem | MenuDivider | TreeViewAction;</code></pre>
     <h2>CM06 · Menu Position Offset</h2>
     <p>Nudge the menu relative to the cursor with <code>contextMenuXOffset</code> (default <code>8</code>) and <code>contextMenuYOffset</code> (default <code>0</code>). Drag the sliders, then right-click a node to see where the menu lands.</p>
 
-    <div class="controls ctx-config">
+    <div class="controls">
         <label>
             <code>contextMenuXOffset</code>
             <input type="range" id="cm6-x" min="-60" max="60" step="1" value="8">
-            <span id="cm6-x-val" class="val">8px</span>
+            <span id="cm6-x-val" class="muted">8px</span>
         </label>
         <label>
             <code>contextMenuYOffset</code>
             <input type="range" id="cm6-y" min="-60" max="60" step="1" value="0">
-            <span id="cm6-y-val" class="val">0px</span>
+            <span id="cm6-y-val" class="muted">0px</span>
         </label>
     </div>
 
@@ -354,36 +321,36 @@ tree.contextMenuYOffset = 0;   // px below the cursor (default)
     <h2>CM07 · CSS Customization</h2>
     <p>The context menu is styled through <code>--wtv-context-menu-*</code> custom properties (set on the host element or inline). Drag the controls — they re-style the <strong>menu</strong>, not the tree rows. Right-click a node to preview the changes.</p>
 
-    <div class="controls ctx-config">
+    <div class="controls">
         <label>
             <code>--wtv-context-menu-min-width</code>
             <input type="range" id="cm7-min-width" min="8" max="30" step="0.5" value="15">
-            <span id="cm7-min-width-val" class="val">15rem</span>
+            <span id="cm7-min-width-val" class="muted">15rem</span>
         </label>
         <label>
             <code>--wtv-context-menu-font-size</code>
             <input type="range" id="cm7-font-size" min="10" max="24" step="1" value="14">
-            <span id="cm7-font-size-val" class="val">14px</span>
+            <span id="cm7-font-size-val" class="muted">14px</span>
         </label>
         <label>
             <code>--wtv-context-menu-icon-width</code>
             <input type="range" id="cm7-icon-size" min="12" max="32" step="1" value="16">
-            <span id="cm7-icon-size-val" class="val">16px</span>
+            <span id="cm7-icon-size-val" class="muted">16px</span>
         </label>
         <label>
             <code>--wtv-context-menu-border-radius</code>
             <input type="range" id="cm7-radius" min="0" max="16" step="1" value="4">
-            <span id="cm7-radius-val" class="val">4px</span>
+            <span id="cm7-radius-val" class="muted">4px</span>
         </label>
         <label>
             <code>--wtv-context-menu-item-gap</code>
             <input type="range" id="cm7-gap" min="0" max="16" step="1" value="8">
-            <span id="cm7-gap-val" class="val">8px</span>
+            <span id="cm7-gap-val" class="muted">8px</span>
         </label>
         <label>
             <code>--wtv-context-menu-disabled-opacity</code>
             <input type="range" id="cm7-disabled-opacity" min="0" max="1" step="0.05" value="0.5">
-            <span id="cm7-disabled-opacity-val" class="val">0.5</span>
+            <span id="cm7-disabled-opacity-val" class="muted">0.5</span>
         </label>
         <label>
             <code>--wtv-context-menu-box-shadow</code>

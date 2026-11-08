@@ -24,6 +24,21 @@
     max-height: 700px;
 }
 
+/* Performance page: the frame swapped by rendering mode. Flat mode scrolls inside a tall
+   frame; virtual scroll sizes and scrolls itself (virtual-scroll-container-height), so the
+   frame must not cap or clip it. */
+.tree-container-tall {
+    min-height: 400px;
+    max-height: 500px;
+    overflow-x: visible;
+    overflow-y: auto;
+}
+
+.tree-container-vs {
+    max-height: none;
+    overflow: visible;
+}
+
 /* Search bar (search + performance pages): one input-looking frame holding a mode toggle,
    the borderless input, a hit counter and prev / next / clear buttons. The frame takes
    the kit's input tokens, so it follows light / dark / auto. */
@@ -92,39 +107,3 @@
     color: var(--kmwc-text-color-2);
 }
 .search-counter.no-results { color: var(--kmwc-danger-color); }
-
-/* Live-status strip (interaction + tree-editor pages); `.badge` inside it is a soft count chip. */
-.status-bar {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    background: var(--kmwc-elevated-bg);
-    border: 1px solid var(--kmwc-border-color);
-    border-radius: var(--kmwc-radius-sm);
-    font-size: 0.875rem;
-    color: var(--kmwc-text-color-2);
-    margin-bottom: 1rem;
-}
-.status-bar .badge {
-    padding: 0.1rem 0.5rem;
-    border-radius: 10px;
-    background: var(--kmwc-accent-light-bg);
-    color: var(--kmwc-text-color-1);
-    font-size: 0.8em;
-}
-
-/* A transient result banner shown / hidden from script: `.result-banner--ok` / `--err`. */
-.result-banner {
-    --kmwc-status-color: var(--kmwc-success-color);
-    display: none;
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--kmwc-status-color) 35%, transparent);
-    border-radius: var(--kmwc-radius-sm);
-    background: color-mix(in srgb, var(--kmwc-status-color) 12%, transparent);
-    color: var(--kmwc-status-color);
-    font-size: 0.85rem;
-}
-.result-banner--err { --kmwc-status-color: var(--kmwc-danger-color); }

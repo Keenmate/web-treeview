@@ -3,55 +3,6 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-/* ──────────────────────────────────────────────────────────────
-   Page-specific styling: CL05 toggle-icon labels, the CL06 renderer
-   toggle and layout, the sidebar. The iOS-Files phone UI
-   (headless-controller demo) is in the fixed-colours block below.
-   Rows a renderNodeCallback draws live in the tree's shadow root,
-   out of page CSS's reach (see getCustomStylesCallback in the script).
-   ────────────────────────────────────────────────────────────── */
-
-/* ── CL05 toggle-icon demo labels ── */
-.fa-mode-label { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--kmwc-text-color-3); }
-
-/* ── CL06 iOS Files ── renderer toggle ── */
-.renderer-toggle {
-    display: inline-flex;
-    border: 1px solid var(--kmwc-border-color-strong);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 1rem;
-}
-.renderer-toggle button {
-    background: var(--kmwc-main-bg);
-    border: none;
-    border-radius: 0;
-    padding: 8px 20px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    color: var(--kmwc-text-color-1);
-}
-.renderer-toggle button:hover { background: var(--kmwc-hover-bg); }
-.renderer-toggle button + button { border-left: 1px solid var(--kmwc-border-color-strong); }
-.renderer-toggle button.active { background: var(--kmwc-accent-color); color: var(--kmwc-text-color-on-accent); }
-
-.demo-layout {
-    display: grid;
-    grid-template-columns: 460px 1fr;
-    gap: 2rem;
-    align-items: start;
-}
-@media (max-width: 960px) { .demo-layout { grid-template-columns: 1fr; } }
-
-/* ── Sidebar info ── */
-.info-sidebar h3 { margin-top: 1.5rem; }
-.info-sidebar h3:first-child { margin-top: 0; }
-.api-list { list-style: none; padding: 0; margin: 0.5rem 0; }
-.api-list li { padding: 4px 0; font-size: 0.9rem; color: var(--kmwc-text-color-2); }
-.api-list code { font-size: 0.82rem; }
-</style>
-
 <style data-kmwc-fixed-colors>
 /* CL06 — the iOS Files mockup draws Apple's own light-mode palette (system grey
    #f2f2f7, label #1c1c1e, tint #007aff). It is a picture of a phone, so it keeps
@@ -342,22 +293,22 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 <h2>CL05 · Toggle-Icon Modes &amp; Icon Sets</h2>
 <p>The disclosure glyph is driven by <code>icon-set</code> (<code>chevron</code> | <code>triangle</code> | <code>plus-minus</code> | <code>arrow</code>) plus <code>toggle-icon-mode</code> (<code>rotate</code> = one glyph that rotates 90&deg;, or <code>swap</code> = two glyphs). Leaf rows can carry a class glyph via <code>leaf-icon-class</code> (e.g. FontAwesome &mdash; inject FA into the shadow root via <code>getCustomStylesCallback</code>); per-node icons go through <code>icon-member</code> / <code>renderIconCallback</code>.</p>
 
-<h3 class="fa-mode-label mt-1">Built-in icon sets (no FontAwesome)</h3>
+<h3 class="mt-1">Built-in icon sets (no FontAwesome)</h3>
 <div class="grid" style="--grid-min: 260px; --grid-gap: 1.5rem;">
     <div>
-        <h3 class="fa-mode-label">chevron (default, rotate)</h3>
+        <p class="demo-label">chevron (default, rotate)</p>
         <div class="tree-container"><web-treeview id="is-chevron" icon-set="chevron"></web-treeview></div>
     </div>
     <div>
-        <h3 class="fa-mode-label">triangle</h3>
+        <p class="demo-label">triangle</p>
         <div class="tree-container"><web-treeview id="is-triangle" icon-set="triangle"></web-treeview></div>
     </div>
     <div>
-        <h3 class="fa-mode-label">plus-minus</h3>
+        <p class="demo-label">plus-minus</p>
         <div class="tree-container"><web-treeview id="is-plusminus" icon-set="plus-minus"></web-treeview></div>
     </div>
     <div>
-        <h3 class="fa-mode-label">arrow</h3>
+        <p class="demo-label">arrow</p>
         <div class="tree-container"><web-treeview id="is-arrow" icon-set="arrow"></web-treeview></div>
     </div>
 </div>
@@ -378,12 +329,12 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 <h2>CL06 · iOS Files Explorer (headless <code>TreeEngine</code>)</h2>
 <p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeEngine</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
 
-<div class="renderer-toggle" role="group" aria-label="Renderer">
-    <button id="rtVanilla" class="active" type="button">Vanilla</button>
-    <button id="rtLit" type="button">lit-html</button>
+<div class="controls" role="group" aria-label="Renderer">
+    <button id="rtVanilla" type="button" aria-pressed="true">Vanilla</button>
+    <button id="rtLit" class="btn-outline" type="button" aria-pressed="false">lit-html</button>
 </div>
 
-<div class="demo-layout">
+<div class="grid-2" style="align-items: start">
     <!-- Phone -->
     <div id="phone" class="ios-phone">
         <!-- Status bar (static) -->
@@ -409,7 +360,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
     </div>
 
     <!-- Sidebar -->
-    <div class="card info-sidebar">
+    <div class="card">
         <h3>Two renderers, one controller</h3>
         <p>The controller is created once; a <code>mode</code> flag chooses which render function the shared <code>render()</code> dispatch calls. Switching the toggle just re-renders &mdash; no controller rebuild, state (path, sort, search, open sheet) is preserved.</p>
 
@@ -419,21 +370,21 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
         </div>
 
         <h3>Vanilla render path</h3>
-        <ul class="api-list">
+        <ul>
             <li><code>document.createElement</code> + <code>appendChild</code></li>
             <li>imperative <code>addEventListener</code> per row</li>
             <li>full <code>innerHTML = ''</code> + rebuild each tick</li>
         </ul>
 
         <h3>lit-html render path</h3>
-        <ul class="api-list">
+        <ul>
             <li><code>html` … `</code> tagged templates from <code>esm.run</code></li>
             <li><code>@click=${fn}</code> event bindings</li>
             <li>efficient DOM diffing on re-render</li>
         </ul>
 
         <h3>Controller APIs used</h3>
-        <ul class="api-list">
+        <ul>
             <li><code>ctrl.getChildren(path)</code> &mdash; folder contents</li>
             <li><code>ctrl.flatNodesToRender</code> &mdash; all nodes (deep search)</li>
             <li><code>node.data</code> &mdash; original user data</li>
@@ -1198,8 +1149,10 @@ const rtLit = document.getElementById('rtLit');
 function setMode(next) {
   if (mode === next) return;
   mode = next;
-  rtVanilla.classList.toggle('active', mode === 'vanilla');
-  rtLit.classList.toggle('active', mode === 'lit');
+  rtVanilla.classList.toggle('btn-outline', mode !== 'vanilla');
+  rtLit.classList.toggle('btn-outline', mode !== 'lit');
+  rtVanilla.setAttribute('aria-pressed', String(mode === 'vanilla'));
+  rtLit.setAttribute('aria-pressed', String(mode === 'lit'));
   clearMounts();
   render();
 }

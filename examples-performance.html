@@ -3,136 +3,31 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
-<style>
-    /* Page-specific: rendering-mode toggle cards */
-    .mode-toggle {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-    .toggle-option {
-        flex: 1;
-        padding: 1rem;
-        border: 2px solid var(--kmwc-border-color);
-        border-radius: var(--kmwc-radius-md);
-        cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
-    }
-    .toggle-option:hover { border-color: var(--kmwc-accent-color); }
-    .toggle-option.active {
-        border-color: var(--kmwc-accent-color);
-        background: var(--kmwc-accent-light-bg);
-    }
-    .toggle-option input { display: none; }
-    .toggle-option .toggle-title {
-        display: block;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--kmwc-text-color-1);
-        margin-bottom: 0.25rem;
-    }
-    .toggle-desc {
-        display: block;
-        font-size: 0.875rem;
-        color: var(--kmwc-text-color-3);
-    }
-
-    /* Page-specific: mode-specific options row */
-    .mode-options {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        margin-top: 0.75rem;
-        background: var(--kmwc-elevated-bg);
-        border-radius: var(--kmwc-radius-sm);
-        font-size: 0.875rem;
-    }
-    .mode-options label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-    .mode-options input[type="number"],
-    .mode-options input[type="text"] { width: 80px; }
-
-    /* Page-specific: performance metric readouts */
-    .metrics { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .metric {
-        background: var(--kmwc-elevated-bg);
-        padding: 1rem 1.5rem;
-        border-radius: var(--kmwc-radius-md);
-        text-align: center;
-        min-width: 120px;
-    }
-    .metric.total {
-        background: var(--kmwc-header-bg);
-        color: var(--kmwc-text-color-on-accent);
-    }
-    .metric.expand-time,
-    .metric.search-time {
-        background: var(--kmwc-accent-light-bg);
-        color: var(--kmwc-accent-color);
-    }
-    .metric.rendering {
-        background: color-mix(in srgb, var(--kmwc-warning-color) 18%, transparent);
-        color: var(--kmwc-warning-color);
-        animation: pulse 1s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-    .metric .value { display: block; font-size: 1.5rem; font-weight: 600; }
-    .metric .label { display: block; font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; }
-
-    /* Page-specific: tree controls + timed-update readouts */
-    .tree-controls {
-        margin-bottom: 1rem;
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-    .control-divider { color: var(--kmwc-border-color-strong); margin: 0 0.25rem; }
-    .path-input { width: 220px; font-family: var(--kmwc-mono-font-family); }
-    .update-time { font-weight: 600; color: var(--kmwc-success-color); }
-    .node-path { color: var(--kmwc-text-color-4); font-size: 0.8em; font-family: var(--kmwc-mono-font-family); }
-
-    /* Page-specific: virtual-scroll container overrides */
-    .tree-container-vs {
-        max-height: none;
-        overflow: visible;
-    }
-    .tree-container-tall {
-        min-height: 400px;
-        max-height: 500px;
-        overflow-x: visible;
-        overflow-y: auto;
-    }
-</style>
-
 <!-- Rendering Mode -->
 <div class="card">
     <h2>PF01 · Rendering Mode</h2>
-    <div class="mode-toggle" id="mode-toggle">
-        <label class="toggle-option" data-mode="flat">
+    <div class="check-list" id="mode-toggle">
+        <label data-mode="flat">
             <input type="radio" name="renderMode" value="flat">
-            <span class="toggle-title">Flat</span>
-            <span class="toggle-desc">Centralized loop, per-node keyed reconciliation</span>
+            <span><strong>Flat</strong> <span class="muted">&mdash; centralized loop, per-node keyed reconciliation</span></span>
         </label>
-        <label class="toggle-option" data-mode="virtual">
+        <label data-mode="virtual">
             <input type="radio" name="renderMode" value="virtual">
-            <span class="toggle-title">Virtual Scroll</span>
-            <span class="toggle-desc">Flat + only renders visible nodes (~50 in DOM)</span>
+            <span><strong>Virtual Scroll</strong> <span class="muted">&mdash; flat + only renders visible nodes (~50 in DOM)</span></span>
         </label>
     </div>
 
     <!-- Virtual-specific options -->
-    <div class="mode-options" id="virtual-options" style="display:none">
-        <label>Container Height: <input type="text" id="opt-container-height" value="500px"></label>
-        <label title="Extra rows rendered above/below viewport to prevent flicker">Overscan: <input type="number" id="opt-overscan" value="5" min="0" max="50"></label>
+    <div class="controls" id="virtual-options" style="display:none">
+        <label>Container Height: <input type="text" id="opt-container-height" class="w-sm" value="500px"></label>
+        <label title="Extra rows rendered above/below viewport to prevent flicker">Overscan: <input type="number" id="opt-overscan" class="w-sm" value="5" min="0" max="50"></label>
     </div>
     <!-- Flat-specific options -->
-    <div class="mode-options" id="flat-options">
+    <div class="controls" id="flat-options">
         <label><input type="checkbox" id="opt-progressive"> Progressive Render</label>
         <span id="progressive-opts" style="display:none">
-            <label>Initial Batch: <input type="number" id="opt-initial-batch" value="20" min="5" max="200" step="5"></label>
-            <label>Max Batch: <input type="number" id="opt-max-batch" value="500" min="100" max="2000" step="100"></label>
+            <label>Initial Batch: <input type="number" id="opt-initial-batch" class="w-sm" value="20" min="5" max="200" step="5"></label>
+            <label>Max Batch: <input type="number" id="opt-max-batch" class="w-sm" value="500" min="100" max="2000" step="100"></label>
         </span>
     </div>
 </div>
@@ -161,33 +56,33 @@
 <!-- Metrics -->
 <div class="card">
     <h2>PF03 · Performance Metrics</h2>
-    <div class="metrics" id="metrics">
-        <div class="metric"><span class="value" id="m-nodes">0</span><span class="label">Nodes</span></div>
-        <div class="metric"><span class="value" id="m-generate">-</span><span class="label">Generate</span></div>
-        <div class="metric"><span class="value" id="m-render">-</span><span class="label">Render</span></div>
-        <div class="metric total"><span class="value" id="m-total">-</span><span class="label">Total</span></div>
+    <div class="controls" id="metrics">
+        <span class="pill pill--muted">Nodes:&nbsp;<span id="m-nodes">0</span></span>
+        <span class="pill pill--muted">Generate:&nbsp;<span id="m-generate">-</span></span>
+        <span class="pill pill--muted">Render:&nbsp;<span id="m-render">-</span></span>
+        <span class="pill pill--ok">Total:&nbsp;<span id="m-total">-</span></span>
     </div>
-    <div class="metrics" id="metrics-extra" style="margin-top:0.5rem"></div>
+    <div class="controls" id="metrics-extra"></div>
 </div>
 
 <!-- Tree -->
 <div class="card" id="tree-card" style="display:none">
     <h2 id="tree-title">PF04 · Results</h2>
 
-    <div class="tree-controls">
+    <div class="controls">
         <button onclick="timedExpandOneNode()">Expand One (timed)</button>
         <button onclick="timedCollapseOneNode()">Collapse One (timed)</button>
-        <span class="control-divider">|</span>
+        <span class="muted">|</span>
         <button class="secondary" onclick="timedExpandAll()">Expand All (timed)</button>
         <button class="secondary" onclick="timedCollapseAll()">Collapse All (timed)</button>
         <button class="secondary" onclick="document.getElementById('perf-tree').expandAll()">Expand All</button>
         <button class="secondary" onclick="document.getElementById('perf-tree').collapseAll()">Collapse All</button>
     </div>
 
-    <div class="tree-controls">
-        <input type="text" id="update-path" placeholder="Node path (empty = random)" class="path-input">
+    <div class="controls">
+        <input type="text" id="update-path" placeholder="Node path (empty = random)" class="mono w-lg">
         <button onclick="timedUpdateNode()">Update Node (timed)</button>
-        <span class="update-time" id="update-time-display"></span>
+        <strong class="mono" id="update-time-display"></strong>
     </div>
 
     <!-- Search bar -->
@@ -206,7 +101,7 @@
         <button class="search-nav-btn" id="search-clear" title="Clear" onclick="clearSearch()" style="display:none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
-        <span class="update-time" id="search-time-display"></span>
+        <strong class="mono" id="search-time-display"></strong>
     </div>
 
     <div id="tree-wrapper" class="tree-container tree-container-tall">
@@ -312,8 +207,7 @@
     const $ = id => document.getElementById(id);
 
     function updateModeUI() {
-        document.querySelectorAll('.toggle-option').forEach(el => {
-            el.classList.toggle('active', el.dataset.mode === renderMode);
+        document.querySelectorAll('#mode-toggle [data-mode]').forEach(el => {
             el.querySelector('input').checked = el.dataset.mode === renderMode;
         });
         $('virtual-options').style.display = renderMode === 'virtual' ? '' : 'none';
@@ -353,13 +247,12 @@
     function showExtraMetric(id, label, value, cls) {
         let el = $(id);
         if (!el) {
-            el = document.createElement('div');
+            el = document.createElement('span');
             el.id = id;
-            el.className = 'metric ' + (cls || '');
             $('metrics-extra').appendChild(el);
         }
-        el.className = 'metric ' + (cls || '');
-        el.innerHTML = `<span class="value">${value}</span><span class="label">${label}</span>`;
+        el.className = 'pill ' + (cls === 'search-time' ? 'pill--warn' : 'pill--info');
+        el.innerHTML = `${label}:&nbsp;${value}`;
     }
 
     function buildTreeConfig() {
@@ -401,7 +294,7 @@
         tree = $('perf-tree');
         metrics.renderStart = performance.now();
         metrics.renderTime = null;
-        tree.update(buildTreeConfig());
+        tree.setAttributes(buildTreeConfig());
         $('tree-card').style.display = '';
         $('btn-redraw').disabled = false;
         $('btn-clear').disabled = false;
@@ -506,7 +399,7 @@
 
     window.clearData = function() {
         treeData = [];
-        tree?.update({ nodes: [] });
+        if (tree) tree.nodes = [];
         $('tree-card').style.display = 'none';
         $('btn-redraw').disabled = true;
         $('btn-clear').disabled = true;
@@ -690,8 +583,8 @@
     };
 
     // ─── Mode toggle ────────────────────────────────────────────────────
-    document.querySelectorAll('.toggle-option').forEach(el => {
-        el.addEventListener('click', () => {
+    document.querySelectorAll('#mode-toggle [data-mode]').forEach(el => {
+        el.querySelector('input').addEventListener('change', () => {
             renderMode = el.dataset.mode;
             updateModeUI();
             saveConfig();

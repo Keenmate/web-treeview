@@ -101,6 +101,8 @@ Chromium and Firefox run them.
 | `checkNode/checkNodes/checkedPaths=/checkAll/uncheckNode/uncheckNodes/uncheckAll` (+ silent) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 | `cascade-check-policy` rolled-up / leaves / all | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
 | `beforeCheckboxToggleCallback` (ctx, false cancels, `string[]` overrides) | ✓ | `checkbox-api.spec.ts` | `checkbox-api.html` |
+| `disabled` (no pointer / keyboard / drag / drop / menu, not focusable, `aria-disabled`, dimmed, menu closes, code calls work, re-enable restores, reflects) | ✓ | `disabled-readonly.spec.ts` | `disabled-readonly.html` |
+| `readonly` (no check / drag / drop / cut / paste / delete, menu items greyed; focus, keyboard nav, expand, selection, copy work; reflects) | ✓ | `disabled-readonly.spec.ts` | `disabled-readonly.html` |
 
 ## 5. Keyboard
 

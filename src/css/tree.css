@@ -1117,6 +1117,28 @@
   color: var(--wtv-text-color-1);
 }
 
+/* Disabled (`disabled` / isDisabled — native semantics): dimmed, rows take no pointer input (no
+   hover, click, drag; the body still scrolls), not-allowed cursor. Keyboard / focus are off in JS. */
+.wtv__container--disabled {
+  opacity: var(--wtv-disabled-tree-opacity);
+}
+
+.wtv__container--disabled .wtv__tree {
+  cursor: not-allowed;
+}
+
+.wtv__container--disabled .wtv__node,
+.wtv__container--disabled .wtv__empty-zone {
+  pointer-events: none;
+}
+
+/* Read-only (`readonly` / isReadonly): not dimmed, still navigable — only the controls that would
+   change data stop advertising it (no grab cursor; the checkbox reads as a plain indicator). */
+.wtv__container--readonly .wtv__node-content--draggable,
+.wtv__container--readonly .wtv__checkbox {
+  cursor: default;
+}
+
 /* ==============================================================================
    LOADING OVERLAY
    ============================================================================== */

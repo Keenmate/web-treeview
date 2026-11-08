@@ -148,6 +148,11 @@
       "values": []
     },
     {
+      "name": "--wtv-disabled-tree-opacity",
+      "description": "The whole tree while `disabled` (reads --wtv-disabled-opacity)",
+      "values": []
+    },
+    {
       "name": "--wtv-selected-text-color",
       "description": "Selected row text color (reads --base-selected-text-color)",
       "values": []

@@ -159,6 +159,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _shouldAutoHandlePaste: boolean = true;
   // Opt out of built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts (default on).
   private _shouldHandleKeyboardShortcuts: boolean = true;
+  // Read-only (`isReadonly`): the user can't change the data — the cut / paste / delete shortcuts
+  // are off (copy stays). Programmatic calls are not gated.
+  private _isReadonly: boolean = false;
   // Internal FlexSearch index (default on) + an optional custom index factory. Both are
   // baked into the LTree at construction — a change recreates it.
   private _shouldUseInternalSearchIndex: boolean = true;
@@ -439,6 +442,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   get shouldClickToggleCheckbox() { return this._shouldClickToggleCheckbox; }
+  /** Read-only: user input can't change the data (checks, moves, clipboard edits). */
+  get isReadonly() { return this._isReadonly; }
   set shouldClickToggleCheckbox(v: boolean) { this._shouldClickToggleCheckbox = v; }
 
   get checkboxMode() { return this._checkboxMode; }
@@ -805,6 +810,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldAutoHandleMove = props.shouldAutoHandleMove ?? true;
     this._shouldAutoHandlePaste = props.shouldAutoHandlePaste ?? true;
     this._shouldHandleKeyboardShortcuts = props.shouldHandleKeyboardShortcuts ?? true;
+    this._isReadonly = props.isReadonly ?? false;
     this._shouldUseInternalSearchIndex = props.shouldUseInternalSearchIndex ?? true;
     this._initializeIndexCallback = props.initializeIndexCallback ?? undefined;
     this._touchDragDelay = props.touchDragDelay ?? 300;
@@ -3374,6 +3380,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this.copyNodes(p);
       return true;
     }
+    // Read-only: copy above still works; cut / paste / delete change the data — off.
+    if (this._isReadonly) return false;
     // Cut — Ctrl/Cmd+X or Shift+Delete (checked before plain Delete below).
     if ((mod && key === 'x') || (event.shiftKey && event.key === 'Delete')) {
       const p = this._shortcutSelectionPaths();
@@ -4068,6 +4076,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._shouldAutoHandlePaste = updates.shouldAutoHandlePaste ?? true;
     if (updates.shouldHandleKeyboardShortcuts !== undefined)
       this._shouldHandleKeyboardShortcuts = updates.shouldHandleKeyboardShortcuts ?? true;
+    if (updates.isReadonly !== undefined)
+      this._isReadonly = updates.isReadonly ?? false;
     if (updates.touchDragDelay !== undefined)
       this._touchDragDelay = updates.touchDragDelay ?? 300;
     if (updates.shouldIndicateUndraggable !== undefined)

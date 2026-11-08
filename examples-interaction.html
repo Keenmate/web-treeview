@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Selection &amp; Interaction">
-<meta name="kmwc:subtitle" content="Click behavior, multi-select, keyboard nav, cascade checkboxes &amp; value policy, silent state restore, clipboard">
+<meta name="kmwc:subtitle" content="Click behavior, multi-select, keyboard nav, cascade checkboxes &amp; value policy, silent state restore, clipboard, disabled &amp; read-only">
 
 <link rel="stylesheet" href="examples-local.css">
 
@@ -366,6 +366,53 @@ function restoreFromUrl(nodePath) {
     </div>
 </div>
 
+<!-- IN06 · Disabled & Read-only -->
+<div class="card">
+    <h2>IN06 · Disabled &amp; Read-only</h2>
+    <p>
+        The pair every data-input component has, with native form-control semantics.
+        <code>disabled</code> blocks <em>all</em> user interaction &mdash; no check, select, expand, drag,
+        clipboard, context menu or keyboard &mdash; takes the tree out of the tab order
+        (<code>aria-disabled="true"</code>) and dims it (<code>--wtv-disabled-tree-opacity</code>).
+        <code>readonly</code> only blocks data changes &mdash; no check, drag, drop, cut / paste / delete &mdash;
+        while keyboard navigation, expand / collapse, selection and <kbd>Ctrl+C</kbd> keep working.
+        Calls from code (the buttons) work under both. Both attributes reflect
+        (<code>el.isDisabled</code> / <code>el.isReadonly</code>).
+    </p>
+
+    <div class="controls">
+        <label>
+            <input type="checkbox" id="in7-disabled">
+            disabled
+        </label>
+        <label>
+            <input type="checkbox" id="in7-readonly">
+            readonly
+        </label>
+        <button class="secondary" id="in7-expand-all">expandAll()</button>
+        <button class="secondary" id="in7-check">checkNode('1.1')</button>
+        <button class="secondary" id="in7-uncheck">uncheckAll()</button>
+    </div>
+
+    <div class="grid" style="--grid-min: 280px">
+        <div>
+            <div class="demo-label">Tree (checkboxes, drag-drop, context menu)</div>
+            <div class="tree-container">
+                <web-treeview id="in7-tree" expand-level="1"
+                    show-checkboxes="true"
+                    drag-drop-mode="self"
+                    selection-mode="multiple"></web-treeview>
+            </div>
+        </div>
+        <div>
+            <div class="demo-label">Host attributes</div>
+            <div class="output">
+                <pre id="in7-state"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
@@ -700,6 +747,26 @@ function restoreFromUrl(nodePath) {
             updateBulkOutput();
             document.getElementById('in6-bulk-result').style.display = 'none';
         });
+
+        // ── IN06 · Disabled & Read-only (ids in7-*) ──────────────────
+        const in7 = document.getElementById('in7-tree');
+        Object.assign(in7, treeConfig, {
+            getContextMenuItemsCallback: () => ['copy', 'cut', 'paste', 'delete', 'expand', 'collapse', 'sort-all'],
+        });
+        in7.nodes = JSON.parse(JSON.stringify(fileTree));
+        const showIn7State = () => {
+            document.getElementById('in7-state').textContent =
+                `disabled: ${in7.hasAttribute('disabled')}
+readonly: ${in7.hasAttribute('readonly')}
+checked: ${[...in7.checkedPaths].join(', ') || '(none)'}`;
+        };
+        in7.addEventListener('checked-change', showIn7State);
+        document.getElementById('in7-disabled').addEventListener('change', (e) => { in7.isDisabled = e.target.checked; showIn7State(); });
+        document.getElementById('in7-readonly').addEventListener('change', (e) => { in7.isReadonly = e.target.checked; showIn7State(); });
+        document.getElementById('in7-expand-all').addEventListener('click', () => in7.expandAll());
+        document.getElementById('in7-check').addEventListener('click', () => in7.checkNode('1.1'));
+        document.getElementById('in7-uncheck').addEventListener('click', () => in7.uncheckAll());
+        showIn7State();
 
         // Persist every .controls input/select on this page across reloads, then
         // re-apply the saved config by replaying each control's change handler.

@@ -318,6 +318,16 @@ export interface TreeViewConfig<T = any> {
   // Loading
   isLoading?: boolean | null;
 
+  /** Disabled (attribute `disabled`, reflects): native form-control semantics — no user interaction
+   *  (check, select, expand / collapse, drag, drop, clipboard, context menu, keyboard), the tree is
+   *  out of the tab order, `aria-disabled="true"`, dimmed. Programmatic API calls still work. */
+  isDisabled?: boolean | null;
+  /** Read-only (attribute `readonly`, reflects): native read-only semantics — the user can't change
+   *  the data (no check, drag, drop, cut / paste / delete, menu sort), but the tree stays focusable
+   *  and navigable (keyboard, scroll, expand / collapse, selection highlight, copy). Not dimmed.
+   *  Programmatic API calls still work. */
+  isReadonly?: boolean | null;
+
   // Callbacks — every one takes ONE ctx (`ctx.node` for the per-node ones)
   getDisplayValueCallback?: (ctx: NodeContext<T>) => string;
   getSearchValueCallback?: (ctx: NodeContext<T>) => string;

@@ -115,6 +115,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _stopSizeObserve: (() => void) | null = null;
   // False between deactivate() and activate() (the host element is detached).
   private _isActive = false;
+  /** Disabled (native semantics, `isDisabled`): every user-input handler is a no-op, the body is
+   *  out of the tab order. Programmatic engine calls are unaffected. */
+  private _isDisabled = false;
+  /** Read-only (`isReadonly`): user input can't change the data (checks, drag, drop). */
+  private get _isReadonly(): boolean {
+    return !!this.config?.isReadonly;
+  }
   // Last body scroll offset while connected (a detached element reads scrollTop 0,
   // and the browser resets it when the host's layout box is rebuilt) — restored on activate().
   private _lastScroll = { top: 0, left: 0 };
@@ -169,6 +176,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Wire event delegation
     this._attachBodyListeners();
     document.addEventListener('dragend', this._onDocumentDragEnd);
+    this._isDisabled = false;
+    this._applyDisabled(!!config.isDisabled);
+    this.container.classList.toggle('wtv__container--readonly', !!config.isReadonly);
 
     // Subscribe to controller
     this.unsubState = controller.on('state-change', (snapshot) => this._onStateChange(snapshot));
@@ -234,6 +244,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
     }
     if ('theme' in config) this._applyTheme(config.theme);
+    if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
+    if ('isReadonly' in config) this.container?.classList.toggle('wtv__container--readonly', !!config.isReadonly);
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
       this._applyTitleOverflow(config.nodeTitleOverflow);
     }
@@ -278,7 +290,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.container.classList.remove('wtv__container');
       this.container.removeAttribute('data-theme');
       this.container.removeAttribute('data-node-title-overflow');
+      this.container.classList.remove('wtv__container--disabled', 'wtv__container--readonly');
     }
+    this._isDisabled = false;
     this.container = null;
     this.controller = null;
     this.lastSnapshot = null;
@@ -417,6 +431,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     btn.type = 'button';
     btn.className = 'wtv__node-info';
     btn.setAttribute('aria-label', resolveLabel(this.config.labels, 'showFullLabel'));
+    btn.disabled = this._isDisabled;
     const stop = (e: Event) => e.stopPropagation();
     btn.addEventListener('pointerdown', stop);
     btn.addEventListener('mousedown', stop);
@@ -424,6 +439,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
+      if (this._isDisabled) return;
       this._toggleReveal(btn, label.textContent ?? '');
     });
     label.after(btn);
@@ -460,6 +476,40 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     reveal.handle.destroy();
   }
 
+  /**
+   * Apply the disabled state (native form-control semantics): `.wtv__container--disabled` (dims it,
+   * rows take no pointer input), the body leaves the tab order (`tabindex` removed, focus dropped)
+   * and gets `aria-disabled="true"`, the info buttons / empty drop zone stop being focusable, and an
+   * open context menu, full-label popover or tooltip closes. Re-enabling restores all of it.
+   */
+  private _applyDisabled(isDisabled: boolean): void {
+    if (isDisabled === this._isDisabled) return;
+    this._isDisabled = isDisabled;
+    this.container?.classList.toggle('wtv__container--disabled', isDisabled);
+    if (isDisabled) {
+      this._closeMenu();
+      if (this.controller?.isContextMenuVisible) this.controller.closeContextMenu();
+      this._closeReveal();
+      for (const h of this.tooltips.values()) h.hide();
+    }
+    const body = this.bodyEl;
+    if (!body) return;
+    if (isDisabled) {
+      body.removeAttribute('tabindex');
+      body.setAttribute('aria-disabled', 'true');
+      const root = body.getRootNode() as Document | ShadowRoot;
+      const active = root.activeElement as HTMLElement | null;
+      if (active && (active === body || body.contains(active))) active.blur();
+    } else {
+      body.setAttribute('tabindex', '0');
+      body.removeAttribute('aria-disabled');
+    }
+    for (const btn of body.querySelectorAll<HTMLButtonElement>('.wtv__node-info')) btn.disabled = isDisabled;
+    if (this.config?.isEmptyDropPlaceholderShown) {
+      for (const zone of body.querySelectorAll<HTMLElement>('.wtv__empty-zone')) zone.tabIndex = isDisabled ? -1 : 0;
+    }
+  }
+
   private _applyTheme(theme: 'dark' | 'light' | null | undefined): void {
     if (!this.container) return;
     if (theme === 'dark' || theme === 'light') {
@@ -474,6 +524,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _onBodyClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (!this.controller) return;
+    // Disabled: no interaction — also cancels a native checkbox toggle.
+    if (this._isDisabled) {
+      event.preventDefault();
+      return;
+    }
 
     // Build selection modifiers from event
     const modifiers = {
@@ -483,6 +538,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Checkbox click
     const checkbox = target.closest('.wtv__checkbox') as HTMLInputElement | null;
+    if (checkbox && this._isReadonly) {
+      // Read-only: the check state is data — cancel the native toggle, change nothing.
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (checkbox) {
       event.stopPropagation();
       // Any non-plain click in between breaks a double-click (NOTES #25).
@@ -559,6 +620,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // normal click/select flow. Expand-on-click still fires.
         if (
           this.controller.shouldClickToggleCheckbox &&
+          !this._isReadonly &&
           this.lastNodeConfig?.isCheckboxesShown &&
           node.isSelectable &&
           isPlainClick
@@ -589,7 +651,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyKeydown = (event: KeyboardEvent) => {
-    if (!this.controller) return;
+    if (!this.controller || this._isDisabled) return;
     const ctrl = event.ctrlKey || event.metaKey;
     const shift = event.shiftKey;
 
@@ -644,7 +706,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         const focused = this.controller.focusedNode;
         if (!focused || !focused.isSelectable) break;
         if (this.controller.isCheckboxesShown) {
-          this.controller.nodeCallbacks.onCheckboxToggle(focused);
+          if (!this._isReadonly) this.controller.nodeCallbacks.onCheckboxToggle(focused);
         } else if (this.controller.selectionMode === 'multiple') {
           this.controller.toggleFocusedSelect();
         } else {
@@ -690,7 +752,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyContextMenu = (event: MouseEvent) => {
-    if (!this.controller) return;
+    if (!this.controller || this._isDisabled) return;
     const target = event.target as HTMLElement;
     const contentEl = target.closest('.wtv__node-content') as HTMLElement;
     const nodeEl = (contentEl || target).closest('.wtv__node') as HTMLElement;
@@ -709,6 +771,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onBodyDragStart = (event: DragEvent) => {
     if (!this.controller) return;
+    if (this._isDisabled || this._isReadonly) {
+      event.preventDefault();
+      return;
+    }
     const target = event.target as HTMLElement;
     const nodeEl = target.closest('.wtv__node') as HTMLElement;
     const path = nodeEl?.getAttribute('data-tree-path');
@@ -721,7 +787,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyDragOver = (event: DragEvent) => {
-    if (!this.controller) return;
+    // Disabled / read-only: not a drop target (no preventDefault → the browser refuses the drop).
+    if (!this.controller || this._isDisabled || this._isReadonly) return;
     const target = event.target as HTMLElement;
     // Log only on first dragover or target change to reduce noise
     const targetDesc = target.tagName + '.' + target.className;
@@ -819,7 +886,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyDrop = (event: DragEvent) => {
-    if (!this.controller) return;
+    if (!this.controller || this._isDisabled || this._isReadonly) return;
     // When the tree drop zone is on, the container also listens for `drop`. bodyEl
     // fully owns in-body drops (node / zone / empty, plus forwarding rejects to the
     // zone), so stop the event here to keep the container handler from double-placing.
@@ -863,6 +930,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyDragEnter = (event: DragEvent) => {
+    if (this._isDisabled || this._isReadonly) return;
     const target = event.target as HTMLElement;
     const related = event.relatedTarget as HTMLElement;
     this.log.DRAG.debug('body dragenter', {
@@ -886,7 +954,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyTouchStart = (event: TouchEvent) => {
-    if (!this.controller) return;
+    // The touch gesture only starts a touch drag — off while disabled / read-only.
+    if (!this.controller || this._isDisabled || this._isReadonly) return;
     const target = event.target as HTMLElement;
     const nodeEl = target.closest('.wtv__node') as HTMLElement;
     const path = nodeEl?.getAttribute('data-tree-path');
@@ -914,8 +983,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // Tree-level drop zone (isTreeDropZoneEnabled): container-level fallback so a
   // drop anywhere over the tree is accepted even when every node rejects it. The
   // controller handlers no-op unless the flag is on, so these can attach always.
-  private _onContainerDragOver = (event: DragEvent) => this.controller?.handleTreeZoneDragOver(event);
-  private _onContainerDrop = (event: DragEvent) => this.controller?.handleTreeZoneDrop(event);
+  private _onContainerDragOver = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.controller?.handleTreeZoneDragOver(event); };
+  private _onContainerDrop = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.controller?.handleTreeZoneDrop(event); };
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
   /** Remember the body scroll offset while connected (restored by activate()). */
@@ -1333,8 +1402,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
         // (routed through the body keydown listener) pastes into the empty tree.
         if (this.config.isEmptyDropPlaceholderShown) {
-          zone.tabIndex = 0;
-          const grabFocus = () => this.bodyEl?.focus();
+          zone.tabIndex = this._isDisabled ? -1 : 0;
+          const grabFocus = () => { if (!this._isDisabled) this.bodyEl?.focus(); };
           zone.addEventListener('pointerenter', grabFocus);
           zone.addEventListener('pointerdown', grabFocus);
         }

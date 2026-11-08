@@ -14,7 +14,7 @@
     { "name": "base-drop-target-bg-active", "required": false, "usage": "Drop target under the pointer: the row accepting the drop, engaged placeholder (= success-bg-subtle-hover)" },
     { "name": "base-drop-target-border-color", "required": false, "usage": "Drop target border / outline (= success-color); a refused drop keeps the danger tint" },
     { "name": "base-danger-bg-subtle-hover", "required": false, "usage": "Drag-denied flash background" },
-    { "name": "base-disabled-opacity", "required": false, "usage": "Disabled checkbox and context menu item opacity" },
+    { "name": "base-disabled-opacity", "required": false, "usage": "Disabled tree, checkbox and context menu item opacity" },
     { "name": "base-dropdown-box-shadow", "required": false, "usage": "Context menu shadow" },
     { "name": "base-dropdown-bg", "required": false, "usage": "Context menu background" },
     { "name": "base-dropdown-border", "required": false, "usage": "Context menu border" },
@@ -112,6 +112,7 @@
     { "name": "wtv-border-radius-lg", "category": "border", "usage": "Large radius (reads --base-border-radius-lg × rem)" },
 
     { "name": "wtv-disabled-opacity", "category": "state", "usage": "Disabled dimming — checkbox, menu item (reads --base-disabled-opacity, 0.65)" },
+    { "name": "wtv-disabled-tree-opacity", "category": "state", "usage": "The whole tree while `disabled` (reads --wtv-disabled-opacity)" },
     { "name": "wtv-selected-text-color", "category": "state", "usage": "Selected row text color (reads --base-selected-text-color)" },
     { "name": "wtv-selected-outline", "category": "state", "usage": "Selected row outline shorthand, drawn inset (reads --base-selected-outline)" },
     { "name": "wtv-focused-text-color", "category": "state", "usage": "Focused row text color (reads --base-focused-text-color)" },

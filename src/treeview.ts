@@ -26,6 +26,9 @@ import type { SearchOptions } from 'flexsearch';
 import { withComponentContext, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 
+/** Built-in menu actions that change the data — greyed out and inert while `isReadonly`. */
+const READONLY_BLOCKED_ACTIONS = new Set(['cut', 'paste', 'delete', 'sort', 'sort-subtree', 'sort-all']);
+
 /** The names of every {@link TreeViewController} method (the facade is built from them). */
 const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded', 'sortNodes', 'sortAll',
@@ -254,18 +257,18 @@ export class WebTreeView<T = any> {
     const targets = () => this.actionTargets(ctx.node).map((p) => this.engine.getNodeByPath(p)).filter((n): n is LTreeNode<T> => !!n && !!n.hasChildren);
     switch (item.action) {
       case 'copy': return { text: label('copy') };
-      case 'cut': return { text: label('cut') };
-      case 'paste': return { text: label('paste'), isDisabled: !this.engine.hasClipboardContent() };
-      case 'delete': return { text: label('delete'), isDanger: true };
+      case 'cut': return { text: label('cut'), isDisabled: this.isReadonly() };
+      case 'paste': return { text: label('paste'), isDisabled: this.isReadonly() || !this.engine.hasClipboardContent() };
+      case 'delete': return { text: label('delete'), isDanger: true, isDisabled: this.isReadonly() };
       case 'expand': return { text: label('expand'), isDisabled: !targets().some((n) => !n.isExpanded) };
       case 'collapse': return { text: label('collapse'), isDisabled: !targets().some((n) => n.isExpanded) };
       case 'expand-subtree': return { text: label('expandSubtree'), isDisabled: targets().length === 0 };
       case 'collapse-subtree': return { text: label('collapseSubtree'), isDisabled: targets().length === 0 };
       case 'expand-all': return { text: label('expandAll') };
       case 'collapse-all': return { text: label('collapseAll') };
-      case 'sort': return { text: label('sort'), isDisabled: targets().length === 0 };
-      case 'sort-subtree': return { text: label('sortSubtree'), isDisabled: targets().length === 0 };
-      case 'sort-all': return { text: label('sortAll') };
+      case 'sort': return { text: label('sort'), isDisabled: this.isReadonly() || targets().length === 0 };
+      case 'sort-subtree': return { text: label('sortSubtree'), isDisabled: this.isReadonly() || targets().length === 0 };
+      case 'sort-all': return { text: label('sortAll'), isDisabled: this.isReadonly() };
       default: return undefined;
     }
   }
@@ -301,6 +304,11 @@ export class WebTreeView<T = any> {
     });
   }
 
+  /** Read-only (`isReadonly`): the user can't change the data. */
+  private isReadonly(): boolean {
+    return !!this.options.isReadonly;
+  }
+
   /** Targets of a built-in menu action: the whole selection when `node` is in it, else just `node`. */
   private actionTargets(node: LTreeNode<T>): string[] {
     const selected = this.engine.getSelectedPaths();
@@ -309,6 +317,8 @@ export class WebTreeView<T = any> {
 
   /** The built-in menu actions act on the node — or on the whole selection when the node is in it. */
   private runBuiltInAction(action: string, node: LTreeNode<T>): void {
+    // Read-only: the menu greys these out; a custom menu activating one changes nothing either.
+    if (this.isReadonly() && READONLY_BLOCKED_ACTIONS.has(action)) return;
     const paths = this.actionTargets(node);
     switch (action) {
       case 'copy': this.engine.copyNodes(paths); break;
@@ -747,6 +757,13 @@ export class WebTreeView<T = any> {
     this.renderer.deactivate?.();
   }
 
+  /** The effective disabled state (the element merges its `isDisabled` input with a disabled
+   *  `<fieldset>`): no user interaction, out of the tab order. Programmatic calls still work. */
+  setDisabled(isDisabled: boolean): void {
+    this.options.isDisabled = isDisabled;
+    this.renderer.updateConfig({ isDisabled });
+  }
+
   /** `highlight-on-page-drag` armed state — an armed empty tree shows its drop zone. */
   setArmed(isArmed: boolean): void {
     this.engine.setArmed(isArmed);
@@ -838,6 +855,7 @@ export class WebTreeView<T = any> {
       shouldAutoHandleMove: o.shouldAutoHandleMove,
       shouldAutoHandlePaste: o.shouldAutoHandlePaste,
       shouldHandleKeyboardShortcuts: o.shouldHandleKeyboardShortcuts,
+      isReadonly: o.isReadonly,
       touchDragDelay: o.touchDragDelay,
       shouldIndicateUndraggable: o.shouldIndicateUndraggable,
       isTreeDropZoneEnabled: o.isTreeDropZoneEnabled,
@@ -966,6 +984,8 @@ export class WebTreeView<T = any> {
     };
     if ('theme' in options) cfg.theme = options.theme ?? null;
     if ('nodeTitleOverflow' in options) cfg.nodeTitleOverflow = options.nodeTitleOverflow ?? null;
+    if ('isDisabled' in options) cfg.isDisabled = !!options.isDisabled;
+    if ('isReadonly' in options) cfg.isReadonly = !!options.isReadonly;
     return cfg;
   }
 }

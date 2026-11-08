@@ -29,6 +29,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `nodeTitleOverflow` (`node-title-overflow`: `wrap` \| `ellipsis` \| `info`, default `ellipsis`) | `nodeTitleOverflow` (default `ellipsis`) | same. The `info` popover closes on a scroll: web (2026-11-08, core `createPopover({ shouldCloseOnScroll })`) on one that moves its row — the tree body, an outer scroller or the page — but not on a scroll inside the popover or of an unrelated scroller; svelte on any scroll on the page (window capture). **to mirror**: svelte keeps it open for a scroll that doesn't move the row |
 | `flatIndentSize` | `flatIndentSize` | same |
 | `contextMenuXOffset`, `contextMenuYOffset`, `isLoading` | same | same |
+| `isDisabled` (`disabled`, reflects) + `isReadonly` (`readonly`, reflects) — core SPEC §6.4, every data-input component has the pair (2026-11-08). Disabled: no user interaction, out of the tab order, `aria-disabled`, dimmed (`--wtv-disabled-tree-opacity`). Readonly: no check / drag / drop / cut / paste / delete / menu sort, but focusable + navigable (keyboard, expand / collapse, selection, copy), not dimmed. Code calls work under both | — | **to mirror** (2026-11-08): svelte props `isDisabled` / `isReadonly` with the same semantics + `--stv-disabled-tree-opacity` |
 | `dragDropMode`, `dropZoneMode`, `dropZoneLayout`, `dropZoneStart`, `dropZoneMaxWidth`, `isCopyAllowed`, `touchDragDelay`, `shouldIndicateUndraggable`, `isTreeDropZoneEnabled` | same | same. `dropZoneMaxWidth`: web takes a number (pixels) or any CSS length string (default `'120px'`), svelte a number (default `120`) |
 | `shouldAutoHandleCopy`, `shouldAutoHandleMove` (`auto-handle-move`), `shouldAutoHandlePaste` | same | same |
 | `labels` | `labels` | same (keys: §7) |
@@ -217,3 +218,4 @@ Kept as each library looked before (aligning them changes one library's look —
 | `text-color-4` | svelte: its own menu's faint text (web: core's menu) |
 | `toggle-icon-margin-right` | svelte: gap after the toggle (web: the toggle column has a fixed width) |
 | `tree-min-height` | web: min height of the empty / loading tree (svelte sizes the drop placeholder only) |
+| `disabled-tree-opacity` | web: the whole tree while `disabled` — **to mirror** with svelte's `isDisabled` (§1) |

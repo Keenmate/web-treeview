@@ -102,6 +102,7 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-danger-text-color` | `--base-danger-text-color` \| `light-dark(#721c24, #f87171)` | Danger as text (context menu danger item) |
 | `--wtv-elevated-bg` | `--base-elevated-bg` \| the bg shifted in lightness (OKLCH) | Elevated surface background (full-label popover) |
 | `--wtv-disabled-opacity` | `--base-disabled-opacity` \| `0.65` | Disabled dimming (checkbox) |
+| `--wtv-disabled-tree-opacity` | `--wtv-disabled-opacity` | The whole tree while `disabled` |
 
 ### Node states
 

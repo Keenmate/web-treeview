@@ -45,6 +45,12 @@ export interface RendererConfig<T> {
   theme?: 'dark' | 'light' | null;
   /** Built-in label overflow (`data-node-title-overflow` on `.wtv__container`). Default `'ellipsis'`. */
   nodeTitleOverflow?: NodeTitleOverflow | null;
+  /** Disabled (native semantics): the renderer ignores user input, drops the body from the tab
+   *  order, sets `aria-disabled` and `.wtv__container--disabled`. Programmatic calls still work. */
+  isDisabled?: boolean;
+  /** Read-only: user input can't change the data (no check, drag, drop); navigation, expand /
+   *  collapse and selection still work. `.wtv__container--readonly`. */
+  isReadonly?: boolean;
   /** The tree container was resized (also once when observing starts). */
   onContainerResize?: (size: ContainerSize, deviceClass: import('@keenmate/web-components-core').DeviceClass) => void;
   /** Custom node content renderer. Receives the node, a container element to populate,

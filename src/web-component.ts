@@ -202,6 +202,10 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'contextMenuXOffset', attribute: 'context-menu-x-offset', converter: toInt(), default: 8, on: 'update', description: 'Horizontal offset (px) of the context menu from the pointer.' },
   { configKey: 'contextMenuYOffset', attribute: 'context-menu-y-offset', converter: toInt(), default: 0, on: 'update', description: 'Vertical offset (px) of the context menu from the pointer.' },
 
+  // ── Disabled / read-only (SPEC §6.4: every data-input component has the pair) ─
+  { configKey: 'isDisabled', attribute: 'disabled', converter: toBool('presence'), shouldReflect: true, on: 'update', description: 'Disable the tree like a native form control: no user interaction (check, select, expand / collapse, drag, drop, copy / cut / paste / delete, context menu, keyboard), out of the tab order, `aria-disabled="true"`, dimmed (`--wtv-disabled-tree-opacity`). Programmatic API calls still work. Re-enabling restores everything.' },
+  { configKey: 'isReadonly', attribute: 'readonly', converter: toBool('presence'), shouldReflect: true, on: 'update', description: 'Read-only tree like a native read-only control: the user cannot change the data — no check, drag, drop, cut / paste / delete (shortcuts and built-in menu items), no sort from the menu — but the tree stays focusable and navigable: keyboard navigation, scroll, expand / collapse, selection highlight and copy work. Not dimmed. Programmatic API calls still work.' },
+
   // ── Loading ──────────────────────────────────────────────────────────────
   { configKey: 'isLoading', attribute: 'loading', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show the loading state.' },
 
@@ -223,7 +227,7 @@ const INPUTS: readonly InputDef[] = [
   // ── Rendering ──────────────────────────────────────────────────────────────
   { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
-  { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`. One shared page listener for all instances (same option as web-dropzone).' },
+  { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`, disabled or read-only. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toCssLength({ default: 'var(--wtv-indent-size)' }), on: 'update', type: 'string | number', description: 'Indent per level in flat rendering, a CSS length (`20px`, `1.5rem`); a bare number means pixels (`flat-indent-size="20"` → `20px`). Default `var(--wtv-indent-size)`.' },
   { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
@@ -370,8 +374,9 @@ const EVENTS: readonly EventDef[] = [
   { name: 'container-resize', description: 'The tree container was resized (also once when the tree starts observing). `detail`: `{ size: { width, height }, deviceClass }` — `size` is also `el.containerSize`. Twin: `onContainerResize(detail)`.' },
 ];
 
-/** configKey the engine does NOT own — injected/handled by this element. */
-const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag']);
+/** configKey the engine does NOT own — injected/handled by this element. `isDisabled` is sent as
+ *  the EFFECTIVE state by #assembleConfig and flipped in place by disabledChanged() (SPEC §6.4). */
+const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag', 'isDisabled']);
 
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
@@ -482,7 +487,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   protected override update(partial: Record<string, unknown>): void {
     if ('getCustomStylesCallback' in partial || 'customStyles' in partial) this.#customStyles?.refresh();
-    if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial) this.#syncPageDrag();
+    if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial || 'isReadonly' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
     const keys = Object.keys(partial);
     if (keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key))) return;
@@ -509,6 +514,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   protected override disconnect(): void {
     this.#treeview?.deactivate();
     this.#syncPageDrag();
+  }
+
+  /** The effective disabled state flipped on the built tree (core SPEC §6.4): apply it in place. */
+  protected override disabledChanged(isDisabled: boolean): void {
+    this.#treeview?.setDisabled(isDisabled);
+    this.#syncArmed();
   }
 
   // ── armed (highlight-on-page-drag) ───────────────────────────────────────
@@ -545,7 +556,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   #syncArmed(): void {
     const isArmed = !!this.#unsubscribePageDrag
       && isPageNodeDragActive()
-      && (this.config as { dragDropMode?: string | null }).dragDropMode !== 'none';
+      && (this.config as { dragDropMode?: string | null }).dragDropMode !== 'none'
+      && !this.isEffectivelyDisabled
+      && !(this.config as { isReadonly?: boolean }).isReadonly;
     if (isArmed === this.#isArmed) return;
     this.#isArmed = isArmed;
     applyArmedState(this, this.internals, isArmed);
@@ -619,6 +632,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   #assembleConfig(): Partial<TreeViewConfig<T>> {
     const cfg = this.engineConfig(NON_ENGINE_KEYS) as Partial<TreeViewConfig<T>>;
     Object.assign(cfg, this.#bridges);
+    // The effective disabled state: the `disabled` input (or a disabled <fieldset>, were it form-associated).
+    cfg.isDisabled = this.isEffectivelyDisabled;
     cfg.hostElement = this;
     cfg.controller = this.controller;
     return cfg;

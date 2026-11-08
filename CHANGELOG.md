@@ -46,6 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`custom-styles` attribute / `customStyles` property** — a CSS string for the instance layer, the declarative twin
   of `getCustomStylesCallback` (which wins when both are set), as in web-multiselect.
 - `docs/theming.md` "Custom CSS (shadow root)", a README "Styling" paragraph.
+- **`disabled` / `readonly` attributes (`isDisabled` / `isReadonly`, both reflect)** — core SPEC §6.4: every
+  data-input component has the pair. `disabled` = native form-control semantics: no user interaction (check, select,
+  expand / collapse, drag, drop, clipboard, context menu, keyboard), out of the tab order, `aria-disabled="true"`,
+  dimmed through the new `--wtv-disabled-tree-opacity` (→ `--wtv-disabled-opacity` → `--base-disabled-opacity`); an
+  open context menu / full-label popover closes. `readonly` = the user can't change the data (no check, drag, drop,
+  cut / paste / delete; the built-in `cut` / `paste` / `delete` / `sort*` menu items are greyed out) while the tree
+  stays focusable and navigable (keyboard, expand / collapse, selection, copy). Calls from code work under both. A
+  disabled or read-only tree never arms for `highlight-on-page-drag`. Typed on `TreeViewConfig` /
+  `TreeViewElementConfig`.
 
 ### Changed — core 1.0.0-rc20 (2026-11-08)
 - **The full-label popover (`node-title-overflow="info"`) closes on a scroll that moves its row** — core

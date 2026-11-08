@@ -113,6 +113,8 @@
   --wtv-border-width: var(--base-border-width, 1px);
   /* Disabled controls (checkbox): the contract's one fade. */
   --wtv-disabled-opacity: var(--base-disabled-opacity, 0.65);
+  /* The whole tree while `disabled` (isDisabled). */
+  --wtv-disabled-tree-opacity: var(--wtv-disabled-opacity);
 
   /* Hover / Active — the contract's translucent overlays of the bg's own hue, so the
      highlight shows on any --wtv-main-bg in both modes. */

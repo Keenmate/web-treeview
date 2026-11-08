@@ -457,6 +457,8 @@ export interface TreeEngineConfig<T> {
   clickBehavior?: ClickBehavior | null | undefined;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default true. */
   shouldHandleKeyboardShortcuts?: boolean | null | undefined;
+  /** Read-only: the cut / paste / delete shortcuts are off (copy stays). Default false. */
+  isReadonly?: boolean | null | undefined;
   /** Long-press hold (ms) before a touch-drag engages. Default 300. */
   touchDragDelay?: number | null | undefined;
   /** Built-in "can't move/drop this" feedback (🚫 badge + haptic). Default true. */

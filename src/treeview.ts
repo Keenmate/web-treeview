@@ -821,12 +821,12 @@ export class WebTreeView<T = any> {
       initialBatchSize: o.initialBatchSize,
       maxBatchSize: o.maxBatchSize,
       isFlatRenderingEnabled: o.isFlatRenderingEnabled ?? true,
-      flatIndentSize: o.flatIndentSize,
+      flatIndentSize: typeof o.flatIndentSize === 'number' ? `${o.flatIndentSize}px` : o.flatIndentSize,
 
       isVirtualScrollEnabled: o.isVirtualScrollEnabled ?? false,
       virtualScrollItemHeight: o.virtualScrollItemHeight ?? undefined,
       virtualScrollOverscan: o.virtualScrollOverscan ?? undefined,
-      virtualScrollContainerHeight: o.virtualScrollContainerHeight ?? undefined,
+      virtualScrollContainerHeight: typeof o.virtualScrollContainerHeight === 'number' ? `${o.virtualScrollContainerHeight}px` : o.virtualScrollContainerHeight,
 
       dragDropMode: o.dragDropMode,
       dropZoneMode: o.dropZoneMode,

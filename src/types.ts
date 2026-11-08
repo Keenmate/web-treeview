@@ -219,13 +219,13 @@ export interface TreeViewConfig<T = any> {
 
   // Flat rendering
   isFlatRenderingEnabled?: boolean | null;
-  flatIndentSize?: string | null;
+  flatIndentSize?: string | number;
 
   // Virtual scroll
   isVirtualScrollEnabled?: boolean | null;
   virtualScrollItemHeight?: number | null;
   virtualScrollOverscan?: number | null;
-  virtualScrollContainerHeight?: string | null;
+  virtualScrollContainerHeight?: string | number;
 
   // Visual
   /** Per-instance theme override. Forwarded to the root `.wtv__container`

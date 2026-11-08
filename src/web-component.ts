@@ -225,7 +225,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
-  { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toCssLength({ default: 'var(--wtv-indent-size)' }), on: 'update', description: 'Indent per level in flat rendering, a CSS length (`20px`, `1.5rem`); a bare number means pixels (`flat-indent-size="20"` → `20px`). Default `var(--wtv-indent-size)`.' },
+  { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toCssLength({ default: 'var(--wtv-indent-size)' }), on: 'update', type: 'string | number', description: 'Indent per level in flat rendering, a CSS length (`20px`, `1.5rem`); a bare number means pixels (`flat-indent-size="20"` → `20px`). Default `var(--wtv-indent-size)`.' },
   { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
   { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), default: 20, on: 'update', description: 'Rows rendered in the first progressive batch.' },
   { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), default: 500, on: 'update', description: 'Maximum rows per progressive batch.' },
@@ -234,7 +234,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isVirtualScrollEnabled', attribute: 'enable-virtual-scroll', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Enable virtual scrolling.' },
   { configKey: 'virtualScrollItemHeight', attribute: 'virtual-scroll-item-height', converter: toFloat(), on: 'update', description: 'Fixed row height (px) used by virtual scrolling.' },
   { configKey: 'virtualScrollOverscan', attribute: 'virtual-scroll-overscan', converter: toInt(), default: 5, on: 'update', description: 'Extra rows rendered above/below the viewport when virtualizing.' },
-  { configKey: 'virtualScrollContainerHeight', attribute: 'virtual-scroll-container-height', converter: toCssLength(), on: 'update', description: 'Height of the virtual-scroll viewport, a CSS length (`400px`, `30rem`, `50vh`); a bare number means pixels. Unset: the measured tree height (else 400px).' },
+  { configKey: 'virtualScrollContainerHeight', attribute: 'virtual-scroll-container-height', converter: toCssLength(), on: 'update', type: 'string | number', description: 'Height of the virtual-scroll viewport, a CSS length (`400px`, `30rem`, `50vh`); a bare number means pixels. Unset: the measured tree height (else 400px).' },
 
   // ── Selection model ────────────────────────────────────────────────────────
   { configKey: 'rangeSelectionMode', attribute: 'range-selection-mode', converter: toEnum(['visual', 'logical'] as const, { default: 'visual' }), on: 'update', description: 'How Shift+click range selection walks the tree (default `visual`).' },
@@ -477,12 +477,15 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * `controller.updateProps` is a merge, and several derived behaviors (e.g.
    * `expandLevel` auto-expansion when `data` arrives) only fire when the relevant
    * keys are present together. A changed-keys-only partial would drop them.
-   * `this.config` already holds every value in `partial`.
+   * `this.config` already holds every value in `partial`. A batch of element-only keys
+   * (NON_ENGINE_KEYS: custom styles, page-drag highlight) doesn't reach the engine.
    */
   protected override update(partial: Record<string, unknown>): void {
     if ('getCustomStylesCallback' in partial || 'customStyles' in partial) this.#customStyles?.refresh();
     if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
+    const keys = Object.keys(partial);
+    if (keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key))) return;
     this.#treeview.update(this.#assembleConfig());
   }
 
@@ -630,7 +633,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * imported icon font's `@font-face` registers (Chromium ignores it inside a shadow root).
    */
   #applyCustomStyles(): void {
-    this.#customStyles ??= createCustomStyles<TreeViewContext<T>>(this, this.#shadow, {
+    if (this.#customStyles) return this.#customStyles.refresh();
+    this.#customStyles = createCustomStyles<TreeViewContext<T>>(this, this.#shadow, { // writes both layers now
       cssClass: 'wtv-custom-styles',
       getContext: () => this.withContext({}) as unknown as TreeViewContext<T>,
       getInstanceStyles: () => ({
@@ -638,7 +642,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
         callback: this.config.getCustomStylesCallback as ((ctx: TreeViewContext<T>) => string | null | undefined) | null | undefined,
       }),
     });
-    this.#customStyles.refresh();
   }
 
   // ── non-input property: renderer (special — swaps live without a rebuild) ──
@@ -1059,12 +1062,4 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
       return this.#treeview;
     }, { isRendering: () => this.#isRendering });
   }
-}
-
-// The package entry (index.ts) defines the tag through core's registerComponent(), which also
-// publishes the global API, the tag-level `responsive` / `customStyles` hooks and the logging
-// bundle — always import the package (its `exports` expose only the entry). This guarded define
-// runs first on that import; registerComponent() then finds the tag defined and adds the rest.
-if (typeof customElements !== 'undefined' && !customElements.get('web-treeview')) {
-  customElements.define('web-treeview', WebTreeViewElement);
 }

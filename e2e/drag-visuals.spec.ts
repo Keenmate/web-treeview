@@ -1,4 +1,4 @@
-import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, WEBKIT_NO_TOUCH_CTOR } from './fixtures';
+import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, WEBKIT_NO_TOUCH_CTOR, hasNoNativeDnd } from './fixtures';
 
 /**
  * Drag visuals, reject feedback and the tree drop zone (/test/drag-visuals.html).
@@ -97,14 +97,15 @@ test.describe('drag classes', () => {
 });
 
 test.describe('drop reject (desktop, real drag)', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  // Per test, not per describe: the enable-tree-drop-zone drop lands on WebKit too.
   /** Real Playwright drag onto the right half (child) of the target row. */
   async function realDrag(page: Page, from: string, to: string) {
     const box = (await content(page, to).boundingBox())!;
     await content(page, from).dragTo(content(page, to), { targetPosition: { x: box.width * 0.8, y: box.height / 2 } });
   }
 
-  test('dropping on a no-drop node is refused: no move, no node-drop', async ({ page }) => {
+  test('dropping on a no-drop node is refused: no move, no node-drop', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await load(page);
     await realDrag(page, '4', '2');
     await page.waitForTimeout(200);
@@ -112,7 +113,8 @@ test.describe('drop reject (desktop, real drag)', () => {
     await expect(nodeByPath(page, '4')).toBeVisible();
   });
 
-  test('… and announces it: node-drop-reject + the 🚫 flash on the target', async ({ page }) => {
+  test('… and announces it: node-drop-reject + the 🚫 flash on the target', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await load(page);
     await realDrag(page, '4', '2');
     await expect.poll(() => logLines(page, LOG), { timeout: 2000 }).toContain('node-drop-reject:2');

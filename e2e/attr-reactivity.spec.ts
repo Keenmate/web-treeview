@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page, nodeByPath, nodeContent } from './fixtures';
 
 /**
@@ -124,6 +125,18 @@ test('setAttributes({ nodes }) goes through the inputs: a later write keeps the 
   await page.evaluate(() => (window as any).tree.whenSettled());
   await expect(nodeByPath(page, '9')).toBeVisible();
   await expect(nodeByPath(page, '1')).toHaveCount(0);
+});
+
+test('core hooks stay protected in the published manifest (C-CA-14: the public batch write is setAttributes())', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../custom-elements.json', import.meta.url), 'utf8'));
+  const element = manifest.modules
+    .flatMap((m: { declarations?: { name: string; members?: { name: string; privacy?: string }[] }[] }) => m.declarations ?? [])
+    .find((d: { name: string }) => d.name === 'WebTreeViewElement');
+  const privacy = (name: string) => element.members.find((m: { name: string }) => m.name === name)?.privacy ?? 'public';
+  expect(['update', 'reinit', 'connect', 'disconnect', 'destroyCallback', 'createController'].map((n) => [n, privacy(n)]))
+    .toEqual([['update', 'protected'], ['reinit', 'protected'], ['connect', 'protected'], ['disconnect', 'protected'],
+      ['destroyCallback', 'protected'], ['createController', 'protected']]);
+  expect(privacy('setAttributes')).toBe('public');
 });
 
 test.describe('enum inputs', () => {

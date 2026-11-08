@@ -14,9 +14,11 @@ are numbered in `test/NOTES.md` (`#N`); tests pinning them are `test.fail`.
 
 Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --workers=2`.
 
-**WebKit skips** (reason strings in `e2e/fixtures.ts`): the native HTML5 drag-and-drop specs
-(`drag-drop`, `drag-hooks`, `highlight-on-page-drag`, `drag-visuals` "drop reject (desktop, real drag)") —
-Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag — and the synthetic touch specs
+**WebKit skips** (reason strings and `hasNoNativeDnd` in `e2e/fixtures.ts`): on **Windows** only, the native
+HTML5 drag-and-drop tests that need a drop (`drag-drop`, `drag-hooks`, `highlight-on-page-drag`, `drag-visuals`
+"drop reject (desktop, real drag)"; per test where a describe also holds a test that needs no drop: "grabbing a
+selected node preserves the selected set" and "enable-tree-drop-zone: a drop … lands on the tree" run on WebKit) —
+Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag — and, on every platform, the synthetic touch specs
 (`touch-drag`, `drag-visuals` "touch: …") — WebKit has no `Touch` constructor, also with `hasTouch` + `isMobile`.
 Chromium and Firefox run them.
 

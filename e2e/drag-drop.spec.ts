@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator, nodeByPath, WEBKIT_NO_NATIVE_DND } from './fixtures';
+import { test, expect, Page, Locator, nodeByPath, WEBKIT_NO_NATIVE_DND, hasNoNativeDnd } from './fixtures';
 
 /**
  * E2E coverage for the drag-and-drop test fixture at /test/drag-drop.html.
@@ -44,7 +44,7 @@ async function dragNodeTo(
 // ── Section 1: single-tree drag ────────────────────────────────────────────
 
 test.describe('single-tree drag', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
   test('drag fires onNodeDrop with operation=move and dragged/target names', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-single');
@@ -87,7 +87,7 @@ test.describe('single-tree drag', () => {
 // ── Section 3: restricted positions via allowedDropPositionsMember ─────────
 
 test.describe('restricted drop positions — allowedDropPositionsMember', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
   test('node restricted to ["child"] snaps "before" intent to "child"', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-restricted-member');
@@ -122,7 +122,7 @@ test.describe('restricted drop positions — allowedDropPositionsMember', () => 
 // ── Section 4: restricted via callback ────────────────────────────────────
 
 test.describe('restricted drop positions — getAllowedDropPositionsCallback', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
   test('callback restricting odd-id nodes to ["before"] snaps "child" intent to "before"', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-restricted-callback');
@@ -156,13 +156,14 @@ test.describe('restricted drop positions — getAllowedDropPositionsCallback', (
 // ── Section 6: multi-drag ─────────────────────────────────────────────────
 
 test.describe('multi-drag (selectionMode=multiple)', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  // Per test, not per describe: 'grabbing a selected node preserves the selected set' needs no drop and runs on WebKit too.
   async function rootNodeNamesInOrder(section: Locator): Promise<string[]> {
     const roots = section.locator('.wtv__node[data-tree-path]:not([data-tree-path*="."])');
     return await roots.locator('.wtv__node-row .wtv__node-content > span').allInnerTexts();
   }
 
-  test('grabbing a non-selected node replaces the selection with just that node', async ({ page }) => {
+  test('grabbing a non-selected node replaces the selection with just that node', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -191,7 +192,8 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
     await expect(page.getByTestId('multi-selected-size')).not.toHaveText('1');
   });
 
-  test('multi-drag (child position): all top-level selected subtrees land under dropNode', async ({ page }) => {
+  test('multi-drag (child position): all top-level selected subtrees land under dropNode', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -214,7 +216,8 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
     await expect(page.getByTestId('multi-drop-dragged')).toHaveText('Multi-A');
   });
 
-  test('multi-drag (after position): chained-after yields [D, A, B, C]', async ({ page }) => {
+  test('multi-drag (after position): chained-after yields [D, A, B, C]', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -230,7 +233,8 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
 
   // Top-level absorption (ancestor + descendant both selected): the descendant
   // rides along INSIDE its moved ancestor (was skipped as TV-5 — NOTES.md #5).
-  test('top-level absorption: descendant of a selected ancestor rides along inside', async ({ page }) => {
+  test('top-level absorption: descendant of a selected ancestor rides along inside', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -251,7 +255,8 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
   });
 
   // TV-5 variant (NOTES.md #5): the same absorption selection dropped as a SIBLING.
-  test('top-level absorption, dropped AFTER D: A and B move, A-1 stays inside A, no duplicates', async ({ page }) => {
+  test('top-level absorption, dropped AFTER D: A and B move, A-1 stays inside A, no duplicates', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi');
 
@@ -275,7 +280,8 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
     await expect(page.getByTestId('multi-drop-count')).toHaveText('1');
   });
 
-  test('locked node (isDraggable=false) in the selected set does NOT ride along on multi-drag', async ({ page }) => {
+  test('locked node (isDraggable=false) in the selected set does NOT ride along on multi-drag', async ({ page, browserName }) => {
+    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await gotoFixture(page);
     const section = page.getByTestId('section-multi-locked');
 
@@ -306,7 +312,7 @@ test.describe('multi-drag (selectionMode=multiple)', () => {
 // dragOver/drop handlers accepted a drop onto a node with isDropAllowed=false.
 // svelte-treeview gates every desktop path; this asserts web now does too.
 test.describe('no-drop node (isDropAllowed=false)', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
   test('a node with isDropAllowed=false rejects a drop; a normal node accepts it', async ({ page }) => {
     await gotoFixture(page);
     const section = page.getByTestId('section-no-drop');
@@ -330,7 +336,7 @@ test.describe('no-drop node (isDropAllowed=false)', () => {
 // REJECT it. The cross-tree branch stays under the skipped two-tree placeholder
 // (Chromium cross-tree native-drag synth is flaky).
 test.describe('drag-drop-mode same-tree gate', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
   async function setMode(page: Page, mode: string) {
     await page.evaluate((m) => {
       document.getElementById('tree-single')!.setAttribute('drag-drop-mode', m);

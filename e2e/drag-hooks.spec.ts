@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Locator, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND } from './fixtures';
+import { test, expect, type Page, type Locator, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, hasNoNativeDnd } from './fixtures';
 
 /**
  * beforeDropCallback / beforeDragStartCallback (/test/drag-hooks.html).
@@ -15,7 +15,7 @@ import { test, expect, type Page, type Locator, nodeByPath, nodeContent, logLine
 const PAGE = '/test/drag-hooks.html';
 const LOG = 'dh-log';
 
-test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
 
 async function load(page: Page, query = '') {
   await page.goto(PAGE + query);

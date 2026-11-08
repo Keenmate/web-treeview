@@ -1,4 +1,4 @@
-import { test, expect, type Page, WEBKIT_NO_NATIVE_DND } from './fixtures';
+import { test, expect, type Page, WEBKIT_NO_NATIVE_DND, hasNoNativeDnd } from './fixtures';
 
 /**
  * highlight-on-page-drag (same option as web-dropzone) + the empty drop zone
@@ -11,7 +11,7 @@ import { test, expect, type Page, WEBKIT_NO_NATIVE_DND } from './fixtures';
 
 const PAGE = '/test/highlight-on-page-drag.html';
 
-test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_NATIVE_DND);
+test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
 
 type Pt = { x: number; y: number };
 let cur: Pt = { x: 0, y: 0 };

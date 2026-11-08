@@ -84,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The dev server and the e2e `baseURL` use `127.0.0.1` (as base-css-variables): Vite's `localhost` can bind `::1`
   only, and Firefox then sometimes got `NS_ERROR_CONNECTION_REFUSED`.
 - `src/logger.ts` header: core vendors its own `loglevel` port (no package dependency).
+- Example pages use only devkit kit classes (drag-drop no longer redefines `.controls`; context-menu, custom-layout,
+  performance, tree-editor and interaction drop their page-local layout / status classes); the performance page
+  batches through `setAttributes()`.
 
 ### Changed — BREAKING — core 1.0.0-rc18 (2026-11-04)
 - `@keenmate/web-components-core` ^1.0.0-rc17 → ^1.0.0-rc18.

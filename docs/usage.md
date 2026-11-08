@@ -203,14 +203,14 @@ a child listed before its parent is dropped as an orphan and reported in
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
-| `flat-indent-size` | `string` (CSS length) | `var(--wtv-indent-size)` | Per-level indent step in flat mode; a bare number means px (`"20"` → `20px`) |
+| `flat-indent-size` | `string \| number` (CSS length) | `var(--wtv-indent-size)` | Per-level indent step in flat mode; a bare number means px on both paths (`"20"` / `el.flatIndentSize = 20` → `20px`); `null` is refused — `undefined` or removing the attribute resets |
 | `enable-progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRenderEnabled`) |
 | `initial-batch-size` | `number` | — | First batch size |
 | `max-batch-size` | `number` | — | Subsequent batch ceiling |
 | `enable-virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
 | `virtual-scroll-item-height` | `number` | auto | Row height in px (auto-measured if omitted) |
 | `virtual-scroll-overscan` | `number` | `5` | Extra rows above/below viewport |
-| `virtual-scroll-container-height` | `string` (CSS length) | measured, else `'400px'` | Viewport height: any CSS length (`30rem`, `50vh`), a bare number means px; the window maths uses the measured height |
+| `virtual-scroll-container-height` | `string \| number` (CSS length) | measured, else `'400px'` | Viewport height: any CSS length (`30rem`, `50vh`), a bare number means px on both paths; `null` is refused — `undefined` or removing the attribute resets; the window maths uses the measured height |
 
 ## Properties (JS only)
 
@@ -301,7 +301,7 @@ Activation order: `beforeActionCallback` → item `onClick` → built-in → `ac
 
 An item's `icon` string is inserted as **HTML** (an `<i class="…">`, an inline `<svg>`, or plain text/emoji) — the same as action buttons.
 
-The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll outside the menu, window blur, Escape / Tab, or when another KeenMate overlay opens (outside interactions are ignored while debug mode pins the menu).
+The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll that moves the tree (the tree body, a scroller around it or the page; never a scroll inside the menu, an unrelated scroller or a bare mouse wheel — core rc20), window blur, Escape / Tab, or when another KeenMate overlay opens (outside interactions are ignored while debug mode pins the menu).
 
 #### Custom menu renderer
 

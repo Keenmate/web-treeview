@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [2.0.0-rc07] - 2026-11-03
 
 ### Changed — BREAKING — core 1.0.0-rc20 (2026-11-08)
-- `@keenmate/web-components-core` ^1.0.0-rc18 → 1.0.0-rc20 (rc19 + the rc20 fixes below).
+- `@keenmate/web-components-core` ^1.0.0-rc18 → ^1.0.0-rc20 (rc19 + rc20).
 - **The element's `update(props)` is gone from the public API** — it is core's protected hook now (rulebook
   C-CA-14), with no alias. Write several inputs at once with core's **`el.setAttributes(props)`** (config keys or
   attribute names; one validated batch, one engine update; returns the refused values, each also fires
@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the selector.
 - **`drag-drop-mode` takes only `none | self | cross | both`** (core `toEnum`, was free text): another value warns,
   fires `input-rejected` and keeps the previous mode (it was accepted silently and acted as `none`).
+- **`null` is refused on `dragDropMode`, `flatIndentSize` and `virtualScrollContainerHeight`** (warn +
+  `input-rejected`, the previous value stays): they have concrete defaults, and core's rule is that
+  `el.x = undefined` or removing the attribute resets an input to its default; `null` is a value only on a nullable
+  input. `TreeViewConfig.flatIndentSize` / `virtualScrollContainerHeight` are typed `string | number` (no `null`;
+  a number means px, as `dropZoneMaxWidth`).
 - **Enum getters read their real default when unset** (they read `null`): `clickBehavior` `'expand-and-focus'`,
   `tooltipPlacement` `'top-start'`, `iconSet` `'chevron'`, `toggleIconMode` `'rotate'`, `dragDropMode` `'none'`,
   `dropZoneMode` `'glow'`, `dropZoneLayout` `'around'`, `rangeSelectionMode` `'visual'`, `selectionMode` `'single'`,
@@ -48,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   a bare number means pixels (`flat-indent-size="20"` → `20px`; it produced an invalid `calc()`, so the indent was
   lost), an invalid value warns + `input-rejected`. `flatIndentSize` reads `var(--wtv-indent-size)` by default.
 - `theme-source="closest"` follows a section that gets its theme after the tree connected (core rc19).
+- **The context menu closes on scroll by core's popover rule** (core rc20 `openMenu()`): only a scroll that moves the
+  tree (its body, a scroller around it, the page) closes it, never a scroll inside the menu, an unrelated scroller
+  (a log panel auto-scrolling) or a bare mouse wheel.
+- The full-label popover also closes when its row leaves the page while it is open (a virtual-scroll re-render; core
+  rc20 `'reference-removed'`).
 
 ### Fixed — core 1.0.0-rc20 review (2026-11-08)
 - **A click on a node checkbox closes the full-label popover again** — the tree stops that click's propagation,
@@ -60,27 +70,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Safari: a search jump into a branch that is still rendering reaches its row** — `scrollToPath` (search
   navigation) waits for a running progressive render (up to ~1 s) before it scrolls: WebKit cancels a smooth
   scroll whose content changes mid-glide, so the container stopped short and the row stayed off-screen.
+- **A tree with `highlight-on-page-drag` and no `drag-drop-mode` is no longer armed by a page drag** — the mode
+  defaulted to `null`, which the arming check (`!== 'none'`) read as enabled while the engine treated it as `none`;
+  the `'none'` default fixes it.
 - An `@import` in the custom CSS whose URL contains a `"` no longer throws (core compares hrefs instead of
   building a selector from the URL), and the head `<link>` it adds is removed when the last tree stops importing it (it leaked on
   `destroy()`).
 
 ### Internal — core 1.0.0-rc20 (2026-11-08)
 - The hand-rolled custom-style slot and its document-head `<link>` hoist (`#applyCustomStyles`) are replaced by core
-  `createCustomStyles()` (refreshed once per build and on a `customStyles` / `getCustomStylesCallback` change,
-  destroyed in `destroyCallback()`); core links each `@import` in the head itself, so IC01's FontAwesome icons
-  still render in Chromium.
-- `src/web-component.ts` documents that the package entry defines the tag through `registerComponent()`; the
-  guarded self-`define` stays for a bare module import (and the rulebook's component detection).
+  `createCustomStyles()`, adopted as core's `docs/usage.md` shows (created on the first build, which writes both
+  layers; refreshed on later builds and on a `customStyles` / `getCustomStylesCallback` change; destroyed in
+  `destroyCallback()`); core links each `@import` in the head itself, so IC01's FontAwesome icons still render in
+  Chromium. A batch of only element-side keys (custom styles, `highlight-on-page-drag`) no longer resends the
+  engine config.
+- The tag is defined only by core's `registerComponent()` in the package entry; `src/web-component.ts` drops its
+  guarded self-`define` (the rulebook's component detection reads `registerComponent(` now).
+- `custom-elements-manifest.config.mjs` folds CRLF to LF in every manifest string, so a Windows checkout
+  (`core.autocrlf`) and a Linux one generate the same `custom-elements.json` / `web-types.json` / VS Code data;
+  `npm run build` leaves the tree clean. The manifests are regenerated (descriptions lose their `\r\n` escapes).
+- IC01 (examples-icons) demos both custom-CSS layers: the page-wide `window.components['web-treeview'].customStyles`
+  holds the FontAwesome `@import`, the tree's `custom-styles` attribute overrides it; the custom-layout API table
+  lists `customStyles` and the page layer. examples-theming and examples-responsive use kit classes for their
+  layout (`grid-2`, `card-grid`, `control-row` / `control-group`, `form-text`).
 - `VALIDATION-NOTES.md` records the doctor false positives C-CSS-8 / C-BV-1 (relative colour syntax) and
   C-BV-3 / C-BV-6 (input variables, `--base-*` read by core's menu); `kmwc doctor` is down to the three `[ports]`
   errors of another repo (web-component-framework-test sits on 12300).
 - e2e: `dropZoneMaxWidth = 90`, the popover closing on a checkbox click / a tree-body scroll / a page scroll and
   staying open on a scroll inside it, page-wide and instance custom CSS (+ the shared head `<link>`), enum
   defaults, `drag-drop-mode` rejection, the `tooltip-delay` / `drop-zone-start` converters, `setAttributes({ nodes })`, CSS-length `flat-indent-size`, a `25rem`
-  virtual viewport and `theme-source="closest"` following a section themed later. WebKit skips the native HTML5 drag-and-drop specs (Playwright WebKit on Windows delivers no
-  `drop` for a mouse-driven drag) and the synthetic touch specs (WebKit has no `Touch` constructor, also with
+  virtual viewport and `theme-source="closest"` following a section themed later. WebKit on Windows skips the native HTML5 drag-and-drop tests that need a drop (Playwright WebKit there
+  delivers no `drop` for a mouse-driven drag; Linux / macOS WebKit run them) and the synthetic touch specs (WebKit has no `Touch` constructor, also with
   `hasTouch` + `isMobile`); Chromium and Firefox run them. The e2e fixture ignores WebKit's benign
-  "ResizeObserver loop" notice.
+  "ResizeObserver loop" notice (WebKit only; Chromium / Firefox still fail on it). A test guards that `update()` /
+  `reinit()` / `connect()` … stay `protected` in `custom-elements.json`.
 - The dev server and the e2e `baseURL` use `127.0.0.1` (as base-css-variables): Vite's `localhost` can bind `::1`
   only, and Firefox then sometimes got `NS_ERROR_CONNECTION_REFUSED`.
 - `src/logger.ts` header: core vendors its own `loglevel` port (no package dependency).

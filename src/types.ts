@@ -1,4 +1,5 @@
 import type { TreeViewLabels } from './labels';
+import type { TreeViewContext } from './interaction';
 import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback } from '@keenmate/web-components-core';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
@@ -707,6 +708,21 @@ export interface ScrollToPathOptions {
  * Example: `{ device: { mobile: { expandLevel: 1 } }, breakpoint: { mobile: { expandLevel: 1 } } }`.
  */
 export type TreeViewResponsiveMap<T = any> = ResponsiveMap<TreeViewConfig<T>>;
+
+/** {@link TreeViewConfig} members that are engine wiring or live state, not `<web-treeview>` inputs. */
+type TreeViewEngineOnlyKey = `on${string}` | 'hostElement' | 'controller' | 'focusedNode' | 'selectedPaths' | 'checkedPaths';
+
+/**
+ * The `<web-treeview>` input properties (core `docs/usage.md` → "Typing the properties"): exactly the
+ * input-table rows — the engine config minus its engine-only members, plus the element-only inputs.
+ * Merged into {@link WebTreeViewElement}, so `el.dropZoneMaxWidth = 120` is typed.
+ */
+export interface TreeViewElementConfig<T = any> extends Omit<TreeViewConfig<T>, TreeViewEngineOnlyKey> {
+  /** Custom CSS for this instance (after the page-wide layer). Attribute `custom-styles`. */
+  customStyles?: string | null;
+  /** Returns this instance's custom CSS; wins over `customStyles`. */
+  getCustomStylesCallback?: ((ctx: TreeViewContext<T>) => string | null | undefined) | null;
+}
 
 /** Callback form of {@link TreeViewResponsiveMap}: `(ctx) => partial config | null | undefined`. */
 export type TreeViewResponsiveCallback<T = any> = ResponsiveCallback<TreeViewConfig<T>>;

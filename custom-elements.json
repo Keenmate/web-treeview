@@ -6881,6 +6881,14 @@
         },
         {
           "kind": "js",
+          "name": "TreeViewElementConfig",
+          "declaration": {
+            "name": "TreeViewElementConfig",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
           "name": "TreeViewResponsiveCallback",
           "declaration": {
             "name": "TreeViewResponsiveCallback",

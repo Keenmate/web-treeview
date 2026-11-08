@@ -40,7 +40,7 @@ import {
   type EventDef,
 } from '@keenmate/web-components-core';
 import { WebTreeView, createTreeViewController } from './treeview';
-import type { TreeViewConfig, ScrollToPathOptions } from './types';
+import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
@@ -1063,3 +1063,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     }, { isRendering: () => this.#isRendering });
   }
 }
+
+// Every input-table row as a typed property (core docs/usage.md → "Typing the properties", rulebook C-CA-16).
+export interface WebTreeViewElement<T = any> extends TreeViewElementConfig<T> {}

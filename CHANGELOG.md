@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   documents them. A default is never reflected (no `icon-set="chevron"` appears on the host).
 
 ### Added — core 1.0.0-rc20 (2026-11-08)
+
+- **Typed input properties for TypeScript.** Every input is now a typed property on `WebTreeViewElement`
+  (`el.dropZoneMaxWidth = 120`, `el.dragDropMode = 'both'`; a typo or a wrong enum value is a compile
+  error). New exported type `TreeViewElementConfig` — the input-table rows (the engine config minus its
+  engine-only members, plus `customStyles` / `getCustomStylesCallback`), merged into the element class
+  as core's `docs/usage.md` prescribes (rulebook C-CA-16).
 - **Page-wide custom CSS** (core rc19 `createCustomStyles()`): `window.components['web-treeview'].customStyles =
   "@import url('/css/tree.css');"` styles every tree on the page, `.getCustomStylesCallback(ctx)` computes it per
   tree from its context; assigning either updates live trees. It sits in its own `<style>` before the instance's,

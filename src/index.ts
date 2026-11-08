@@ -95,6 +95,7 @@ export type {
   TreeNode,
   TreeViewConfig,
   TreeViewResponsiveMap,
+  TreeViewElementConfig,
   TreeViewResponsiveCallback,
   TreeViewMethods,
   TreeEventMap,

@@ -4317,11 +4317,11 @@
             },
             {
               "kind": "method",
-              "name": "_virtualScrollTopFor",
+              "name": "_virtualRowBox",
               "privacy": "private",
               "return": {
                 "type": {
-                  "text": "number"
+                  "text": "{ top: number; height: number }"
                 }
               },
               "parameters": [
@@ -4330,21 +4330,9 @@
                   "type": {
                     "text": "number"
                   }
-                },
-                {
-                  "name": "block",
-                  "type": {
-                    "text": "ScrollLogicalPosition"
-                  }
-                },
-                {
-                  "name": "scrollEl",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
                 }
               ],
-              "description": "Virtual scroll: the `.wtv__tree` scrollTop that shows the row at `index` per `block`\n(the row isn't rendered yet, so this is index math, not core's helper)."
+              "description": "Virtual scroll: the `.wtv__tree` box of the row at `index` (content coordinates — it isn't\nrendered yet), for core's `getScrollTopForBox` / `scrollContainerToBox`."
             },
             {
               "kind": "method",

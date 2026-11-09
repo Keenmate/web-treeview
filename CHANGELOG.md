@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [2.0.0-rc07] - 2026-11-03
 
 ### Internal — core 1.0.0-rc21 (2026-11-09)
+- Virtual scroll: the index → `scrollTop` math of `scrollToPath()` / the keyboard reveal (`_virtualScrollTopFor`,
+  deleted) is core's `scrollContainerToBox()` (SPEC §12.15). Same block rules; two differences, both fixes: the
+  target is clamped to the scroll range (`scrollToPath()` near the end used to keep an unclamped `scrollTop` for its
+  render window until the next scroll event), and a `scroll-padding-top/bottom` on `.wtv__tree` is honoured.
 - `custom-elements-manifest.config.mjs` drops its local `normalizeLineEndingsPlugin()` (CRLF → LF fold + modules
   sorted by path): core's `blissAnalyzerConfig()` runs `stableOutputPlugin()`, which does both. Two builds in a row
   leave the tree clean; `custom-elements.json` / `web-types.json` / VS Code data are byte-identical to before.

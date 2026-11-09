@@ -34,7 +34,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
-import { findScrollContainer, scrollIntoContainer } from '@keenmate/web-components-core';
+import { findScrollContainer, scrollContainerToBox, scrollIntoContainer } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -2868,23 +2868,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     });
   }
 
-  /** Virtual scroll: the `.wtv__tree` scrollTop that shows the row at `index` per `block`
-   *  (the row isn't rendered yet, so this is index math, not core's helper). */
-  private _virtualScrollTopFor(index: number, block: ScrollLogicalPosition, scrollEl: HTMLElement): number {
-    const rowHeight = this.resolvedRowHeight;
-    const top = index * rowHeight;
-    const bottom = top + rowHeight;
-    const viewHeight = scrollEl.clientHeight || this.virtualViewportHeightPx;
-    const current = scrollEl.scrollTop;
-    switch (block) {
-      case 'start': return Math.max(0, top);
-      case 'end': return Math.max(0, bottom - viewHeight);
-      case 'center': return Math.max(0, top - viewHeight / 2 + rowHeight / 2);
-      default:
-        if (top < current) return top;
-        if (bottom > current + viewHeight) return bottom - viewHeight;
-        return current;
-    }
+  /** Virtual scroll: the `.wtv__tree` box of the row at `index` (content coordinates — it isn't
+   *  rendered yet), for core's `getScrollTopForBox` / `scrollContainerToBox`. */
+  private _virtualRowBox(index: number): { top: number; height: number } {
+    const height = this.resolvedRowHeight;
+    return { top: index * height, height };
   }
 
   revealNode(path: string, behavior: ScrollBehavior = 'auto', source: TreeViewScrollSource = 'keyboard'): void {
@@ -2903,9 +2891,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (idx >= 0) {
         options = this._resolveScroll(flat[idx], source, scrollEl, defaults);
         if (!options) return;
-        const scrollTop = this._virtualScrollTopFor(idx, options.block, scrollEl);
-        if (scrollTop !== scrollEl.scrollTop) {
-          scrollEl.scrollTop = scrollTop;
+        // Instant (synchronous) index jump; the row's own scroll below applies the behavior.
+        if (scrollContainerToBox(scrollEl, this._virtualRowBox(idx), { block: options.block }) !== null) {
           this._vsScrollTop = scrollEl.scrollTop;
           this._scheduleNotify();
         }
@@ -3818,9 +3805,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (nodeIndex >= 0) {
         scroll = this._resolveScroll(node, 'scroll-to-path', vsScrollEl, defaults);
         if (scroll) {
-          const targetScrollTop = this._virtualScrollTopFor(nodeIndex, scroll.block, vsScrollEl);
-          this._vsScrollTop = targetScrollTop;
-          vsScrollEl.scrollTop = targetScrollTop;
+          // Core's box math (SPEC §12.15), clamped to the scroll range; the window follows the
+          // container's actual scrollTop.
+          scrollContainerToBox(vsScrollEl, this._virtualRowBox(nodeIndex), { block: scroll.block });
+          this._vsScrollTop = vsScrollEl.scrollTop;
           // Synchronous flush — renderer reconciles the visible window immediately,
           // so the target node element is in the DOM before we query for it below.
           // This also prevents race conditions when scrollToPath is called rapidly.

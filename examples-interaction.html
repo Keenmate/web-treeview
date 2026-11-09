@@ -366,9 +366,27 @@ function restoreFromUrl(nodePath) {
     </div>
 </div>
 
-<!-- IN06 · Disabled & Read-only -->
+<!-- IN06 · Disabled / Readonly States -->
 <div class="card">
-    <h2>IN06 · Disabled &amp; Read-only</h2>
+    <h2>IN06 · Disabled / Readonly States</h2>
+    <div class="grid">
+        <div class="form-group">
+            <label>Disabled Tree</label>
+            <div class="tree-container">
+                <web-treeview id="in7-disabled-tree" disabled expand-level="1" show-checkboxes="true"></web-treeview>
+            </div>
+            <small>No interaction, not focusable</small>
+        </div>
+
+        <div class="form-group">
+            <label>Readonly Tree</label>
+            <div class="tree-container">
+                <web-treeview id="in7-readonly-tree" readonly expand-level="1" show-checkboxes="true"></web-treeview>
+            </div>
+            <small>The value can't change; still focusable and copyable</small>
+        </div>
+    </div>
+
     <p>
         The pair every data-input component has, with native form-control semantics.
         <code>disabled</code> blocks <em>all</em> user interaction &mdash; no check, select, expand, drag,
@@ -748,7 +766,13 @@ function restoreFromUrl(nodePath) {
             document.getElementById('in6-bulk-result').style.display = 'none';
         });
 
-        // ── IN06 · Disabled & Read-only (ids in7-*) ──────────────────
+        // ── IN06 · Disabled / Readonly States (ids in7-*) ────────────
+        for (const id of ['in7-disabled-tree', 'in7-readonly-tree']) {
+            const tree = document.getElementById(id);
+            Object.assign(tree, treeConfig);
+            tree.nodes = JSON.parse(JSON.stringify(fileTree));
+            tree.checkNode('1.1');
+        }
         const in7 = document.getElementById('in7-tree');
         Object.assign(in7, treeConfig, {
             getContextMenuItemsCallback: () => ['copy', 'cut', 'paste', 'delete', 'expand', 'collapse', 'sort-all'],

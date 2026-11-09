@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — core 1.0.0-rc21 (2026-11-09)
+- `custom-elements-manifest.config.mjs` drops its local `normalizeLineEndingsPlugin()` (CRLF → LF fold + modules
+  sorted by path): core's `blissAnalyzerConfig()` runs `stableOutputPlugin()`, which does both. Two builds in a row
+  leave the tree clean; `custom-elements.json` / `web-types.json` / VS Code data are byte-identical to before.
+
 ### Changed — BREAKING — core 1.0.0-rc20 (2026-11-08)
 - `@keenmate/web-components-core` ^1.0.0-rc18 → ^1.0.0-rc20 (rc19 + rc20).
 - **The element's `update(props)` is gone from the public API** — it is core's protected hook now (rulebook

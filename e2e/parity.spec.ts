@@ -277,3 +277,19 @@ test.describe('scrollToPath options', () => {
     expect(await prop(page, 'expandedPaths')).toEqual([]);
   });
 });
+
+test.describe('context menu scroll close', () => {
+  test('a tree-body scroll that moves the right-clicked row closes the context menu (core openMenu point reference)', async ({ page }) => {
+    await page.goto(PAGE);
+    await page.evaluate(async () => {
+      const w = window as any;
+      await w.make({ nodes: w.manyNodes(80), attrs: { 'enable-virtual-scroll': '', 'virtual-scroll-container-height': '200px' } });
+      w.tree.getContextMenuItemsCallback = () => [{ id: 'noop', text: 'Noop', onClick() {} }];
+    });
+    const menu = page.locator('.km-menu');
+    await nodeContent(nodeByPath(page.locator('#tree'), '2')).click({ button: 'right' });
+    await expect(menu).toHaveCount(1);
+    await page.evaluate(() => { (window as any).tree.shadowRoot.querySelector('.wtv__tree').scrollTop = 40; });
+    await expect(menu).toHaveCount(0);
+  });
+});

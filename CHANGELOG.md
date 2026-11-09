@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   sorted by path): core's `blissAnalyzerConfig()` runs `stableOutputPlugin()`, which does both. Two builds in a row
   leave the tree clean; `custom-elements.json` / `web-types.json` / VS Code data are byte-identical to before.
 
+### Tests — core 1.0.0-rc21 (2026-11-09)
+- e2e `parity.spec.ts` "context menu scroll close": right-click a row of a virtual-scroll tree, scroll the tree body so
+  the row moves → the context menu closes (core rc21 `openMenu()` anchors a point menu's scroll close to the clicked
+  row, not the host; on rc20 / rc21-pre.4 the menu stayed open).
+
 ### Changed — BREAKING — core 1.0.0-rc20 (2026-11-08)
 - `@keenmate/web-components-core` ^1.0.0-rc18 → ^1.0.0-rc20 (rc19 + rc20).
 - **The element's `update(props)` is gone from the public API** — it is core's protected hook now (rulebook

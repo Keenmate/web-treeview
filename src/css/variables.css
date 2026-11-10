@@ -380,9 +380,9 @@
   --wtv-drop-zone-before-box-shadow-active: 0 2px 12px rgba(134, 179, 152, 0.4);
   --wtv-drop-zone-after-box-shadow-active: 0 2px 12px rgba(242, 182, 158, 0.4);
   --wtv-drop-zone-child-box-shadow-active: 0 2px 12px rgba(167, 155, 198, 0.4);
-  --wtv-drop-zone-before-text-color: rgba(62, 89, 72, 0.7);
-  --wtv-drop-zone-after-text-color: rgba(120, 70, 50, 0.7);
-  --wtv-drop-zone-child-text-color: rgba(72, 62, 98, 0.7);
+  --wtv-drop-zone-before-text-color: light-dark(rgba(62, 89, 72, 0.7), rgba(178, 214, 192, 0.9));
+  --wtv-drop-zone-after-text-color: light-dark(rgba(120, 70, 50, 0.7), rgba(247, 204, 186, 0.9));
+  --wtv-drop-zone-child-text-color: light-dark(rgba(72, 62, 98, 0.7), rgba(204, 195, 230, 0.9));
 
   /* Drag-over states */
   --wtv-drag-over-bg: var(--base-drop-target-bg, var(--wtv-drop-valid-bg));

@@ -229,11 +229,6 @@ export interface TreeViewConfig<T = any> {
   virtualScrollContainerHeight?: string | number;
 
   // Visual
-  /** Per-instance theme override. Forwarded to the root `.wtv__container`
-   *  as `data-theme="dark"|"light"`, which the stylesheet uses to flip the
-   *  tree's colors independently of the surrounding page. Leave undefined to
-   *  inherit from the page (OS preference, framework classes, etc.). */
-  theme?: 'dark' | 'light' | null;
   bodyClass?: string | null;
   /** CSS class applied to every node in the selected set (Ctrl/Shift+click). */
   selectedNodeClass?: string | null;

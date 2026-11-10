@@ -142,7 +142,7 @@
     window.toggleFollow = (cb) => { document.getElementById('tree1').shouldTooltipFollowCursor = cb.checked; };
     window.setTheme = (t, btn) => {
         const tree = document.getElementById('tree3');
-        if (t) tree.setAttribute('theme', t); else tree.removeAttribute('theme');
+        if (t) tree.setAttribute('data-theme', t); else tree.removeAttribute('data-theme');
         activate(btn);
     };
 

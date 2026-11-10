@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — BREAKING — one per-instance theme switch (2026-11-10)
+- **The `theme` attribute / property / `TreeViewOptions.theme` is removed.** Force one tree's scheme with
+  `data-theme="dark"` / `"light"` on `<web-treeview>`, the switch every KeenMate component shares (it already
+  worked; `theme` was a second switch that copied the value onto the inner `.wtv__container`). Programmatic
+  `new WebTreeView(container, …)`: put `data-theme` on your own container. No alias.
+- Examples / docs: TH01 described an OS-following `prefers-color-scheme` rule that doesn't exist; it now lists the real
+  order (per-instance `data-theme` → page / `theme-source` signal → inherited `color-scheme`), and its "none" option
+  reads "follows the page". `docs/parity.md` records svelte-treeview's `theme` prop as intentional.
+
+### Fixed — dark mode (2026-11-10)
+- The resting drop-zone labels (before / after / child) were dark text on a dark tree; they get a light branch
+  (`--wtv-drop-zone-*-text-color` are `light-dark()` pairs).
+
 ### Internal — core 1.0.0-rc21 (2026-11-09)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc21`** (was `^1.0.0-rc20`).
 - Virtual scroll: the index → `scrollTop` math of `scrollToPath()` / the keyboard reveal (`_virtualScrollTopFor`,

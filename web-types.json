@@ -155,11 +155,6 @@
               "value": { "type": "string | null" }
             },
             {
-              "name": "theme",
-              "description": "Force a `dark` / `light` theme (unset → follow host).",
-              "value": { "type": "'dark' | 'light' | null" }
-            },
-            {
               "name": "body-class",
               "description": "Extra class on the tree body container.",
               "value": { "type": "string | null" }
@@ -878,11 +873,6 @@
                 "name": "searchTerm",
                 "description": "Active search/filter term.",
                 "type": "string | null"
-              },
-              {
-                "name": "theme",
-                "description": "Force a `dark` / `light` theme (unset → follow host).",
-                "type": "'dark' | 'light' | null"
               },
               {
                 "name": "bodyClass",

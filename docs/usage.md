@@ -124,7 +124,6 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `indexer-batch-size` | `number` | — | Items per requestIdleCallback batch |
 | `indexer-timeout` | `number` | — | Idle-callback deadline (ms) |
 | `search-term` | `string` | — | Current search/filter text |
-| `theme` | `'dark' \| 'light'` | — | Per-instance theme override |
 | `custom-styles` | `string` | — | CSS injected into the shadow root (a full stylesheet, `@import url(…)` works) — the declarative twin of `getCustomStylesCallback`, which wins when both are set (config key: `customStyles`). See [Custom CSS](./theming.md#custom-css-shadow-root) |
 | `loading` | `boolean` | `false` | Show loading overlay |
 | `disabled` | `boolean` (presence) | `false` | Disable the tree like a native form control (config key: `isDisabled`, reflects): no user interaction at all — no check, select, expand / collapse, drag, drop, copy / cut / paste / delete, context menu or keyboard; out of the tab order (`tabindex` removed), `aria-disabled="true"` on the tree body, dimmed (`--wtv-disabled-tree-opacity` → `--wtv-disabled-opacity` → `--base-disabled-opacity`). An open context menu / full-label popover closes. Calls from code (`expandAll()`, `checkNode()`, …) still work; removing it restores everything |

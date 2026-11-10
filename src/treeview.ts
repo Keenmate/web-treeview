@@ -982,7 +982,6 @@ export class WebTreeView<T = any> {
         this.options.onContainerResize?.(this.ctx({ size: { width: size.width, height: size.height }, deviceClass }));
       },
     };
-    if ('theme' in options) cfg.theme = options.theme ?? null;
     if ('nodeTitleOverflow' in options) cfg.nodeTitleOverflow = options.nodeTitleOverflow ?? null;
     if ('isDisabled' in options) cfg.isDisabled = !!options.isDisabled;
     if ('isReadonly' in options) cfg.isReadonly = !!options.isReadonly;

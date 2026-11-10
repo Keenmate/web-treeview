@@ -40,9 +40,6 @@ export interface ContainerSize {
 }
 
 export interface RendererConfig<T> {
-  /** Per-instance theme. Renderer forwards as `data-theme` on the `.wtv__container`.
-   *  See `dark-mode.css` for the cascade. */
-  theme?: 'dark' | 'light' | null;
   /** Built-in label overflow (`data-node-title-overflow` on `.wtv__container`). Default `'ellipsis'`. */
   nodeTitleOverflow?: NodeTitleOverflow | null;
   /** Disabled (native semantics): the renderer ignores user input, drops the body from the tab

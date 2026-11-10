@@ -174,7 +174,6 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'searchTerm', attribute: 'search-term', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Active search/filter term.' },
 
   // ── Theme / visual classes ─────────────────────────────────────────────────
-  { configKey: 'theme', attribute: 'theme', converter: toEnum(['dark', 'light'] as const, { isNullable: true }), on: 'update', description: 'Force a `dark` / `light` theme (unset → follow host).' },
   { configKey: 'bodyClass', attribute: 'body-class', converter: toText({ isNullable: true }), on: 'update', description: 'Extra class on the tree body container.' },
   { configKey: 'selectedNodeClass', attribute: 'selected-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to selected nodes.' },
   { configKey: 'focusedNodeClass', attribute: 'focused-node-class', converter: toText({ isNullable: true }), on: 'update', description: 'Class applied to the focused node.' },

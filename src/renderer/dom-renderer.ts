@@ -134,7 +134,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Build skeleton
     this.container.innerHTML = '';
     this.container.classList.add('wtv__container');
-    this._applyTheme(config.theme);
     this._applyTitleOverflow(config.nodeTitleOverflow);
 
     // Header
@@ -243,7 +242,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this._fullRender(this.controller.getSnapshot());
       }
     }
-    if ('theme' in config) this._applyTheme(config.theme);
     if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
     if ('isReadonly' in config) this.container?.classList.toggle('wtv__container--readonly', !!config.isReadonly);
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
@@ -507,15 +505,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     for (const btn of body.querySelectorAll<HTMLButtonElement>('.wtv__node-info')) btn.disabled = isDisabled;
     if (this.config?.isEmptyDropPlaceholderShown) {
       for (const zone of body.querySelectorAll<HTMLElement>('.wtv__empty-zone')) zone.tabIndex = isDisabled ? -1 : 0;
-    }
-  }
-
-  private _applyTheme(theme: 'dark' | 'light' | null | undefined): void {
-    if (!this.container) return;
-    if (theme === 'dark' || theme === 'light') {
-      this.container.setAttribute('data-theme', theme);
-    } else {
-      this.container.removeAttribute('data-theme');
     }
   }
 

@@ -46,11 +46,12 @@
 }
 
 /* =============================================================================
-   SIGNAL #2 — Per-instance override via the `theme` prop / `data-theme` attribute
+   SIGNAL #2 — Per-instance override: the `data-theme` attribute
    =============================================================================
-   Highest specificity. WebTreeViewElement forwards the `theme` attribute as
-   `data-theme` on the .wtv__container. The :host([data-theme=...]) selector
-   also catches consumers who set `<web-treeview data-theme="dark">` directly.
+   Declared last, so it wins. `<web-treeview data-theme="dark">` (the same switch
+   as every KeenMate component); the .wtv__container selector serves the
+   programmatic `new WebTreeView(container, …)`, where `data-theme` goes on your
+   own container element.
    ============================================================================= */
 :host([data-theme="dark"]),
 .wtv__container[data-theme="dark"] {

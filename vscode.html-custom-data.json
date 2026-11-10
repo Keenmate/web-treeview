@@ -151,11 +151,6 @@
           "values": []
         },
         {
-          "name": "theme",
-          "description": "Force a `dark` / `light` theme (unset → follow host).",
-          "values": [{ "name": "dark" }, { "name": "light" }]
-        },
-        {
           "name": "body-class",
           "description": "Extra class on the tree body container.",
           "values": []

@@ -21,7 +21,8 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `indexerBatchSize`, `indexerTimeout`, `searchTerm` | same (`searchTerm` `$bindable`) | same |
 | `shouldHandleKeyboardShortcuts` (`handle-keyboard-shortcuts`, default `true`) | same (`true`) | same |
 | `shouldAlignNodeIcons` (`align-node-icons`, default `true`) | same (`true`) | same |
-| `theme`, `bodyClass`, `selectedNodeClass`, `focusedNodeClass`, `checkedNodeClass`, `dragOverNodeClass`, `draggedNodeClass` | same | same |
+| `bodyClass`, `selectedNodeClass`, `focusedNodeClass`, `checkedNodeClass`, `dragOverNodeClass`, `draggedNodeClass` | same | same |
+| — (removed 2026-11-10; per-instance theme is `data-theme="dark"` / `"light"` on the host, the switch every KeenMate web component shares, and core's page / `theme-source` detection) | `theme` | **intentional** — svelte has no core theme detection; its `theme` prop stays |
 | `isNodeTooltipsShown`, `tooltipPlacement`, `tooltipDelay`, `tooltipOffset`, `shouldTooltipFollowCursor` | same | same |
 | `iconSet`, `leafIconClass`, `toggleIconMode` | same | same |
 | — (`expandIconClass` / `collapseIconClass` removed) | — (removed) | same |

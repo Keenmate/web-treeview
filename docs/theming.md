@@ -25,7 +25,7 @@ web-treeview {
 
 /* Per-instance theme via the attribute */
 <web-treeview data-theme="dark">...</web-treeview>
-<web-treeview theme="light">...</web-treeview>
+<web-treeview data-theme="light">...</web-treeview>
 ```
 
 `examples-theming.html` ships 8 complete themes (dark, neon, corporate, glassmorphism, etc.).

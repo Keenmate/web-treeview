@@ -9,8 +9,7 @@ import { test, expect, Page, Locator } from './fixtures';
  *   A. Library defaults (no brand theme)
  *      Light: --wtv-main-bg falls back to var(--base-main-bg, #ffffff)  → rgb(255, 255, 255)
  *      Dark:  --wtv-main-bg falls back to var(--base-main-bg, #1e293b)  → rgb(30, 41, 59) (the contract default)
- *      Triggered by per-instance theme="dark"/"light" prop (mirrored to
- *      data-theme on the container by _applyTheme).
+ *      Triggered by per-instance data-theme="dark"/"light" on the host.
  *
  *   B. Brand theme with light-dark() at wrapper
  *      Light: --base-main-bg = #dc2626 → rgb(220, 38, 38)
@@ -48,7 +47,7 @@ async function backgroundColor(loc: Locator): Promise<string> {
   return loc.evaluate((el) => getComputedStyle(el).backgroundColor);
 }
 
-test.describe('Theming — library defaults + per-instance prop', () => {
+test.describe('Theming — library defaults + per-instance data-theme', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(PAGE);
     await page.locator('h1').first().waitFor();
@@ -60,16 +59,20 @@ test.describe('Theming — library defaults + per-instance prop', () => {
     expect(await backgroundColor(tree)).toBe(LIGHT_BG);
   });
 
-  test('2. Per-instance theme="dark" → library dark default', async ({ page }) => {
+  test('2. Per-instance data-theme="dark" → library dark default', async ({ page }) => {
     const tree = ltreeContainer(scenarioCard(page, 'per-instance-dark'));
     expect(await backgroundColor(tree)).toBe(DARK_BG);
-    await expect(tree).toHaveAttribute('data-theme', 'dark');
+    // The switch is the host's own data-theme (CSS :host rule) — nothing is copied inward.
+    await expect(scenarioCard(page, 'per-instance-dark').locator('web-treeview')).toHaveAttribute('data-theme', 'dark');
+    await expect(tree).not.toHaveAttribute('data-theme');
   });
 
-  test('3. Per-instance theme="light" → library light default', async ({ page }) => {
+  test('3. Per-instance data-theme="light" → library light default', async ({ page }) => {
     const tree = ltreeContainer(scenarioCard(page, 'per-instance-light'));
     expect(await backgroundColor(tree)).toBe(LIGHT_BG);
-    await expect(tree).toHaveAttribute('data-theme', 'light');
+    // The switch is the host's own data-theme (CSS :host rule) — nothing is copied inward.
+    await expect(scenarioCard(page, 'per-instance-light').locator('web-treeview')).toHaveAttribute('data-theme', 'light');
+    await expect(tree).not.toHaveAttribute('data-theme');
   });
 });
 
@@ -183,7 +186,7 @@ test.describe('Theming — page signal via data-context-theme', () => {
     await expect.poll(() => backgroundColor(ltreeContainer(card))).toBe(LIGHT_BG);
   });
 
-  test('13. Per-instance theme="light" wins over page dark', async ({ page }) => {
+  test('13. Per-instance data-theme="light" wins over page dark', async ({ page }) => {
     await page.goto(PAGE);
     await page.locator('h1').first().waitFor();
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));

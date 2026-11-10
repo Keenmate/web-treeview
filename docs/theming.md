@@ -238,7 +238,7 @@ so retinting a glow colour retints its arrow too.
 ### Context menu
 
 The menu is core's shared menu. Every value resolves, highest precedence first:
-**`--wtv-context-menu-*`** (this tree) → **`--km-menu-*`** (every KeenMate menu on the page) →
+**`--wtv-context-menu-*`** (this tree) → **`--km-menu-*`** (every Keenmate menu on the page) →
 **`--base-*`** (theme) → core's default. The `--wtv-context-menu-*` variables are unset by
 default (the tree maps each onto core's private `--_km-menu-*` with no fallback), so a
 page-wide `--km-menu-*` reaches the tree's menu:
@@ -297,7 +297,7 @@ The `--km-menu-*` list (with each one's `--base-*` fallback and default) ships i
 The `isLoading` overlay draws through web-components-core's shared loader (`renderLoader`):
 the instance `renderLoadingCallback`, else the page-wide `window.components.renderLoadingCallback`,
 else the default `<span class="wtv__loader">` drawn from the tokens above. One page-wide change
-(`--base-loader-*` or the page hook) restyles the loader of every KeenMate component.
+(`--base-loader-*` or the page hook) restyles the loader of every Keenmate component.
 
 ### Tooltip
 

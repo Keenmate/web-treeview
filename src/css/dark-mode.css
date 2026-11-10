@@ -49,7 +49,7 @@
    SIGNAL #2 — Per-instance override: the `data-theme` attribute
    =============================================================================
    Declared last, so it wins. `<web-treeview data-theme="dark">` (the same switch
-   as every KeenMate component); the .wtv__container selector serves the
+   as every Keenmate component); the .wtv__container selector serves the
    programmatic `new WebTreeView(container, …)`, where `data-theme` goes on your
    own container element.
    ============================================================================= */

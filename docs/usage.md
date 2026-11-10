@@ -302,7 +302,7 @@ Activation order: `beforeActionCallback` → item `onClick` → built-in → `ac
 
 An item's `icon` string is inserted as **HTML** (an `<i class="…">`, an inline `<svg>`, or plain text/emoji) — the same as action buttons.
 
-The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll that moves the tree (the tree body, a scroller around it or the page; never a scroll inside the menu, an unrelated scroller or a bare mouse wheel — core rc20), window blur, Escape / Tab, or when another KeenMate overlay opens (outside interactions are ignored while debug mode pins the menu).
+The menu is web-components-core's shared `openMenu()` (`/menu`). It is rendered inside the tree's shadow root and closes on an outside click, a scroll that moves the tree (the tree body, a scroller around it or the page; never a scroll inside the menu, an unrelated scroller or a bare mouse wheel — core rc20), window blur, Escape / Tab, or when another Keenmate overlay opens (outside interactions are ignored while debug mode pins the menu).
 
 #### Custom menu renderer
 
@@ -355,7 +355,7 @@ Classes (core `/menu`): `.km-menu` (`role="menu"`), `.km-menu--submenu`,
 (see CHANGELOG for the mapping).
 
 Theme the menu with the `--wtv-context-menu-*` variables (this tree only) or with core's
-`--km-menu-*` on `:root` (every KeenMate menu on the page). Precedence: `--wtv-context-menu-*`
+`--km-menu-*` on `:root` (every Keenmate menu on the page). Precedence: `--wtv-context-menu-*`
 → `--km-menu-*` → `--base-*` → core default. The tree maps each `--wtv-context-menu-*` onto
 core's private `--_km-menu-*` with no fallback, so an unset one falls through:
 
@@ -532,7 +532,7 @@ index-based scroll. There is no scroll event. Demo: `examples-search.html` SF04.
 `el.getController()` (which returned the internal engine) is gone — use `el.controller`.
 
 **Motion level (core).** `motion="auto | none | snappy | smooth"` (attribute / property; core
-declares it on every KeenMate element), the page-wide `window.components.motion`, or a
+declares it on every Keenmate element), the page-wide `window.components.motion`, or a
 `data-motion` attribute on any ancestor (`<html>`, a section) sets the tree's speeds: core maps the
 level onto `--base-duration-*` / `--base-scroll-behavior`, which every `--wtv-transition-*` and
 `--wtv-scroll-behavior` reads. `none` = no transitions + instant `scrollToPath` (the drop-zone icon
@@ -611,7 +611,7 @@ tree.navigationOverrides = null; // back to the defaults
 | `render-progress` | `{ pending, processed }` | A render batch finished (`pending` rows still queued) |
 | `render-complete` | `{ pending, processed }` | The progressive render finished — `isRendering` is `false` |
 | `container-resize` | `{ size: { width, height }, deviceClass }` | The tree container was resized (also once when observing starts); `size` = `containerSize` |
-| `input-rejected` | `{ configKey, attribute?, value, reason?, kept, source }` | Core (every KeenMate component): an attribute / property write was refused (invalid value, unknown `setAttributes()` key). Synchronous — it has fired when the write returns; the element warns and keeps `kept`. `setAttributes()` also returns the list |
+| `input-rejected` | `{ configKey, attribute?, value, reason?, kept, source }` | Core (every Keenmate component): an attribute / property write was refused (invalid value, unknown `setAttributes()` key). Synchronous — it has fired when the write returns; the element warns and keeps `kept`. `setAttributes()` also returns the list |
 
 Bulk `expandAll()` / `collapseAll()` (and expand-level seeding) fire **no** per-node `node-expand` / `node-collapse` — only one `expanded-change` (the set). `expandNodes` / `collapseNodes` / `expandAll` / `collapseAll` with `{ isSilent: true }` fire none of them.
 
@@ -698,7 +698,7 @@ WebTreeViewElement (custom element, BlissElement)
 Quiet by default: every category starts at `warn` (web-components-core's default), so
 only real problems (invalid input, failed inserts, a throwing callback) reach the
 console. Lines carry the instance: `[TREEVIEW:DATA] #my-tree 2 of 40 items failed to insert`.
-`window.components.logging` switches every KeenMate component on the page at once;
+`window.components.logging` switches every Keenmate component on the page at once;
 `window.components['web-treeview'].logging` just this one. A level persisted in
 `localStorage` (`km-log:TREEVIEW:*`) wins over the default. Enable at runtime for debugging:
 

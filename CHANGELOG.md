@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [2.0.0-rc07] - 2026-11-03
 
 ### Internal — core 1.0.0-rc21 (2026-11-09)
+- **Requires `@keenmate/web-components-core` `^1.0.0-rc21`** (was `^1.0.0-rc20`).
 - Virtual scroll: the index → `scrollTop` math of `scrollToPath()` / the keyboard reveal (`_virtualScrollTopFor`,
   deleted) is core's `scrollContainerToBox()` (SPEC §12.15). Same block rules; two differences, both fixes: the
   target is clamped to the scroll range (`scrollToPath()` near the end used to keep an unclamped `scrollTop` for its

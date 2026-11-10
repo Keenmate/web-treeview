@@ -189,7 +189,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
 
 <script type="module">
     // Importing the module runs registerComponent() → window.components is populated.
-    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    import { attachControlsPersistence, mapToEscapedHtml } from '@keenmate/web-components-devkit/examples';
     // Perf logging is a separate free-function API (not part of .logging).
     import { enablePerfLogging, disablePerfLogging, setPerfThreshold } from '/src/index.ts';
 
@@ -244,8 +244,6 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
     };
 
     // ── 1. registry inspector ────────────────────────────────────────────
-    const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-
     window.refreshRegistry = () => {
         const view = document.getElementById('registry-view');
         const r = reg();
@@ -258,17 +256,17 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
             // Reflect each category's effective level from what we last set.
             const lvl = window.__catLevel?.[c];
             const on = lvl && lvl !== 'silent';
-            return `<span class="pill ${on ? 'pill--ok' : ''}">${esc(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
+            return `<span class="pill ${on ? 'pill--ok' : ''}">${mapToEscapedHtml(c.split(':')[1] || c)}${on ? ` · ${lvl}` : ''}</span>`;
         }).join('');
         const instPills = instances.length
-            ? instances.map((el, i) => `<span class="pill">${esc(el.id || `#${i}`)}</span>`).join('')
+            ? instances.map((el, i) => `<span class="pill">${mapToEscapedHtml(el.id || `#${i}`)}</span>`).join('')
             : '<span class="muted">none connected</span>';
 
         view.innerHTML = `
-            <dt>version()</dt><dd>${esc(r.version())}</dd>
-            <dt>config.name</dt><dd>${esc(cfg.name ?? '—')}</dd>
-            <dt>config.author</dt><dd>${esc(cfg.author ?? '—')}</dd>
-            <dt>config.license</dt><dd>${esc(cfg.license ?? '—')}</dd>
+            <dt>version()</dt><dd>${mapToEscapedHtml(r.version())}</dd>
+            <dt>config.name</dt><dd>${mapToEscapedHtml(cfg.name ?? '—')}</dd>
+            <dt>config.author</dt><dd>${mapToEscapedHtml(cfg.author ?? '—')}</dd>
+            <dt>config.license</dt><dd>${mapToEscapedHtml(cfg.license ?? '—')}</dd>
             <dt>logging</dt><dd>${cats.length ? catPills : '<span class="muted">no bundle</span>'}</dd>
             <dt>getInstances()</dt><dd><span class="badge">${instances.length}</span> &nbsp; ${instPills}</dd>
         `;

@@ -130,7 +130,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
     <div class="output">
         <p class="output-label">Event log:</p>
-        <div class="event-log" id="tree5-log"></div>
+        <div class="log-panel log-panel--dark" id="tree5-log" data-empty="Click a node or move the focus…"></div>
     </div>
     <button onclick="document.getElementById('tree5-log').innerHTML = ''" class="btn-outline mt-1">Clear log</button>
 </div>
@@ -157,7 +157,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 </div>
 
 <script type="module">
-    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    import { appendLogLine, attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
     // ── Sample Data ──────────────────────────────────────────────────
 
@@ -378,13 +378,8 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 
         const logEl = document.getElementById('tree5-log');
         function logEvent(name, detail) {
-            const time = new Date().toLocaleTimeString();
             const node = detail?.node ?? detail?.focusedNode;
-            const info = node ? ` - ${node.data?.name} (path: ${node.path})` : '';
-            const entry = document.createElement('div');
-            entry.className = 'event-entry';
-            entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">${name}</span>${info}`;
-            logEl.prepend(entry);
+            appendLogLine(logEl, { name, detail: node ? `${node.data?.name} (path: ${node.path})` : undefined });
         }
 
         tree5.addEventListener('node-click', (e) => logEvent('node-click', e.detail));

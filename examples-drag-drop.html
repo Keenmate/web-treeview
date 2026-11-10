@@ -216,12 +216,13 @@
 
     <div class="output">
         <p class="output-label">Validation results:</p>
-        <div class="event-log" id="tree5-log"></div>
+        <div class="log-panel log-panel--dark" id="tree5-log" data-empty="Drag a node — each drop is allowed or rejected here…"></div>
     </div>
 </div>
 
 <script type="module">
     import { uniqueName } from '/src/index.ts';
+    import { appendLogLine } from '@keenmate/web-components-devkit/examples';
 
     // ── Sample Data ──────────────────────────────────────────────────
 
@@ -733,30 +734,22 @@
         const log5 = document.getElementById('tree5-log');
 
         tree5.beforeDropCallback = ({ target, dragged, position, operation, event }) => {
-            const time = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = 'event-entry';
             const draggedNode = dragged[0]?.node ?? dragged[0];
             const dropNode = target?.node ?? null;
 
             // Reject moving locked nodes
             if (draggedNode?.data?.name?.includes('[locked]')) {
-                entry.classList.add('log-line--err');
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">REJECTED</span> Cannot move locked node: ${draggedNode.data.name}`;
-                log5.prepend(entry);
+                appendLogLine(log5, { name: 'REJECTED', detail: `Cannot move locked node: ${draggedNode.data.name}`, variant: 'danger' });
                 return false;
             }
 
             // Reject dropping directly on Archive root
             if (dropNode?.data?.name === 'Archive' && position === 'child') {
-                entry.classList.add('log-line--err');
-                entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">REJECTED</span> Cannot drop into Archive root directly`;
-                log5.prepend(entry);
+                appendLogLine(log5, { name: 'REJECTED', detail: 'Cannot drop into Archive root directly', variant: 'danger' });
                 return false;
             }
 
-            entry.innerHTML = `<span class="event-time">${time}</span> <span class="event-name">ALLOWED</span> ${draggedNode.data?.name} &rarr; ${dropNode?.data?.name} (${position})`;
-            log5.prepend(entry);
+            appendLogLine(log5, { name: 'ALLOWED', detail: `${draggedNode.data?.name} → ${dropNode?.data?.name} (${position})`, variant: 'success' });
             return true;
         };
     });

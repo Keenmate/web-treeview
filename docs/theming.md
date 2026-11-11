@@ -306,6 +306,16 @@ else the default `<span class="wtv__loader">` drawn from the tokens above. One p
 | `--wtv-tooltip-bg` | `--base-tooltip-bg` \| text 85% into the bg (light) / the bg lifted (dark) | Tooltip background |
 | `--wtv-tooltip-text-color` | `--base-tooltip-text-color` \| `light-dark(<bg>, <text color>)` | Tooltip text color |
 | `--wtv-tooltip-box-shadow` | `--base-shadow-md` \| `0 2px 8px var(--wtv-shadow-color)` | Tooltip shadow |
+| `--wtv-tooltip-padding` | `calc(0.8 * --wtv-rem) calc(1.2 * --wtv-rem)` | Tooltip padding (8px 12px) |
+| `--wtv-tooltip-border-radius` | `= --wtv-border-radius-lg` | Tooltip corner radius |
+| `--wtv-tooltip-font-size` | `calc(--base-font-size-sm` \| `1.4` `* --wtv-rem)` | Tooltip font size (14px) |
+| `--wtv-tooltip-width` | `auto` | Tooltip width — `auto` shrinks to the content (capped by `max-width`); a length gives a fixed box (pair it with `--wtv-tooltip-max-width: none`) |
+| `--wtv-tooltip-min-width` | `0` | Width floor — the tooltip still grows up to `max-width` |
+| `--wtv-tooltip-max-width` | `calc(32 * --wtv-rem)` | Wrap point (320px); `none` when using a fixed width |
+
+The width variables size the content box (the padding is added around it). They are
+content-specific, so there are no page-wide `--base-*` width tokens:
+set them on the tree (or in a `web-treeview { … }` rule for every tree on the page).
 
 ### Z-index
 

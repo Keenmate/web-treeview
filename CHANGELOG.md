@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Examples and docs — tooltip width + custom content (2026-11-11)
+- `docs/theming.md` Tooltip table lists the whole tooltip surface: `--wtv-tooltip-padding`, `-border-radius`,
+  `-font-size` and the width model `--wtv-tooltip-width` (`auto`), `--wtv-tooltip-min-width` (`0`),
+  `--wtv-tooltip-max-width` (`32 × --wtv-rem`) — they size the content box; no `--base-*` width tokens.
+- `examples-tooltips.html` TT04 · Tooltip width: width / min-width / max-width controls on a tree with short and long
+  descriptions. TT02's custom tooltip is a pronounced element built from the callback's `node`: bold uppercase name,
+  italic description, and a *folder · N items* / *leaf* chip with level + path (built with `textContent`). TT02 drops `tooltip-placement="right-start"`: the row spans the
+  whole tree, so the tooltip flipped to the left and opened off-screen; it uses the default `top-start`.
+
+### Tests — tooltip width variables (2026-11-11)
+- e2e `tooltip.spec.ts` "width variables": default auto width + 320px wrap, `--wtv-tooltip-min-width` floor,
+  `--wtv-tooltip-max-width` wrap point, fixed `--wtv-tooltip-width` with `max-width: none` (fixture
+  `test/tooltip.html#sized`).
+
 ### Changed — BREAKING — one per-instance theme switch (2026-11-10)
 - **The `theme` attribute / property / `TreeViewOptions.theme` is removed.** Force one tree's scheme with
   `data-theme="dark"` / `"light"` on `<web-treeview>`, the switch every KeenMate component shares (it already

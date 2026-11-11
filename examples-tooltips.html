@@ -40,12 +40,15 @@
     <h2>TT02 · Rich HTML tooltips</h2>
     <p>
         Return a built <code>HTMLElement</code> from the callback for rich content (the
-        web-component analog of svelte-treeview's <code>tooltip</code> snippet). Here each
-        tooltip shows an icon + title, a description line, and the node path.
+        web-component analog of svelte-treeview's <code>tooltip</code> snippet). The callback gets
+        the node, so the content can show its place in the tree: here a bold icon + name, the
+        description in italics, and a chip — <em>folder · N items</em> for a branch, <em>leaf</em>
+        otherwise — with the level and path. Tooltip content is display-only: no buttons or links
+        (the tooltip ignores the pointer and closes when it leaves the row).
     </p>
 
     <div class="tree-container" id="tree2-container">
-        <web-treeview id="tree2" expand-level="3" show-node-tooltips tooltip-placement="right-start"></web-treeview>
+        <web-treeview id="tree2" expand-level="3" show-node-tooltips></web-treeview>
     </div>
 </div>
 
@@ -69,6 +72,32 @@
     </div>
 </div>
 
+<!-- TT04 · Tooltip width -->
+<div class="card">
+    <h2>TT04 · Tooltip width</h2>
+    <p>
+        Three variables size the tooltip box. <code>--wtv-tooltip-width</code> is <code>auto</code>
+        (shrink to the content) by default, capped by <code>--wtv-tooltip-max-width</code> (the wrap
+        point, <code>32 × --wtv-rem</code> = 320px); <code>--wtv-tooltip-min-width</code> sets a floor
+        that still grows up to the max. For a fixed box set a width and clear the max
+        (<code>none</code>). Change the values and hover a row — short and long descriptions show the
+        difference.
+    </p>
+
+    <div class="controls">
+        <label title="Tooltip width in px (--wtv-tooltip-width). Empty = auto (shrink to the content)."><code>--wtv-tooltip-width</code> (px):
+            <input type="number" id="tw-width" min="40" max="600" step="10" placeholder="auto" class="w-xs"></label>
+        <label title="Minimum tooltip width in px (--wtv-tooltip-min-width). Empty = 0 (no floor)."><code>--wtv-tooltip-min-width</code> (px):
+            <input type="number" id="tw-min" min="0" max="600" step="10" placeholder="0" class="w-xs"></label>
+        <label title="Maximum tooltip width in px before the text wraps (--wtv-tooltip-max-width). Empty = none."><code>--wtv-tooltip-max-width</code> (px):
+            <input type="number" id="tw-max" min="40" max="600" step="10" value="320" placeholder="none" class="w-xs"></label>
+    </div>
+
+    <div class="tree-container" id="tree4-container">
+        <web-treeview id="tree4" expand-level="3" show-node-tooltips tooltip-delay="150"></web-treeview>
+    </div>
+</div>
+
 <script type="module">
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
@@ -82,7 +111,8 @@
         { id: 'lemon', path: '1.3.2', name: 'Lemon', icon: '🍋', desc: '' /* no tooltip */ },
         { id: 'veg', path: '2', name: 'Vegetables', icon: '🥦', desc: 'Edible plants & roots' },
         { id: 'carrot', path: '2.1', name: 'Carrot', icon: '🥕', desc: 'Crunchy orange root' },
-        { id: 'potato', path: '2.2', name: 'Potato', icon: '🥔', desc: 'Starchy tuber' }
+        { id: 'potato', path: '2.2', name: 'Potato', icon: '🥔', desc: 'Starchy tuber' },
+        { id: 'spinach', path: '2.3', name: 'Spinach', icon: '🥬', desc: 'Leafy green, eaten raw in salads or cooked; rich in iron, folate and vitamins A, C and K, and one of the quickest crops to grow' }
     ];
     const byPath = (p) => data.find(d => d.path === p);
 
@@ -103,26 +133,41 @@
             getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
         });
 
-        // TT02 — rich HTML element
+        // TT02 — rich element built from the node: bold name, italic description, and a
+        // branch / leaf chip with level + path. textContent only (node data is never HTML);
+        // the tooltip lives in the tree's shadow root, so the content styles itself inline.
         Object.assign(tree2, common, {
             nodes: data,
             getNodeTooltipCallback: ({ node }) => {
                 const d = node.data;
                 if (!d) return null;
-                const el = document.createElement('div');
-                el.style.display = 'flex';
-                el.style.flexDirection = 'column';
-                el.style.gap = '2px';
-                el.innerHTML =
-                    `<strong>${d.icon} ${d.name}</strong>` +
-                    `<span style="opacity:.85">${d.desc || '—'}</span>` +
-                    `<span style="opacity:.6;font-size:.85em">path ${d.path}</span>`;
-                return el;
+                const box = document.createElement('div');
+                box.style.cssText = 'display: grid; gap: .25rem; white-space: normal;';
+                const name = document.createElement('strong');
+                name.style.cssText = 'font-size: 1.05em; letter-spacing: .02em; text-transform: uppercase;';
+                name.textContent = `${d.icon} ${d.name}`;
+                const about = document.createElement('span');
+                about.style.cssText = 'opacity: .8; font-style: italic;';
+                about.textContent = d.desc || 'No description';
+                const chip = document.createElement('span');
+                const count = node.children.length;
+                chip.style.cssText = 'justify-self: start; margin-top: .15rem; padding: 0 .45rem; border-radius: 999px; font-size: .85em;'
+                    + (count ? ' background: #2563eb; color: #fff;' : ' border: 1px solid currentColor; opacity: .75;');
+                chip.textContent = (count ? `folder · ${count} item${count === 1 ? '' : 's'}` : 'leaf')
+                    + ` · level ${node.level} · path ${node.path}`;
+                box.append(name, about, chip);
+                return box;
             }
         });
 
         // TT03 — theme reaction
         Object.assign(tree3, common, {
+            nodes: data,
+            getNodeTooltipCallback: ({ node }) => node.data?.desc || node.data?.name || null
+        });
+
+        // TT04 — width variables (plain text, so the box size is easy to see)
+        Object.assign(document.getElementById('tree4'), common, {
             nodes: data,
             getNodeTooltipCallback: ({ node }) => node.data?.desc || node.data?.name || null
         });
@@ -145,6 +190,19 @@
         if (t) tree.setAttribute('data-theme', t); else tree.removeAttribute('data-theme');
         activate(btn);
     };
+
+    // TT04 — an empty field falls back to the variable's own default.
+    const tree4 = document.getElementById('tree4');
+    const bindWidth = (inputId, cssVar, emptyValue) => {
+        document.getElementById(inputId).addEventListener('input', (e) => {
+            const v = e.target.value;
+            if (v === '' && emptyValue == null) tree4.style.removeProperty(cssVar);
+            else tree4.style.setProperty(cssVar, v === '' ? emptyValue : `${v}px`);
+        });
+    };
+    bindWidth('tw-width', '--wtv-tooltip-width', null);
+    bindWidth('tw-min', '--wtv-tooltip-min-width', null);
+    bindWidth('tw-max', '--wtv-tooltip-max-width', 'none');
 
     // Persist .controls across reloads (shared helper — parity with web-multiselect).
     attachControlsPersistence('tooltips');

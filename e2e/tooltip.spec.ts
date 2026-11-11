@@ -112,3 +112,57 @@ test('tooltipDelay = { show, hide } (JS property): instant show, delayed hide', 
 	await expect(tip).toBeVisible();
 	await expect(page.locator('#delayed .wtv__tooltip')).toHaveCount(0, { timeout: 2000 });
 });
+
+test.describe('width variables', () => {
+	const tipBox = async (page: Page, path: string) => {
+		await row(page, 'sized', path).hover();
+		const tip = page.locator('.wtv__tooltip.wtv__tooltip--visible');
+		await expect(tip).toBeVisible();
+		return tip.evaluate((el) => {
+			// The variables size the CONTENT box (padding is added outside, like any box).
+			const cs = getComputedStyle(el);
+			const extra = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth']
+				.reduce((sum, k) => sum + parseFloat(cs[k as any]), 0);
+			return { width: el.getBoundingClientRect().width - extra, minWidth: cs.minWidth, maxWidth: cs.maxWidth };
+		});
+	};
+	const setVars = (page: Page, vars: Record<string, string>) =>
+		page.evaluate((v) => {
+			const el = document.getElementById('sized')!;
+			for (const [k, val] of Object.entries(v)) el.style.setProperty(k, val);
+		}, vars);
+
+	test('defaults: auto width shrinks to short text; a long text wraps at the 320px max-width', async ({ page }) => {
+		const short = await tipBox(page, '1');
+		expect(short.minWidth).toBe('0px');
+		expect(short.maxWidth).toBe('320px');
+		expect(short.width).toBeLessThan(100);
+		await page.mouse.move(0, 0);
+		const long = await tipBox(page, '1.1');
+		expect(long.width).toBeLessThanOrEqual(320.5);
+		expect(long.width).toBeGreaterThan(300);
+	});
+
+	test('--wtv-tooltip-min-width is a floor for short content', async ({ page }) => {
+		await setVars(page, { '--wtv-tooltip-min-width': '250px' });
+		const box = await tipBox(page, '1');
+		expect(box.minWidth).toBe('250px');
+		expect(Math.round(box.width)).toBe(250);
+	});
+
+	test('--wtv-tooltip-max-width moves the wrap point', async ({ page }) => {
+		await setVars(page, { '--wtv-tooltip-max-width': '180px' });
+		const box = await tipBox(page, '1.1');
+		expect(box.maxWidth).toBe('180px');
+		expect(box.width).toBeLessThanOrEqual(180.5);
+	});
+
+	test('--wtv-tooltip-width + max-width:none gives a fixed box', async ({ page }) => {
+		await setVars(page, { '--wtv-tooltip-width': '450px', '--wtv-tooltip-max-width': 'none' });
+		const short = await tipBox(page, '1');
+		expect(Math.round(short.width)).toBe(450);
+		await page.mouse.move(0, 0);
+		const long = await tipBox(page, '1.1');
+		expect(Math.round(long.width)).toBe(450);
+	});
+});

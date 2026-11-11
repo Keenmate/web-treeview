@@ -36,6 +36,8 @@
             tooltip-placement="right" tooltip-offset="24" tooltip-delay="0"></web-treeview></div>
         <h2>delay object (JS property)</h2>
         <div class="tree"><web-treeview id="delayed" expand-level="2" show-node-tooltips></web-treeview></div>
+        <h2>width variables (--wtv-tooltip-width / -min-width / -max-width)</h2>
+        <div class="tree"><web-treeview id="sized" expand-level="2" show-node-tooltips tooltip-delay="0"></web-treeview></div>
         <h2>attribute delay</h2>
         <div class="tree"><web-treeview id="slow" expand-level="2" show-node-tooltips tooltip-delay="700"></web-treeview></div>
     </main>
@@ -78,6 +80,16 @@
 
             Object.assign(cursor, {
                 idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: wideData,
+                getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
+            });
+
+            // Short text on "1", a long sentence on "1.1" (wraps at max-width).
+            Object.assign(document.getElementById('sized'), {
+                idMember: 'id', pathMember: 'path', displayValueMember: 'name',
+                nodes: [
+                    { id: 1, path: '1', name: 'Short', desc: 'Hi' },
+                    { id: 2, path: '1.1', name: 'Long', desc: 'A deliberately long tooltip sentence that keeps going well past any sensible width so the box has to wrap at its max-width' }
+                ],
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
             });
 

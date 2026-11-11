@@ -8,6 +8,8 @@
         main { max-width: 900px; margin: 0 auto; padding: 1.5rem; font-family: system-ui, sans-serif; }
         .tree { width: 300px; border: 1px solid #ccc; margin-bottom: 1rem; }
         web-treeview { display: block; }
+        /* No scroll anchoring: an expand under a stationary pointer must not shift the page. */
+        html { overflow-anchor: none; }
     </style>
 </head>
 <body>
@@ -38,6 +40,8 @@
         <div class="tree"><web-treeview id="delayed" expand-level="2" show-node-tooltips></web-treeview></div>
         <h2>width variables (--wtv-tooltip-width / -min-width / -max-width)</h2>
         <div class="tree"><web-treeview id="sized" expand-level="2" show-node-tooltips tooltip-delay="0"></web-treeview></div>
+        <h2>live state (selected / checked / expanded)</h2>
+        <div class="tree"><web-treeview id="live" expand-level="2" show-node-tooltips show-checkboxes tooltip-delay="0"></web-treeview></div>
         <h2>attribute delay</h2>
         <div class="tree"><web-treeview id="slow" expand-level="2" show-node-tooltips tooltip-delay="700"></web-treeview></div>
     </main>
@@ -91,6 +95,13 @@
                     { id: 2, path: '1.1', name: 'Long', desc: 'A deliberately long tooltip sentence that keeps going well past any sensible width so the box has to wrap at its max-width' }
                 ],
                 getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
+            });
+
+            // The content reads the node's LIVE state — resolved at show time, refreshed while open.
+            Object.assign(document.getElementById('live'), common, {
+                getNodeTooltipCallback: ({ node, element }) =>
+                    `${node.data.name} | sel:${node.isSelected ? 1 : 0} | chk:${node.isChecked ? 1 : 0} | exp:${node.isExpanded ? 1 : 0}`
+                    + ` | checked in tree:${element.checkedPaths.length}`
             });
 
             for (const id of ['placed', 'delayed', 'slow']) {

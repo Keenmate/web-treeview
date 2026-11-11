@@ -95,15 +95,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private lastSnapshot: TreeEngineSnapshot<T> | null = null;
   private lastNodeConfig: NodeConfig | null = null;
   // Hover/focus tooltip handles, keyed like nodeElements (id || path). Created per
-  // row via the shared core createTooltip; rebuilt only when the node's data changes
-  // (content derives from getNodeTooltipCallback(node)), destroyed when the row leaves.
+  // row via the shared core createTooltip, destroyed when the row leaves. The content
+  // is resolved from getNodeTooltipCallback(ctx) at SHOW time (and refreshed while
+  // visible on every state change), so it reflects live state — selected / checked /
+  // expanded / focused — not the state the row was built in. The handle itself is
+  // kept across reconciles, so the follow-cursor rect seeded on mouseenter survives.
   // Mirrors web-multiselect's option tooltips.
   private tooltips = new Map<string, TooltipHandle>();
-  // The node _rev each live tooltip was built at. A reconcile pass that ISN'T a data
-  // change (virtual-scroll reposition, focus/selection toggle) keeps the same handle,
-  // so the core createTooltip's follow-cursor rect — seeded on mouseenter — survives a
-  // stationary hover instead of being dropped by a needless destroy+recreate.
-  private tooltipRevs = new Map<string, number>();
+  // The node each live tooltip describes (the content is resolved from it at show time).
+  private tooltipNodes = new Map<string, LTreeNode<T>>();
   private _lastDragOverTarget: string = '';
   private _lastEmptyState: string = '';
   // Responsive env for the NodeRenderContext (@keenmate/web-components-core/environment).
@@ -1188,6 +1188,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Reconcile nodes
     this._reconcileNodes(snapshot);
+    // An open tooltip tracks the state change that produced this snapshot.
+    this._refreshVisibleTooltips();
 
     // Virtual scroll: update spacer/content positioning
     this._updateVirtualScrollPositioning(snapshot);
@@ -1730,32 +1732,61 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     };
   }
 
-  /** Create / refresh / tear down the hover-focus tooltip for a row. The direct
-   *  analog of web-multiselect's attachOptionTooltips, built on the shared core
-   *  createTooltip (portal, autoUpdate, shouldFollowCursor, data-theme inherit). Recreated
-   *  on every node update so content tracks data (rename / _rev bump); a no-op +
-   *  teardown when disabled, no callback, or empty content. Mounts into the shadow
-   *  container so it inherits the injected --wtv-tooltip-* tokens + data-theme. */
+  /** Create / tear down the hover-focus tooltip for a row. The direct analog of
+   *  web-multiselect's attachOptionTooltips, built on the shared core createTooltip
+   *  (portal, autoUpdate, shouldFollowCursor, data-theme inherit). The handle is made
+   *  whenever tooltips are on and a callback is set; the CONTENT is resolved from the
+   *  callback at each show (`_fillTooltip`), so it reflects the node's live state.
+   *  Empty content ⇒ the tooltip doesn't stay up. Mounts into the shadow container so
+   *  it inherits the injected --wtv-tooltip-* tokens + data-theme. */
   private _applyTooltip(triggerEl: HTMLElement | null, node: LTreeNode<T>): void {
     const key = this._nodeKey(node);
     this._destroyTooltip(key);
     const cfg = this.lastNodeConfig;
     if (!triggerEl || !cfg?.isNodeTooltipsShown || !cfg.getNodeTooltipCallback) return;
-    const content = cfg.getNodeTooltipCallback(node);
-    if (content == null || (typeof content === 'string' && content.trim() === '')) return;
-    const handle = createTooltip({
+    const handle: TooltipHandle = createTooltip({
       trigger: triggerEl,
       container: this.container ?? document.body,
-      content,
+      content: '',
       placement: cfg.tooltipPlacement,
       offset: cfg.tooltipOffset,
       delay: cfg.tooltipDelay,
       shouldFollowCursor: cfg.shouldTooltipFollowCursor,
       cssClass: 'wtv__tooltip',
-      visibleClass: 'wtv__tooltip--visible'
+      visibleClass: 'wtv__tooltip--visible',
+      // Runs right before the tooltip becomes visible: resolve the content NOW. No
+      // content → hide on the microtask (before paint; show() can't be cancelled here).
+      beforeShowCallback: () => {
+        if (!this._fillTooltip(key)) queueMicrotask(() => handle.hide());
+      }
     });
     this.tooltips.set(key, handle);
-    this.tooltipRevs.set(key, node._rev);
+    this.tooltipNodes.set(key, node);
+  }
+
+  /** Resolve a tooltip's content from the callback against its node's current state and
+   *  put it into the tooltip element. Returns false when there's nothing to show. */
+  private _fillTooltip(key: string): boolean {
+    const handle = this.tooltips.get(key);
+    const node = this.tooltipNodes.get(key);
+    const cb = this.lastNodeConfig?.getNodeTooltipCallback;
+    if (!handle || !node || !cb) return false;
+    const content = cb(node);
+    if (content == null || (typeof content === 'string' && content.trim() === '')) {
+      handle.element.replaceChildren();
+      return false;
+    }
+    if (typeof content === 'string') handle.element.textContent = content;
+    else handle.element.replaceChildren(content);
+    return true;
+  }
+
+  /** A state change (selection / check / expand / focus / data) while a tooltip is up:
+   *  re-resolve its content so it never shows stale state; nothing left → hide. */
+  private _refreshVisibleTooltips(): void {
+    for (const [key, handle] of this.tooltips) {
+      if (handle.isVisible && !this._fillTooltip(key)) handle.hide();
+    }
   }
 
   private _destroyTooltip(key: string): void {
@@ -1764,13 +1795,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       h.destroy();
       this.tooltips.delete(key);
     }
-    this.tooltipRevs.delete(key);
+    this.tooltipNodes.delete(key);
   }
 
   private _destroyAllTooltips(): void {
     for (const h of this.tooltips.values()) h.destroy();
     this.tooltips.clear();
-    this.tooltipRevs.clear();
+    this.tooltipNodes.clear();
   }
 
   private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): void {
@@ -1891,17 +1922,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Refresh the per-node icon (value/color track the node's data).
     const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
     if (row) this._applyNodeIcon(row, node, ctx);
-    // Rebuild the tooltip ONLY when the node's data changed — its content comes
-    // from getNodeTooltipCallback(node), so a same-_rev reconcile (reposition,
-    // focus/selection toggle) must keep the existing handle. Rebuilding every pass
-    // would drop the follow-cursor rect seeded on mouseenter (stationary-hover bug)
-    // and needlessly churn floating-ui autoUpdate + listeners. Enable/disable,
-    // callback, placement and follow-cursor changes are config-level and go through
-    // _onConfigChange → _fullRender, which rebuilds all tooltips anyway.
-    const key = this._nodeKey(node);
-    if (this.tooltipRevs.get(key) !== node._rev) {
-      this._applyTooltip(content, node);
-    }
+    // The tooltip handle is kept (its content is resolved at show time and refreshed
+    // while visible — _refreshVisibleTooltips), so the follow-cursor rect seeded on
+    // mouseenter survives a reconcile. Enable/disable, callback, placement and
+    // follow-cursor changes are config-level and go through _onConfigChange →
+    // _fullRender, which rebuilds all tooltips anyway.
   }
 
   // ── Drag CSS classes ────────────────────────────────────────────────

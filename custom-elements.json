@@ -8758,9 +8758,9 @@
             },
             {
               "kind": "field",
-              "name": "tooltipRevs",
+              "name": "tooltipNodes",
               "privacy": "private",
-              "default": "new Map<string, number>()"
+              "default": "new Map<string, LTreeNode<T>>()"
             },
             {
               "kind": "field",
@@ -9663,7 +9663,37 @@
                   }
                 }
               ],
-              "description": "Create / refresh / tear down the hover-focus tooltip for a row. The direct\nanalog of web-multiselect's attachOptionTooltips, built on the shared core\ncreateTooltip (portal, autoUpdate, shouldFollowCursor, data-theme inherit). Recreated\non every node update so content tracks data (rename / _rev bump); a no-op +\nteardown when disabled, no callback, or empty content. Mounts into the shadow\ncontainer so it inherits the injected --wtv-tooltip-* tokens + data-theme."
+              "description": "Create / tear down the hover-focus tooltip for a row. The direct analog of\nweb-multiselect's attachOptionTooltips, built on the shared core createTooltip\n(portal, autoUpdate, shouldFollowCursor, data-theme inherit). The handle is made\nwhenever tooltips are on and a callback is set; the CONTENT is resolved from the\ncallback at each show (`_fillTooltip`), so it reflects the node's live state.\nEmpty content ⇒ the tooltip doesn't stay up. Mounts into the shadow container so\nit inherits the injected --wtv-tooltip-* tokens + data-theme."
+            },
+            {
+              "kind": "method",
+              "name": "_fillTooltip",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "key",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ],
+              "description": "Resolve a tooltip's content from the callback against its node's current state and\nput it into the tooltip element. Returns false when there's nothing to show."
+            },
+            {
+              "kind": "method",
+              "name": "_refreshVisibleTooltips",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "A state change (selection / check / expand / focus / data) while a tooltip is up:\nre-resolve its content so it never shows stale state; nothing left → hide."
             },
             {
               "kind": "method",

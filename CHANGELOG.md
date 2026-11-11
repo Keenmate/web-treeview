@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — node tooltips show live state (2026-11-11)
+- A `getNodeTooltipCallback` tooltip is resolved when it opens, not when the row was last rendered, so content
+  built from live state (`node.isSelected` / `isChecked` / `isExpanded`, or anything read off `ctx.element` /
+  `ctx.controller`) is never stale. A tooltip that's open while its node's state changes (a click, a checkbox,
+  <kbd>Space</kbd> / <kbd>Enter</kbd>) updates in place instead of closing; empty content still means no tooltip.
+- Examples: TT02's rich tooltip adds *selected* / *checked* / *expanded* state chips (tree shows checkboxes).
+- e2e `tooltip.spec.ts` "live state" (fixture `test/tooltip.html#live`).
+
 ### Examples and docs — tooltip width + custom content (2026-11-11)
 - `docs/theming.md` Tooltip table lists the whole tooltip surface: `--wtv-tooltip-padding`, `-border-radius`,
   `-font-size` and the width model `--wtv-tooltip-width` (`auto`), `--wtv-tooltip-min-width` (`0`),

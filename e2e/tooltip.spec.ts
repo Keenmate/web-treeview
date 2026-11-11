@@ -113,6 +113,48 @@ test('tooltipDelay = { show, hide } (JS property): instant show, delayed hide', 
 	await expect(page.locator('#delayed .wtv__tooltip')).toHaveCount(0, { timeout: 2000 });
 });
 
+test.describe('live state: the callback content reflects the node state when shown', () => {
+	const liveTip = (page: Page) => page.locator('#live .wtv__tooltip.wtv__tooltip--visible');
+
+	test('state toggled before the hover → the tooltip shows the new state', async ({ page }) => {
+		await row(page, 'live', '1.1').hover();
+		await expect(liveTip(page)).toHaveText('Apple | sel:0 | chk:0 | exp:1 | checked in tree:0');
+		await page.mouse.move(0, 0);
+		await expect(page.locator('#live .wtv__tooltip')).toHaveCount(0);
+
+		// Another row's check doesn't touch Apple's node, but Apple's tooltip reads the
+		// tree-wide count — resolved when shown, not when the row was last rendered.
+		await page.evaluate(() => (document.getElementById('live') as any).checkNode('1.2'));
+		await row(page, 'live', '1.1').hover();
+		await expect(liveTip(page)).toHaveText('Apple | sel:0 | chk:0 | exp:1 | checked in tree:1');
+
+		// Select (click) + check (Space) Apple itself, then hover again.
+		await row(page, 'live', '1.1').click();
+		await page.keyboard.press('Space');
+		await page.mouse.move(0, 0);
+		await expect(page.locator('#live .wtv__tooltip')).toHaveCount(0);
+		await row(page, 'live', '1.1').hover();
+		await expect(liveTip(page)).toHaveText('Apple | sel:1 | chk:1 | exp:1 | checked in tree:2');
+	});
+
+	test('state toggled from the keyboard while the tooltip is open → it updates in place', async ({ page }) => {
+		// Focus the tree on Apple, then move the keyboard focus to its parent Fruits.
+		await row(page, 'live', '1.1').click();
+		await page.keyboard.press('ArrowLeft');
+		// Start collapsed: expanding (Enter) grows the page, so the hovered row stays under
+		// the pointer (a collapse can shrink the page and scroll the row away).
+		await page.evaluate(() => (document.getElementById('live') as any).collapseNodes('1'));
+		await row(page, 'live', '1').hover();
+		const tip = liveTip(page);
+		await expect(tip).toContainText('Fruits | ');
+		await expect(tip).toContainText('chk:0 | exp:0');
+		await page.keyboard.press('Space'); // checkboxes shown → toggles the focused node's check
+		await expect(tip).toContainText('chk:1 | exp:0');
+		await page.keyboard.press('Enter'); // expands the focused branch
+		await expect(tip).toContainText('chk:1 | exp:1');
+	});
+});
+
 test.describe('width variables', () => {
 	const tipBox = async (page: Page, path: string) => {
 		await row(page, 'sized', path).hover();

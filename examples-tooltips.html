@@ -43,12 +43,15 @@
         web-component analog of svelte-treeview's <code>tooltip</code> snippet). The callback gets
         the node, so the content can show its place in the tree: here a bold icon + name, the
         description in italics, and a chip — <em>folder · N items</em> for a branch, <em>leaf</em>
-        otherwise — with the level and path. Tooltip content is display-only: no buttons or links
-        (the tooltip ignores the pointer and closes when it leaves the row).
+        otherwise — with the level and path. The callback runs each time the tooltip opens (and
+        again while it's open), so it can show live state too: the second row of chips reads
+        <code>isSelected</code> / <code>isChecked</code> / <code>isExpanded</code>. Click a row, tick a
+        checkbox or press <kbd>Space</kbd> / <kbd>Enter</kbd> with a tooltip open — it follows. Tooltip
+        content is display-only: no buttons or links.
     </p>
 
     <div class="tree-container" id="tree2-container">
-        <web-treeview id="tree2" expand-level="3" show-node-tooltips></web-treeview>
+        <web-treeview id="tree2" expand-level="3" show-node-tooltips show-checkboxes></web-treeview>
     </div>
 </div>
 
@@ -155,7 +158,19 @@
                     + (count ? ' background: #2563eb; color: #fff;' : ' border: 1px solid currentColor; opacity: .75;');
                 chip.textContent = (count ? `folder · ${count} item${count === 1 ? '' : 's'}` : 'leaf')
                     + ` · level ${node.level} · path ${node.path}`;
-                box.append(name, about, chip);
+                // Live state — read when the tooltip opens and refreshed while it's open.
+                const states = document.createElement('span');
+                states.style.cssText = 'display: flex; flex-wrap: wrap; gap: .25rem;';
+                const stateChip = (label, isOn) => {
+                    const s = document.createElement('span');
+                    s.style.cssText = 'padding: 0 .45rem; border-radius: 999px; font-size: .85em;'
+                        + (isOn ? ' background: #16a34a; color: #fff;' : ' border: 1px dashed currentColor; opacity: .6;');
+                    s.textContent = (isOn ? '✓ ' : '✗ ') + label;
+                    return s;
+                };
+                states.append(stateChip('selected', node.isSelected), stateChip('checked', node.isChecked));
+                if (count) states.append(stateChip('expanded', node.isExpanded));
+                box.append(name, about, chip, states);
                 return box;
             }
         });

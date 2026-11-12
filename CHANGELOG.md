@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Internal — core 1.0.0-rc22 (2026-11-13)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
 
+### Added — the context menu is named by its node (2026-11-13)
+- The context menu passes the node's display text to core `openMenu({ title })` (rc22): it is the menu's
+  `aria-label`, and on a phone — where the menu is a bottom sheet — the sheet's header.
+
 ### Fixed — node tooltips show live state (2026-11-11)
 - A `getNodeTooltipCallback` tooltip is resolved when it opens, not when the row was last rendered, so content
   built from live state (`node.isSelected` / `isChecked` / `isExpanded`, or anything read off `ctx.element` /

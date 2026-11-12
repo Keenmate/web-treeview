@@ -1,3 +1,4 @@
+import { devices } from '@playwright/test';
 import { test, expect, Page, Locator, nodeContent, escapeRe, nodeByPath } from './fixtures';
 
 /**
@@ -226,5 +227,38 @@ test.describe('Callback approach', () => {
 
     await card.getByRole('button', { name: 'Clear Log' }).click();
     await expect(card.locator('.output')).toBeHidden();
+  });
+});
+
+// ── Menu title (core openMenu title: aria-label; the phone sheet's header) ──
+
+test.describe('menu title', () => {
+  test("the menu is named by the node's text", async ({ page }) => {
+    await gotoContextMenu(page);
+    const card = callbackCard(page);
+    await rightClick(card, '1.2');
+    await expect(menuIn(card)).toHaveAttribute('aria-label', 'Notes.txt');
+  });
+});
+
+// Chromium only (the e2e rule): a phone = the Pixel 7 descriptor (isMobile + hasTouch → coarse pointer)
+const { defaultBrowserType: _ignored, ...PHONE } = devices['Pixel 7'];
+
+test.describe('phone: the context menu is a bottom sheet', () => {
+  test.use(PHONE);
+
+  test("the sheet header shows the node's text; the close button closes it", async ({ page }) => {
+    await gotoContextMenu(page);
+    const content = nodeContent(nodeIn(callbackCard(page), '1.2'));
+    await content.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await content.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true, clientX: r.x + 10, clientY: r.y + r.height / 2 }));
+    });
+    const sheet = page.locator('.km-menu-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('.km-menu-sheet__title')).toHaveText('Notes.txt');
+    await sheet.locator('.km-menu-sheet__close').tap();
+    await expect(sheet).toHaveCount(0);
   });
 });

@@ -2071,6 +2071,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       host: this.container,
       shouldFocusFirst: isFromKeyboard,
       returnFocusTo: this.bodyEl,
+      // The node's text names the menu: the phone sheet's header and the menu's aria-label.
+      title: this.controller.tree?.getNodeDisplayValue(node) || String(node.id),
       // A lazy submenu's loading row speaks the tree's own `labels.loading`.
       labels: { loading: resolveLabel(config.labels, 'loading') },
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),

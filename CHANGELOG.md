@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — core 1.0.0-rc22 (2026-11-13)
+- **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
+
 ### Fixed — node tooltips show live state (2026-11-11)
 - A `getNodeTooltipCallback` tooltip is resolved when it opens, not when the row was last rendered, so content
   built from live state (`node.isSelected` / `isChecked` / `isExpanded`, or anything read off `ctx.element` /

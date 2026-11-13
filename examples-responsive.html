@@ -72,7 +72,7 @@
 </div>
 <p class="form-text">&harr; The box has a native resize handle (bottom-right) &mdash; drag it to cross 460px.</p>
 
-<div class="code-block"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
+<div class="code-block" data-language="js"><pre><code>tree.renderNodeCallback = ({ node, contentElement: el, container, deviceClass }) =&gt; {
   const narrow = container.width &lt; 460;            // the tree's OWN box
   el.innerHTML = '';
   const row = document.createElement('span');
@@ -122,7 +122,7 @@
 </div>
 <p class="form-text">&harr; Drag the handle below ~380px to collapse to major groups only.</p>
 
-<div class="code-block"><pre><code>// ctx tells each row the device + box; your app picks the depth from the
+<div class="code-block" data-language="js"><pre><code>// ctx tells each row the device + box; your app picks the depth from the
 // derived breakpoint and reassigns expandLevel (capability first, then width):
 function resolveDepth(width, deviceClass) {
   if (deviceClass === 'mobile' || width &lt; 380) return 1; // major groups
@@ -167,7 +167,7 @@ new ResizeObserver(([e]) =&gt; {
 </div>
 <p class="form-text">In <code>ellipsis</code> mode, hover a clipped occupation title to see the full text.</p>
 
-<div class="code-block"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
+<div class="code-block" data-language="js"><pre><code>let overflow = 'ellipsis';   // 'wrap' | 'ellipsis'
 
 tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
   el.innerHTML = '';
@@ -189,7 +189,7 @@ tree.renderNodeCallback = ({ node, contentElement: el }) =&gt; {
     observers and tears them down in <code>destroy()</code>.
 </p>
 
-<div class="code-block"><pre><code>interface NodeRenderContext {
+<div class="code-block" data-language="ts"><pre><code>interface NodeRenderContext {
   deviceClass: 'mobile' | 'tablet' | 'desktop'; // classifyDevice(): capability + size
   container: { width: number; height: number }; // the tree's OWN border-box, in px
   isExpanded:    boolean;

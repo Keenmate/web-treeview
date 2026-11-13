@@ -10,7 +10,7 @@
 
     <div class="grid" style="--grid-min: 320px">
         <div>
-            <div class="code-block">
+            <div class="code-block" data-language="js">
 <pre><code>// Each item's path encodes its position
 const data = [
   { id: 1, path: '1',     name: 'Root' },
@@ -70,7 +70,7 @@ tree.displayValueMember = 'name';</code></pre>
         </div>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>// No displayValueMember and no callback → every label uses the fallback
 tree.idMember = 'id';
 tree.pathMember = 'path';
@@ -89,7 +89,7 @@ tree.labels = { noDisplayValue: '(no name)' };</code></pre>
             <div class="tree-container tree-container-sm" id="ds03a-container">
                 <web-treeview id="ds03a" tree-path-separator="/" expand-level="3"></web-treeview>
             </div>
-            <div class="code-block">
+            <div class="code-block" data-language="js">
 <pre><code>tree.treePathSeparator = '/';
 tree.nodes = [
   { id: 1, path: 'home',               name: '/home' },
@@ -103,7 +103,7 @@ tree.nodes = [
             <div class="tree-container tree-container-sm" id="ds03b-container">
                 <web-treeview id="ds03b" tree-path-separator="::" expand-level="3"></web-treeview>
             </div>
-            <div class="code-block">
+            <div class="code-block" data-language="js">
 <pre><code>tree.treePathSeparator = '::';
 tree.nodes = [
   { id: 1, path: 'App',                name: 'App' },
@@ -137,7 +137,7 @@ tree.nodes = [
         <pre id="ds04-output">Run a branch operation</pre>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>// addBranch(parentPath, data)  → { success, count, failed: [{ data, error }], parentNode }
 //   every item is placed by its own path (whole subtrees OK); an item with a
 //   missing/empty path, a duplicate path, or a path not under parentPath is in `failed`
@@ -174,7 +174,7 @@ const res = tree.addBranch('1.1', [
         <pre id="ds05-output"></pre>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>tree.addNode('1', { id: 9, path: '1.9', name: 'New Task' });
 tree.updateNode('1', { name: 'Renamed Root' });
 tree.removeNode('1.3');                 // remove a single leaf
@@ -219,10 +219,10 @@ tree.removeNode('1', true);             // remove a node and its descendants</co
         </thead>
         <tbody>
             <tr class="is-highlight">
-                <td><code>data</code></td>
+                <td><code>nodes</code></td>
                 <td>&mdash; (set as JS property)</td>
                 <td><code>[]</code></td>
-                <td>Array of data items to display in the tree</td>
+                <td>Array of node objects to display in the tree (assigning replaces the data)</td>
             </tr>
             <tr>
                 <td><code>idMember</code></td>
@@ -251,7 +251,7 @@ tree.removeNode('1', true);             // remove a node and its descendants</co
         </tbody>
     </table>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>// Your data can use any property names
 const data = [
   { categoryId: 1, categoryPath: '1',   label: 'Electronics' },

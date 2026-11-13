@@ -35,7 +35,7 @@
         <p style="margin:0">The search index is built asynchronously after the data is set. If no results appear on the very first keystroke, wait a moment for indexing to finish.</p>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>// Enable the internal index + point it at the label member
 tree.shouldUseInternalSearchIndex = true;
 tree.searchValueMember = 'name';
@@ -120,7 +120,7 @@ function navigateTo(i) {
 <!-- SF03 · Internal Search Index (FlexSearch) -->
 <div class="card">
     <h2>SF03 · Internal Search Index (FlexSearch)</h2>
-    <p>Search is backed by an internal <strong>FlexSearch</strong> index, built asynchronously off the node data. Enable it with <code>shouldUseInternalSearchIndex</code> and tell it which value to index via <code>searchValueMember</code> (or the <code>getSearchValueCallback</code> for multi-field / computed text). Without the index enabled, <code>filterNodes</code> / <code>searchNodes</code> have nothing to query.</p>
+    <p>Search is backed by an internal <strong>FlexSearch</strong> index, built asynchronously off the node data. It is on by default (<code>shouldUseInternalSearchIndex</code>); tell it which value to index via <code>searchValueMember</code> (or the <code>getSearchValueCallback</code> for multi-field / computed text). Without the index enabled, <code>filterNodes</code> / <code>searchNodes</code> have nothing to query.</p>
 
     <table class="reference-table">
         <thead>
@@ -136,7 +136,7 @@ function navigateTo(i) {
                 <td><code>shouldUseInternalSearchIndex</code></td>
                 <td><code>use-internal-search-index</code></td>
                 <td><code>boolean</code></td>
-                <td>Enable the internal FlexSearch index (required for search/filter)</td>
+                <td>Build the internal FlexSearch index (required for search/filter). Default <code>true</code>; <code>false</code> = no index, search finds nothing</td>
             </tr>
             <tr>
                 <td><code>searchValueMember</code></td>
@@ -157,10 +157,71 @@ function navigateTo(i) {
                 <td>Max nodes indexed per idle slot (default 1000; each slot is also time-boxed)</td>
             </tr>
             <tr>
+                <td><code>indexerTimeout</code></td>
+                <td><code>indexer-timeout</code></td>
+                <td><code>number</code></td>
+                <td>Idle timeout (ms) between index batches (default 50)</td>
+            </tr>
+            <tr>
+                <td><code>initializeIndexCallback</code></td>
+                <td>&mdash; (set as JS property)</td>
+                <td><code>() =&gt; Index</code></td>
+                <td>Factory for a custom FlexSearch <code>Index</code> (tokenizer, charset, …) instead of the built-in one; a change rebuilds the index</td>
+            </tr>
+            <tr>
+                <td><code>searchTerm</code></td>
+                <td><code>search-term</code></td>
+                <td><code>string | null</code></td>
+                <td>The active filter term &mdash; the declarative twin of <code>filterNodes(text)</code></td>
+            </tr>
+            <tr>
                 <td><code>searchResultLimit</code></td>
                 <td><code>search-result-limit</code></td>
                 <td><code>number</code></td>
                 <td>Max matches a search / filter returns (default 1000); <code>search-status-change</code> reports <code>isLimited</code></td>
+            </tr>
+            <tr>
+                <td><code>filterScope</code></td>
+                <td><code>filter-scope</code></td>
+                <td><code>'matches' | 'descendants' | 'tree-depth' | 'subtree-height' | 'levels-below'</code></td>
+                <td><strong>Experimental.</strong> Which descendants of a filter match stay visible (ancestors always do): <code>matches</code> (default), <code>descendants</code> (whole subtree), <code>tree-depth</code> (whole subtree for a match at level &ge; max depth &minus; x), <code>subtree-height</code> (whole subtree if it is &le; x levels deep), <code>levels-below</code> (x levels under each match)</td>
+            </tr>
+            <tr>
+                <td><code>filterDescendantDepth</code></td>
+                <td><code>filter-descendant-depth</code></td>
+                <td><code>number</code></td>
+                <td><strong>Experimental.</strong> The x of the depth-limited filter scopes (default 1)</td>
+            </tr>
+            <tr>
+                <td><code>shouldExpandFilterDescendants</code></td>
+                <td><code>expand-filter-descendants</code></td>
+                <td><code>boolean</code></td>
+                <td><strong>Experimental.</strong> Expand the descendants a filter scope adds (default <code>true</code>); off, they start collapsed</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="reference-table">
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Twin</th>
+                <th>Detail</th>
+                <th>Fires when</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>index-progress</code></td>
+                <td><code>onIndexProgress</code></td>
+                <td><code>{ processed, total, isComplete }</code></td>
+                <td>The async index filled another batch, and once more with <code>isComplete: true</code> at the end &mdash; results are partial until then</td>
+            </tr>
+            <tr>
+                <td><code>search-status-change</code></td>
+                <td><code>onSearchStatusChange</code></td>
+                <td><code>{ searchTerm, matchCount, isLimited, limit, isIndexing }</code></td>
+                <td>A filter was applied or cleared (also the automatic re-filter when indexing completes); <code>isLimited</code> = more matched than <code>search-result-limit</code></td>
             </tr>
         </tbody>
     </table>
@@ -183,7 +244,7 @@ function navigateTo(i) {
         <pre id="sf03-output">Type to search</pre>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>// Simple: index a single member
 tree.shouldUseInternalSearchIndex = true;
 tree.searchValueMember = 'name';
@@ -212,11 +273,11 @@ tree.getSearchValueCallback = ({ node }) =>
             <tr><th>ctx field</th><th>Type</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td><code>node</code> / <code>path</code></td><td><code>TreeNode</code> / <code>string</code></td><td>The node being revealed</td></tr>
+            <tr><td><code>node</code> / <code>path</code></td><td><code>LTreeNode</code> / <code>string</code></td><td>The node being revealed</td></tr>
             <tr class="is-highlight"><td><code>source</code></td><td><code>'keyboard' | 'scroll-to-path' | 'paste'</code></td><td>What made the tree scroll</td></tr>
             <tr><td><code>container</code></td><td><code>HTMLElement | null</code></td><td>The scroll container found around the row (the tree's own, or a wrapper); <code>null</code> = only the page scrolls</td></tr>
             <tr><td><code>options</code></td><td><code>{ block, inline, behavior, shouldRevealContainer }</code></td><td>What the tree is about to use; return a partial to replace it</td></tr>
-            <tr><td><code>controller</code> / <code>element</code></td><td></td><td>The usual component context</td></tr>
+            <tr><td><code>controller</code> / <code>element</code></td><td><code>TreeViewController</code> / <code>HTMLElement</code></td><td>The usual component context</td></tr>
         </tbody>
     </table>
 
@@ -229,7 +290,7 @@ tree.getSearchValueCallback = ({ node }) =>
         <div class="log-panel" id="sf04-log"></div>
     </div>
 
-    <div class="code-block">
+    <div class="code-block" data-language="js">
 <pre><code>tree.beforeScrollCallback = ({ source, path, container, options }) =&gt; {
   if (source === 'keyboard' &amp;&amp; cancelKeyboard) return false;    // skip it
   if (source === 'scroll-to-path') return { block: 'start' };    // replace a default

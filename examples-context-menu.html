@@ -28,7 +28,7 @@
         <pre id="cm1-log">Right-click a node to see the context menu</pre>
     </div>
 
-    <div class="code-block mt-1">
+    <div class="code-block mt-1" data-language="js">
 <pre><code>import { createMenuDivider } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }) =&gt; {
@@ -97,7 +97,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; {
         <pre id="cm2-log">Right-click a person to see a rich context menu</pre>
     </div>
 
-    <div class="code-block mt-1">
+    <div class="code-block mt-1" data-language="js">
 <pre><code>// Customize specific items; leave the rest to default rendering.
 //   buttonElement populated  → custom rendering
 //   buttonElement left empty → default icon + label + shortcut
@@ -156,10 +156,38 @@ tree.addEventListener('action', ({ detail }) =&gt; log(detail.id, detail.node));
                 <td><code>undefined</code></td>
                 <td>An item was activated. <code>detail</code>: <code>action</code> (built-in name or <code>'custom'</code>), <code>id</code>, <code>item</code>, <code>source: 'context-menu'</code>, <code>node</code> / <code>path</code> / <code>parent</code> / <code>siblings</code>. Fires after the item's <code>onClick</code>, before the built-in.</td>
             </tr>
+            <tr>
+                <td><code>contextMenuXOffset</code></td>
+                <td><code>context-menu-x-offset</code></td>
+                <td><code>number</code></td>
+                <td><code>8</code></td>
+                <td>Horizontal offset (px) of the menu from the pointer (see CM06).</td>
+            </tr>
+            <tr>
+                <td><code>contextMenuYOffset</code></td>
+                <td><code>context-menu-y-offset</code></td>
+                <td><code>number</code></td>
+                <td><code>0</code></td>
+                <td>Vertical offset (px) of the menu from the pointer.</td>
+            </tr>
+            <tr>
+                <td><code>menuPresentation</code></td>
+                <td><code>menu-presentation</code></td>
+                <td><code>'auto' | 'floating' | 'sheet' | 'drawer'</code></td>
+                <td><code>'auto'</code></td>
+                <td>How the menu opens (core <code>openMenu()</code>): <code>auto</code> = a bottom sheet on a phone, else floating at the pointer. Read when the menu opens. The sheet / drawer use <code>labels.back</code> / <code>labels.close</code>.</td>
+            </tr>
+            <tr>
+                <td><code>menuSide</code></td>
+                <td><code>menu-side</code></td>
+                <td><code>'start' | 'end'</code></td>
+                <td><code>'start'</code></td>
+                <td>The edge a <code>drawer</code> menu slides in from.</td>
+            </tr>
         </tbody>
     </table>
 
-    <div class="code-block mt-1">
+    <div class="code-block mt-1" data-language="ts">
 <pre><code>import { createMenuDivider, type TreeMenuEntry } from '@keenmate/web-treeview';
 
 tree.getContextMenuItemsCallback = ({ node }): TreeMenuEntry[] =&gt; [
@@ -202,8 +230,8 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
             </tr>
             <tr>
                 <td><code>renderContextMenuCallback</code></td>
-                <td><code>(ctx: { node, path, parent, siblings, containerElement: HTMLElement }) =&gt; void</code></td>
-                <td>Take over the whole menu: fill <code>containerElement</code>; close via <code>ctx.controller.closeContextMenu()</code>.</td>
+                <td><code>(ctx: { node, path, parent, siblings, containerElement: HTMLElement, entries }) =&gt; void</code></td>
+                <td>Take over the whole menu: fill <code>containerElement</code>; close via <code>ctx.controller.closeContextMenu()</code>. <code>entries</code> is the resolved top level of <code>getContextMenuItemsCallback</code> — run one with <code>ctx.controller.activateMenuItem(entry.item, ctx)</code>.</td>
             </tr>
         </tbody>
     </table>
@@ -217,7 +245,7 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
 <!-- CM05 · TreeMenuEntry / MenuDivider Types -->
 <div class="card">
     <h2>CM05 · TreeMenuEntry Types</h2>
-    <p>An entry is a <code>TreeMenuItem</code> (a core action item), a <code>MenuDivider</code>, or a built-in action name: <code>'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'</code>. Built-ins act on the node — or on the whole selection when the node is in it — and come with default text / disabled / danger state.</p>
+    <p>An entry is a <code>TreeMenuItem</code> (a core action item), a <code>MenuDivider</code>, or a built-in action name: <code>'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse' | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all' | 'sort' | 'sort-subtree' | 'sort-all'</code>. Built-ins act on the node — or on the whole selection when the node is in it — and come with default text / disabled / danger state.</p>
 
     <table class="reference-table">
         <thead>
@@ -254,7 +282,7 @@ tree.beforeActionCallback = ({ id, node }) =&gt; {
         </tbody>
     </table>
 
-    <div class="code-block mt-1">
+    <div class="code-block mt-1" data-language="ts">
 <pre><code>interface MenuDivider {
   divider: true;
   text?: string;             // named: ──── [text] ────   (createMenuDivider(text))
@@ -279,7 +307,9 @@ interface TreeMenuItem {
   getChildrenCallback?(ctx: TreeMenuContext): TreeMenuEntry[] | Promise&lt;TreeMenuEntry[]&gt;;
 }
 
-type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse';
+type TreeViewAction = 'copy' | 'cut' | 'paste' | 'delete' | 'expand' | 'collapse'
+                    | 'expand-subtree' | 'collapse-subtree' | 'expand-all' | 'collapse-all'
+                    | 'sort' | 'sort-subtree' | 'sort-all';
 type TreeMenuEntry  = TreeMenuItem | MenuDivider | TreeViewAction;</code></pre>
     </div>
 </div>
@@ -306,7 +336,7 @@ type TreeMenuEntry  = TreeMenuItem | MenuDivider | TreeViewAction;</code></pre>
         <web-treeview id="cm6-tree" icon-set="triangle"></web-treeview>
     </div>
 
-    <div class="code-block mt-1">
+    <div class="code-block mt-1" data-language="js">
 <pre><code>tree.getContextMenuItemsCallback = getMenuItems;
 tree.contextMenuXOffset = 8;   // px right of the cursor (default)
 tree.contextMenuYOffset = 0;   // px below the cursor (default)

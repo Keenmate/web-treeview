@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Internal — core 1.0.0-rc22 (2026-11-13)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
 
+### Documentation — example pages on devkit rc14 (2026-11-13)
+- Devkit `^1.0.0-rc14`: API tables stack into cards on a phone, hand-written code blocks are highlighted (`data-language`) with a Copy button. Reference fixed: DS07 listed a `data` property (it is `nodes`); the built-in menu actions lacked `expand-subtree` … `sort-all`; `renderContextMenuCallback`'s ctx lacked `entries`; SF04 typed `node` as `TreeNode`; SF03 said the search index must be enabled (on by default) and gained `searchTerm`, `indexerTimeout`, `initializeIndexCallback`, the experimental filter-scope inputs and the `index-progress` / `search-status-change` events; CM03 gained the offsets and `menu-presentation` / `menu-side`. The manifest lists `--base-overlay-bg` / `--base-touch-target-min` (read by core's menu sheet).
+
 ### Added — context menu presentation: `menu-presentation` / `menu-side` (2026-11-13)
 - Core `/menu` host inputs (`menuPresentationInputs()`, core rc24): `menu-presentation` (`auto` / `floating` /
   `sheet` / `drawer`, default `auto` = a bottom sheet on a phone) and `menu-side` (`start` / `end`, the drawer's

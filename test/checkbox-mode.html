@@ -21,6 +21,8 @@
         <div class="controls">
             <button data-testid="mode-cascade">cascade</button>
             <button data-testid="mode-independent">independent</button>
+            <button data-testid="filter-resume">filter "resume"</button>
+            <button data-testid="filter-clear">clear filter</button>
         </div>
 
         <div class="tree-container">
@@ -28,6 +30,7 @@
                 expand-level="3"
                 show-checkboxes="true"
                 checkbox-mode="cascade"
+                use-internal-search-index="true"
                 click-behavior="select"></web-treeview>
         </div>
 
@@ -57,8 +60,16 @@
             if (el) el.textContent = text;
         }
 
+        // ?mode=independent starts the tree in independent mode (runtime-switch
+        // regression: a tree that STARTED independent must show [-] after → cascade).
+        const initialMode = new URLSearchParams(location.search).get('mode') === 'independent'
+            ? 'independent' : 'cascade';
+        document.getElementById('tree').setAttribute('checkbox-mode', initialMode);
+        setText('mode', initialMode);
+
         customElements.whenDefined('web-treeview').then(() => {
             const tree = document.getElementById('tree');
+            tree.searchValueMember = 'name';
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
@@ -78,6 +89,9 @@
                 tree.setAttribute('checkbox-mode', 'independent');
                 setText('mode', 'independent');
             };
+            // Filter: Documents → Resume visible, Cover Letter hidden.
+            document.querySelector('[data-testid="filter-resume"]').onclick = () => tree.filterNodes('resume');
+            document.querySelector('[data-testid="filter-clear"]').onclick = () => tree.filterNodes('');
         });
     </script>
 </body>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Search Status Fixture</title>
+    <style>
+        main { padding: 1rem; font-family: sans-serif; max-width: 700px; }
+        h1 { margin: 0 0 1rem; font-size: 1.2rem; }
+        .tree-container { border: 1px solid #e2e8f0; padding: 0.5rem; max-width: 420px; height: 400px; overflow: auto; }
+        .controls { margin: 0.5rem 0; display: flex; gap: 0.5rem; align-items: center; }
+        .readouts { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 0.75rem; margin-top: 0.5rem; font-family: monospace; font-size: 0.85rem; }
+        .readouts dt { font-weight: 600; }
+        .readouts dd { margin: 0; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Search Status Fixture</h1>
+        <!-- search-result-limit truncation detection, search-status-change, index-progress,
+             and a tree that STARTS with a search-term before its index is built.
+             ?term=<initial search-term>  ?limit=<search-result-limit>  ?count=<groups>  ?batch=<indexer-batch-size>
+             Data: groups × 10 leaves ("Group g", "Leaf g-l"). Mirrors svelte-treeview's
+             /test/search-status. Targeted by e2e/search-status.spec.ts. -->
+
+        <div class="controls">
+            <input data-testid="term" />
+            <button data-testid="limit-5">limit = 5</button>
+            <button data-testid="limit-default">limit = default</button>
+        </div>
+
+        <div class="tree-container">
+            <web-treeview id="tree" expand-level="1" use-internal-search-index="true"></web-treeview>
+        </div>
+
+        <dl class="readouts">
+            <dt>status</dt><dd data-testid="status">(none)</dd>
+            <dt>index complete</dt><dd data-testid="index-complete">false</dd>
+            <dt>index progress</dt><dd data-testid="index-progress"></dd>
+            <dt>status events</dt><dd data-testid="status-events">0</dd>
+        </dl>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        const params = new URLSearchParams(location.search);
+        const groups = Number(params.get('count') ?? 20);
+        const data = [];
+        let id = 1;
+        for (let g = 1; g <= groups; g++) {
+            data.push({ id: id++, path: `${g}`, name: `Group ${g}` });
+            for (let l = 1; l <= 10; l++) data.push({ id: id++, path: `${g}.${l}`, name: `Leaf ${g}-${l}` });
+        }
+
+        function setText(testId, text) {
+            const el = document.querySelector(`[data-testid="${testId}"]`);
+            if (el) el.textContent = text;
+        }
+
+        const initialTerm = params.get('term') ?? '';
+        const termInput = document.querySelector('[data-testid="term"]');
+        termInput.value = initialTerm;
+
+        customElements.whenDefined('web-treeview').then(() => {
+            const tree = document.getElementById('tree');
+            let statusEvents = 0;
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            tree.searchValueMember = 'name';
+            tree.sortCallback = ({ nodes }) => nodes;
+            if (params.get('limit')) tree.searchResultLimit = Number(params.get('limit'));
+            if (params.get('batch')) tree.indexerBatchSize = Number(params.get('batch'));
+            tree.addEventListener('search-status-change', (e) => {
+                const s = e.detail;
+                setText('status', `${s.searchTerm}|${s.matchCount}|${s.isLimited}|${s.limit}`);
+                setText('status-events', String(++statusEvents));
+            });
+            tree.addEventListener('index-progress', (e) => {
+                setText('index-complete', String(e.detail.isComplete));
+                setText('index-progress', `${e.detail.processed}/${e.detail.total}`);
+            });
+            // The term is set BEFORE the data: the filter runs against an empty / building index.
+            if (initialTerm) tree.searchTerm = initialTerm;
+            tree.nodes = data;
+
+            termInput.addEventListener('input', () => { tree.searchTerm = termInput.value; });
+            document.querySelector('[data-testid="limit-5"]').addEventListener('click', () => { tree.searchResultLimit = 5; });
+            document.querySelector('[data-testid="limit-default"]').addEventListener('click', () => { tree.searchResultLimit = 1000; });
+        });
+    </script>
+</body>
+</html>

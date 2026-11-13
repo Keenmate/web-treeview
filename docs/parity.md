@@ -18,7 +18,10 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `expandLevel` (`expand-level`, default `0` = roots only) | `expandLevel` (`0`) | same |
 | `shouldUseInternalSearchIndex` (`use-internal-search-index`, default `true`) | same (`true`) | same |
 | `initializeIndexCallback` (JS only, `() => Index`) | same | same |
-| `indexerBatchSize`, `indexerTimeout`, `searchTerm` | same (`searchTerm` `$bindable`) | same |
+| `indexerTimeout`, `searchTerm` | same (`searchTerm` `$bindable`) | same |
+| `indexerBatchSize` default `1000` (was 25; each idle slot is time-boxed ≤16 ms, ≤8 ms when forced, so the cap no longer governs smoothness — 55k nodes: svelte ~2 s, web ~21 s (being investigated), both ~2 min before) | same | same |
+| `searchResultLimit` (`search-result-limit`, default `1000`; replaces FlexSearch's silent 100) | same | same |
+| `filterScope` (`filter-scope`: `matches` \| `descendants` \| `tree-depth` \| `subtree-height` \| `levels-below`, default `matches`), `filterDescendantDepth` (`filter-descendant-depth`, default `1`), `shouldExpandFilterDescendants` (`expand-filter-descendants`, default `true`) — EXPERIMENTAL | same | same |
 | `shouldHandleKeyboardShortcuts` (`handle-keyboard-shortcuts`, default `true`) | same (`true`) | same |
 | `shouldAlignNodeIcons` (`align-node-icons`, default `true`) | same (`true`) | same |
 | `bodyClass`, `selectedNodeClass`, `focusedNodeClass`, `checkedNodeClass`, `dragOverNodeClass`, `draggedNodeClass` | same | same |
@@ -34,7 +37,8 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `dragDropMode`, `dropZoneMode`, `dropZoneLayout`, `dropZoneStart`, `dropZoneMaxWidth`, `isCopyAllowed`, `touchDragDelay`, `shouldIndicateUndraggable`, `isTreeDropZoneEnabled` | same | same. `dropZoneMaxWidth`: web takes a number (pixels) or any CSS length string (default `'120px'`), svelte a number (default `120`) |
 | `shouldAutoHandleCopy`, `shouldAutoHandleMove` (`auto-handle-move`), `shouldAutoHandlePaste` | same | same |
 | `labels` | `labels` | same (keys: §7) |
-| `isEmptyDropPlaceholderShown`, `isFlatRenderingEnabled`, `isProgressiveRenderEnabled`, `initialBatchSize`, `maxBatchSize` | same | same |
+| `isEmptyDropPlaceholderShown`, `isProgressiveRenderEnabled`, `initialBatchSize`, `maxBatchSize` | same | same |
+| `isFlatRenderingEnabled` (`enable-flat-rendering`) | — | svelte removed it with its recursive renderer (flat is the only mode); web still accepts it (`false` only drops the row indent + progressive batching) — pending removal |
 | `shouldHighlightOnPageDrag` (`highlight-on-page-drag`): node drag anywhere → `armed` attr + `:state(armed)` + `isArmed`, empty tree shows its zone (`--wtv-drop-placeholder-bg-armed` / `-border-color-armed`); names = web-dropzone's | — | **to mirror** (2026-11-02): svelte prop `shouldHighlightOnPageDrag` + `armed` (class / data attr) + `--stv-drop-placeholder-bg-armed` |
 | Empty drop zone look: icon above the label (`--wtv-drop-placeholder-icon` / `-icon-size`), thin dashed border, engaged = spotlight bg + lift shadow (no halo ring), `-border-style-hover`, `-accent` | old look | **to mirror** (2026-11-02) |
 | `isVirtualScrollEnabled`, `virtualScrollItemHeight`, `virtualScrollOverscan`, `virtualScrollContainerHeight` | same | same |
@@ -74,8 +78,10 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `focus-change` (`{ focusedNode }`) | `onFocusChange` | same |
 | `expanded-change` (`{ paths }`) | `onExpandedChange` (`paths: Set`) | intentional — `string[]` vs `Set` |
 | `nodes-reorder`, `tree-change`, `action` | `onNodesReorder`, `onTreeChange`, `onAction` | same |
-| `render-start`, `render-progress`, `render-complete` (`{ pending, processed }`) | `onRenderStart`, `onRenderProgress`, `onRenderComplete` | same — web fires them around its progressive flat render (the only progressive path of the DOM renderer); svelte around its progressive recursive render |
+| `render-start`, `render-progress`, `render-complete` (`{ pending, processed }`) | `onRenderStart`, `onRenderProgress`, `onRenderComplete` | same — both fire them around the progressive FLAT render (rAF batches; `processed` counts rows) |
 | `container-resize` (`{ size, deviceClass }`) | `onContainerResize` | same |
+| `index-progress` (`{ processed, total, isComplete }`, per idle batch + once on completion) | `onIndexProgress` | same |
+| `search-status-change` (`{ searchTerm, matchCount, isLimited, limit, isIndexing }`, on every applied/cleared filter incl. the auto re-filter when indexing completes) | `onSearchStatusChange` | same |
 | `ready` (core) | — | intentional — core element lifecycle |
 
 ## 4. before*Callbacks
@@ -155,7 +161,11 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 - Scroll target — **web**: keyboard moves, `scrollToPath` and the paste reveal all go through core's `scrollIntoContainer` (2026-11-02, core rc16): only the row's scroll container moves (the tree's own or a wrapper around the element — slots walked, `scroll-padding` / `scroll-margin` honoured, RTL-aware `inline`, no `scrollTo()` when nothing moves); with no container the page gets the caller's `block` (a `center` jump centres the row in the window). **svelte**: keyboard moves use its own container scroll, but the public `scrollToPath` still calls `scrollIntoView` (scrolls the page too) — **to mirror** (2026-11-02): port core's algorithm (no core dependency).
 - Keyboard scroll position: `block: 'nearest'` — a visible row doesn't scroll, an off-screen one is brought in to the nearest edge (svelte: inside the tree's scroll container only, never the page; virtual scroll included) — same.
 - Paste into a node (`position: 'child'`): expands it (announced, like `expandNodes`) and brings the first pasted node into view with `block: 'nearest'` — a programmatic jump, so `--*-scroll-behavior`; `before` / `after` land beside a visible node — nothing to open — same.
-- Indent: `--*-indent-size` = `calc(var(--base-tree-indent, 1.6) * var(--*-rem))` — a 16px visual step per level in both (web: flat rows padded (level − 1) × it; svelte: flat rows the same, recursive mode nests each child with a margin of it — the toggle column sits inside every row, so the margin is the whole step, measured by an e2e test in each repo).
+- Indent: `--*-indent-size` = `calc(var(--base-tree-indent, 1.6) * var(--*-rem))` — a 16px visual step per level in both (both: flat rows offset (level − 1) × it — the toggle column sits inside every row, so the offset is the whole step, measured by an e2e test in each repo).
+- Checkboxes while a filter is active (`checkboxMode: 'cascade'`): checked state lives on the real nodes, so a parent's box reflects ALL its children, hidden ones included (filter shows one checked child of many → parent `[-]`), and checks made while filtered survive clearing the filter. A UI click on a parent checks / unchecks only its VISIBLE matches — all visible descendants checked → uncheck them, else check them — after which each touched branch is re-derived from its real children (partial → `[-]`, not in the checked set). `checkAll` while filtered checks the visible nodes and keeps hidden checks. Programmatic `checkNode(s)` / `uncheckNode(s)` / assigning `checkedPaths` stay whole-subtree regardless of the filter. A runtime `checkboxMode` change re-renders every row in the new mode — same (e2e: svelte `checkbox-policy` + `checkbox-mode`, web `checkbox-mode`).
+- Search limit + status: a search/filter asks the index for `searchResultLimit + 1` hits, so `isLimited` distinguishes "exactly N" from "N+, cut off"; `searchNodes(term, { limit })` overrides per call. `onSearchStatusChange` / `onIndexProgress` handlers run untracked (svelte) — reading state inside them must not re-trigger the filter. Same (e2e: svelte `search-status`, web `search-status`).
+- Filter scope (EXPERIMENTAL): ancestors of a match always show; `filterScope` adds (some of) its descendants — `descendants` = whole subtree; `tree-depth` = whole subtree only for a match at level ≥ (max tree depth − x); `subtree-height` = whole subtree only if the match's own subtree is ≤ x levels deep; `levels-below` = x levels under every match (x = `filterDescendantDepth`). With `shouldExpandFilterDescendants: false` the added nodes start collapsed (matches + ancestors stay expanded) — this is what keeps a top-level match on a big tree cheap. Same (e2e: svelte `filter-scope`, web `filter-scope`).
+- Data loaded while a filter is active (e.g. a tree that starts with a non-empty `searchTerm`) is inserted into the real tree, never the filtered view; the filter re-applies when indexing completes. Same.
 
 ## 10. CSS custom properties
 
@@ -203,7 +213,6 @@ Kept as each library looked before (aligning them changes one library's look —
 
 | name | library: why |
 |---|---|
-| `children-margin-top` | svelte: nested children container (web renders flat rows) |
 | `context-menu-arrow-font-size` | web: core's menu draws the submenu arrow as a text glyph (svelte: a mask icon) |
 | `cut-opacity` | web: dims cut nodes; svelte keeps `cutPaths` but does not render the dimming yet (API gap) |
 | `drag-denied-badge-color` | svelte: the no-entry badge is a mask icon (web: a text glyph) |

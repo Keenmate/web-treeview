@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Internal — core 1.0.0-rc22 (2026-11-13)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
 
+### Added — context menu presentation: `menu-presentation` / `menu-side` (2026-11-13)
+- Core `/menu` host inputs (`menuPresentationInputs()`, core rc24): `menu-presentation` (`auto` / `floating` /
+  `sheet` / `drawer`, default `auto` = a bottom sheet on a phone) and `menu-side` (`start` / `end`, the drawer's
+  edge). Read when the context menu opens (the effective config, so `responsive` rules apply) and passed to core
+  `openMenu()` via `menuPresentationOptions()`.
+- `labels.back` (`'Back'` — the row that leaves a submenu on a sheet / drawer) and `labels.close` (`'Close'` — the
+  sheet / drawer close button's aria-label) reach the menu.
+- The menu's default z-index follows core: `--base-z-tooltip + 1` (9001, was 10000); the phone sheet header uses
+  core's shared sheet chrome (`.km-sheet-title` / `.km-sheet-close`).
+- e2e `menu-presentation.spec.ts` (fixture `test/menu-presentation.html`): drawer + end side + translated labels,
+  read-at-open switching, English defaults.
+
 ### Added — the context menu is named by its node (2026-11-13)
 - The context menu passes the node's display text to core `openMenu({ title })` (rc22): it is the menu's
   `aria-label`, and on a phone — where the menu is a bottom sheet — the sheet's header.

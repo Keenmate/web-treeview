@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Context menu presentation (core menu-presentation / menu-side)</title>
+</head>
+<body>
+    <main>
+        <h1>Context menu presentation</h1>
+        <!-- core /menu host inputs: menu-presentation + menu-side; labels.back / labels.close reach the sheet -->
+        <web-treeview id="tree" expand-level="2" menu-presentation="drawer" menu-side="end"
+            labels='{"back":"Zpět","close":"Zavřít"}'></web-treeview>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+
+        const data = [
+            { id: 1, path: '1', name: 'Documents' },
+            { id: 2, path: '1.1', name: 'Notes.txt' },
+            { id: 3, path: '2', name: 'Images' },
+        ];
+
+        customElements.whenDefined('web-treeview').then(() => {
+            const tree = document.getElementById('tree');
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            tree.getContextMenuItemsCallback = () => [
+                { id: 'open', text: 'Open' },
+                { id: 'more', text: 'More', children: [{ id: 'info', text: 'Info' }] },
+            ];
+            tree.nodes = data;
+        });
+    </script>
+</body>
+</html>

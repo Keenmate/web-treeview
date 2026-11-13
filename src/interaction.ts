@@ -10,6 +10,7 @@
 import type { ComponentContext, DeviceClass } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail, ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
+import type { FilterScope, IndexProgress, SearchStatus } from './ltree/types';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type {
   NodeRef,
@@ -318,6 +319,14 @@ export type NodesReorderEventDetail<T = any> = NodesReorderContext<T> & TreeView
 export type TreeEventDetail<T = any> = TreeViewContext<T>;
 /** `render-start`: the context only. */
 export type RenderStartEventDetail<T = any> = TreeViewContext<T>;
+/** `index-progress`: the async search index filled another batch (`isComplete` once at the end).
+ *  Search / filter results are partial until `isComplete`. */
+export type IndexProgressEventDetail<T = any> = IndexProgress & TreeViewContext<T>;
+/** `search-status-change`: the applied (or cleared) filter — `matchCount`, `isLimited` (more
+ *  matched than `limit`, the rest cut off), `isIndexing` (index still filling; the filter
+ *  re-applies itself on completion and fires again). */
+export type SearchStatusEventDetail<T = any> = SearchStatus & TreeViewContext<T>;
+export type { FilterScope, IndexProgress, SearchStatus };
 /** `render-progress` / `render-complete`: the progressive-render counters. */
 export interface RenderStatsEventDetail<T = any> extends TreeViewContext<T> {
   /** Rows still queued. */

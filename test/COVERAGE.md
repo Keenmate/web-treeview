@@ -174,6 +174,9 @@ Chromium and Firefox run them.
 | `search-value-member` / `getSearchValueCallback` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Index stays correct across `removeNode` / `removeBranch`; `addNode` indexes the new node | ✓ | `search-index-removal.spec.ts` | `search.html` |
+| A tree that STARTS with a `search-term` (filtered before the index is built) shows its matches once indexing completes (completion re-filter) | ✓ | `search-status.spec.ts` | `search-status.html` |
+| `search-result-limit` (default 1000, not FlexSearch's silent 100) + `search-status-change` `isLimited`; `index-progress` completes with processed === total | ✓ | `search-status.spec.ts` | `search-status.html` |
+| EXPERIMENTAL `filter-scope` (`matches` / `descendants` / `tree-depth` / `subtree-height` / `levels-below`) + `filter-descendant-depth` + `expand-filter-descendants` | ✓ | `filter-scope.spec.ts` | `filter-scope.html` |
 
 ## 9. Context menu & actions
 

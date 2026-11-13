@@ -105,7 +105,10 @@ export type {
   ApplyChangesResult,
   DragDropMode,
   DropZoneLayout,
-  DropOperation
+  DropOperation,
+  FilterScope,
+  IndexProgress,
+  SearchStatus
 } from './types';
 
 // The interaction model: controller facade, callback contexts, menu items, event details.

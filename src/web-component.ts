@@ -39,6 +39,7 @@ import {
   type InputDef,
   type EventDef,
 } from '@keenmate/web-components-core';
+import { menuPresentationInputs, menuPresentationOptions } from '@keenmate/web-components-core/menu';
 import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
@@ -66,6 +67,8 @@ import type {
   RenderStartEventDetail,
   RenderStatsEventDetail,
   ContainerResizeEventDetail,
+  IndexProgressEventDetail,
+  SearchStatusEventDetail,
 } from './interaction';
 import type { ContainerSize } from './renderer/types';
 import type { SearchOptions } from 'flexsearch';
@@ -168,10 +171,14 @@ const INPUTS: readonly InputDef[] = [
 
   // ── Search / indexer ───────────────────────────────────────────────────────
   { configKey: 'shouldUseInternalSearchIndex', attribute: 'use-internal-search-index', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Build the internal FlexSearch index that filterNodes / searchNodes / search-term query (default on; `false` = no index, search finds nothing).' },
-  { configKey: 'indexerBatchSize', attribute: 'indexer-batch-size', converter: toInt(), default: 25, on: 'update', description: 'Nodes indexed per batch when building the search index.' },
+  { configKey: 'indexerBatchSize', attribute: 'indexer-batch-size', converter: toInt(), default: 1000, on: 'update', description: 'Max nodes indexed per idle slot when building the search index (default 1000). Each slot is also time-boxed (≤16 ms, ≤8 ms when forced on a busy page), which is what keeps the UI smooth.' },
   { configKey: 'indexerTimeout', attribute: 'indexer-timeout', converter: toInt(), default: 50, on: 'update', description: 'Idle timeout (ms) between search-index batches.' },
   { configKey: 'initializeIndexCallback', converter: cb(), on: 'update', type: '() => Index', description: 'Factory for a custom FlexSearch Index (tokenizer, charset, …) used instead of the built-in one. JS only; a change rebuilds the index.' },
   { configKey: 'searchTerm', attribute: 'search-term', converter: toText({ isNullable: true, isEmptyAllowed: true }), on: 'update', description: 'Active search/filter term.' },
+  { configKey: 'searchResultLimit', attribute: 'search-result-limit', converter: toInt({ min: 1, default: 1000 }), default: 1000, on: 'update', description: 'Max matches a search / filter returns (default 1000; FlexSearch\'s own silent default was 100). Check `search-status-change` `detail.isLimited` to tell users the result was truncated.' },
+  { configKey: 'filterScope', attribute: 'filter-scope', converter: toEnum(['matches', 'descendants', 'tree-depth', 'subtree-height', 'levels-below'] as const, { default: 'matches' }), on: 'update', description: 'EXPERIMENTAL — which descendants of a filter match stay visible (ancestors always do): `matches` (default), `descendants` (whole subtree), `tree-depth` (whole subtree for a match at level ≥ max depth − x), `subtree-height` (whole subtree if it is ≤ x levels deep), `levels-below` (x levels under each match). x = filter-descendant-depth.' },
+  { configKey: 'filterDescendantDepth', attribute: 'filter-descendant-depth', converter: toInt({ min: 0, default: 1 }), on: 'update', description: 'EXPERIMENTAL — the x for the depth-limited filter scopes. Default 1.' },
+  { configKey: 'shouldExpandFilterDescendants', attribute: 'expand-filter-descendants', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'EXPERIMENTAL — expand the descendants a filter scope adds (default on). Off: they start collapsed (matches + ancestors stay expanded) — keeps a top-level match on a big tree cheap.' },
 
   // ── Theme / visual classes ─────────────────────────────────────────────────
   { configKey: 'bodyClass', attribute: 'body-class', converter: toText({ isNullable: true }), on: 'update', description: 'Extra class on the tree body container.' },
@@ -224,7 +231,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items). `{name}` placeholders.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items), `back` ("Back") / `close` ("Close") (the context menu as a phone sheet / drawer: submenu back row, header close button). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`, disabled or read-only. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
@@ -314,6 +321,8 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'beforeActionCallback', converter: cb(), on: 'update', type: '(detail: TreeViewActionEventDetail) => void | false | Promise<void | false>', description: 'Runs before a context-menu item activates: `false` cancels its onClick, the `action` event and the built-in.' },
   { configKey: 'nodeOutputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data', description: 'OUTPUT (egress) transform — clean/redact `ctx.data` as a node leaves the source (copy/cut/copy-drop).' },
   { configKey: 'nodeInputTransformationCallback', converter: cb(), on: 'update', type: '(ctx: NodeTransformCallbackContext) => data | null', description: 'INPUT (ingress) transform — derive ids/values from `ctx.data` as a node lands (paste/copy-drop); return null to skip.' },
+  // ── Context menu presentation (core /menu host inputs: menu-presentation, menu-side; on:'none') ──
+  ...menuPresentationInputs(),
 ];
 
 // ── Outward DOM events (core §12.5) ──────────────────────────────────────────
@@ -345,6 +354,8 @@ type TreeViewEvents = {
   'render-progress': RenderStatsEventDetail;
   'render-complete': RenderStatsEventDetail;
   'container-resize': ContainerResizeEventDetail;
+  'index-progress': IndexProgressEventDetail;
+  'search-status-change': SearchStatusEventDetail;
 };
 const EVENTS: readonly EventDef[] = [
   { name: 'node-click', description: 'A node was clicked (a checkbox toggle is not a click — see `checked-change`). `detail`: the node with `path`, `parent`, `siblings`. Twin: `onNodeClick(detail)`.' },
@@ -370,12 +381,14 @@ const EVENTS: readonly EventDef[] = [
   { name: 'render-start', description: 'A progressive render began (`isRendering` turns true). `detail`: the context only. Twin: `onRenderStart(detail)`.' },
   { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
   { name: 'render-complete', description: 'The progressive render finished (`isRendering` turns false). `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' },
+  { name: 'index-progress', description: 'The async search index filled another batch, and once more with `isComplete: true` at the end — search / filter results are partial until then. `detail`: `{ processed, total, isComplete }`. Twin: `onIndexProgress(detail)`.' },
+  { name: 'search-status-change', description: 'A filter was applied or cleared (also the automatic re-filter when indexing completes). `detail`: `{ searchTerm, matchCount, isLimited, limit, isIndexing }` — `isLimited` = more matched than `search-result-limit` and the rest were cut off. Twin: `onSearchStatusChange(detail)`.' },
   { name: 'container-resize', description: 'The tree container was resized (also once when the tree starts observing). `detail`: `{ size: { width, height }, deviceClass }` — `size` is also `el.containerSize`. Twin: `onContainerResize(detail)`.' },
 ];
 
 /** configKey the engine does NOT own — injected/handled by this element. `isDisabled` is sent as
  *  the EFFECTIVE state by #assembleConfig and flipped in place by disabledChanged() (SPEC §6.4). */
-const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag', 'isDisabled']);
+const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag', 'isDisabled', 'menuPresentation', 'menuSide']);
 
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
@@ -411,6 +424,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onRenderProgress: ((detail: RenderStatsEventDetail<T>) => void) | null;
   declare onRenderComplete: ((detail: RenderStatsEventDetail<T>) => void) | null;
   declare onContainerResize: ((detail: ContainerResizeEventDetail<T>) => void) | null;
+  declare onIndexProgress: ((detail: IndexProgressEventDetail<T>) => void) | null;
+  declare onSearchStatusChange: ((detail: SearchStatusEventDetail<T>) => void) | null;
 
   /**
    * The tree's notifications → `emit()` (which calls the twin, then dispatches). Built
@@ -441,6 +456,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onRenderProgress: (d) => this.emit('render-progress', d),
     onRenderComplete: (d) => { this.#isRendering = false; this.emit('render-complete', d); },
     onContainerResize: (d) => this.emit('container-resize', d),
+    onIndexProgress: (d) => this.emit('index-progress', d),
+    onSearchStatusChange: (d) => this.emit('search-status-change', d),
   };
 
   #shadow: ShadowRoot;
@@ -635,6 +652,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     cfg.isDisabled = this.isEffectivelyDisabled;
     cfg.hostElement = this;
     cfg.controller = this.controller;
+    // menu-presentation / menu-side are on:'none' (read at open): hand the tree a live reader of the effective config.
+    cfg.getMenuPresentationOptions = () => menuPresentationOptions(this.config);
     return cfg;
   }
 

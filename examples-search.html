@@ -154,7 +154,13 @@ function navigateTo(i) {
                 <td><code>indexerBatchSize</code></td>
                 <td><code>indexer-batch-size</code></td>
                 <td><code>number</code></td>
-                <td>Nodes indexed per async batch (tune for very large trees)</td>
+                <td>Max nodes indexed per idle slot (default 1000; each slot is also time-boxed)</td>
+            </tr>
+            <tr>
+                <td><code>searchResultLimit</code></td>
+                <td><code>search-result-limit</code></td>
+                <td><code>number</code></td>
+                <td>Max matches a search / filter returns (default 1000); <code>search-status-change</code> reports <code>isLimited</code></td>
             </tr>
         </tbody>
     </table>

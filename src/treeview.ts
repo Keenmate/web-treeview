@@ -6,6 +6,7 @@ import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer
 import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
+import type { IndexProgress, SearchStatus } from './ltree/types';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
@@ -25,6 +26,7 @@ import type {
 import type { SearchOptions } from 'flexsearch';
 import { withComponentContext, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
 
 /** Built-in menu actions that change the data — greyed out and inert while `isReadonly`. */
 const READONLY_BLOCKED_ACTIONS = new Set(['cut', 'paste', 'delete', 'sort', 'sort-subtree', 'sort-all']);
@@ -832,6 +834,14 @@ export class WebTreeView<T = any> {
       initializeIndexCallback: o.initializeIndexCallback,
       indexerBatchSize: o.indexerBatchSize,
       indexerTimeout: o.indexerTimeout,
+      searchResultLimit: o.searchResultLimit,
+      filterScope: o.filterScope,
+      filterDescendantDepth: o.filterDescendantDepth,
+      shouldExpandFilterDescendants: o.shouldExpandFilterDescendants,
+      onIndexProgress: this.wrap(o.onIndexProgress, 'indexProgress', (f) => (p: IndexProgress) =>
+        f(this.ctx({ processed: p.processed, total: p.total, isComplete: p.isComplete }))),
+      onSearchStatusChange: this.wrap(o.onSearchStatusChange, 'searchStatus', (f) => (s: SearchStatus) =>
+        f(this.ctx({ searchTerm: s.searchTerm, matchCount: s.matchCount, isLimited: s.isLimited, limit: s.limit, isIndexing: s.isIndexing }))),
       isLoading: o.isLoading ?? false,
 
       isProgressiveRenderEnabled: o.isProgressiveRenderEnabled ?? true,
@@ -977,6 +987,8 @@ export class WebTreeView<T = any> {
       contextMenuContext: (node) => this.menuCtx(node),
       contextMenuItemDefaults: (item, ctx) => this.menuItemDefaults(item, ctx),
       activateContextMenuItem: (item, ctx, trigger, event) => this.activateMenuItem(item, ctx, trigger, event),
+      // Read at every open: <web-treeview> supplies its live effective config; standalone = these options.
+      menuPresentationOptions: () => this.options.getMenuPresentationOptions?.() ?? menuPresentationOptions(this.options),
       onContainerResize: (size, deviceClass) => {
         this.lastContainerSize = { width: size.width, height: size.height };
         this.options.onContainerResize?.(this.ctx({ size: { width: size.width, height: size.height }, deviceClass }));

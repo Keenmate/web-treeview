@@ -148,6 +148,19 @@ export interface Ltree<T> {
 	// Filtering properties
 	filteredTree: LTreeNode<T>[] | null;
 	isFiltered: boolean;
+	/** EXPERIMENTAL — which descendants of a filter match stay visible. See {@link FilterScope}. */
+	filterScope?: FilterScope;
+	/** EXPERIMENTAL — the `x` used by the depth-limited {@link FilterScope}s (default 1). */
+	filterDescendantDepth?: number;
+	/** EXPERIMENTAL — expand the descendants a filterScope ADDS (default true). When false they
+	 *  start collapsed; matches + their ancestors are always expanded. */
+	shouldExpandFilterDescendants?: boolean;
+	/** Max matches a search/filter returns (default DEFAULT_SEARCH_RESULT_LIMIT). */
+	searchResultLimit?: number;
+	/** Fired as the async search index fills (per idle batch) and once on completion. */
+	onIndexProgress?: (progress: IndexProgress) => void;
+	/** Fired every time filterNodes applies or clears a filter. */
+	onSearchStatus?: (status: SearchStatus) => void;
 
 	isSelectableMember: string | null | undefined;
 	getIsSelectableCallback?: (node: LTreeNode<T>) => boolean;
@@ -184,6 +197,15 @@ export interface Ltree<T> {
 	searchNodes(_term: string | null | undefined, _searchOptions?: SearchOptions): LTreeNode<T>[];
 
 	createFilteredTree(targetPaths: string[]): void;
+	/** @internal */
+	_resolveSearchLimit(searchOptions?: SearchOptions): number;
+	/** @internal Runs the index query with the result limit + truncation detection. */
+	_runSearch(
+		searchTerm: string,
+		searchOptions?: SearchOptions
+	): { nodes: LTreeNode<T>[]; isLimited: boolean; limit: number };
+	/** @internal Adds descendants of filter matches per filterScope (EXPERIMENTAL). */
+	_addFilterScopeDescendants(targetPaths: string[], required: Set<LTreeNode<T>>): void;
 
 	clearFilter(): void;
 
@@ -270,4 +292,35 @@ export interface Ltree<T> {
 	// Internal helpers
 	_updateDescendantPaths(node: LTreeNode<T>, oldBasePath: string, newBasePath: string): void;
 	_placeRelative(parentPath: string, block: LTreeNode<T>[], targetNode: LTreeNode<T>, position: 'before' | 'after'): void;
+}
+
+/**
+ * EXPERIMENTAL — which descendants of a filter match stay visible (ancestors always do).
+ * `x` = `filterDescendantDepth`.
+ * - `'matches'` (default) — matches + their ancestors only.
+ * - `'descendants'` — every match also shows its whole subtree.
+ * - `'tree-depth'` — a match at level >= (max tree depth - x) shows its whole subtree.
+ * - `'subtree-height'` — a match whose own subtree is at most x levels deep shows it.
+ * - `'levels-below'` — every match shows x levels beneath it.
+ */
+export type FilterScope = 'matches' | 'descendants' | 'tree-depth' | 'subtree-height' | 'levels-below';
+
+/** Progress of the async search index (see `index-progress`). `processed`/`total` count
+ *  nodes queued by the current load; search/filter results are partial until `isComplete`. */
+export interface IndexProgress {
+	processed: number;
+	total: number;
+	isComplete: boolean;
+}
+
+/** State of the last applied filter (see `search-status-change`). `isLimited` = more nodes
+ *  matched than `limit` and the rest were cut off; `isIndexing` = the search index was still
+ *  filling, so `matchCount` may grow (the filter re-applies itself when indexing completes,
+ *  firing a fresh status). */
+export interface SearchStatus {
+	searchTerm: string;
+	matchCount: number;
+	isLimited: boolean;
+	limit: number;
+	isIndexing: boolean;
 }

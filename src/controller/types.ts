@@ -471,6 +471,18 @@ export interface TreeEngineConfig<T> {
   shouldUseInternalSearchIndex?: boolean | null | undefined;
   indexerBatchSize?: number | null | undefined;
   indexerTimeout?: number | null | undefined;
+  /** Max matches a search/filter returns (default 1000; FlexSearch's own silent default was 100). */
+  searchResultLimit?: number | null | undefined;
+  /** EXPERIMENTAL — which descendants of a filter match stay visible. */
+  filterScope?: import('../ltree/types').FilterScope | null | undefined;
+  /** EXPERIMENTAL — the `x` for the depth-limited filterScopes (default 1). */
+  filterDescendantDepth?: number | null | undefined;
+  /** EXPERIMENTAL — expand the descendants a filterScope adds (default true). */
+  shouldExpandFilterDescendants?: boolean | null | undefined;
+  /** Search-index fill progress (per idle batch + once on completion). */
+  onIndexProgress?: (progress: import('../ltree/types').IndexProgress) => void;
+  /** State of the applied filter (on every applied/cleared filter incl. the re-filter on index completion). */
+  onSearchStatusChange?: (status: import('../ltree/types').SearchStatus) => void;
   isLoading?: boolean;
 
   // Progressive rendering

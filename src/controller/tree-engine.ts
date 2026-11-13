@@ -26,7 +26,10 @@ import {
   type ApplyChangesResult,
   type ExpandOptions,
   type SortOptions,
-  type NodesReorderContext
+  type NodesReorderContext,
+  type FilterScope,
+  type IndexProgress,
+  type SearchStatus
 } from '../ltree/types';
 import {
   createRenderCoordinator,
@@ -233,6 +236,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private renderStartCb: (() => void) | undefined;
   private renderProgressCb: ((stats: RenderStats) => void) | undefined;
   private renderCompleteCb: ((stats: RenderStats) => void) | undefined;
+  private indexProgressCb: ((progress: IndexProgress) => void) | undefined;
+  private searchStatusCb: ((status: SearchStatus) => void) | undefined;
+
+  // Search: result limit + EXPERIMENTAL filter scope (pushed onto the ltree, see _wireTreeSearch)
+  private _searchResultLimit: number | undefined = undefined;
+  private _filterScope: FilterScope = 'matches';
+  private _filterDescendantDepth = 1;
+  private _shouldExpandFilterDescendants = true;
+  private _indexProgress: IndexProgress | null = null;
+  private _searchStatus: SearchStatus | null = null;
+  // A search-status handler that itself changes the filter must not recurse into a
+  // nested dispatch — the nested status is queued and delivered after the outer one.
+  private _isDispatchingSearchStatus = false;
+  private _pendingSearchStatus: SearchStatus | null = null;
 
   // Visual config
   private _clickBehavior: import('./types').ClickBehavior = 'expand-and-focus';
@@ -489,6 +506,83 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._searchText = v;
     this.tree?.filterNodes(v as string);
     this._scheduleNotify();
+  }
+
+  /** Max matches a search/filter returns (undefined = DEFAULT_SEARCH_RESULT_LIMIT, 1000). */
+  get searchResultLimit() { return this._searchResultLimit; }
+  set searchResultLimit(v: number | undefined) {
+    if (this._searchResultLimit === v) return;
+    this._searchResultLimit = v;
+    this._wireTreeSearch();
+    this._reapplySearchFilter();
+  }
+
+  /** EXPERIMENTAL — which descendants of a filter match stay visible. */
+  get filterScope() { return this._filterScope; }
+  set filterScope(v: FilterScope) {
+    if (this._filterScope === v) return;
+    this._filterScope = v;
+    this._wireTreeSearch();
+    this._reapplySearchFilter();
+  }
+
+  /** EXPERIMENTAL — the `x` for the depth-limited filterScopes. */
+  get filterDescendantDepth() { return this._filterDescendantDepth; }
+  set filterDescendantDepth(v: number) {
+    if (this._filterDescendantDepth === v) return;
+    this._filterDescendantDepth = v;
+    this._wireTreeSearch();
+    this._reapplySearchFilter();
+  }
+
+  /** EXPERIMENTAL — expand the descendants a filterScope adds (default true). */
+  get shouldExpandFilterDescendants() { return this._shouldExpandFilterDescendants; }
+  set shouldExpandFilterDescendants(v: boolean) {
+    if (this._shouldExpandFilterDescendants === v) return;
+    this._shouldExpandFilterDescendants = v;
+    this._wireTreeSearch();
+    this._reapplySearchFilter();
+  }
+
+  /** Latest search-index progress; null until a load queues indexing. */
+  get indexProgress(): IndexProgress | null { return this._indexProgress; }
+  /** Status of the last applied/cleared filter; null before the first filter. */
+  get searchStatus(): SearchStatus | null { return this._searchStatus; }
+
+  /** Push the search settings + progress/status hooks onto the current ltree (it is
+   *  recreated by updateProps, so this runs after every createLTree too). */
+  private _wireTreeSearch(): void {
+    const tree = this.tree;
+    if (!tree) return;
+    tree.searchResultLimit = this._searchResultLimit;
+    tree.filterScope = this._filterScope;
+    tree.filterDescendantDepth = this._filterDescendantDepth;
+    tree.shouldExpandFilterDescendants = this._shouldExpandFilterDescendants;
+    tree.onIndexProgress = (progress) => {
+      this._indexProgress = progress;
+      this.indexProgressCb?.(progress);
+    };
+    tree.onSearchStatus = (status) => this._dispatchSearchStatus(status);
+  }
+
+  private _dispatchSearchStatus(status: SearchStatus): void {
+    this._searchStatus = status;
+    if (this._isDispatchingSearchStatus) {
+      // A handler changed the filter mid-dispatch — deliver the newest status after it returns.
+      this._pendingSearchStatus = status;
+      return;
+    }
+    this._isDispatchingSearchStatus = true;
+    try {
+      let next: SearchStatus | null = status;
+      while (next) {
+        this._pendingSearchStatus = null;
+        this.searchStatusCb?.(next);
+        next = this._pendingSearchStatus;
+      }
+    } finally {
+      this._isDispatchingSearchStatus = false;
+    }
   }
 
   get isRendering() { return this._isRendering; }
@@ -790,6 +884,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._shouldShowCheckboxes = props.isCheckboxesShown ?? false;
     this._checkboxMode = props.checkboxMode ?? 'independent';
     this._cascadeCheckPolicy = props.cascadeCheckPolicy ?? 'rolled-up';
+    this._searchResultLimit = props.searchResultLimit ?? undefined;
+    this._filterScope = props.filterScope ?? 'matches';
+    this._filterDescendantDepth = props.filterDescendantDepth ?? 1;
+    this._shouldExpandFilterDescendants = props.shouldExpandFilterDescendants ?? true;
+    this.indexProgressCb = props.onIndexProgress;
+    this.searchStatusCb = props.onSearchStatusChange;
     this._shouldClickToggleCheckbox = props.shouldClickToggleCheckbox ?? false;
     this.beforeCheckboxToggleCb = props.beforeCheckboxToggleCallback;
 
@@ -942,6 +1042,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     // Wire tree change notifications
     this.tree.onChange = () => this._onTreeChanged();
+    this._wireTreeSearch();
 
     // ── Create render coordinator ───────────────────────────────────
     this.renderCoordinator = this._isProgressiveRenderEnabled
@@ -2147,7 +2248,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
       for (const child of children) walk(child);
     };
-    for (const root of this.tree.tree) walk(root);
+    for (const root of this.tree.root.children) walk(root);
     return out;
   }
 
@@ -2193,7 +2294,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (this._checkboxMode === 'cascade') {
       const expanded = new Set(paths);
       for (const path of paths) {
-        const n = this.tree?.getNodeByPath(path);
+        const n = this._realNode(path);
         if (n) for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
       }
       affected = [...expanded];
@@ -2201,7 +2302,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const newPaths = new Set(this._checkedPaths);
     let changed = false;
     for (const path of affected) {
-      const n = this.tree?.getNodeByPath(path);
+      const n = this._realNode(path);
       if (!n) continue;
       if (checked) {
         if (!newPaths.has(path)) { newPaths.add(path); changed = true; }
@@ -2215,7 +2316,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._checkedPaths = newPaths;
     if (this._checkboxMode === 'cascade') {
       for (const rp of paths) {
-        const rn = this.tree?.getNodeByPath(rp);
+        const rn = this._realNode(rp);
         if (!rn) continue;
         const vs = this._computeVisualState(rn);
         if (rn.visualState !== vs) { rn.visualState = vs; rn._rev++; }
@@ -2223,17 +2324,18 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     } else {
       for (const path of affected) {
-        const n = this.tree?.getNodeByPath(path);
+        const n = this._realNode(path);
         if (n) n.visualState = n.isChecked ? VisualState.checked : VisualState.unchecked;
       }
     }
+    this._syncFilteredCheckState();
     return changed;
   }
 
   /** Clear `isChecked` + reset visualState on every node in the checkbox set. */
   private _clearCheckedFlags(): void {
     for (const path of this._checkedPaths) {
-      const node = this.tree?.getNodeByPath(path);
+      const node = this._realNode(path);
       if (node) {
         node.isChecked = false;
         node.visualState = VisualState.unchecked;
@@ -2276,18 +2378,24 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** Check every selectable node. Pass `{ isSilent: true }` to skip
    *  `checkedChangeCallback`. */
   checkAll(options?: TreeMutationOptions): void {
-    const newPaths = new Set<string>();
+    // While filtered only the visible matches are checked — keep hidden checks.
+    const isFiltered = !!this.tree?.isFiltered;
+    const newPaths = isFiltered ? new Set(this._checkedPaths) : new Set<string>();
     const traverse = (node: LTreeNode<T>) => {
       if (node.path && node.isSelectable) {
-        node.isChecked = true;
-        if (node.visualState !== VisualState.checked) node.visualState = VisualState.checked;
-        node._rev++;
+        const real = this._realNode(node.path) ?? node;
+        real.isChecked = true;
+        if (real.visualState !== VisualState.checked) real.visualState = VisualState.checked;
+        real._rev++;
         newPaths.add(node.path);
       }
       for (const child of node.children) traverse(child);
     };
     for (const root of this.tree?.tree ?? []) traverse(root);
     this._checkedPaths = newPaths;
+    // Branches with hidden unchecked children must fall back to [-] in cascade.
+    if (isFiltered && this._checkboxMode === 'cascade') this._reconcileVisualStatesForMode();
+    this._syncFilteredCheckState();
     if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2317,6 +2425,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   uncheckAll(options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
+    this._syncFilteredCheckState();
     if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2352,11 +2461,28 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     node: LTreeNode<T>,
     options?: { skipFocus?: boolean }
   ): void {
-    // In cascade mode, indeterminate → check all (not fully checked yet).
-    const newChecked =
-      this._checkboxMode === 'cascade' && node.visualState === VisualState.indeterminate
-        ? true
-        : !node.isChecked;
+    // While a filter is active, a cascade click acts on the VISIBLE matches only
+    // (the filtered copy's children), not the hidden real descendants. The parent's
+    // own box still reflects ALL its real children, so it can stay [-] after the
+    // click — hence the toggle direction comes from the visible set: all visible
+    // descendants checked → uncheck them, otherwise check them. (svelte-treeview parity)
+    const isFilteredCascade = this._checkboxMode === 'cascade' && !!this.tree?.isFiltered;
+    const visibleDescendants = (path: string): string[] => {
+      const copy = this.tree?.getNodeByPath(path);
+      return copy ? this._getDescendantPaths(copy) : [];
+    };
+
+    let newChecked: boolean;
+    const clickedVisible = isFilteredCascade ? visibleDescendants(node.path) : [];
+    if (clickedVisible.length > 0) {
+      newChecked = !clickedVisible.every((p) => this._realNode(p)?.isChecked);
+    } else {
+      // In cascade mode, indeterminate → check all (not fully checked yet).
+      newChecked =
+        this._checkboxMode === 'cascade' && node.visualState === VisualState.indeterminate
+          ? true
+          : !node.isChecked;
+    }
 
     // Bulk via selection: if the clicked node is in a multi-selection,
     // apply to every selected node.
@@ -2370,7 +2496,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (this._checkboxMode === 'cascade') {
       const expanded = new Set(affectedPaths);
       for (const path of affectedPaths) {
-        const n = this.tree?.getNodeByPath(path);
+        if (isFilteredCascade) {
+          for (const dp of visibleDescendants(path)) expanded.add(dp);
+          continue;
+        }
+        const n = this._realNode(path);
         if (n) {
           for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
         }
@@ -2387,7 +2517,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     const newPaths = new Set(this._checkedPaths);
     for (const path of affectedPaths) {
-      const n = this.tree?.getNodeByPath(path);
+      const n = this._realNode(path);
       if (!n) continue;
       if (newChecked) {
         newPaths.add(path);
@@ -2405,9 +2535,30 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // Update visual states (cascade only — independent mode never auto-checks
     // a parent based on descendants).
     if (this._checkboxMode === 'cascade') {
+      // A filtered click checked only the visible part of each branch it touched, so
+      // those branches may still have hidden unchecked children. Re-derive every
+      // touched branch from its REAL children, deepest first, so a partial branch
+      // lands at [-] and never sits in the canonical checked set.
+      if (isFilteredCascade) {
+        const branches = affectedPaths
+          .map((p) => this._realNode(p))
+          .filter((n): n is LTreeNode<T> => !!n && n.children.length > 0)
+          .sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
+        const canonical = new Set(this._checkedPaths);
+        for (const bn of branches) {
+          const vs = this._computeVisualState(bn);
+          const shouldBeChecked = vs === VisualState.checked;
+          bn.visualState = vs;
+          bn.isChecked = shouldBeChecked;
+          if (shouldBeChecked) canonical.add(bn.path);
+          else canonical.delete(bn.path);
+          bn._rev++;
+        }
+        this._checkedPaths = canonical;
+      }
       const rootPaths = isMultiSelected ? [...this._selectedPaths] : [node.path];
       for (const rp of rootPaths) {
-        const rn = this.tree?.getNodeByPath(rp);
+        const rn = this._realNode(rp);
         if (!rn) continue;
         const vs = this._computeVisualState(rn);
         if (rn.visualState !== vs) {
@@ -2418,6 +2569,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
 
+    this._syncFilteredCheckState();
     // A checkbox toggle is not a node click — `checked-change` reports it.
     this._emitCheckedChange();
     this.tree.refresh();
@@ -2473,10 +2625,38 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     for (const child of this.tree.root.children) visit(child);
     if (checkedChanged) this._checkedPaths = newPaths;
     if (anyChanged) {
+      this._syncFilteredCheckState();
       this.tree.refresh();
       if (checkedChanged) this._emitCheckedChange();
       this._scheduleNotify();
     }
+  }
+
+  /**
+   * Resolve a path against the REAL (unfiltered) tree. While a filter is active,
+   * `tree.getNodeByPath()` returns the filtered COPY, whose `children` hold only the
+   * matching subset — checkbox state must live on (and cascade math must see every
+   * child of) the real node, or a parent with one visible match reads as fully
+   * checked. (svelte-treeview parity)
+   */
+  private _realNode(path: string): LTreeNode<T> | null {
+    return this.tree?.getNodeByPath(path, this.tree.root) ?? null;
+  }
+
+  /** Mirror isChecked/visualState from the real nodes onto the filtered copies
+   *  (bumping `_rev` so the reconciler re-syncs them). No-op when unfiltered. */
+  private _syncFilteredCheckState(): void {
+    if (!this.tree?.isFiltered) return;
+    const visit = (copy: LTreeNode<T>) => {
+      const real = this._realNode(copy.path);
+      if (real && real !== copy && (copy.isChecked !== real.isChecked || copy.visualState !== real.visualState)) {
+        copy.isChecked = real.isChecked;
+        copy.visualState = real.visualState;
+        copy._rev = (copy._rev || 0) + 1;
+      }
+      for (const child of copy.children) visit(child);
+    };
+    for (const node of this.tree.tree) visit(node);
   }
 
   /** Collect every descendant path of a node (depth-first). */
@@ -2497,9 +2677,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  descendants checked → ancestor checked). */
   private _updateAncestorVisualStates(startPath: string): void {
     const newPaths = new Set(this._checkedPaths);
-    let path: string | null | undefined = this.tree?.getNodeByPath(startPath)?.parentPath;
+    let path: string | null | undefined = this._realNode(startPath)?.parentPath;
     while (path) {
-      const ancestor = this.tree?.getNodeByPath(path);
+      const ancestor = this._realNode(path);
       if (!ancestor) break;
       const vs = this._computeVisualState(ancestor);
 
@@ -4009,6 +4189,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._shouldClickToggleCheckbox = updates.shouldClickToggleCheckbox ?? false;
     if (updates.beforeCheckboxToggleCallback !== undefined)
       this.beforeCheckboxToggleCb = updates.beforeCheckboxToggleCallback;
+    if (updates.onIndexProgress !== undefined) this.indexProgressCb = updates.onIndexProgress;
+    if (updates.onSearchStatusChange !== undefined) this.searchStatusCb = updates.onSearchStatusChange;
+    // Filter settings first (each re-applies the active filter), then a new term.
+    if (updates.searchResultLimit !== undefined) this.searchResultLimit = updates.searchResultLimit ?? undefined;
+    if (updates.filterScope !== undefined) this.filterScope = updates.filterScope ?? 'matches';
+    if (updates.filterDescendantDepth !== undefined) this.filterDescendantDepth = updates.filterDescendantDepth ?? 1;
+    if (updates.shouldExpandFilterDescendants !== undefined)
+      this.shouldExpandFilterDescendants = updates.shouldExpandFilterDescendants ?? true;
     if (updates.searchTerm !== undefined && updates.searchTerm !== this._searchText) this.searchTerm = updates.searchTerm;
     if (updates.isLoading !== undefined) this._isLoading = updates.isLoading ?? false;
     if (updates.bodyClass !== undefined) this._bodyClass = updates.bodyClass;
@@ -4230,6 +4418,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         }
       );
       this.tree.onChange = () => this._onTreeChanged();
+      this._wireTreeSearch();
 
       // Insert data into the new tree
       if (data) {

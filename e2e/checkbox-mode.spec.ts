@@ -75,3 +75,67 @@ test.describe('Checkbox mode switch', () => {
     await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
   });
 });
+
+// Tree that STARTS independent, then switches to cascade at runtime (svelte-treeview
+// rc16 regression: its rows never received the runtime checkboxMode change).
+test('a tree that STARTS independent shows the [-] dash after a runtime switch to cascade', async ({ page }) => {
+  await page.goto(`${PAGE}?mode=independent`);
+  await expect(page.locator('.wtv__node').first()).toBeVisible();
+  await expect(page.getByTestId('mode')).toHaveText('independent');
+
+  await checkbox(page, '1.1').click();
+  await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(false);
+
+  await page.getByTestId('mode-cascade').click();
+  await expect(page.getByTestId('mode')).toHaveText('cascade');
+  await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+  await expect(checkboxInput(page, '1')).not.toBeChecked();
+});
+
+// Filter 'resume' → Documents (1) shows only Resume (1.1); Cover Letter (1.2) hidden.
+test.describe('Cascade checkboxes while filtered', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(PAGE);
+    await expect(page.locator('.wtv__node').first()).toBeVisible();
+    await expect(page.getByTestId('mode')).toHaveText('cascade');
+    await page.getByTestId('filter-resume').click();
+    await expect(tree(page).locator('.wtv__node[data-tree-path="1.2"]')).toHaveCount(0);
+  });
+
+  test('checking a filtered match cascades against the REAL children, not the visible subset', async ({ page }) => {
+    await checkbox(page, '1.1').click();
+    // Documents must be indeterminate (Cover Letter is unchecked), NOT fully checked.
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+    await expect(checkboxInput(page, '1')).not.toBeChecked();
+    await expect(page.getByTestId('selection')).toHaveText('1.1');
+
+    // The check made while filtered survives clearing the filter.
+    await page.getByTestId('filter-clear').click();
+    await expect(checkboxInput(page, '1.2')).toBeVisible();
+    await expect(checkboxInput(page, '1.1')).toBeChecked();
+    await expect(checkboxInput(page, '1.2')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+  });
+
+  test('clicking a filtered PARENT checks only its visible matches; a second click unchecks them', async ({ page }) => {
+    await checkbox(page, '1').click();
+    await expect(checkboxInput(page, '1.1')).toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+    await expect(page.getByTestId('selection')).toHaveText('1.1');
+
+    // Second click: every visible descendant is checked → unchecks them (not stuck at [-]).
+    await checkbox(page, '1').click();
+    await expect(checkboxInput(page, '1.1')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(false);
+    await expect(page.getByTestId('selection')).toHaveText('');
+
+    // Check again, clear the filter: Cover Letter was never touched.
+    await checkbox(page, '1').click();
+    await page.getByTestId('filter-clear').click();
+    await expect(checkboxInput(page, '1.2')).toBeVisible();
+    await expect(checkboxInput(page, '1.1')).toBeChecked();
+    await expect(checkboxInput(page, '1.2')).not.toBeChecked();
+    await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
+    await expect(page.getByTestId('selection')).toHaveText('1.1');
+  });
+});

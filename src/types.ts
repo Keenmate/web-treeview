@@ -1,6 +1,7 @@
 import type { TreeViewLabels } from './labels';
 import type { TreeViewContext } from './interaction';
 import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback } from '@keenmate/web-components-core';
+import type { MenuDrawerSide, MenuPresentation } from '@keenmate/web-components-core/menu';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
@@ -57,6 +58,11 @@ export type {
   RenderStartEventDetail,
   RenderStatsEventDetail,
   ContainerResizeEventDetail,
+  IndexProgressEventDetail,
+  SearchStatusEventDetail,
+  FilterScope,
+  IndexProgress,
+  SearchStatus,
 } from './interaction';
 
 // Re-export controller types
@@ -154,6 +160,9 @@ import type {
   RenderStartEventDetail,
   RenderStatsEventDetail,
   ContainerResizeEventDetail,
+  IndexProgressEventDetail,
+  SearchStatusEventDetail,
+  FilterScope,
 } from './interaction';
 
 export interface TreeViewConfig<T = any> {
@@ -210,8 +219,21 @@ export interface TreeViewConfig<T = any> {
   /** Factory for a custom FlexSearch `Index` (tokenizer, charset, …) used instead of the
    *  built-in one. JS only; a change rebuilds the index. */
   initializeIndexCallback?: (() => import('flexsearch').Index) | null;
+  /** Max nodes indexed per idle slot (default 1000). Each slot is also time-boxed (≤16 ms,
+   *  ≤8 ms when forced on a busy page) — the time budget keeps the UI smooth. */
   indexerBatchSize?: number | null;
   indexerTimeout?: number | null;
+  /** Max matches a search / filter returns (default 1000 — FlexSearch's own silent default
+   *  was 100). Check `isLimited` in `search-status-change` to tell users it was truncated. */
+  searchResultLimit?: number | null;
+  /** EXPERIMENTAL — which descendants of a filter match stay visible (ancestors always do):
+   *  `matches` (default), `descendants`, `tree-depth`, `subtree-height`, `levels-below`. */
+  filterScope?: FilterScope | null;
+  /** EXPERIMENTAL — the `x` for the depth-limited filter scopes. Default 1. */
+  filterDescendantDepth?: number | null;
+  /** EXPERIMENTAL — expand the descendants a filterScope adds (default `true`); `false` keeps
+   *  them collapsed (matches + ancestors stay expanded) — keeps a top-level match on a big tree cheap. */
+  shouldExpandFilterDescendants?: boolean | null;
 
   // Progressive rendering
   isProgressiveRenderEnabled?: boolean | null;
@@ -509,6 +531,10 @@ export interface TreeViewConfig<T = any> {
   onRenderComplete?: (detail: RenderStatsEventDetail<T>) => void;
   /** Twin of `container-resize` (`detail.size`, `detail.deviceClass`). */
   onContainerResize?: (detail: ContainerResizeEventDetail<T>) => void;
+  /** Twin of `index-progress` (`detail.processed` / `detail.total` / `detail.isComplete`). */
+  onIndexProgress?: (detail: IndexProgressEventDetail<T>) => void;
+  /** Twin of `search-status-change` (`detail.searchTerm`, `matchCount`, `isLimited`, `limit`, `isIndexing`). */
+  onSearchStatusChange?: (detail: SearchStatusEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
   shouldHandleKeyboardShortcuts?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
@@ -543,6 +569,13 @@ export interface TreeViewConfig<T = any> {
   renderContextMenuCallback?: (ctx: ContextMenuRenderContext<T>) => void;
   /** Fill one item's `ctx.buttonElement` (leave it empty for the default). */
   renderContextMenuItemCallback?: (ctx: ContextMenuItemRenderContext<T>) => void;
+  /** Context menu presentation (core `menu-presentation`): `auto` (default — a bottom sheet on a
+   *  phone, else floating), `floating`, `sheet` or `drawer`. Read when the menu opens. */
+  menuPresentation?: MenuPresentation | null;
+  /** The edge a `drawer` context menu slides in from (core `menu-side`): `start` (default) or `end`. */
+  menuSide?: MenuDrawerSide | null;
+  /** @internal `<web-treeview>` wiring: the live `{ presentation, side }` (its effective config) at menu open. */
+  getMenuPresentationOptions?: () => { presentation: MenuPresentation; side: MenuDrawerSide };
 
   // Context (passed by <web-treeview>; a standalone WebTreeView defaults them)
   /** The host element — `element` on every ctx / event detail. */
@@ -685,6 +718,8 @@ export interface TreeEventMap<T = any> {
   'render-progress': CustomEvent<RenderStatsEventDetail<T>>;
   'render-complete': CustomEvent<RenderStatsEventDetail<T>>;
   'container-resize': CustomEvent<ContainerResizeEventDetail<T>>;
+  'index-progress': CustomEvent<IndexProgressEventDetail<T>>;
+  'search-status-change': CustomEvent<SearchStatusEventDetail<T>>;
 }
 
 // ── Scroll Options ─────────────────────────────────────────────────────
@@ -715,7 +750,7 @@ export interface ScrollToPathOptions {
 export type TreeViewResponsiveMap<T = any> = ResponsiveMap<TreeViewConfig<T>>;
 
 /** {@link TreeViewConfig} members that are engine wiring or live state, not `<web-treeview>` inputs. */
-type TreeViewEngineOnlyKey = `on${string}` | 'hostElement' | 'controller' | 'focusedNode' | 'selectedPaths' | 'checkedPaths';
+type TreeViewEngineOnlyKey = `on${string}` | 'hostElement' | 'controller' | 'getMenuPresentationOptions' | 'focusedNode' | 'selectedPaths' | 'checkedPaths';
 
 /**
  * The `<web-treeview>` input properties (core `docs/usage.md` → "Typing the properties"): exactly the

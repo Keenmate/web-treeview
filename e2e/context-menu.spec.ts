@@ -257,8 +257,8 @@ test.describe('phone: the context menu is a bottom sheet', () => {
     });
     const sheet = page.locator('.km-menu-sheet');
     await expect(sheet).toBeVisible();
-    await expect(sheet.locator('.km-menu-sheet__title')).toHaveText('Notes.txt');
-    await sheet.locator('.km-menu-sheet__close').tap();
+    await expect(sheet.locator('.km-sheet-title')).toHaveText('Notes.txt');
+    await sheet.locator('.km-sheet-close').tap();
     await expect(sheet).toHaveCount(0);
   });
 });

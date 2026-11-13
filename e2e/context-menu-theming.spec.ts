@@ -69,9 +69,9 @@ test.describe('context menu — CSS variable chain', () => {
     await plain(page).hover();
     await expect(plain(page)).toHaveCSS('color', 'rgb(200, 0, 100)');
   });
-  test('z-index: core 10000 by default; page --km-menu-z-index reaches the tree; --wtv-context-menu-z-index wins', async ({ page }) => {
+  test('z-index: core 9001 (--base-z-tooltip + 1) by default; page --km-menu-z-index reaches the tree; --wtv-context-menu-z-index wins', async ({ page }) => {
     await openMenu(page);
-    await expect(menu(page)).toHaveCSS('z-index', '10000');
+    await expect(menu(page)).toHaveCSS('z-index', '9001');
     await page.keyboard.press('Escape');
     await expect(menu(page)).toBeHidden();
     await setRoot(page, '--km-menu-z-index', '12345');

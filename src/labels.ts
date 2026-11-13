@@ -36,6 +36,10 @@ export interface TreeViewLabels {
   sort: string;
   sortSubtree: string;
   sortAll: string;
+  /** Context menu as a phone sheet / drawer: the row on top of a drilled-in submenu that goes up one level. */
+  back: string;
+  /** Context menu as a phone sheet / drawer: the accessible name of the header's close button. */
+  close: string;
 }
 
 /** Built-in English strings. */
@@ -59,6 +63,8 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   sort: 'Sort',
   sortSubtree: 'Sort subtree',
   sortAll: 'Sort all',
+  back: 'Back',
+  close: 'Close',
 });
 
 /**

@@ -2073,8 +2073,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       returnFocusTo: this.bodyEl,
       // The node's text names the menu: the phone sheet's header and the menu's aria-label.
       title: this.controller.tree?.getNodeDisplayValue(node) || String(node.id),
-      // A lazy submenu's loading row speaks the tree's own `labels.loading`.
-      labels: { loading: resolveLabel(config.labels, 'loading') },
+      // Floating / sheet / drawer + drawer side: core `menu-presentation` / `menu-side` (effective config).
+      ...config.menuPresentationOptions?.(),
+      // The tree's own strings: a lazy submenu's loading row, the sheet header's back / close buttons.
+      labels: {
+        loading: resolveLabel(config.labels, 'loading'),
+        back: resolveLabel(config.labels, 'back'),
+        close: resolveLabel(config.labels, 'close'),
+      },
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
       renderItemCallback: config.renderContextMenuItemCallback
         ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)

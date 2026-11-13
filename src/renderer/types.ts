@@ -9,6 +9,7 @@ import type { TreeEngine } from '../controller/tree-engine';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { NodeRenderContext } from '../controller/types';
 import type { ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import type { MenuDrawerSide, MenuPresentation } from '@keenmate/web-components-core/menu';
 import type { TreeMenuContext, TreeMenuItem, TreeViewAction } from '../interaction';
 
 export interface TreeViewRenderer<T = any> {
@@ -88,4 +89,7 @@ export interface RendererConfig<T> {
    * event → built-in). Resolves `false` when cancelled.
    */
   activateContextMenuItem?: (item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger: HTMLElement, event: Event) => Promise<boolean>;
+  /** Core `openMenu()` presentation + drawer side, read at every open (core `menuPresentationOptions()`
+   *  over the effective config). Missing: core's defaults (`'auto'`, `'start'`). */
+  menuPresentationOptions?: () => { presentation: MenuPresentation; side: MenuDrawerSide };
 }

@@ -13,14 +13,25 @@
         returns an empty string get no tooltip.
     </p>
 
+    <!-- Same controls, same order as svelte-treeview's TT01. -->
     <div class="controls">
-        <span class="muted">Placement:</span>
-        <button onclick="setPlacement('top-start', this)" id="pl-top-start">top-start</button>
-        <button onclick="setPlacement('right', this)" id="pl-right">right</button>
-        <button onclick="setPlacement('bottom', this)" id="pl-bottom">bottom</button>
-        <label style="margin-left:1rem">
-            <input type="checkbox" id="follow" onchange="toggleFollow(this)"> follow cursor
+        <label>Placement
+            <select id="tt-placement" onchange="setPlacement(this.value)">
+                <option>top-start</option><option>top</option><option>top-end</option>
+                <option>right-start</option><option>right</option><option>right-end</option>
+                <option>bottom-start</option><option>bottom</option><option>bottom-end</option>
+                <option>left-start</option><option>left</option><option>left-end</option>
+            </select>
         </label>
+        <label>Show delay
+            <input id="tt-delay" type="range" min="0" max="1000" step="50" value="400" oninput="setDelay(this.value)">
+            <code id="tt-delay-value">400ms</code>
+        </label>
+        <label>Offset
+            <input id="tt-offset" type="range" min="0" max="24" step="1" value="8" oninput="setOffset(this.value)">
+            <code id="tt-offset-value">8px</code>
+        </label>
+        <label><input type="checkbox" id="tt-follow" onchange="toggleFollow(this)"> follow cursor</label>
     </div>
 
     <div class="tree-container" id="tree1-container">
@@ -55,29 +66,9 @@
     </div>
 </div>
 
-<!-- TT03 · Theme reaction -->
+<!-- TT03 · Sizing -->
 <div class="card">
-    <h2>TT03 · Theme reaction</h2>
-    <p>
-        The tooltip surface reads the shared <code>--base-tooltip-*</code> tokens (with a
-        light/dark fallback), so it retints with the component theme. Flip the theme and hover
-        a row — the tooltip follows, identical to how web-multiselect's option tooltip renders.
-    </p>
-
-    <div class="controls">
-        <button onclick="setTheme('', this)" id="th-auto">Auto</button>
-        <button onclick="setTheme('light', this)" id="th-light">Light</button>
-        <button onclick="setTheme('dark', this)" id="th-dark">Dark</button>
-    </div>
-
-    <div class="tree-container" id="tree3-container">
-        <web-treeview id="tree3" expand-level="2" show-node-tooltips></web-treeview>
-    </div>
-</div>
-
-<!-- TT04 · Tooltip width -->
-<div class="card">
-    <h2>TT04 · Tooltip width</h2>
+    <h2>TT03 · Sizing</h2>
     <p>
         Three variables size the tooltip box. <code>--wtv-tooltip-width</code> is <code>auto</code>
         (shrink to the content) by default, capped by <code>--wtv-tooltip-max-width</code> (the wrap
@@ -99,6 +90,62 @@
     <div class="tree-container" id="tree4-container">
         <web-treeview id="tree4" expand-level="3" show-node-tooltips tooltip-delay="150"></web-treeview>
     </div>
+
+    <div class="code-block" data-language="css"><pre><code>/* fixed box — disable shrink */
+web-treeview {
+  --wtv-tooltip-width: 22rem;
+  --wtv-tooltip-max-width: none;
+}
+/* or a floor that still grows up to max-width */
+web-treeview { --wtv-tooltip-min-width: 24rem; }</code></pre></div>
+</div>
+
+<!-- TT04 · Theme reaction -->
+<div class="card">
+    <h2>TT04 · Theme reaction</h2>
+    <p>
+        The tooltip surface reads the shared <code>--base-tooltip-*</code> tokens (with a
+        light/dark fallback), so it retints with the component theme. Flip the theme and hover
+        a row — the tooltip follows, identical to how web-multiselect's option tooltip renders.
+    </p>
+
+    <div class="controls">
+        <button onclick="setTheme('', this)" id="th-auto">Auto</button>
+        <button onclick="setTheme('light', this)" id="th-light">Light</button>
+        <button onclick="setTheme('dark', this)" id="th-dark">Dark</button>
+    </div>
+
+    <div class="tree-container" id="tree3-container">
+        <web-treeview id="tree3" expand-level="2" show-node-tooltips></web-treeview>
+    </div>
+</div>
+
+<!-- TT05 · Variable reference -->
+<div class="card">
+    <h2>TT05 · Tooltip CSS variables</h2>
+    <p>
+        All chain to the shared <code>--base-tooltip-*</code> contract (so a KeenMate theme retints
+        the tooltip), each with a fallback. Sizes are <code>calc(N × --wtv-rem)</code>.
+    </p>
+    <table class="reference-table">
+        <thead><tr><th>Variable</th><th>Default</th><th>Effect</th></tr></thead>
+        <tbody>
+            <tr><td><code>--wtv-tooltip-bg</code></td><td><code>--base-tooltip-bg</code> → inverse of the tree surface (light-dark)</td><td>Background</td></tr>
+            <tr><td><code>--wtv-tooltip-text-color</code></td><td><code>--base-tooltip-text-color</code> → tree background (light-dark)</td><td>Text color</td></tr>
+            <tr><td><code>--wtv-tooltip-padding</code></td><td><code>0.8×rem 1.2×rem</code> (8px 12px)</td><td>Inner spacing</td></tr>
+            <tr><td><code>--wtv-tooltip-font-size</code></td><td><code>--base-font-size-sm</code> (1.4) × rem (14px)</td><td>Text size</td></tr>
+            <tr><td><code>--wtv-tooltip-width</code></td><td><code>auto</code></td><td>Fixed box when set (shrink off)</td></tr>
+            <tr><td><code>--wtv-tooltip-min-width</code></td><td><code>0</code></td><td>Floor (still grows to max)</td></tr>
+            <tr><td><code>--wtv-tooltip-max-width</code></td><td><code>32×rem</code> (320px)</td><td>Wrap point / cap</td></tr>
+            <tr><td><code>--wtv-tooltip-border-radius</code></td><td><code>--wtv-border-radius-lg</code></td><td>Corner rounding</td></tr>
+            <tr><td><code>--wtv-tooltip-box-shadow</code></td><td><code>--base-shadow-md</code> → <code>0 2px 8px</code> shadow color</td><td>Drop shadow</td></tr>
+            <tr><td><code>--wtv-tooltip-z-index</code></td><td><code>--base-z-tooltip</code> → <code>9000</code></td><td>Stacking order</td></tr>
+        </tbody>
+    </table>
+    <p class="form-text">
+        Related but distinct: <code>node-title-overflow="info"</code> is a <em>click</em> reveal that
+        appears only on clipped labels — not a hover tooltip.
+    </p>
 </div>
 
 <script type="module">
@@ -175,19 +222,18 @@
             }
         });
 
-        // TT03 — theme reaction
+        // TT04 — theme reaction
         Object.assign(tree3, common, {
             nodes: data,
             getNodeTooltipCallback: ({ node }) => node.data?.desc || node.data?.name || null
         });
 
-        // TT04 — width variables (plain text, so the box size is easy to see)
+        // TT03 — width variables (plain text, so the box size is easy to see)
         Object.assign(document.getElementById('tree4'), common, {
             nodes: data,
             getNodeTooltipCallback: ({ node }) => node.data?.desc || node.data?.name || null
         });
 
-        setPlacement('top-start', document.getElementById('pl-top-start'));
         setTheme('', document.getElementById('th-auto'));
     });
 
@@ -198,7 +244,15 @@
         // the others get `.secondary`.
         for (const sib of btn.parentElement.querySelectorAll('button')) sib.classList.toggle('secondary', sib !== btn);
     }
-    window.setPlacement = (p, btn) => { document.getElementById('tree1').tooltipPlacement = p; activate(btn); };
+    window.setPlacement = (p) => { document.getElementById('tree1').tooltipPlacement = p; };
+    window.setDelay = (ms) => {
+        document.getElementById('tree1').tooltipDelay = { show: Number(ms), hide: 100 };
+        document.getElementById('tt-delay-value').textContent = `${ms}ms`;
+    };
+    window.setOffset = (px) => {
+        document.getElementById('tree1').tooltipOffset = Number(px);
+        document.getElementById('tt-offset-value').textContent = `${px}px`;
+    };
     window.toggleFollow = (cb) => { document.getElementById('tree1').shouldTooltipFollowCursor = cb.checked; };
     window.setTheme = (t, btn) => {
         const tree = document.getElementById('tree3');
@@ -206,7 +260,7 @@
         activate(btn);
     };
 
-    // TT04 — an empty field falls back to the variable's own default.
+    // TT03 — an empty field falls back to the variable's own default.
     const tree4 = document.getElementById('tree4');
     const bindWidth = (inputId, cssVar, emptyValue) => {
         document.getElementById(inputId).addEventListener('input', (e) => {

@@ -1321,6 +1321,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (snapshot.isFlatRenderingEnabled) {
           el.style.paddingLeft = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
         }
+        // Row animation: the reveal was cleared → drop the modifier (never ADD it to a
+        // reused row — only a row created during the reveal plays).
+        if (!snapshot.revealedPaths.has(node.path)) el.classList.remove('wtv__node--opening');
       } else {
         // Create new node
         el = this._createNodeElement(node, snapshot);
@@ -1569,6 +1572,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _createNodeElement(node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): HTMLElement {
     const el = document.createElement('div');
     el.className = 'wtv__node';
+    // Row animation: a row the last expand revealed plays the enter keyframes (tree.css).
+    if (snapshot.revealedPaths.has(node.path)) el.classList.add('wtv__node--opening');
     el.setAttribute('data-tree-path', node.path);
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));

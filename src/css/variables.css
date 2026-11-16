@@ -251,6 +251,12 @@
      with svelte-treeview's --stv-node-content-transition). Restore the animated fade with
      `background var(--wtv-transition-normal) var(--wtv-ease-standard)`. */
   --wtv-node-transition: none;
+  /* Row animation: the rows an expand reveals fade in while sliding down from this
+     distance (0 = a plain fade). Part of `motion` (no on/off attribute — core SPEC §12.16):
+     motion="none" / reduced motion → 0s → instant; 0s here turns off just the rows.
+     The duration must stay on a speed token, or motion stops reaching it. */
+  --wtv-row-animation-duration: var(--wtv-transition-normal);
+  --wtv-row-animation-distance: calc(-0.6 * var(--wtv-rem));
 
   /* Per-node icon (.wtv__node-icon): color inherits the row text color by default (a
      per-node iconColor or iconColorMember/Callback overrides it); width is the reserved

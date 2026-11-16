@@ -184,6 +184,8 @@ Only the contract's four speeds and its easings; there is no attribute for anima
 | `--wtv-ease-standard` / `-out` / `-in` | `--base-ease-*` | Easings |
 | `--wtv-scroll-behavior` | `--base-scroll-behavior` \| `smooth` (`auto` under reduced motion) | Programmatic jumps (`scrollToPath`, the paste reveal) when the caller passes no `behavior`; keyboard moves always scroll instantly |
 | `--wtv-toggle-icon-transition` | `transform --wtv-transition-normal --wtv-ease-standard` | Expand / collapse turn of the glyph |
+| `--wtv-row-animation-duration` | `--wtv-transition-normal` | Rows an expand reveals / a collapse hides (on by default, part of `motion`); `0s` turns off just them — keep it on a speed token, or `motion` stops reaching it |
+| `--wtv-row-animation-distance` | `calc(-0.6 * --wtv-rem)` | The slide revealed rows enter from; `0` = a plain fade |
 
 ### Drag & drop — glow indicators
 

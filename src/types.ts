@@ -239,6 +239,10 @@ export interface TreeViewConfig<T = any> {
   isProgressiveRenderEnabled?: boolean | null;
   initialBatchSize?: number | null;
   maxBatchSize?: number | null;
+  /** Rows an expand reveals animate in (part of `motion` — `motion="none"`, reduced motion or
+   *  `--wtv-row-animation-duration: 0s` make it instant). At most this many rows animate per
+   *  expand; the rest appear at once. Default `50`; `0` = none. */
+  rowAnimationLimit?: number | null;
 
   // Flat rendering
   isFlatRenderingEnabled?: boolean | null;

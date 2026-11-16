@@ -38,6 +38,7 @@ attribute in parentheses); svelte names are `<Tree>` props / exports. Decided 20
 | `shouldAutoHandleCopy`, `shouldAutoHandleMove` (`auto-handle-move`), `shouldAutoHandlePaste` | same | same |
 | `labels` | `labels` | same (keys: §7) |
 | `isEmptyDropPlaceholderShown`, `isProgressiveRenderEnabled`, `initialBatchSize`, `maxBatchSize` | same | same |
+| `rowAnimationLimit` (`row-animation-limit`, default `50`, `0` = none): the rows an expand reveals fade in + slide (`wtv__node--opening`, `@keyframes wtv-row-in`, `--wtv-row-animation-duration` → `transition-normal` / `-distance`), first N in visible order; never on first render, a re-render, a reload or a filter. A collapse animates the hidden rows out first (`wtv__node--closing` + `inert`, core `animateOut`, `@keyframes wtv-row-out` shrinking from `--km-exit-height`), then applies (events then; re-expanding mid-animation cancels it; a related expand applies it at once). **On by default — no on/off input:** core `motion` is the one switch (SPEC §12.16, rulebook C-NC-15); `motion="none"` / reduced motion / `--wtv-row-animation-duration: 0s` (rows only) → instant | same (`stv__node--opening` / `--closing`) | same (2026-11-16; `docs/PLAN-row-animation.md` phases 1 + 2) |
 | `isFlatRenderingEnabled` (`enable-flat-rendering`) | — | svelte removed it with its recursive renderer (flat is the only mode); web still accepts it (`false` only drops the row indent + progressive batching) — pending removal |
 | `shouldHighlightOnPageDrag` (`highlight-on-page-drag`): node drag anywhere → `armed` attr + `:state(armed)` + `isArmed`, empty tree shows its zone (`--wtv-drop-placeholder-bg-armed` / `-border-color-armed`); names = web-dropzone's | — | **to mirror** (2026-11-02): svelte prop `shouldHighlightOnPageDrag` + `armed` (class / data attr) + `--stv-drop-placeholder-bg-armed` |
 | Empty drop zone look: icon above the label (`--wtv-drop-placeholder-icon` / `-icon-size`), thin dashed border, engaged = spotlight bg + lift shadow (no halo ring), `-border-style-hover`, `-accent` | old look | **to mirror** (2026-11-02) |
@@ -106,8 +107,8 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 | web | svelte | status |
 |---|---|---|
-| `expandNodes`, `collapseNodes`, `toggleNodeExpanded` (sync) | same (async — await `tick`) | intentional — svelte returns a Promise |
-| `expandAll`, `collapseAll`, `sortNodes`, `sortAll` | same | same |
+| `expandNodes`, `toggleNodeExpanded` (sync); `collapseNodes`, `collapseAll` return a Promise (settles after the rows animated out and the collapse applied) | same (all async) | same for the collapse Promise (2026-11-16); expand: intentional — svelte returns a Promise |
+| `expandAll`, `sortNodes`, `sortAll` | same | same |
 | `filterNodes(term, searchOptions?)`, `searchNodes(term, searchOptions?)` | same | same |
 | `scrollToPath(path, { shouldExpandAncestors = true, shouldHighlight = false, behavior?, block?, inline? }): Promise<boolean>` | same | same |
 | `scrollToPath` option `shouldRevealContainer` (default `true`): first scroll the page to an off-screen tree (web 2026-11-02) | — | **to mirror** (2026-11-02) |
@@ -169,7 +170,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 ## 10. CSS custom properties
 
-One token list for both libraries — `--wtv-<name>` (web) = `--stv-<name>` (svelte). 195 shared names; the few library-only names belong to a feature only that library renders. Every token chains to `--base-*` the same way (checked by `npm run check:contract` and the `contract-parity` e2e spec in each repo); both `component-variables.manifest.json` list the same names. Motion: only `--*-transition-fast | -normal | -medium | -slow` (→ `--base-duration-*`) and `--*-ease-*`; `prefers-reduced-motion` sets the speeds to `0s`; motion off = `--*-transition-*: 0s` (no prop / attribute).
+One token list for both libraries — `--wtv-<name>` (web) = `--stv-<name>` (svelte). 197 shared names; the few library-only names belong to a feature only that library renders. Every token chains to `--base-*` the same way (checked by `npm run check:contract` and the `contract-parity` e2e spec in each repo); both `component-variables.manifest.json` list the same names. Motion: only `--*-transition-fast | -normal | -medium | -slow` (→ `--base-duration-*`) and `--*-ease-*`; `prefers-reduced-motion` sets the speeds to `0s`; motion off = `--*-transition-*: 0s` (no prop / attribute).
 
 ### Shared names
 
@@ -182,7 +183,7 @@ One token list for both libraries — `--wtv-<name>` (web) = `--stv-<name>` (sve
 | state | `disabled-opacity`, `focused-outline`, `focused-text-color`, `selected-fill-text-color`, `selected-outline`, `selected-text-color` |
 | typography | `font-family`, `font-size`, `font-size-sm`, `font-size-xs`, `font-weight-medium`, `font-weight-semibold` |
 | spacing | `spacing-lg`, `spacing-md`, `spacing-sm`, `spacing-xl`, `spacing-xs` |
-| animation | `ease-in`, `ease-out`, `ease-standard`, `node-transition`, `scroll-behavior`, `toggle-icon-transition`, `transition-fast`, `transition-medium`, `transition-normal`, `transition-slow` |
+| animation | `ease-in`, `ease-out`, `ease-standard`, `node-transition`, `row-animation-distance`, `row-animation-duration`, `scroll-behavior`, `toggle-icon-transition`, `transition-fast`, `transition-medium`, `transition-normal`, `transition-slow` |
 | tree | `focused-outline-offset`, `icon-collapse`, `icon-expand`, `icon-leaf`, `icon-rotate-collapsed`, `icon-rotate-expanded`, `icon-size-glyph`, `indent-size`, `node-bg-active`, `node-bg-hover`, `node-border-radius`, `node-icon-color`, `node-icon-margin-right`, `node-icon-width`, `node-info-bg-hover`, `node-info-color`, `node-info-color-hover`, `node-padding`, `scroll-highlight-box-shadow`, `toggle-icon-color`, `toggle-icon-size`, `toggle-icon-width` |
 | icon | `icon-info` |
 | checkbox | `checkbox-bg`, `checkbox-border-color`, `checkbox-border-radius`, `checkbox-border-width`, `checkbox-checked-bg`, `checkbox-checked-bg-hover`, `checkbox-checked-border-color`, `checkbox-checkmark-color`, `checkbox-focus-box-shadow`, `checkbox-focus-ring-color`, `checkbox-focus-ring-width`, `checkbox-gap`, `checkbox-scale`, `checkbox-size`, `icon-check`, `icon-check-size`, `icon-indeterminate` |

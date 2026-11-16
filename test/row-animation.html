@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — row animation (docs/PLAN-row-animation.md)</title>
+    <style>
+        /* A 1s duration so the test can see the reveal (custom properties pierce the shadow root). */
+        #on { --wtv-row-animation-duration: 1s; }
+        #off { --wtv-row-animation-duration: 0s; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>row animation</h1>
+        <p>Targeted by <code>e2e/row-animation.spec.ts</code> (mirror of svelte-treeview's
+           <code>/test/row-animation</code>). On by default (part of core <code>motion</code>, no on/off
+           attribute): rows an expand reveals get <code>wtv__node--opening</code> (capped by
+           <code>row-animation-limit</code>); never on first render, a re-render or a data reload.</p>
+        <div data-scenario="off">
+            <p><code>--wtv-row-animation-duration: 0s</code> → just the rows are off.</p>
+            <web-treeview id="off" expand-level="0"></web-treeview>
+        </div>
+        <div data-scenario="on">
+            <p>No attribute (on by default), limit 3, a 1s duration.</p>
+            <button data-testid="expand-all">expandAll</button>
+            <button data-testid="reload">reload data</button>
+            <button data-testid="collapse-code">await collapseNodes('3')</button>
+            <button data-testid="collapse-all">collapseAll</button>
+            <output data-testid="collapse-log"></output>
+            <output data-testid="await-result"></output>
+            <web-treeview id="on" expand-level="0" row-animation-limit="3"></web-treeview>
+        </div>
+        <div data-scenario="none">
+            <p>motion="none" → 0s → no reveal.</p>
+            <web-treeview id="none" expand-level="0" motion="none"></web-treeview>
+        </div>
+        <div data-scenario="plain">
+            <p>Default tokens (transition-normal) — reduced motion zeroes it.</p>
+            <web-treeview id="plain" expand-level="0"></web-treeview>
+        </div>
+    </main>
+    <script type="module">
+        import '/src/index.ts';
+        await customElements.whenDefined('web-treeview');
+        const make = () => [
+            { id: 1, path: '1', name: 'Folder A' },
+            ...[1, 2, 3, 4, 5].map((i) => ({ id: 10 + i, path: `1.${i}`, name: `A ${i}` })),
+            { id: 2, path: '2', name: 'Folder B' },
+            { id: 21, path: '2.1', name: 'B 1' },
+            { id: 22, path: '2.2', name: 'B 2' },
+            { id: 3, path: '3', name: 'Folder C (open)' },
+            { id: 31, path: '3.1', name: 'C 1' }
+        ];
+        const sortByPath = (items) => [...items].sort((a, b) => a.path.localeCompare(b.path));
+        for (const tree of document.querySelectorAll('web-treeview')) {
+            tree.idMember = 'id';
+            tree.pathMember = 'path';
+            tree.displayValueMember = 'name';
+            tree.sortCallback = ({ nodes }) => sortByPath(nodes);
+            tree.nodes = make();
+            tree.expandedPaths = ['3'];
+        }
+        const on = document.getElementById('on');
+        document.querySelector('[data-testid="expand-all"]').addEventListener('click', () => on.expandAll());
+        document.querySelector('[data-testid="reload"]').addEventListener('click', () => { on.nodes = make(); });
+        document.querySelector('[data-testid="collapse-all"]').addEventListener('click', () => on.collapseAll());
+        // Collapse half: node-collapse fires only after the rows animated out; await collapseNodes() too.
+        const log = [];
+        on.addEventListener('node-collapse', (e) => {
+            log.push(e.detail.path);
+            document.querySelector('[data-testid="collapse-log"]').textContent = log.join(',');
+        });
+        document.querySelector('[data-testid="collapse-code"]').addEventListener('click', async () => {
+            const started = performance.now();
+            await on.collapseNodes('3');
+            const rowsLeft = on.shadowRoot.querySelectorAll('.wtv__node[data-tree-path="3.1"]').length;
+            document.querySelector('[data-testid="await-result"]').textContent = `${Math.round(performance.now() - started)}|${rowsLeft}`;
+        });
+    </script>
+</body>
+</html>

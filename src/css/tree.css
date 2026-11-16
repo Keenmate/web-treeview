@@ -49,6 +49,34 @@
   min-height: var(--wtv-node-height);
 }
 
+/* Row animation: a row the last expand revealed (part of `motion`). Same technique
+   as core's menu sheet — @keyframes on a modifier, motion-token duration, ease-out in. */
+.wtv__node--opening {
+  animation: wtv-row-in var(--wtv-row-animation-duration) var(--wtv-ease-out);
+}
+/* Collapse: the rows a collapse hides shrink in place (core animateOut writes
+   --km-exit-height), the rows below slide up with them, then the node collapses. */
+.wtv__node--closing {
+  pointer-events: none;
+  overflow: hidden;
+  min-height: 0;
+  animation: wtv-row-out var(--wtv-row-animation-duration) var(--wtv-ease-in) forwards;
+}
+@keyframes wtv-row-out {
+  from { height: var(--km-exit-height); }
+  to {
+    height: 0;
+    opacity: 0;
+    transform: translateY(var(--wtv-row-animation-distance));
+  }
+}
+@keyframes wtv-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--wtv-row-animation-distance));
+  }
+}
+
 .wtv__node .wtv__node-row {
   display: flex;
   align-items: center;

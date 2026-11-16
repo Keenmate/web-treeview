@@ -212,6 +212,7 @@ a child listed before its parent is dropped as an orphan and reported in
 | `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
 | `flat-indent-size` | `string \| number` (CSS length) | `var(--wtv-indent-size)` | Per-level indent step in flat mode; a bare number means px on both paths (`"20"` / `el.flatIndentSize = 20` → `20px`); `null` is refused — `undefined` or removing the attribute resets |
 | `enable-progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRenderEnabled`) |
+| `row-animation-limit` | `number` | `50` | Rows an expand reveals animate in (fade + slide, `--wtv-row-animation-duration` / `-distance`); at most this many per expand, the rest appear at once; `0` = none (config key: `rowAnimationLimit`). No on/off attribute: `motion="none"` / reduced motion stop it, `--wtv-row-animation-duration: 0s` stops just the rows |
 | `initial-batch-size` | `number` | — | First batch size |
 | `max-batch-size` | `number` | — | Subsequent batch ceiling |
 | `enable-virtual-scroll` | `boolean` | `false` | Render only visible rows (config key: `isVirtualScrollEnabled`) |
@@ -428,10 +429,10 @@ All methods are available on the element **and** on `el.controller`.
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `expandNodes` | `(paths: string \| string[], options?)` | Expand the node(s) one level (collapsed ancestors are opened) |
-| `collapseNodes` | `(paths: string \| string[], options?)` | Collapse the node(s) |
+| `collapseNodes` | `(paths: string \| string[], options?)` | Collapse the node(s). The rows they hide animate out first (motion); returns a Promise that settles once the collapse applied — `node-collapse` / `expanded-change` fire then. An expand during the animation: the same node → cancelled (stays open); a related one → the collapse applies at once, so `collapseAll(); expandNodes(x)` ends as without motion |
 | `toggleNodeExpanded` | `(path, options?)` | Toggle as the user would (honors `shouldExpandAsAccordion`; `isExclusive` replaces the accordion) |
 | `expandAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
-| `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants |
+| `collapseAll` | `(paths?: string \| string[] \| null, options?)` | `null` / omitted = the whole tree; paths = those nodes + all their descendants. Returns a Promise; animates like `collapseNodes` |
 | `sortNodes` | `(paths: string \| string[], options?)` | Sort the children of each node, one level (`''` = the roots) — see [Sorting](#sorting) |
 | `sortAll` | `(paths?: string \| string[] \| null, options?)` | Sort whole subtrees (the nodes' children at every depth); `null` / omitted = the whole tree |
 | `filterNodes` | `(term, searchOptions?)` | Filter the tree by a search term (hide non-matching); `searchOptions` go to FlexSearch (e.g. `{ limit }`) |
@@ -609,7 +610,7 @@ tree.navigationOverrides = null; // back to the defaults
 | `selection-change` | `{ paths, nodes }` | Selected (Ctrl/Shift+click) set changed (`paths`: `string[]`) |
 | `checked-change` | `{ paths, nodes }` | Checkbox/data-state checked set changed (`paths`: `string[]`) |
 | `focus-change` | `{ focusedNode }` | Single-focused node changed |
-| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / data changes. Synchronous right after an expand / collapse (after its `node-expand` / `node-collapse`); on the next microtask after a data change. Not for `{ isSilent: true }` nor for assigning `expandedPaths` |
+| `expanded-change` | `{ paths }` | The expanded set changed — the whole new set (= `expandedPaths`); one event per change, including `expandAll()` / `collapseAll()` / data changes. Synchronous right after an expand, and right after a collapse applies (a collapse with rows to animate applies after they animated out; after its `node-expand` / `node-collapse`); on the next microtask after a data change. Not for `{ isSilent: true }` nor for assigning `expandedPaths` |
 | `nodes-reorder` | `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }` | A sort with `compareCallback` or `direction: 'desc'` rewrote one parent's `order-member` values (one event per parent; `nodes` = all its children in the new order, `changes` = only those whose value changed). Never without `order-member`; not with `isSilent` |
 | `tree-change` | context only | The data / structure changed: add / insert / update / move / remove, `applyChanges`, add / insert / replace / `removeBranch`, paste, drop, duplicate, sort — one event per change (a multi-node drop fires once), on the microtask after it. **Not** for expand / select / check / focus, nor for loading `nodes`; read the new data from `controller.nodes` |
 | `action` | `{ action, id, item, source: 'context-menu', node, path, parent, siblings, sourceEvent, triggerElement }` | A context-menu item was activated (after its `onClick`, before the built-in) |

@@ -63,6 +63,9 @@ test.describe('assigning the state sets is silent', () => {
 test.describe('expanded-change from methods is synchronous', () => {
   test('expandNodes / collapseNodes / expandAll fire it right away, after node-expand / node-collapse', async ({ page }) => {
     await make(page);
+    // Synchronous when nothing animates. With the row animation on (the default), a collapse
+    // lands after its rows animated out — e2e/row-animation.spec.ts covers that order.
+    await page.addStyleTag({ content: 'web-treeview { --wtv-row-animation-duration: 0s; }' });
     let r = await track(page, `t.expandNodes('1');`);
     expect(r.sync).toEqual(['node-expand', 'expanded-change']);
     expect(r.all).toEqual(['node-expand', 'expanded-change']); // no echo on the microtask
@@ -129,8 +132,8 @@ test.describe('keyboard (WAI-ARIA)', () => {
     await press(page, '1', 'Enter');
     expect(await get(page, 'expandedPaths')).toEqual(['1']);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(50);
-    expect(await get(page, 'expandedPaths')).toEqual([]);
+    // The collapse lands after the rows animated out (motion).
+    await expect.poll(() => get(page, 'expandedPaths')).toEqual([]);
   });
 
   test('Space toggles the checkbox when checkboxes are shown (no expand)', async ({ page }) => {

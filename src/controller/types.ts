@@ -489,6 +489,8 @@ export interface TreeEngineConfig<T> {
   isProgressiveRenderEnabled?: boolean;
   initialBatchSize?: number;
   maxBatchSize?: number;
+  // Row animation (docs/PLAN-row-animation.md; on/off = core `motion`)
+  rowAnimationLimit?: number;
   onRenderStart?: () => void;
   onRenderProgress?: (stats: RenderStats) => void;
   onRenderComplete?: (stats: RenderStats) => void;
@@ -655,6 +657,9 @@ export interface TreeEngineSnapshot<T> {
    *  multi-drag members + their descendants, minus leave-behind holes) — so the dragged visual
    *  dims the whole set, not just the roots. Empty when no drag is in progress. */
   draggedPaths: string[];
+  /** Rows the last expand revealed (capped at rowAnimationLimit) — a row
+   *  CREATED while its path is in here gets `wtv__node--opening`. Empty when idle. */
+  revealedPaths: ReadonlySet<string>;
   isDragInProgress: boolean;
   hoveredNodeForDropPath: string | null;
   activeDropPosition: DropPosition | null;

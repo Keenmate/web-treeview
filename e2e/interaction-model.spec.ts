@@ -161,8 +161,8 @@ test('on* twins receive the detail; a checkbox toggle fires checked-change, not 
 });
 
 test('el.controller is the public facade (and the one on every detail)', async ({ page }) => {
-  const r = await page.locator('web-treeview').evaluate((el: any) => {
-    el.controller.collapseAll();
+  const r = await page.locator('web-treeview').evaluate(async (el: any) => {
+    await el.controller.collapseAll(); // settles after the rows animated out (motion)
     const afterCollapse = el.controller.expandedPaths.length;
     el.controller.expandAll();
     return {

@@ -273,6 +273,16 @@
       "values": []
     },
     {
+      "name": "--wtv-row-animation-duration",
+      "description": "Row animation (isRowAnimationEnabled): one duration for the enter / exit keyframes (default var(--wtv-transition-normal))",
+      "values": []
+    },
+    {
+      "name": "--wtv-row-animation-distance",
+      "description": "Row animation: the slide offset revealed rows enter from (0 = a plain fade)",
+      "values": []
+    },
+    {
       "name": "--wtv-toggle-icon-transition",
       "description": "Expand / collapse turn of the glyph",
       "values": []

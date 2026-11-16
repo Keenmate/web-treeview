@@ -236,6 +236,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`, disabled or read-only. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
   { configKey: 'flatIndentSize', attribute: 'flat-indent-size', converter: toCssLength({ default: 'var(--wtv-indent-size)' }), on: 'update', type: 'string | number', description: 'Indent per level in flat rendering, a CSS length (`20px`, `1.5rem`); a bare number means pixels (`flat-indent-size="20"` → `20px`). Default `var(--wtv-indent-size)`.' },
+  { configKey: 'rowAnimationLimit', attribute: 'row-animation-limit', converter: toInt({ min: 0, default: 50 }), default: 50, on: 'update', description: 'Rows an expand reveals animate in (part of `motion`; `--wtv-row-animation-duration: 0s` turns off just the rows). At most this many animate per expand; the rest appear at once. 0 = none.' },
   { configKey: 'isProgressiveRenderEnabled', attribute: 'enable-progressive-render', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render large trees in progressive batches.' },
   { configKey: 'initialBatchSize', attribute: 'initial-batch-size', converter: toInt(), default: 20, on: 'update', description: 'Rows rendered in the first progressive batch.' },
   { configKey: 'maxBatchSize', attribute: 'max-batch-size', converter: toInt(), default: 500, on: 'update', description: 'Maximum rows per progressive batch.' },
@@ -709,16 +710,18 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#live?.expandAll(paths, options);
   }
 
-  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): void {
-    this.#live?.collapseAll(paths, options);
+  /** Settles after the collapse applied — after the rows animated out (motion). */
+  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): Promise<void> {
+    return this.#live?.collapseAll(paths, options) ?? Promise.resolve();
   }
 
   expandNodes(paths: string | string[], options?: ExpandOptions): void {
     this.#live?.expandNodes(paths, options);
   }
 
-  collapseNodes(paths: string | string[], options?: ExpandOptions): void {
-    this.#live?.collapseNodes(paths, options);
+  /** Settles after the collapse applied — after the rows animated out (motion). */
+  collapseNodes(paths: string | string[], options?: ExpandOptions): Promise<void> {
+    return this.#live?.collapseNodes(paths, options) ?? Promise.resolve();
   }
 
   /** Filter the visible tree to `term` (empty = clear); `searchOptions` go to FlexSearch. */

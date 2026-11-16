@@ -318,7 +318,7 @@ export class WebTreeView<T = any> {
   }
 
   /** The built-in menu actions act on the node — or on the whole selection when the node is in it. */
-  private runBuiltInAction(action: string, node: LTreeNode<T>): void {
+  private async runBuiltInAction(action: string, node: LTreeNode<T>): Promise<void> {
     // Read-only: the menu greys these out; a custom menu activating one changes nothing either.
     if (this.isReadonly() && READONLY_BLOCKED_ACTIONS.has(action)) return;
     const paths = this.actionTargets(node);
@@ -328,11 +328,12 @@ export class WebTreeView<T = any> {
       case 'paste': this.engine.pasteNodes(node.path); break;
       case 'delete': this.engine.runDeleteCommand(paths); break;
       case 'expand': this.engine.expandNodes(paths); break;
-      case 'collapse': this.engine.collapseNodes(paths); break;
+      // Collapses settle after the rows animated out — the action event fires after that.
+      case 'collapse': await this.engine.collapseNodes(paths); break;
       case 'expand-subtree': this.engine.expandAll(paths); break;
-      case 'collapse-subtree': this.engine.collapseAll(paths); break;
+      case 'collapse-subtree': await this.engine.collapseAll(paths); break;
       case 'expand-all': this.engine.expandAll(null); break;
-      case 'collapse-all': this.engine.collapseAll(null); break;
+      case 'collapse-all': await this.engine.collapseAll(null); break;
       case 'sort': this.sortNodes(paths); break;
       case 'sort-subtree': this.sortAll(paths); break;
       case 'sort-all': this.sortAll(null); break;
@@ -362,8 +363,9 @@ export class WebTreeView<T = any> {
     this.engine.expandNodes(paths, options);
   }
 
-  collapseNodes(paths: string | string[], options?: ExpandOptions): void {
-    this.engine.collapseNodes(paths, options);
+  /** Settles after the collapse applied — after the rows animated out (motion). */
+  collapseNodes(paths: string | string[], options?: ExpandOptions): Promise<void> {
+    return this.engine.collapseNodes(paths, options);
   }
 
   /** Toggle the expand state of a node as if the user had clicked its toggle
@@ -390,8 +392,9 @@ export class WebTreeView<T = any> {
     this.engine.expandAll(paths, options);
   }
 
-  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): void {
-    this.engine.collapseAll(paths, options);
+  /** Settles after the collapse applied — after the rows animated out (motion). */
+  collapseAll(paths?: string | string[] | null, options?: ExpandOptions): Promise<void> {
+    return this.engine.collapseAll(paths, options);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -845,6 +848,7 @@ export class WebTreeView<T = any> {
       isLoading: o.isLoading ?? false,
 
       isProgressiveRenderEnabled: o.isProgressiveRenderEnabled ?? true,
+      rowAnimationLimit: o.rowAnimationLimit ?? undefined,
       initialBatchSize: o.initialBatchSize,
       maxBatchSize: o.maxBatchSize,
       isFlatRenderingEnabled: o.isFlatRenderingEnabled ?? true,

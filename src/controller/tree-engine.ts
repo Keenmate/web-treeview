@@ -37,7 +37,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
-import { findScrollContainer, scrollContainerToBox, scrollIntoContainer } from '@keenmate/web-components-core';
+import { animateOut, findScrollContainer, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -147,6 +147,21 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _isProgressiveRenderEnabled: boolean = true;
   private _initialBatchSize: number = 20;
   private _maxBatchSize: number = 500;
+  // ROW ANIMATION (docs/PLAN-row-animation.md): rows an expand reveals get
+  // wtv__node--opening (CSS @keyframes, timed by the motion tokens) — at most
+  // rowAnimationLimit. No on/off property: core `motion` is the one switch (SPEC §12.16 /
+  // C-NC-15); --wtv-row-animation-duration: 0s turns off just rows. The renderer adds the
+  // class only to rows it CREATES while the path is in the reveal, so a reused /
+  // scrolled-back row never replays.
+  private _rowAnimationLimit = 50;
+  private _revealedPaths: ReadonlySet<string> = new Set();
+  private _revealGeneration = 0;
+  private _revealDepth = 0;
+  // Collapse half: the rows a collapse hides animate out first (core animateOut — the
+  // closing class + inert + --km-exit-height), THEN the node really collapses. The handle is
+  // kept per collapsing node: a re-expand cancels it, a second collapse awaits it. Rows are
+  // reused by the renderer, so the class added to the live element survives re-renders.
+  private _closingHandles = new Map<string, { handle: AnimateOutHandle; apply: () => void; targets: string[] }>();
   private _bodyClass: string | null | undefined = undefined;
   // Current expand-to-level. Tracked on the controller because the LTree bakes
   // its expand level into a closure at construction — the only way to change it
@@ -604,6 +619,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   get isProgressiveRenderEnabled() { return this._isProgressiveRenderEnabled; }
   get initialBatchSize() { return this._initialBatchSize; }
   get maxBatchSize() { return this._maxBatchSize; }
+  get rowAnimationLimit() { return this._rowAnimationLimit; }
+  get revealedPaths(): ReadonlySet<string> { return this._revealedPaths; }
 
   get bodyClass() { return this._bodyClass; }
   set bodyClass(v: string | null | undefined) { this._bodyClass = v; this._scheduleNotify(); }
@@ -900,6 +917,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._isProgressiveRenderEnabled = props.isProgressiveRenderEnabled ?? true;
     this._initialBatchSize = props.initialBatchSize ?? 20;
     this._maxBatchSize = props.maxBatchSize ?? 500;
+    this._rowAnimationLimit = props.rowAnimationLimit ?? 50;
     this._bodyClass = props.bodyClass;
 
     this._expandLevel = props.expandLevel ?? null;
@@ -1113,6 +1131,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     options?: ExpandOptions
   ) {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
+    this._settleClosing(paths);
     if (!this.beforeExpandCb) {
       this._expandWithEvents(paths, options);
       return;
@@ -1135,18 +1154,31 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `isSilent`). */
+  /** Collapse the nodes. The rows they hide animate out first (motion); the Promise settles
+   *  once the collapse applied (`node-collapse` fires then). */
   collapseNodes(
     nodePath: string | string[],
     options?: ExpandOptions
-  ) {
+  ): Promise<void> {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
     const wereExpanded = paths
       .map((p) => this.tree?.getNodeByPath(p))
       .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
-    this.tree.collapseNodes(nodePath, options);
-    if (!options?.isSilent)
-      for (const n of wereExpanded) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
-    this._markExpanded(options?.isSilent);
+    // Already animating out (a second collapse) → wait for that one.
+    const running = wereExpanded.filter((n) => this._closingHandles.has(n.path));
+    const fresh = wereExpanded.filter((n) => !this._closingHandles.has(n.path));
+    const waits: Promise<unknown>[] = running.map((n) => this._closingHandles.get(n.path)!.handle.finished);
+    if (fresh.length || !running.length)
+      waits.push(
+        this._animateCollapse(fresh.map((n) => n.path), () => {
+          this.tree.collapseNodes(fresh.length ? fresh.map((n) => n.path) : paths, options);
+          if (!options?.isSilent)
+            for (const n of fresh) if (!n.isExpanded) this.nodeCollapseCb?.(this.nodeRef(n));
+          this._markExpanded(options?.isSilent);
+          this._scheduleNotify();
+        })
+      );
+    return Promise.all(waits).then(() => undefined);
   }
 
   /** Whether `path` has an async `beforeExpandCallback` in flight (renders the loading state). */
@@ -1168,7 +1200,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         if (!n.isExpanded && n.hasChildren) changing.set(prefix, n);
       }
     }
-    this.tree.expandNodes(paths, options);
+    this._withReveal(() => this.tree.expandNodes(paths, options));
     if (!options?.isSilent)
       for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
     this._markExpanded(options?.isSilent);
@@ -1231,6 +1263,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // two packages behave the same way.
     if (!this.tree.getNodeIsCollapsible(node)) return;
     if (this._expandPending.has(path)) return;
+    // Toggled again while its rows animate out = re-expand: cancel, it stays open.
+    if (this._settleClosing([path])) {
+      uiLogger.debug(`Node re-expanded mid-collapse (animation cancelled): ${path}`, { path, id: node.id });
+      return;
+    }
 
     const shouldExpand = !node.isExpanded;
 
@@ -1256,17 +1293,19 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return;
     }
     const collapsedSiblings: LTreeNode<T>[] = [];
-    if (this._shouldExpandAsAccordion) {
-      const siblings = this.tree.getSiblings(path);
-      for (const sibling of siblings) {
-        if (sibling.path !== path && sibling.isExpanded && this.tree.getNodeIsCollapsible(sibling)) {
-          sibling.isExpanded = false;
-          (sibling as any)._rev = ((sibling as any)._rev || 0) + 1;
-          collapsedSiblings.push(sibling);
+    this._withReveal(() => {
+      if (this._shouldExpandAsAccordion) {
+        const siblings = this.tree.getSiblings(path);
+        for (const sibling of siblings) {
+          if (sibling.path !== path && sibling.isExpanded && this.tree.getNodeIsCollapsible(sibling)) {
+            sibling.isExpanded = false;
+            (sibling as any)._rev = ((sibling as any)._rev || 0) + 1;
+            collapsedSiblings.push(sibling);
+          }
         }
       }
-    }
-    this.tree.expandNodes(path, options);
+      this.tree.expandNodes(path, options);
+    });
     if (!options?.isSilent) {
       for (const s of collapsedSiblings) this.nodeCollapseCb?.(this.nodeRef(s));
       if (node.isExpanded) this.nodeExpandCb?.(this.nodeRef(node));
@@ -1278,16 +1317,167 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     nodePath?: string | string[] | null | undefined,
     options?: ExpandOptions
   ) {
-    this.tree?.expandAll(nodePath, options);
+    this._settleClosing(nodePath == null ? null : Array.isArray(nodePath) ? nodePath : [nodePath]);
+    this._withReveal(() => this.tree?.expandAll(nodePath, options));
     this._markExpanded(options?.isSilent);
   }
 
+  /**
+   * Row animation: run an expand and record the rows it made visible (the first
+   * `rowAnimationLimit` in visible order) as the reveal. Nested calls (the accordion toggle →
+   * _expandWithEvents) record once, around the outermost. Nothing to animate (duration 0s —
+   * motion "none", reduced motion, the token — or a limit of 0) → just `apply()`, so a
+   * motion-off tree never builds the before-set.
+   */
+  private _withReveal(apply: () => void): void {
+    if (this._revealDepth > 0 || !this.tree || !this._isRowAnimationOn()) {
+      apply();
+      return;
+    }
+    const before = new Set<string>();
+    for (const n of this.tree.visibleFlatNodes ?? []) before.add(n.path);
+    this._revealDepth++;
+    try {
+      apply();
+    } finally {
+      this._revealDepth--;
+    }
+    const limit = Math.max(0, this._rowAnimationLimit ?? 50);
+    const revealed = new Set<string>();
+    if (limit > 0)
+      for (const n of this.tree.visibleFlatNodes ?? []) {
+        if (before.has(n.path)) continue;
+        revealed.add(n.path);
+        if (revealed.size >= limit) break;
+      }
+    if (revealed.size === 0) return;
+    this._revealedPaths = revealed;
+    const generation = ++this._revealGeneration;
+    this._scheduleNotify();
+    // Clear the reveal once the rows played (a row created later — virtual-scroll window,
+    // progressive batch — must not replay). The duration is read back from CSS (core
+    // readAnimationMs): 0 under motion="none" / reduced motion → cleared at once. The
+    // state-change microtask renders first, so look after it.
+    setTimeout(() => {
+      if (generation !== this._revealGeneration) return;
+      const row = this.containerElement?.querySelector('.wtv__node--opening');
+      const ms = row ? readAnimationMs(row) : 0;
+      uiLogger.debug('Row animation: reveal', { rows: revealed.size, ms });
+      setTimeout(() => {
+        if (generation !== this._revealGeneration) return;
+        this._revealedPaths = new Set();
+        this._scheduleNotify();
+      }, ms + 50);
+    }, 0);
+  }
+
+  /** Collapse the whole tree (`null`) or the given nodes + their descendants. The rows animate
+   *  out first (motion); the Promise settles once the tree is collapsed. */
   collapseAll(
     nodePath?: string | string[] | null | undefined,
     options?: ExpandOptions
-  ) {
-    this.tree?.collapseAll(nodePath, options);
-    this._markExpanded(options?.isSilent);
+  ): Promise<void> {
+    const apply = () => {
+      this.tree?.collapseAll(nodePath, options);
+      this._markExpanded(options?.isSilent);
+      this._scheduleNotify();
+    };
+    if (!this.tree) return Promise.resolve();
+    // The nodes whose rows disappear: every expanded root (whole tree) or the given ones.
+    const targets = (nodePath == null
+      ? (this.tree.visibleFlatNodes ?? []).filter((n) => !n.parentPath)
+      : (Array.isArray(nodePath) ? nodePath : [nodePath]).map((p) => this.tree.getNodeByPath(p))
+    )
+      .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren)
+      .map((n) => n.path);
+    return this._animateCollapse(targets, apply);
+  }
+
+  /**
+   * Row animation, collapse half: animate out the visible rows under `targets` (the first
+   * `rowAnimationLimit`; the rest go with the collapse), then `apply()` the real collapse — core
+   * `animateOut` (closing class + inert + --km-exit-height, waits for the CSS animation; 0s → at
+   * once). Nothing to animate → `apply()` now.
+   */
+  private _animateCollapse(targets: string[], apply: () => void): Promise<void> {
+    const container = this.containerElement;
+    if (!targets.length || !container || !this._isRowAnimationOn()) {
+      apply();
+      return Promise.resolve();
+    }
+    const sep = this._treePathSeparator || '.';
+    const targetSet = new Set(targets);
+    const isUnderTarget = (path: string): boolean => {
+      for (let i = path.lastIndexOf(sep); i > 0; i = path.lastIndexOf(sep, i - 1))
+        if (targetSet.has(path.slice(0, i))) return true;
+      return false;
+    };
+    const limit = Math.max(0, this._rowAnimationLimit ?? 50);
+    const hiding: string[] = [];
+    for (const n of this.tree.visibleFlatNodes ?? []) {
+      if (hiding.length >= limit) break;
+      if (isUnderTarget(n.path)) hiding.push(n.path);
+    }
+    const rowByPath = new Map<string, Element>();
+    for (const el of container.querySelectorAll('.wtv__node[data-tree-path]'))
+      rowByPath.set(el.getAttribute('data-tree-path')!, el);
+    const rows = hiding.map((p) => rowByPath.get(p)).filter((el): el is Element => !!el);
+    if (!rows.length) {
+      apply();
+      return Promise.resolve();
+    }
+    uiLogger.debug('Row animation: closing', { targets, rows: rows.length });
+    const cleanup = () => {
+      for (const t of targets) if (this._closingHandles.get(t)?.handle === handle) this._closingHandles.delete(t);
+    };
+    const handle: AnimateOutHandle = animateOut(rows, {
+      className: 'wtv__node--closing',
+      shouldSetInert: true,
+      shouldSetHeightVar: true,
+      onDone: () => {
+        cleanup();
+        apply();
+      },
+    });
+    const entry = { handle, apply, targets };
+    for (const t of targets) this._closingHandles.set(t, entry);
+    return handle.finished.then((isDone) => {
+      if (!isDone) cleanup();
+    });
+  }
+
+  /**
+   * Before an expand: settle the pending collapses that involve `paths` (the same node, an
+   * ancestor or a descendant; `null` = all). A pending collapse of exactly ONE of these nodes
+   * is cancelled — a re-expand mid-animation, it simply stays open. Any other one (e.g. a
+   * collapseAll in flight) is applied NOW, so calls keep their order: `collapseAll();
+   * expandNodes(x)` ends exactly as it does without motion. Returns whether one was cancelled.
+   */
+  private _settleClosing(paths: readonly string[] | null): boolean {
+    const sep = this._treePathSeparator || '.';
+    const isRelated = (t: string) =>
+      paths == null || paths.some((p) => p === t || p.startsWith(t + sep) || t.startsWith(p + sep));
+    const entries = new Set(this._closingHandles.values());
+    let isCancelled = false;
+    for (const entry of entries) {
+      if (!entry.targets.some(isRelated)) continue;
+      const isReExpand = paths != null && entry.targets.length === 1 && paths.includes(entry.targets[0]);
+      entry.handle.cancel(); // class + inert off; core's onDone never runs
+      for (const t of entry.targets) if (this._closingHandles.get(t) === entry) this._closingHandles.delete(t);
+      if (isReExpand) isCancelled = true;
+      else entry.apply();
+    }
+    return isCancelled;
+  }
+
+  /** Rows animate: a limit above 0 and a resolved `--wtv-row-animation-duration` above 0s. */
+  private _isRowAnimationOn(): boolean {
+    if ((this._rowAnimationLimit ?? 50) <= 0) return false;
+    const el = this.containerElement;
+    if (!el || typeof getComputedStyle !== 'function') return false;
+    const raw = getComputedStyle(el).getPropertyValue('--wtv-row-animation-duration').trim();
+    const value = parseFloat(raw);
+    return Number.isFinite(value) && value > 0;
   }
 
   /** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites
@@ -4276,6 +4466,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._flatIndentSize = updates.flatIndentSize ?? 'var(--wtv-indent-size)';
     if (updates.initialBatchSize !== undefined) this._initialBatchSize = updates.initialBatchSize ?? 20;
     if (updates.maxBatchSize !== undefined) this._maxBatchSize = updates.maxBatchSize ?? 500;
+    if (updates.rowAnimationLimit !== undefined) this._rowAnimationLimit = updates.rowAnimationLimit ?? 50;
     const nextFlat = updates.isFlatRenderingEnabled !== undefined ? (updates.isFlatRenderingEnabled ?? true) : this._isFlatRenderingEnabled;
     const nextProgressive = updates.isProgressiveRenderEnabled !== undefined ? (updates.isProgressiveRenderEnabled ?? true) : this._isProgressiveRenderEnabled;
     if (nextFlat !== this._isFlatRenderingEnabled || nextProgressive !== this._isProgressiveRenderEnabled) {
@@ -4468,6 +4659,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       flatNodesToRender: this.flatNodesToRender,
       draggedNodePath: this._draggedNode?.path ?? null,
       draggedPaths: this._draggedPaths,
+      revealedPaths: this._revealedPaths,
       isDragInProgress: this._isDragInProgress,
       hoveredNodeForDropPath: this._hoveredNodeForDrop?.path ?? null,
       activeDropPosition: this._activeDropPosition,

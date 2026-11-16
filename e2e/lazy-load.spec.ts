@@ -118,6 +118,9 @@ test('keyboard: ArrowRight / Backspace / Enter fire node-expand / node-collapse 
   await expect.poll(() => focused(page)).toBe('4.1');
   await page.keyboard.press('Backspace'); // collapse 4, focus 4
   await expect.poll(() => focused(page)).toBe('4');
+  // The collapse lands after the rows animated out; an Enter before that would re-expand
+  // mid-animation (cancel — no collapse event at all).
+  await expect.poll(() => log(page)).toContain('collapse:4');
   await page.keyboard.press('Enter'); // toggle → expand 4
   await expect(label(page, 'Folder child')).toBeVisible();
   expect(await log(page)).toEqual(['before:4', 'expand:4', 'collapse:4', 'before:4', 'expand:4']);

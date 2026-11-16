@@ -64,17 +64,17 @@ function sorted(paths: string[]): string[] {
 
 async function resetCollapsed(page: Page) {
   await page.getByTestId('collapse-all').click();
-  expect(await visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
+  await expect.poll(() => visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
 }
 
 async function resetExpanded(page: Page) {
   await page.getByTestId('expand-all').click();
-  expect(await visiblePaths(page)).toEqual(sorted(ALL_PATHS));
+  await expect.poll(() => visiblePaths(page)).toEqual(sorted(ALL_PATHS));
 }
 
 test('initial state: only roots visible (expandLevel=0)', async ({ page }) => {
   await goto(page);
-  expect(await visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
+  await expect.poll(() => visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
 });
 
 // ── expandNodes ─────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ test.describe('expandNodes', () => {
 
     await page.getByTestId('expand-nodes-single').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted(['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.3', '2', '3'])
     );
   });
@@ -97,7 +97,7 @@ test.describe('expandNodes', () => {
 
     await page.getByTestId('expand-nodes-array').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted(['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.3', '2', '2.1', '2.1.1', '2.2', '3'])
     );
   });
@@ -108,7 +108,7 @@ test.describe('expandNodes', () => {
 
     await page.getByTestId('expand-nodes-exclusive').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted(['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.3', '2', '3'])
     );
   });
@@ -119,7 +119,7 @@ test.describe('expandNodes', () => {
 
     await page.getByTestId('expand-nodes-array-exclusive').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted([
         '1',
         '1.1',
@@ -147,7 +147,7 @@ test.describe('collapseNodes', () => {
     await page.getByTestId('collapse-nodes-single').click();
 
     const expected = ALL_PATHS.filter((p) => p !== '1.1.1' && p !== '1.1.2');
-    expect(await visiblePaths(page)).toEqual(sorted(expected));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(expected));
   });
 
   test('array: closes every target node independently', async ({ page }) => {
@@ -159,7 +159,7 @@ test.describe('collapseNodes', () => {
     const expected = ALL_PATHS.filter(
       (p) => p !== '1.1.1' && p !== '1.1.2' && p !== '2.1.1'
     );
-    expect(await visiblePaths(page)).toEqual(sorted(expected));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(expected));
   });
 });
 
@@ -172,7 +172,7 @@ test.describe('expandAll', () => {
 
     await page.getByTestId('expand-all').click();
 
-    expect(await visiblePaths(page)).toEqual(sorted(ALL_PATHS));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(ALL_PATHS));
   });
 
   test('single subtree: expands only that subtree', async ({ page }) => {
@@ -181,7 +181,7 @@ test.describe('expandAll', () => {
 
     await page.getByTestId('expand-all-subtree').click();
 
-    expect(await visiblePaths(page)).toEqual(sorted(['1', '2', '2.1', '2.1.1', '2.2', '3']));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(['1', '2', '2.1', '2.1.1', '2.2', '3']));
   });
 
   test('array: expands multiple subtrees, leaves siblings collapsed', async ({ page }) => {
@@ -190,7 +190,7 @@ test.describe('expandAll', () => {
 
     await page.getByTestId('expand-all-array').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted([
         '1',
         '1.1',
@@ -216,7 +216,7 @@ test.describe('expandAll', () => {
 
     await page.getByTestId('expand-all-exclusive').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted(['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.3', '2', '3'])
     );
   });
@@ -231,7 +231,7 @@ test.describe('collapseAll', () => {
 
     await page.getByTestId('collapse-all').click();
 
-    expect(await visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(['1', '2', '3']));
   });
 
   test('single subtree: closes that subtree, leaves others open', async ({ page }) => {
@@ -240,7 +240,7 @@ test.describe('collapseAll', () => {
 
     await page.getByTestId('collapse-all-subtree').click();
 
-    expect(await visiblePaths(page)).toEqual(
+    await expect.poll(() => visiblePaths(page)).toEqual(
       sorted(['1', '2', '2.1', '2.1.1', '2.2', '3', '3.1', '3.1.1', '3.2'])
     );
   });
@@ -251,6 +251,6 @@ test.describe('collapseAll', () => {
 
     await page.getByTestId('collapse-all-array').click();
 
-    expect(await visiblePaths(page)).toEqual(sorted(['1', '2', '3', '3.1', '3.1.1', '3.2']));
+    await expect.poll(() => visiblePaths(page)).toEqual(sorted(['1', '2', '3', '3.1', '3.1.1', '3.2']));
   });
 });

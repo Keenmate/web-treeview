@@ -5849,7 +5849,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (typeof document === 'undefined') return;
     const el = this._domScope().querySelector(
-      `[data-tree-path="${node.path}"] .wtv__node-content`
+      `[data-tree-path="${CSS.escape(node.path)}"] .wtv__node-content`
     ) as HTMLElement | null;
     if (!el) return;
 
@@ -5895,7 +5895,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (typeof document === 'undefined') return;
     const el = this._domScope().querySelector(
-      `[data-tree-path="${node.path}"] .wtv__node-content`
+      `[data-tree-path="${CSS.escape(node.path)}"] .wtv__node-content`
     ) as HTMLElement | null;
     if (!el) return;
 
@@ -5965,7 +5965,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (this.touchDragState.currentDropTarget && this.touchDragState.currentDropTarget !== newTarget) {
       const prevElement = this._domScope().querySelector(
-        `[data-tree-path="${this.touchDragState.currentDropTarget.path}"] .wtv__node-content`
+        `[data-tree-path="${CSS.escape(this.touchDragState.currentDropTarget.path)}"] .wtv__node-content`
       );
       prevElement?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
     }
@@ -5982,7 +5982,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (newTarget && newTarget !== this._draggedNode && newTarget.isDropAllowed) {
       const targetElement = this._domScope().querySelector(
-        `[data-tree-path="${newTarget.path}"] .wtv__node-content`
+        `[data-tree-path="${CSS.escape(newTarget.path)}"] .wtv__node-content`
       );
       targetElement?.classList.add(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
       this.touchDragState.currentDropTarget = newTarget;
@@ -5994,7 +5994,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private clearDropTargetHighlight() {
     if (this.touchDragState.currentDropTarget) {
       const element = this._domScope().querySelector(
-        `[data-tree-path="${this.touchDragState.currentDropTarget.path}"] .wtv__node-content`
+        `[data-tree-path="${CSS.escape(this.touchDragState.currentDropTarget.path)}"] .wtv__node-content`
       );
       element?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
     }

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — node paths escaped in the drag selectors (2026-11-16)
+- The touch-drag drop-target highlight and the "can't drag" indicator built `[data-tree-path="…"]` selectors
+  from the raw path; a path with a quote or a backslash threw a `SyntaxError` from `querySelector`. They
+  use `CSS.escape()` now, like the other path lookups.
+
 ### Internal — core 1.0.0-rc24 (2026-11-16)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc24`** (was `^1.0.0-rc22`): `readAnimationMs()` for the row animation, `menuPresentationInputs()` for the menu presentation.
 

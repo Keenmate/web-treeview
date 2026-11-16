@@ -156,6 +156,79 @@ element.setAttribute('display-value-member', 'label');</code></pre>
     </p>
 </div>
 
+<!-- Row animation -->
+<div class="card">
+    <h2>BU07 · Row Animation</h2>
+    <p>Rows an expand reveals fade and slide in; rows a collapse hides shrink and fade out, then the node really collapses. It is on by default and part of <code>motion</code>: the <code>motion</code> attribute, a <code>data-motion</code> section, the page-wide <code>window.components.motion</code> or the OS reduced-motion setting turn it off together with every other animation. There is no on/off attribute &mdash; to turn off just the rows, set <code>--wtv-row-animation-duration: 0s</code>.</p>
+
+    <div class="controls">
+        <label>Duration (<code>--wtv-row-animation-duration</code>)
+            <select id="ra-speed">
+                <option value="normal">--wtv-transition-normal (default)</option>
+                <option value="slow" selected>--wtv-transition-slow</option>
+                <option value="off">0s (rows off)</option>
+            </select>
+        </label>
+        <label>
+            <input type="checkbox" id="ra-fade">
+            Plain fade (<code>--wtv-row-animation-distance: 0</code>)
+        </label>
+        <label><code>row-animation-limit</code>
+            <select id="ra-limit">
+                <option value="50" selected>50 (default)</option>
+                <option value="5">5</option>
+                <option value="0">0 (none)</option>
+            </select>
+        </label>
+        <label><code>motion</code>
+            <select id="ra-motion">
+                <option value="auto" selected>auto</option>
+                <option value="smooth">smooth</option>
+                <option value="snappy">snappy</option>
+                <option value="none">none</option>
+            </select>
+        </label>
+    </div>
+    <div class="controls">
+        <button onclick="document.getElementById('tree-ra').expandAll()">Expand all</button>
+        <button class="btn-outline" onclick="collapseRowTree()">await collapseAll()</button>
+        <button onclick="document.getElementById('tree-ra').expandNodes('1')">Expand "src" (1)</button>
+        <button class="btn-outline" onclick="document.getElementById('tree-ra').collapseNodes('1')">Collapse "src" (1)</button>
+    </div>
+
+    <div class="tree-container">
+        <web-treeview id="tree-ra" expand-level="1"></web-treeview>
+    </div>
+    <p class="form-text mt-1" id="tree-ra-status"></p>
+
+    <div class="code-block" data-language="css">
+<pre><code>/* Rows only — everything else keeps animating */
+web-treeview.my-tree { --wtv-row-animation-duration: 0s; }
+
+/* Slower rows, plain fade (no slide) */
+web-treeview.my-tree {
+  --wtv-row-animation-duration: var(--wtv-transition-slow);
+  --wtv-row-animation-distance: 0;
+}</code></pre>
+    </div>
+    <div class="code-block" data-language="html">
+<pre><code>&lt;!-- motion="none" (or window.components.motion = 'none') = no animation at all --&gt;
+&lt;web-treeview motion="none"&gt;&lt;/web-treeview&gt;
+
+&lt;!-- At most 5 rows animate per expand / collapse; the rest appear / go at once --&gt;
+&lt;web-treeview row-animation-limit="5"&gt;&lt;/web-treeview&gt;</code></pre>
+    </div>
+    <div class="code-block" data-language="js">
+<pre><code>// The collapse applies after the rows animated out — await it before reading state
+await tree.collapseAll();
+await tree.collapseNodes('1');</code></pre>
+    </div>
+
+    <p class="form-text mt-1">
+        Only expands and collapses animate &mdash; never the first render, a reload, a filter or a re-render. Toggling a node again while its rows are animating out cancels the collapse (it stays open). <code>row-animation-limit</code> is a performance cap: expanding a node with thousands of children animates just the first rows.
+    </p>
+</div>
+
 <script type="module">
     import { appendLogLine, attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
@@ -396,6 +469,34 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             const on = document.getElementById('acc-enabled').checked;
             if (on) accTree.setAttribute('expand-as-accordion', 'true');
             else accTree.removeAttribute('expand-as-accordion');
+        };
+
+        // Example 7: Row animation. The tokens are set inline on the host (they inherit into
+        // the Shadow DOM and override the stylesheet default, like the display sliders above).
+        const raTree = document.getElementById('tree-ra');
+        raTree.nodes = fileTree;
+        raTree.idMember = 'id';
+        raTree.pathMember = 'path';
+        raTree.displayValueMember = 'name';
+        const RA_SPEED = { normal: 'var(--wtv-transition-normal)', slow: 'var(--wtv-transition-slow)', off: '0s' };
+        const applyRowAnimation = () => {
+            raTree.style.setProperty('--wtv-row-animation-duration', RA_SPEED[document.getElementById('ra-speed').value]);
+            if (document.getElementById('ra-fade').checked) raTree.style.setProperty('--wtv-row-animation-distance', '0');
+            else raTree.style.removeProperty('--wtv-row-animation-distance');
+            raTree.setAttribute('row-animation-limit', document.getElementById('ra-limit').value);
+            raTree.setAttribute('motion', document.getElementById('ra-motion').value);
+        };
+        for (const id of ['ra-speed', 'ra-fade', 'ra-limit', 'ra-motion'])
+            document.getElementById(id).addEventListener('change', applyRowAnimation);
+        applyRowAnimation();
+        // collapseAll() returns a Promise that settles once the rows animated out and the
+        // tree really collapsed (node-collapse / expanded-change fire then).
+        window.collapseRowTree = async () => {
+            const status = document.getElementById('tree-ra-status');
+            const start = performance.now();
+            status.textContent = 'collapsing…';
+            await raTree.collapseAll();
+            status.textContent = `collapsed — the Promise settled after ${Math.round(performance.now() - start)} ms`;
         };
 
         // Persist .controls across reloads (shared helper — parity with web-multiselect).

@@ -37,6 +37,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
+import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
 import { animateOut, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
@@ -87,6 +88,20 @@ import { perf } from '../perf-logger';
 
 /** Rows a PageUp / PageDown (and their Shift variants) jumps in the visible flat list. */
 const NAV_PAGE_SIZE = 10;
+
+/**
+ * The built-in clipboard / delete shortcuts, in core `/actions` syntax (`matchesShortcut`).
+ * Ctrl AND Cmd (Meta) on every platform, plus the classic CUA aliases
+ * (Ctrl+Insert copy · Shift+Delete cut · Shift+Insert paste).
+ */
+const TREE_SHORTCUTS = {
+  copy: ['Ctrl+C', 'Meta+C', 'Ctrl+Insert'],
+  cut: ['Ctrl+X', 'Meta+X', 'Shift+Delete'],
+  paste: ['Ctrl+V', 'Meta+V', 'Shift+Insert'],
+  delete: ['Delete'],
+  cancelCut: ['Escape']
+} as const satisfies Record<string, readonly string[]>;
+type TreeShortcutCommand = keyof typeof TREE_SHORTCUTS;
 
 export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // ── LTree instance ──────────────────────────────────────────────────
@@ -3721,17 +3736,15 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    * Built-in keyboard shortcuts, gated by `shouldHandleKeyboardShortcuts` (default
    * on). Returns true when it consumed the event (caller should preventDefault +
    * stop). A consumer `onTreeKeydown` runs BEFORE this, so it can override/suppress.
-   *   Ctrl/Cmd+C copy · Ctrl/Cmd+X cut · Ctrl/Cmd+V paste (into focused node / root) ·
-   *   Delete remove selection · Escape cancel cut. Classic CUA aliases too:
-   *   Ctrl+Insert copy · Shift+Insert paste · Shift+Delete cut.
+   * Matched with core `/actions` `matchesShortcut()` ({@link TREE_SHORTCUTS}: exact
+   * modifiers); a key typed into a text field inside the tree (`isTypingTarget`) is
+   * never taken — it keeps its native text editing.
    */
   handleShortcutKeydown(event: KeyboardEvent): boolean {
-    if (!this._shouldHandleKeyboardShortcuts) return false;
-    const mod = event.ctrlKey || event.metaKey;
-    const key = event.key.toLowerCase();
-    const isInsert = event.key === 'Insert';
+    if (!this._shouldHandleKeyboardShortcuts || isTypingTarget(event)) return false;
+    const is = (command: TreeShortcutCommand) => TREE_SHORTCUTS[command].some((s) => matchesShortcut(event, s));
 
-    if ((mod && key === 'c') || (event.ctrlKey && isInsert)) {
+    if (is('copy')) {
       const p = this._shortcutSelectionPaths();
       if (!p.length) return false;
       this.copyNodes(p);
@@ -3739,25 +3752,23 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
     // Read-only: copy above still works; cut / paste / delete change the data — off.
     if (this._isReadonly) return false;
-    // Cut — Ctrl/Cmd+X or Shift+Delete (checked before plain Delete below).
-    if ((mod && key === 'x') || (event.shiftKey && event.key === 'Delete')) {
+    if (is('cut')) {
       const p = this._shortcutSelectionPaths();
       if (!p.length) return false;
       this.cutNodes(p);
       return true;
     }
-    if ((mod && key === 'v') || (event.shiftKey && isInsert)) {
+    if (is('paste')) {
       if (!hasClipboardFn()) return false;
       this.pasteNodes(this._focusedNode?.path ?? '', this.inputTransformCb ?? null, 'child');
       return true;
     }
-    // Delete selection — plain Delete only (Shift+Delete was cut, handled above).
-    if (event.key === 'Delete' && !event.shiftKey) {
+    if (is('delete')) {
       if (!this._shortcutSelectionPaths().length) return false;
       this.runDeleteCommand();
       return true;
     }
-    if (event.key === 'Escape' && getClipboardOp() === 'cut') {
+    if (is('cancelCut') && getClipboardOp() === 'cut') {
       this.cancelCut();
       return true;
     }

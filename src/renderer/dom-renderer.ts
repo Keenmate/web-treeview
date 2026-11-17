@@ -16,6 +16,7 @@ import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition } from '../ltree/types';
 import type { TreeMenuContext, TreeMenuItem } from '../interaction';
 import { openMenu, type MenuHandle } from '@keenmate/web-components-core/menu';
+import { matchesShortcut } from '@keenmate/web-components-core/actions';
 import { createTooltip, createPopover, type TooltipHandle, type PopoverHandle } from '@keenmate/web-components-core/positioning';
 import {
   classifyDevice,
@@ -640,7 +641,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onBodyKeydown = (event: KeyboardEvent) => {
     if (!this.controller || this._isDisabled) return;
-    const ctrl = event.ctrlKey || event.metaKey;
     const shift = event.shiftKey;
 
     // Consumer onTreeKeydown (can suppress everything) THEN the built-in
@@ -652,8 +652,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
 
     // Shift+F10 / the ContextMenu key open the focused node's context menu.
-    if (event.key === 'ContextMenu' || (event.key === 'F10' && shift && !ctrl && !event.altKey)) {
+    if (matchesShortcut(event, 'ContextMenu') || matchesShortcut(event, 'Shift+F10')) {
       if (this._openContextMenuFromKeyboard()) event.preventDefault();
+      return;
+    }
+
+    // Ctrl/Cmd+A selects every node.
+    if (matchesShortcut(event, 'Ctrl+A') || matchesShortcut(event, 'Meta+A')) {
+      event.preventDefault();
+      this.controller.selectAll();
       return;
     }
 
@@ -724,12 +731,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         event.preventDefault();
         if (shift) this.controller.navSelectPageUp();
         else this.controller.navPageUp();
-        break;
-      case 'a':
-        if (ctrl) {
-          event.preventDefault();
-          this.controller.selectAll();
-        }
         break;
       case 'Escape':
         // handleKeydown already consumed Escape when a cut was pending

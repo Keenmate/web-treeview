@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — selection runs on core `createSelection` (2026-11-17)
+- The selected set, the Shift anchor and the click / Ctrl / Shift rules come from core `createSelection` (SPEC §12.27,
+  the rules every Keenmate list / tree / grid shares); the range order is the visible rows (`range-selection-mode=
+  "visual"`) or every node depth-first (`"logical"`). `selectedPaths`, `selectionAnchor`, the methods and the
+  `selection-change` detail (`{ paths, nodes }`) are unchanged; checkboxes (`checkedPaths`, tri-state) stay the tree's own.
+  Where treeview's old rules differed, the core rule now applies:
+  - **Ctrl+Shift+click adds the range** to the selection (was: replaced it, like Shift+click).
+  - **Clicking (or arrowing onto) an unselectable node leaves the selection as it is** — focus still moves (was:
+    the selection was cleared).
+  - **`selection-mode="single"`: Ctrl+click on the selected node clears it** (was: kept it); Shift is ignored as before.
+  - **`selectAll()` / Ctrl+A are no-ops in single mode** (was: selected every visible node — NOTES #3, fixed).
+  - **`selectNodes()` / `setSelectedPaths()` keep one path in single mode** (the first selectable one; was: all of them).
+  - **Shift+click when the anchor isn't in the range order** (e.g. collapsed away) selects just the clicked node (was:
+    nothing changed); Ctrl+Shift+click without an anchor adds the node (was: toggled it).
+  - **A click / key that doesn't change the selection fires no `selection-change`** (clicking the already selected
+    node; was: fired with the same paths). The methods (`selectNodes`, `clearSelection`, `selectAll`, …) announce as before.
+
 ### Changed — drop pads and the touch ghost are core layers (2026-11-17)
 - The floating drop pads (`drop-zone-mode="floating"`) and the touch drag ghost render in core `createLayer()`
   layers (SPEC §12.29) — a `div.km-layer` in `<body>` (or the open modal / popover the tree sits in) with its own

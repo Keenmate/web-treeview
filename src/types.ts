@@ -381,8 +381,9 @@ export interface TreeViewConfig<T = any> {
   contextMenuYOffset?: number | null;
 
   // Selection model (rc06+: focusedNode / selectedPaths / checkedPaths)
-  /** `'single'` (default) — Ctrl/Shift+click degrade to plain click.
-   *  `'multiple'` — Ctrl+click toggles, Shift+click range-extends. */
+  /** `'single'` (default) — a click selects the node, Ctrl+click on the selected node clears it, Shift is ignored.
+   *  `'multiple'` — Ctrl+click toggles, Shift+click selects the anchor…node range, Ctrl+Shift+click adds it
+   *  (core `createSelection` rules). */
   selectionMode?: 'single' | 'multiple';
   /** Replace individual keyboard-navigation methods — merged over the defaults
    *  (`{ ...defaults, ...navigationOverrides }`), so a method you leave out keeps its

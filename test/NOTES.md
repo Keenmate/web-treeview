@@ -85,7 +85,7 @@ then emits again → two `tree-change` notifications for one operation.
 **Suggested fix:** use an internal non-emitting insert, emit once; count
 removed descendants (sum of `removeNode` results).
 
-## 3. (TV-3) `selectAll` ignores `selectionMode='single'` and moves focus silently
+## 3. ~~(TV-3) `selectAll` ignores `selectionMode='single'` and moves focus silently~~ — fixed
 
 **Where:** `src/controller/tree-engine.ts` `selectAll()` (~1664-1679).
 
@@ -100,6 +100,9 @@ emitting `focus-change`.
 (single mode) is `test.fail`. The focus half did NOT reproduce: `selectAll()`
 moves focus to the last visible row and a `focus-change` *is* emitted (pinned
 as a passing test in the same spec).
+
+**Fixed (2026-11-17):** selection moved onto core `createSelection`, whose `selectAll`
+rule is multi-only — `selectAll()` / Ctrl+A are no-ops in single mode; the test passes.
 
 ## 4. ~~(TV-4) PageUp / PageDown / Shift-extend keyboard selection unimplemented~~ — resolved
 

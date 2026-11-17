@@ -48,6 +48,32 @@ test.describe('rangeSelectionMode', () => {
   });
 });
 
+test.describe('core createSelection rules', () => {
+  test('Ctrl+Shift+click adds the anchor…node range to the selection', async ({ page }) => {
+    await load(page, '?mode=multiple');
+    await click(page, '3');
+    await click(page, '1', ['Control']);           // anchor = 1, selection = 3, 1
+    await click(page, '1.2', ['Control', 'Shift']);
+    await expect.poll(() => selected(page)).toEqual(['1', '1.1', '1.2', '3']);
+  });
+
+  test('Shift+click replaces the selection with the range (the anchor stays)', async ({ page }) => {
+    await load(page, '?mode=multiple');
+    await click(page, '3');
+    await click(page, '1', ['Control']);
+    await click(page, '1.2', ['Shift']);
+    await expect.poll(() => selected(page)).toEqual(['1', '1.1', '1.2']);
+    expect(await page.evaluate(() => (window as any).tree.selectionAnchor)).toBe('1');
+  });
+
+  test("single mode: Ctrl+click on the selected node clears it", async ({ page }) => {
+    await load(page, '?mode=single');
+    await click(page, '2');
+    await click(page, '2', ['Control']);
+    await expect.poll(() => selected(page)).toEqual([]);
+  });
+});
+
 test.describe("selectionMode='single'", () => {
   test('Ctrl+click replaces instead of adding', async ({ page }) => {
     await load(page, '?mode=single');
@@ -65,7 +91,6 @@ test.describe("selectionMode='single'", () => {
   });
 
   test('Ctrl+A does not select everything', async ({ page }) => {
-    test.fail(true, 'NOTES.md #3');
     await load(page, '?mode=single');
     await click(page, '1.2');
     await page.keyboard.press('Control+a');

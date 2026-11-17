@@ -86,7 +86,8 @@ Chromium and Firefox run them.
 | `rangeSelectionMode` visual | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `rangeSelectionMode` logical includes collapsed descendants, forwards + backwards (NOTES #7) | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectionMode='single'` blocks Ctrl/Shift click | ✓ | `range-selection.spec.ts` | `range-selection.html` |
-| `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✗ (test.fail) | `range-selection.spec.ts` | `range-selection.html` |
+| `selectionMode='single'` blocks Ctrl+A / `selectAll` (NOTES #3) | ✓ | `range-selection.spec.ts` | `range-selection.html` |
+| Core `createSelection` rules: Ctrl+Shift adds the range, Shift keeps the anchor, single-mode Ctrl+click clears | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll` moves focus + emits `focus-change` | ✓ | `range-selection.spec.ts` | `range-selection.html` |
 | `selectAll`, assigning `selectedPaths` (+ silent replace), `focusNode` / `clearFocus`, `focus-change` payload | ✓ | `selection-api.spec.ts` | `selection-api.html` |
 | Silent focus / select fire no `focus-change` (NOTES #11) | ✓ | `selection-api.spec.ts` | `selection-api.html` |

@@ -175,7 +175,7 @@ a child listed before its parent is dropped as an orphan and reported in
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `selection-mode` | `string` | `'single'` | `'single'` (Ctrl/Shift+click degrade to plain click; Shift+keyboard extend is a no-op) \| `'multiple'` (Ctrl+toggle, Shift+range, Shift+Arrow/Home/End/PageUp/PageDown extend) |
+| `selection-mode` | `string` | `'single'` | `'single'` (a click selects the node, Ctrl+click on the selected node clears it, Shift is ignored; Shift+keyboard extend is a no-op) \| `'multiple'` (Ctrl+toggle, Shift+range, Ctrl+Shift+range added, Shift+Arrow/Home/End/PageUp/PageDown extend) |
 | `range-selection-mode` | `string` | `'visual'` | `'visual'` (visible flat nodes) \| `'logical'` (tree walk) |
 | `show-checkboxes` | `boolean` | `false` | Render checkbox per selectable node (config key: `isCheckboxesShown`) |
 | `checkbox-mode` | `string` | `'independent'` | `'independent'` (per-node) \| `'cascade'` (parent → descendants) |
@@ -456,7 +456,7 @@ All methods are available on the element **and** on `el.controller`.
 | `applyChanges` | `(changes: TreeChange[]): ApplyChangesResult` | Apply a batch: `{ operation: 'add', parentPath, data, pathSegment? }`, `{ operation: 'insert', targetPath, position, data }`, `{ operation: 'update', path, data }`, `{ operation: 'remove', path }` |
 | `selectNode` | `(path, mode?, options?)` | Select one node. `mode`: `'replace'` (default) \| `'toggle'` \| `'range'` |
 | `selectNodes` | `(paths[], options?)` | Add nodes to the selected set (**additive**) |
-| `selectAll` | `(options?)` | Select every visible node (Ctrl+A) |
+| `selectAll` | `(options?)` | Select every visible selectable node (Ctrl+A); `selection-mode="multiple"` only |
 | `clearSelection` | `(paths?, options?)` | Clear the given paths, or all when omitted |
 | `getSelectedNodes` | `(): LTreeNode[]` | All selected nodes |
 | `isNodeSelected` | `(path): boolean` | Check selected-set membership |

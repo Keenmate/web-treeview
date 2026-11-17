@@ -40,7 +40,7 @@ import { EventEmitter } from './event-emitter';
 import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
 import { openTreeLayer, type TreeLayerOpener } from '../renderer/layers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
-import { animateOut, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
+import { animateOut, createSelection, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -210,9 +210,19 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _shouldIndicateUndraggable: boolean = true;
 
   // Three-level selection model (rc06+)
+  // Selection = core `createSelection` (SPEC §12.27): it owns the selected keys, the Shift anchor and the
+  // click / Ctrl / Shift rules. `_selectedPaths` is its read mirror (renderer snapshot, O(1) `has`),
+  // re-synced by `_syncSelection()` after every write; the nodes' `isSelected` flags follow it.
   private _selectedPaths: Set<string> = new Set();
+  private readonly _selection = createSelection<string>({
+    mode: () => (this._selectionMode === 'multiple' ? 'multi' : 'single'),
+    getOrderedKeys: () => this._selectionOrder(),
+    isSelectable: (path) => this.tree?.getNodeByPath(path)?.isSelectable === true,
+    onChange: () => this._onSelectionGesture(),
+  });
+  /** A gesture-path write (`_applySelection`) that must not emit. */
+  private _isSelectionSilent = false;
   private _checkedPaths: Set<string> = new Set();
-  private _lastSelectedPath: string | null = null;
   private _rangeSelectionMode: import('./types').RangeSelectionMode = 'visual';
   private _selectionMode: 'single' | 'multiple' = 'single';
   // Keyboard navigation: the defaults merged with the consumer's navigationOverrides.
@@ -1555,11 +1565,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** The Shift-range anchor (Shift+click / Shift+Arrow extend from it); `null` = none.
    *  Writable so an alternative renderer can keep its own range selection in sync. */
   get selectionAnchor(): string | null {
-    return this._lastSelectedPath;
+    return this._selection.anchor;
   }
 
   set selectionAnchor(path: string | null) {
-    this._lastSelectedPath = path ?? null;
+    this._selection.setAnchor(path ?? null);
   }
 
   /** Toggle the focused node in/out of the selection (Ctrl+click semantics; the anchor
@@ -1700,9 +1710,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     };
     const selectionAffected = collect(this._selectedPaths);
     const checkedAffected = collect(this._checkedPaths);
+    const anchorPath = this._selection.anchor;
     const lastSelectedSuffix =
-      this._lastSelectedPath && selectionAffected.has(this._lastSelectedPath)
-        ? selectionAffected.get(this._lastSelectedPath)
+      anchorPath && selectionAffected.has(anchorPath)
+        ? selectionAffected.get(anchorPath)
         : undefined;
     const focusedAffectedSuffix =
       this._focusedNode &&
@@ -1725,10 +1736,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           paths.add(newPath + suffix);
         }
       };
-      remap(this._selectedPaths, selectionAffected);
+      if (selectionAffected.size > 0) {
+        const next = new Set(this._selection.values());
+        remap(next, selectionAffected);
+        this._selection.set(next, { isSilent: true });
+        // The moved nodes keep their own `isSelected` flags (same objects, new paths).
+        this._syncSelection(false);
+      }
       remap(this._checkedPaths, checkedAffected);
       if (lastSelectedSuffix !== undefined) {
-        this._lastSelectedPath = newPath + lastSelectedSuffix;
+        this._selection.setAnchor(newPath + lastSelectedSuffix);
       }
       if (focusedAffectedSuffix !== undefined && this._focusedNode) {
         // _focusedNode is the same node reference; its .path was already
@@ -2182,19 +2199,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  Use setSelectedPaths() to replace the whole set instead.
    *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   selectNodes(paths: string[], options?: TreeMutationOptions): void {
-    let lastNode: LTreeNode<T> | null = null;
-    for (const path of paths) {
-      const node = this.tree?.getNodeByPath(path);
-      if (node && node.isSelectable) {
-        this._selectedPaths.add(path);
-        node.isSelected = true;
-        node._rev++;
-        lastNode = node;
+    const added = paths.filter((path) => this.tree?.getNodeByPath(path)?.isSelectable);
+    if (added.length > 0) {
+      // Single mode keeps one key (core `set`): the first of the added paths.
+      const isSingle = this._selectionMode !== 'multiple';
+      this._selection.set(isSingle ? added : [...this._selection.values(), ...added], { isSilent: true });
+      this._syncSelection();
+      const last = [...added].reverse().find((path) => this._selection.has(path));
+      if (last) {
+        this._selection.setAnchor(last);
+        this._focusedNode = this.tree.getNodeByPath(last) ?? this._focusedNode;
       }
-    }
-    if (lastNode) {
-      this._lastSelectedPath = lastNode.path;
-      this._focusedNode = lastNode;
     }
     if (!options?.isSilent) {
       this._emitSelectionChange();
@@ -2209,10 +2224,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  Equivalent to clearSelection() + selectNodes(paths).
    *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   setSelectedPaths(paths: string[], options?: TreeMutationOptions): void {
-    this._clearSelectionFlags();
-    this._selectedPaths.clear();
-    this._lastSelectedPath = null;
+    this._selection.clear({ isSilent: true });
+    this._selection.setAnchor(null);
     this.selectNodes(paths, { isSilent: true });
+    this._syncSelection();
     if (!options?.isSilent) this._emitSelectionChange();
     this._mirrorSelectedToChecked(options?.isSilent);
     this._markSilentFocus(options);
@@ -2224,23 +2239,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   clearSelection(paths?: string[], options?: TreeMutationOptions): void {
     if (paths && paths.length > 0) {
-      for (const path of paths) {
-        const node = this.tree?.getNodeByPath(path);
-        if (node) {
-          node.isSelected = false;
-          node._rev++;
-        }
-        this._selectedPaths.delete(path);
-      }
-      if (this._lastSelectedPath && !this._selectedPaths.has(this._lastSelectedPath)) {
-        this._lastSelectedPath = null;
-      }
+      const dropped = new Set(paths);
+      this._selection.set(this._selection.values().filter((path) => !dropped.has(path)), { isSilent: true });
+      const anchor = this._selection.anchor;
+      if (anchor && !this._selection.has(anchor)) this._selection.setAnchor(null);
     } else {
-      this._clearSelectionFlags();
-      this._selectedPaths.clear();
-      this._lastSelectedPath = null;
+      this._selection.clear({ isSilent: true });
+      this._selection.setAnchor(null);
       this._focusedNode = null;
     }
+    this._syncSelection();
     if (!options?.isSilent) {
       this._emitSelectionChange();
       this._mirrorSelectedToChecked();
@@ -2270,20 +2278,16 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return this._selectedPaths.has(path);
   }
 
-  /** Select every visible node. Pass `{ isSilent: true }` to skip
-   *  `selectionChangeCallback`. */
+  /** Select every visible selectable node (multiple selection mode only — core
+   *  `selectAll` rule). Pass `{ isSilent: true }` to skip `selectionChangeCallback`. */
   selectAll(options?: TreeMutationOptions): void {
-    this._clearSelectionFlags();
-    this._selectedPaths.clear();
+    if (this._selectionMode !== 'multiple') return;
+    // Visible rows even under rangeSelectionMode 'logical' (whose range order includes collapsed nodes).
     const visible = this.tree?.visibleFlatNodes ?? [];
-    for (const node of visible) {
-      if (!node.isSelectable) continue;
-      this._selectedPaths.add(node.path);
-      node.isSelected = true;
-      node._rev++;
-    }
+    this._selection.set(visible.filter((node) => node.isSelectable).map((node) => node.path), { isSilent: true });
+    this._syncSelection();
     if (visible.length > 0) {
-      this._lastSelectedPath = visible[visible.length - 1].path;
+      this._selection.setAnchor(visible[visible.length - 1].path);
       this._focusedNode = visible[visible.length - 1];
     }
     if (!options?.isSilent) {
@@ -2293,17 +2297,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
-  }
-
-  /** Clear `isSelected` flag on every node currently in the selected set. */
-  private _clearSelectionFlags(): void {
-    for (const path of this._selectedPaths) {
-      const node = this.tree?.getNodeByPath(path);
-      if (node) {
-        node.isSelected = false;
-        node._rev++;
-      }
-    }
   }
 
   /** Every node depth-first in display (children) order, ignoring expansion. */
@@ -2317,45 +2310,49 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return out;
   }
 
-  /** Range-select between two paths. */
-  private _rangeSelect(fromPath: string, toPath: string): void {
-    // visual: the rendered rows; logical: every node depth-first in display order,
-    // collapsed descendants included (NOTES #7 — `tree.tree` is the roots only).
+  /** The selection's display order (core `getOrderedKeys`) — what a Shift range spans. visual: the
+   *  rendered rows (collapsed children excluded); logical: every node depth-first, collapsed
+   *  descendants included (NOTES #7 — `tree.tree` is the roots only). */
+  private _selectionOrder(): string[] {
     const nodes = this._rangeSelectionMode === 'visual'
       ? (this.tree?.visibleFlatNodes ?? [])
       : this._allNodesDepthFirst();
+    return nodes.map((node) => node.path);
+  }
 
-    let fromIndex = -1;
-    let toIndex = -1;
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i].path === fromPath) fromIndex = i;
-      if (nodes[i].path === toPath) toIndex = i;
-      if (fromIndex >= 0 && toIndex >= 0) break;
+  /** Re-read the core selection into the `_selectedPaths` mirror; with `isFlagSync`, flip the
+   *  `isSelected` flag (+ `_rev`) of every node that joined or left it. */
+  private _syncSelection(isFlagSync = true): void {
+    const next = new Set(this._selection.values());
+    if (isFlagSync) {
+      const flip = (path: string, isSelected: boolean) => {
+        const node = this.tree?.getNodeByPath(path);
+        if (node) {
+          node.isSelected = isSelected;
+          node._rev++;
+        }
+      };
+      for (const path of this._selectedPaths) if (!next.has(path)) flip(path, false);
+      for (const path of next) if (!this._selectedPaths.has(path)) flip(path, true);
     }
+    this._selectedPaths = next;
+  }
 
-    if (fromIndex < 0 || toIndex < 0) return;
-
-    const start = Math.min(fromIndex, toIndex);
-    const end = Math.max(fromIndex, toIndex);
-
-    this._clearSelectionFlags();
-    this._selectedPaths.clear();
-
-    for (let i = start; i <= end; i++) {
-      const node = nodes[i];
-      if (!node.isSelectable) continue;
-      this._selectedPaths.add(node.path);
-      node.isSelected = true;
-      node._rev++;
-    }
-
-    this._focusedNode = this.tree?.getNodeByPath(toPath) ?? null;
+  /** Core `onChange` (a gesture changed the selection): sync, then report — unless silent. */
+  private _onSelectionGesture(): void {
+    this._syncSelection();
+    if (this._isSelectionSilent) return;
+    this._emitSelectionChange();
+    this._mirrorSelectedToChecked();
   }
 
   /** Internal: do the click-driven selection work. Called by both the
    *  click handler (with `modifiers` from the event) and the public
    *  `selectNode(path, mode, options)` (which builds modifiers from
-   *  the mode string). */
+   *  the mode string). Core `click()` rules (SPEC §12.27): plain → only this
+   *  node, Ctrl → toggle, Shift → anchor…node range, Ctrl+Shift → range added;
+   *  single mode ignores Shift; an unselectable node leaves the selection as it is.
+   *  `selection-change` fires only when the selection changed. */
   private _applySelection(
     path: string,
     modifiers?: SelectionModifiers,
@@ -2366,45 +2363,18 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     const ctrl = modifiers?.ctrl ?? false;
     const shift = modifiers?.shift ?? false;
-    // Single-mode degrades Ctrl/Shift+click to plain click (matches rc09).
-    const isMulti = this._selectionMode === 'multiple';
-    const useCtrl = ctrl && isMulti;
-    const useShift = shift && isMulti;
+    // Ctrl+click on an unselectable node: nothing (not even focus).
+    if (ctrl && !shift && !node.isSelectable) return;
 
-    if (useShift && this._lastSelectedPath) {
-      this._rangeSelect(this._lastSelectedPath, path);
-    } else if (useCtrl) {
-      if (!node.isSelectable) return;
-      if (this._selectedPaths.has(path)) {
-        this._selectedPaths.delete(path);
-        node.isSelected = false;
-        node._rev++;
-      } else {
-        this._selectedPaths.add(path);
-        node.isSelected = true;
-        node._rev++;
-      }
-      this._lastSelectedPath = path;
-      this._focusedNode = node;
-    } else {
-      // Replace
-      this._clearSelectionFlags();
-      this._selectedPaths.clear();
-      if (node.isSelectable) {
-        this._selectedPaths.add(path);
-        node.isSelected = true;
-        node._rev++;
-        this._lastSelectedPath = path;
-      } else {
-        this._lastSelectedPath = null;
-      }
-      this._focusedNode = node;
+    // Focus first, so a selection-change listener reads the new focus.
+    this._focusedNode = node;
+    this._isSelectionSilent = options?.isSilent ?? false;
+    try {
+      this._selection.click(path, { ctrlKey: ctrl, shiftKey: shift });
+    } finally {
+      this._isSelectionSilent = false;
     }
 
-    if (!options?.isSilent) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
-    }
     this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
@@ -3182,20 +3152,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Extend the selected range to `path` (Shift+nav) and move focus there. The
-   *  range runs from the Shift anchor (`_lastSelectedPath` — seeded from the
+   *  range runs from the Shift anchor (core `selection.anchor` — seeded from the
    *  focused node on the first Shift move; a plain move resets it to the new
    *  node). No-op in single selection mode. */
   private _navSelectTo(path: string): void {
     if (this._selectionMode !== 'multiple') return;
     const focused = this._focusedNode;
-    if (!this._lastSelectedPath && focused) {
-      this._lastSelectedPath = focused.path;
-      if (focused.isSelectable && !this._selectedPaths.has(focused.path)) {
-        this._selectedPaths.add(focused.path);
-        focused.isSelected = true;
-        focused._rev++;
-      }
-    }
+    if (this._selection.anchor === null && focused) this._selection.setAnchor(focused.path);
     this._applySelection(path, { ctrl: false, shift: true });
     this.revealNode(path);
   }
@@ -4365,8 +4328,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (updates.treePathSeparator !== undefined)
       this.treePathSeparator = updates.treePathSeparator ?? '.';
     if (updates.focusedNode !== undefined) this._focusedNode = updates.focusedNode;
-    if (updates.selectedPaths !== undefined)
-      this._selectedPaths = new Set(updates.selectedPaths);
+    if (updates.selectedPaths !== undefined) {
+      this._selection.set(updates.selectedPaths ?? [], { isSilent: true });
+      this._syncSelection();
+    }
     if (updates.checkedPaths !== undefined)
       this._checkedPaths = new Set(updates.checkedPaths);
     if (updates.selectionMode !== undefined)
@@ -5221,11 +5186,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         // the drag is Esc-cancelled. Without this, the user is left with
         // the dragged node selected even though they cancelled the operation.
         this._preDragSelectionSnapshot = new Set(this._selectedPaths);
-        this._clearSelectionFlags();
-        node.isSelected = true;
-        node._rev++;
-        this._selectedPaths = new Set([node.path]);
-        this._lastSelectedPath = node.path;
+        this._selection.set([node.path], { isSilent: true });
+        this._selection.setAnchor(node.path);
+        this._syncSelection();
         this._focusedNode = node;
         this._emitSelectionChange();
         this._mirrorSelectedToChecked();
@@ -5272,15 +5235,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // the dragged node doesn't end up "stuck" selected. Mirrors svelte-treeview.
     if (dropEffect === 'none' && this._preDragSelectionSnapshot) {
       const prior = this._preDragSelectionSnapshot;
-      this._clearSelectionFlags();
-      this._selectedPaths = new Set(prior);
-      for (const path of prior) {
-        const n = this.tree?.getNodeByPath(path);
-        if (n) {
-          n.isSelected = true;
-          n._rev++;
-        }
-      }
+      this._selection.set(prior, { isSilent: true });
+      this._syncSelection();
       // When the snapshot was empty, focus also belonged to nobody — clear it.
       if (prior.size === 0) this._focusedNode = null;
       this._emitSelectionChange();

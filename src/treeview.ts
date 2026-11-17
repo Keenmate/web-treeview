@@ -2,7 +2,7 @@ import { createLabels, type Labels } from '@keenmate/web-components-core/locale'
 import { DEFAULT_LABELS, type TreeViewLabels } from './labels';
 import { TreeEngine } from './controller/tree-engine';
 import type { TreeLoggers } from './logger';
-import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext } from './controller/types';
+import type { TreeEngineConfig, NodeRef, NodeDropContext, NodeRenderContext, NodeTransformContext } from './controller/types';
 import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer/types';
 import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
@@ -25,7 +25,7 @@ import type {
   ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
 
@@ -159,6 +159,49 @@ export class WebTreeView<T = any> {
       }
     });
   }
+
+  // ── Screen-reader announcements (core `announce()`) ─────────────────
+
+  /** Announce a label through the page's polite live region; a label set to `''` stays silent. */
+  private say(key: keyof TreeViewLabels, params?: Record<string, unknown>): void {
+    const text = this.labels.text(key, params as any);
+    if (text) announce(text, { document: this.hostElement().ownerDocument });
+  }
+
+  /** A node's display text for an announcement. */
+  private nodeName(node: LTreeNode<T> | null | undefined): string {
+    return node ? (this.engine.tree?.getNodeDisplayValue(node) || String(node.id)) : '';
+  }
+
+  /** `search-status-change` bridge: announce a settled search (not while the index is still
+   *  filling — a fresh status follows when it completes; a cleared search is silent). */
+  private readonly searchStatusBridge = (s: SearchStatus): void => {
+    if (s.searchTerm && !s.isIndexing) {
+      if (s.matchCount === 0) this.say('announceSearchNoResults');
+      else this.say(s.matchCount === 1 ? 'announceSearchResultsOne' : 'announceSearchResults', { count: s.matchCount });
+    }
+    this.options.onSearchStatusChange?.(this.ctx({ searchTerm: s.searchTerm, matchCount: s.matchCount, isLimited: s.isLimited, limit: s.limit, isIndexing: s.isIndexing }));
+  };
+
+  /** `node-drop` bridge: announce the outcome when the tree placed the nodes itself
+   *  (a consumer-owned drop — `dropped: null` — is the consumer's to announce). */
+  private readonly nodeDropBridge = (d: NodeDropContext<T>): void => {
+    if (d.dropped?.length) {
+      const name = d.dragged.length > 1
+        ? this.labels.text('announceDropItems', { count: d.dragged.length })
+        : this.nodeName(d.dropped[0].node);
+      const target = d.target?.node ? this.nodeName(d.target.node) : this.labels.text('announceDropTreeRoot');
+      const where = !d.target || d.position === 'child' ? 'Into' : d.position === 'before' ? 'Before' : 'After';
+      this.say(`announce${d.operation === 'copy' ? 'Copied' : 'Moved'}${where}` as keyof TreeViewLabels, { name, target });
+    }
+    this.options.onNodeDrop?.(this.ctx(d));
+  };
+
+  /** `node-drop-reject` bridge: say the drop was refused, and why. */
+  private readonly nodeDropDeniedBridge = (ref: NodeRef<T>): void => {
+    this.say('announceDropDenied', { target: this.nodeName(ref.node) });
+    this.options.onNodeDropReject?.(this.ctx(ref));
+  };
 
   // ── Context ─────────────────────────────────────────────────────────
 
@@ -838,8 +881,8 @@ export class WebTreeView<T = any> {
       shouldExpandFilterDescendants: o.shouldExpandFilterDescendants,
       onIndexProgress: this.wrap(o.onIndexProgress, 'indexProgress', (f) => (p: IndexProgress) =>
         f(this.ctx({ processed: p.processed, total: p.total, isComplete: p.isComplete }))),
-      onSearchStatusChange: this.wrap(o.onSearchStatusChange, 'searchStatus', (f) => (s: SearchStatus) =>
-        f(this.ctx({ searchTerm: s.searchTerm, matchCount: s.matchCount, isLimited: s.isLimited, limit: s.limit, isIndexing: s.isIndexing }))),
+      // Always bridged (stable identity): the bridge announces, then calls the current hook.
+      onSearchStatusChange: this.searchStatusBridge,
       isLoading: o.isLoading ?? false,
 
       isProgressiveRenderEnabled: o.isProgressiveRenderEnabled ?? true,
@@ -902,9 +945,9 @@ export class WebTreeView<T = any> {
       beforeDropCallback: this.wrap(o.beforeDropCallback, 'drop', (f) => async (engineCtx: object) =>
         internalGate(await runBeforeCallback(f, this.ctx(engineCtx), 'beforeDropCallback'))),
       beforeDragStartCallback: this.syncGate(o.beforeDragStartCallback, 'beforeDragStartCallback'),
-      onNodeDrop: this.event(o.onNodeDrop),
+      onNodeDrop: this.nodeDropBridge,
       onNodeDragDenied: this.event(o.onNodeDragReject),
-      onNodeDropDenied: this.event(o.onNodeDropReject),
+      onNodeDropDenied: this.nodeDropDeniedBridge,
       // Keydown: the public hook vetoes with `false`; the engine's internal one suppresses with `true`.
       onTreeKeydown: this.wrap(o.beforeKeydownCallback, 'keydown', (f) => (engineCtx: object) =>
         runBeforeCallbackSync(f, this.ctx(engineCtx), 'beforeKeydownCallback').isRejected ? true : undefined),

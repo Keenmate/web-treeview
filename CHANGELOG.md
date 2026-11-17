@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — screen-reader announcements (2026-11-18)
+- The tree speaks through core `announce()` (SPEC §12.23, the page's one polite live region shared by every
+  component): a settled search ("12 results" / "1 result" / "No results found" — not while the index is still
+  filling), a drop the tree placed ("Apricot moved into Banana", "… before / after …", "… copied …", "3 items moved
+  …") and a refused drop with its reason ("Cannot drop here: Locked does not accept dropped items"). Each is a
+  `labels` key (`announceSearchResults` / `announceSearchResultsOne` / `announceSearchNoResults`, `announceMoved*` /
+  `announceCopied*` (`Into` / `Before` / `After`), `announceDropItems`, `announceDropTreeRoot`, `announceDropDenied`);
+  counts go in raw (locale-formatted by core), and a label set to `''` stays silent. Selection and expand / collapse
+  are not announced — they already carry ARIA state.
+
 ### Fixed — engine and search-index logs follow the element's own logging (2026-11-17)
 - The tree engine's `INIT` / `UI` / `DRAG` lines and the search indexer's `INDEX` lines go through the element's
   instance loggers (`this.log`, handed to the engine / LTree / indexer) instead of the module-level ones: they read

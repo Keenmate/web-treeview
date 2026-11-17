@@ -218,5 +218,7 @@ Chromium and Firefox run them.
 | Lifecycle: no duplicated document/window listeners after N moves; released while detached; open context menu closes on a move | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Logging silent by default (warn level, no direct console.*) (NOTES #24) | ✓ | `logging.spec.ts` | `logging.html` |
 | `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
+| `el.enableLogging()` turns on one tree's engine lines (`#id` label); `el.disableLogging()` silences them | ✓ | `logging.spec.ts` | `logging.html` |
+| Screen-reader announcements (core `announce()`, `[data-km-announcer]`): settled search count / no results, placed drop, refused drop + reason; `''` labels silent | ✓ | `announce.spec.ts` | `announce.html` |
 | `tree-id`; removed debug inputs (`should-display-debug-information`, `shouldDisplayContextMenuInDebugMode`) are inert | ✓ | `logging.spec.ts` | `logging.html` |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

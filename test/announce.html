@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — Screen-reader announcements</title>
+    <style>
+        body { font-family: sans-serif; padding: 1rem; }
+        web-treeview { display: block; width: 420px; border: 1px solid #ccc; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <!-- Core announce() through the page's one polite [data-km-announcer] live region:
+         a settled search ("{count} results" / no results), a placed drop, a refused drop.
+         #tree — the default labels; #silent — every announce* label ''.
+         Targeted by e2e/announce.spec.ts. -->
+    <div id="host"></div>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree } from './fixture-kit.js';
+
+        const data = () => [
+            { id: 1, path: '1', name: 'Apple', canDrop: true },
+            { id: 11, path: '1.1', name: 'Apricot', canDrop: true },
+            { id: 2, path: '2', name: 'Banana', canDrop: true },
+            { id: 3, path: '3', name: 'Locked', canDrop: false },
+        ];
+
+        await customElements.whenDefined('web-treeview');
+        const make = (id, extra = {}) => {
+            const tree = document.createElement('web-treeview');
+            tree.id = id;
+            tree.setAttribute('expand-level', '2');
+            tree.setAttribute('drag-drop-mode', 'both');
+            tree.setAttribute('is-drop-allowed-member', 'canDrop');
+            setupTree(tree, data(), { searchValueMember: 'name', ...extra });
+            document.getElementById('host').appendChild(tree);
+            return tree;
+        };
+        window.tree = make('tree');
+        window.silent = make('silent', {
+            labels: {
+                announceSearchResults: '', announceSearchResultsOne: '', announceSearchNoResults: '',
+                announceMovedInto: '', announceMovedBefore: '', announceMovedAfter: '',
+                announceDropDenied: '',
+            },
+        });
+        window.__ready = true;
+    </script>
+</body>
+</html>

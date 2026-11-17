@@ -138,9 +138,9 @@
 .wtv__node .wtv__node-content.wtv__node-content--glow-before::after {
   content: '';
   position: absolute;
-  left: var(--wtv-drop-arrow-position);
+  inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-before-rotation));
+  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-before-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -160,9 +160,9 @@
 .wtv__node .wtv__node-content.wtv__node-content--glow-after::after {
   content: '';
   position: absolute;
-  left: var(--wtv-drop-arrow-position);
+  inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-after-rotation));
+  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-after-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -176,16 +176,16 @@
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-child {
   border-radius: 0 !important;
-  box-shadow: inset calc(-1 * var(--wtv-drop-glow-size)) 0 0 0 var(--wtv-drop-glow-child-color);
+  box-shadow: inset calc(-1 * var(--wtv-dir-sign, 1) * var(--wtv-drop-glow-size)) 0 0 0 var(--wtv-drop-glow-child-color);
   background-color: var(--wtv-drop-glow-child-bg);
 }
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-child::after {
   content: '';
   position: absolute;
-  left: var(--wtv-drop-arrow-position);
+  inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(-50%, -50%) rotate(var(--wtv-drop-arrow-child-rotation));
+  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-child-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -223,13 +223,13 @@
    rather than --expand, so a custom escape-hatch glyph class (e.g. FontAwesome,
    which replaces --expand) still rotates. */
 .wtv__node .wtv__toggle-icon.wtv__clickable {
-  transform: rotate(var(--wtv-icon-rotate-collapsed, 0deg));
+  transform: rotate(calc(var(--wtv-icon-rotate-collapsed, 0deg) * var(--wtv-dir-sign, 1)));
 }
 
 /* Expanded orientation — the state marker `--expanded` is applied by the renderer
    for BOTH rotate and swap modes (swap just doesn't rotate; see below). */
 .wtv__node .wtv__toggle-icon.wtv__clickable.wtv__toggle-icon--expanded {
-  transform: rotate(var(--wtv-icon-rotate-expanded, 90deg));
+  transform: rotate(calc(var(--wtv-icon-rotate-expanded, 90deg) * var(--wtv-dir-sign, 1)));
 }
 
 /* Dedicated per-node icon element (iconMember / iconCallback / renderIconCallback),
@@ -242,7 +242,7 @@
   justify-content: center;
   flex: 0 0 auto;
   font-size: var(--wtv-font-size-sm);
-  margin-right: var(--wtv-node-icon-margin-right, var(--wtv-spacing-sm));
+  margin-inline-end: var(--wtv-node-icon-margin-right, var(--wtv-spacing-sm));
   color: var(--wtv-node-icon-color, currentColor);
   line-height: 1;
 }
@@ -254,7 +254,7 @@
 
 .wtv__node .wtv__node-label {
   font-weight: var(--wtv-font-weight-medium);
-  margin-right: var(--wtv-spacing-md);
+  margin-inline-end: var(--wtv-spacing-md);
   /* Truncate instead of wrapping. web-treeview is the virtual-scroll package, so a
      wrapping label (which grew the row past --wtv-node-height) would desync the
      fixed-row-height scroll math. Ellipsis keeps every row single-line. Consumers
@@ -282,7 +282,7 @@
 
 .wtv__container[data-node-title-overflow='info'] .wtv__node .wtv__node-label {
   flex: 1 1 auto;
-  margin-right: 0;
+  margin-inline-end: 0;
 }
 
 /* The glyph is the Lucide "info" icon drawn via a CSS mask so it follows `color`;
@@ -496,14 +496,14 @@
 
 .wtv__node-content--selected-brackets::before {
   content: '\276F';
-  margin-right: calc(0.6 * var(--wtv-rem));
+  margin-inline-end: calc(0.6 * var(--wtv-rem));
   color: var(--wtv-accent-color);
   font-weight: bold;
 }
 
 .wtv__node-content--selected-brackets::after {
   content: '\276E';
-  margin-left: calc(0.6 * var(--wtv-rem));
+  margin-inline-start: calc(0.6 * var(--wtv-rem));
   color: var(--wtv-accent-color);
   font-weight: bold;
 }
@@ -706,7 +706,7 @@
 /* No-entry icon pops in and STAYS visible until the finger lifts. */
 .wtv__drag-denied-badge {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: 50%;
   font-size: 1em;
   line-height: 1;
@@ -733,8 +733,8 @@
   content: '';
   position: absolute;
   top: -2px;
-  left: -2px;
-  right: -2px;
+  inset-inline-start: -2px;
+  inset-inline-end: -2px;
   bottom: -2px;
   background: var(--wtv-drag-over-glow-bg);
   pointer-events: none;
@@ -814,7 +814,7 @@
 .wtv__scroll-arrow::before {
   content: '\21E8';
   position: absolute;
-  left: -1.2em;
+  inset-inline-start: -1.2em;
   top: 50%;
   transform: translateY(-57%);
   font-size: 3em;
@@ -826,7 +826,7 @@
 .wtv__scroll-arrow::after {
   content: '\21E6';
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: 50%;
   transform: translateY(-57%);
   font-size: 3em;
@@ -893,19 +893,19 @@
 
 /* Layout: "around" */
 .wtv__drop-zones--around .wtv__drop-zone--before {
-  top: 0; left: var(--drop-zone-start, 33%); right: 0;
+  top: 0; inset-inline-start: var(--drop-zone-start, 33%); inset-inline-end: 0;
   transform: translateY(-100%);
 }
 .wtv__drop-zones--around .wtv__drop-zone--after {
   bottom: 0;
-  left: var(--drop-zone-start, 33%);
-  right: calc((100% - var(--drop-zone-start, 33%)) / 2);
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 2);
   transform: translateY(100%);
 }
 .wtv__drop-zones--around .wtv__drop-zone--child {
   bottom: 0;
-  left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 2);
-  right: 0;
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 2);
+  inset-inline-end: 0;
   transform: translateY(100%);
 }
 
@@ -917,18 +917,18 @@
   transform: translateY(-100%);
 }
 .wtv__drop-zones--before .wtv__drop-zone--before {
-  left: var(--drop-zone-start, 33%);
-  right: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
   border-radius: 0 0 0 0;
 }
 .wtv__drop-zones--before .wtv__drop-zone--after {
-  left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
-  right: calc((100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 3);
   border-radius: 0;
 }
 .wtv__drop-zones--before .wtv__drop-zone--child {
-  left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
-  right: 0;
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-end: 0;
   border-radius: 0;
 }
 
@@ -940,24 +940,24 @@
   transform: translateY(100%);
 }
 .wtv__drop-zones--after .wtv__drop-zone--before {
-  left: var(--drop-zone-start, 33%);
-  right: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
 }
 .wtv__drop-zones--after .wtv__drop-zone--after {
-  left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
-  right: calc((100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 3);
 }
 .wtv__drop-zones--after .wtv__drop-zone--child {
-  left: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
-  right: 0;
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-end: 0;
 }
 
 /* Layout: "wave" */
 .wtv__drop-zones--wave .wtv__drop-zone--before,
 .wtv__drop-zones--wave .wtv__drop-zone--after,
 .wtv__drop-zones--wave .wtv__drop-zone--child {
-  left: var(--drop-zone-start, 33%);
-  right: auto;
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: auto;
   width: var(--drop-zone-max-width, 120px);
   max-width: var(--drop-zone-max-width, 120px);
   height: auto;
@@ -982,23 +982,23 @@
 .wtv__drop-zones--wave2 .wtv__drop-zone--before,
 .wtv__drop-zones--wave2 .wtv__drop-zone--after,
 .wtv__drop-zones--wave2 .wtv__drop-zone--child {
-  right: auto;
+  inset-inline-end: auto;
   width: var(--drop-zone-max-width, 120px);
   max-width: var(--drop-zone-max-width, 120px);
   height: auto;
 }
 .wtv__drop-zones--wave2 .wtv__drop-zone--before {
-  left: calc(var(--drop-zone-start, 33%) - 7%);
+  inset-inline-start: calc(var(--drop-zone-start, 33%) - 7%);
   top: 10%; bottom: auto; height: 80%;
   transform: translateY(-100%);
 }
 .wtv__drop-zones--wave2 .wtv__drop-zone--child {
-  left: var(--drop-zone-start, 33%);
+  inset-inline-start: var(--drop-zone-start, 33%);
   top: 10%; bottom: 10%;
   border-radius: 0;
 }
 .wtv__drop-zones--wave2 .wtv__drop-zone--after {
-  left: calc(var(--drop-zone-start, 33%) - 7%);
+  inset-inline-start: calc(var(--drop-zone-start, 33%) - 7%);
   top: auto; bottom: 10%; height: 80%;
   transform: translateY(100%);
 }
@@ -1036,7 +1036,7 @@
    margins get zeroed by common unlayered resets (Bootstrap reboot `input { margin: 0 }`,
    Tailwind preflight). A div margin survives. Mirrors svelte-treeview. */
 .wtv__checkbox ~ .wtv__node-content {
-  margin-left: var(--wtv-checkbox-gap);
+  margin-inline-start: var(--wtv-checkbox-gap);
 }
 
 .wtv__checkbox {
@@ -1170,7 +1170,7 @@
 
 .wtv__loading-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  inset: 0;
   background: var(--wtv-loading-bg);
   display: flex;
   align-items: center;
@@ -1209,9 +1209,34 @@
 
 .wtv__loading-more {
   padding: var(--wtv-spacing-sm) var(--wtv-spacing-md);
-  margin-left: var(--wtv-spacing-md);
+  margin-inline-start: var(--wtv-spacing-md);
   font-size: var(--wtv-font-size-xs);
   color: var(--wtv-loading-color);
   font-style: italic;
 }
 
+
+/* ==============================================================================
+   RTL — what the logical properties above can't mirror on their own
+   ============================================================================== */
+
+/* -1 in a right-to-left tree: flips the toggle glyph's rotation, the drop arrows and
+   the child-glow edge (the rules above multiply by it). Follows `dir` live. */
+.wtv__container:dir(rtl) {
+  --wtv-dir-sign: -1;
+}
+
+/* The toggle glyph itself is mirrored; the element's rotation is negated (via the sign),
+   so a collapsed chevron points to the inline END (left) and an expanded one still down. */
+.wtv__container:dir(rtl) .wtv__toggle-icon--expand::before {
+  transform: scaleX(-1);
+}
+
+.wtv__container:dir(rtl) .wtv__node-content--dragged {
+  transform-origin: right center;
+}
+
+.wtv__container:dir(rtl) .wtv__node-content--selected-brackets::before { content: '\276E'; }
+.wtv__container:dir(rtl) .wtv__node-content--selected-brackets::after { content: '\276F'; }
+.wtv__container:dir(rtl) .wtv__scroll-arrow::before { content: '\21E6'; }
+.wtv__container:dir(rtl) .wtv__scroll-arrow::after { content: '\21E8'; }

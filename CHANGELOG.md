@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — right-to-left pages (2026-11-17)
+- In a `dir="rtl"` tree the indent, icon / label / checkbox gaps, drop pads, drop arrows and the drag-denied badge sat as in LTR. `tree.css` uses logical properties now (`inset-inline-*`, `margin-inline-*`), the flat-row indent is `padding-inline-start`, and the collapsed chevron, drop arrows, child-drop glow edge, selected brackets and scroll arrows mirror (`--wtv-dir-sign`, `:dir(rtl)`). The drop position (before / after / child) is measured from the row's inline start (core `isRtl()`), and the keyboard context menu opens at the node's start corner.
+- ArrowLeft / ArrowRight follow the reading direction (WAI-ARIA tree): in RTL ArrowLeft expands / moves into the first child and ArrowRight goes to the parent. Read per key, so a runtime `dir` change anywhere up the tree applies at once. LTR pages are unchanged.
+
 ### Internal — core helpers replace own copies (2026-11-17)
 - Reduced motion: the own `@media (prefers-reduced-motion)` blocks (the `--wtv-transition-*` zeroing, the drop-zone icon bob) are gone — core's `MOTION_CSS` (adopted by `BlissElement`) zeroes `--base-duration-*` / sets `--base-scroll-behavior: auto`, which the `--wtv-*` tokens read. Same result.
 - `TreeEngine.findScrollableAncestor()` removed — dead since scrolling went through core's `findScrollContainer()` (nothing called it; the exported class loses the method).

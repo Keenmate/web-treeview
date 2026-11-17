@@ -62,6 +62,8 @@
 
         customElements.whenDefined('web-treeview').then(() => {
             const tree = document.getElementById('tree');
+            // ?dir=rtl: a right-to-left tree (keyboard-nav.spec.ts RTL block).
+            if (new URLSearchParams(location.search).get('dir') === 'rtl') tree.setAttribute('dir', 'rtl');
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';

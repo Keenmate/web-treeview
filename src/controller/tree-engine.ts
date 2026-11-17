@@ -37,7 +37,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
-import { animateOut, findScrollContainer, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
+import { animateOut, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -4079,7 +4079,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     allowedPositions?: DropPosition[] | null
   ): DropPosition {
     const rect = element.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    // Offset from the row's inline START (the right edge in a right-to-left tree), so the
+    // child pad stays on the indent side, matching the logical drop-zone CSS.
+    const x = isRtl(element) ? rect.right - event.clientX : event.clientX - rect.left;
     const y = event.clientY - rect.top;
     const width = rect.width;
     const height = rect.height;

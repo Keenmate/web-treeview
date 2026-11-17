@@ -25,6 +25,7 @@ import {
   deepActiveElement,
   createFrameScheduler,
   createElementSizeObserver,
+  isRtl,
   type DeviceClass,
   type ElementSizeObserver,
   type ElementSize
@@ -668,14 +669,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (shift) this.controller.navSelectPrev();
         else this.controller.navPrevSibling();
         break;
+      // ArrowRight / ArrowLeft = forward (into / expand) / back (out / collapse) along the
+      // reading direction: swapped in a right-to-left tree (WAI-ARIA tree RTL rule). Read live
+      // per key — follows a `dir` change anywhere up the tree, no directionChanged() needed.
       case 'ArrowRight':
+      case 'ArrowLeft': {
         event.preventDefault();
-        this.controller.navInto();
+        const isForward = (event.key === 'ArrowRight') !== isRtl(this.bodyEl ?? this.container);
+        if (isForward) this.controller.navInto();
+        else this.controller.navOut();
         break;
-      case 'ArrowLeft':
-        event.preventDefault();
-        this.controller.navOut();
-        break;
+      }
       case 'Backspace':
         event.preventDefault();
         this.controller.navBackOut();
@@ -1306,7 +1310,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         }
         // Update indent for flat mode
         if (snapshot.isFlatRenderingEnabled) {
-          el.style.paddingLeft = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
+          el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
         }
         // Row animation: the reveal was cleared → drop the modifier (never ADD it to a
         // reused row — only a row created during the reveal plays).
@@ -1585,7 +1589,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Flat mode indent
     if (snapshot.isFlatRenderingEnabled) {
-      el.style.paddingLeft = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
+      el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
     }
 
     const nodeConfig = this.lastNodeConfig;
@@ -2118,7 +2122,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const anchorEl = (nodeEl?.querySelector('.wtv__node-content') ?? nodeEl) as HTMLElement | null;
     const rect = (anchorEl ?? this.bodyEl).getBoundingClientRect();
     this._isMenuOpeningFromKeyboard = true;
-    ctrl.openContextMenu(node, rect.left, rect.bottom);
+    // At the node's inline-start corner (the right edge in a right-to-left tree).
+    ctrl.openContextMenu(node, isRtl(this.bodyEl) ? rect.right : rect.left, rect.bottom);
     return true;
   }
 

@@ -452,3 +452,39 @@ test.describe('navigationOverrides', () => {
     expect(await page.evaluate(() => (window as any).__overrideCalls)).toBe(0);
   });
 });
+
+// ── Right-to-left (dir="rtl") ──────────────────────────────────────────────
+
+test.describe('dir="rtl" — indent on the right, ArrowLeft / ArrowRight swapped', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(`${PAGE}?dir=rtl`);
+    await expect.poll(() => visibleCount(page)).toBe(18);
+  });
+
+  test('the indent is on the inline start — the right edge', async ({ page }) => {
+    const pad = (p: string) => nodeByPath(page, p).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight) };
+    });
+    expect(await pad('1')).toEqual({ left: 0, right: 0 });
+    const deep = await pad('1.1.1');
+    expect(deep.left).toBe(0);
+    expect(deep.right).toBeGreaterThan(0);
+    // A deeper row's label ends further LEFT (its right edge is pushed in by the indent).
+    const rightEdge = (p: string) => nodeContent(nodeByPath(page, p)).evaluate((el) => el.getBoundingClientRect().right);
+    expect(await rightEdge('1.1.1')).toBeLessThan(await rightEdge('1'));
+  });
+
+  test('ArrowLeft expands + moves into the first child; ArrowRight goes back to the parent', async ({ page }) => {
+    await clickToFocus(page, '1');
+    await page.keyboard.press('Enter'); // collapse Root-A
+    await expect.poll(() => visibleCount(page)).toBe(11);
+
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByTestId('focused-path')).toHaveText('1.1');
+    await expect.poll(() => visibleCount(page)).toBe(18);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('focused-path')).toHaveText('1');
+  });
+});

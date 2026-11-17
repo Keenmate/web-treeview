@@ -676,9 +676,6 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .wtv__empty-zone--active .wtv__empty-zone-content::before { animation: none; }
-}
 
 /* Whole-tree drop zone (isTreeDropZoneEnabled): while a drag hovers the tree the
    container shows an engaged outline so the "basket" reads as active. */

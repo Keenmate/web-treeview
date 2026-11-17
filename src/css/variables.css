@@ -199,7 +199,7 @@
   /* ==========================================================================
      MOTION — the contract's four speeds + easings, nothing else. Motion off:
      --wtv-transition-*: 0s (this tree) or --base-duration-*: 0s (page-wide);
-     prefers-reduced-motion sets them to 0s (block after this rule).
+     prefers-reduced-motion zeroes --base-duration-* (core MOTION_CSS, adopted by BlissElement).
      ========================================================================== */
   --wtv-transition-fast: var(--base-duration-fast, 0.1s);
   --wtv-transition-normal: var(--base-duration-normal, 0.15s);
@@ -531,17 +531,6 @@
      set to 1 to disable the shrink. Mirrors --stv-dragged-scale. */
   --wtv-dragged-scale: 0.95;
   --wtv-cut-opacity: 0.4;
-}
-
-/* Reduced motion: no transitions / animations (the loader keeps turning, slower — the contract's --base-loader-duration). */
-@media (prefers-reduced-motion: reduce) {
-  :host {
-    --wtv-transition-fast: 0s;
-    --wtv-transition-normal: 0s;
-    --wtv-transition-medium: 0s;
-    --wtv-transition-slow: 0s;
-    --wtv-scroll-behavior: var(--base-scroll-behavior, auto);
-  }
 }
 
 /* ==============================================================================

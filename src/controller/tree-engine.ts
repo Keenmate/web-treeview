@@ -85,6 +85,7 @@ import {
 import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perf } from '../perf-logger';
+import { rowDomId } from '../helpers/string-helpers';
 
 // ─── TreeEngine ───────────────────────────────────────────────────────
 
@@ -4168,11 +4169,11 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
 
-    const elementId = `${this._treeId}-${node.id}`;
+    const elementId = rowDomId(this._treeId, path);
     const rootEl = this.containerElement;
     const findContent = (): HTMLElement | null => {
-      // Find the row by PATH (unique) — ids may repeat (a pasted copy keeps its
-      // source id, NOTES #8); the element id is only the fallback without a root.
+      // Find the row by PATH (unique); the element id (also path-derived) is only
+      // the fallback without a root.
       const el = rootEl
         ? rootEl.querySelector(`.wtv__node[data-tree-path="${CSS.escape(path)}"]`)
         : document.getElementById(elementId);

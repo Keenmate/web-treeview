@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — every row has its own DOM id (2026-11-18)
+- A row's element id is now `{treeId}-{node path}` (was `{treeId}-{node id}`; characters outside `A-Z a-z 0-9 . -`
+  are written as `_<hex>_`). Node ids are the consumer's data and may repeat — a pasted copy keeps its source id
+  unless `pasteNodeTransformationCallback` changes it — so two rows could share an id and `aria-activedescendant`
+  pointed at the wrong one. The path is unique per tree, so every rendered row id is too. Code that looked rows up
+  by `#{treeId}-{id}` should use `[data-tree-path]` (or the new id form).
+
 ### Accessibility — ARIA tree semantics (2026-11-18)
 - The tree body is `role="tree"` (`aria-label` from the new `labels.treeLabel`, default `'Tree'`;
   `aria-multiselectable="true"` in `selection-mode="multiple"`) and every row is `role="treeitem"` with `aria-level`,

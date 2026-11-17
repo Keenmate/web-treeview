@@ -95,7 +95,7 @@ test.describe('debug smoke', () => {
 
   test('tree-id: rows carry it in their element id; nodes report it', async ({ page }) => {
     await load(page);
-    await expect(nodeByPath(page, '1.1')).toHaveAttribute('id', 'docs-tree-11');
+    await expect(nodeByPath(page, '1.1')).toHaveAttribute('id', 'docs-tree-1.1'); // {treeId}-{path}
     expect(await page.evaluate(() => (window as any).tree.getNodeByPath('1.1')?.treeId)).toBe('docs-tree');
   });
 });

@@ -141,3 +141,33 @@ test('checkboxes: aria-checked true / false / mixed (cascade)', async ({ page })
   await expect(fruit).toHaveAttribute('aria-checked', 'false');
   await expect(apple).toHaveAttribute('aria-checked', 'false');
 });
+
+test('a pasted copy keeps its source id but gets its own row id; aria-activedescendant hits the right row', async ({ page }) => {
+  const t = page.locator('#tree');
+  // Copy Banana (id 12) into Veg — no transform, so the copy keeps node id 12.
+  const pasteError = await page.evaluate(() => {
+    const tree = (window as any).tree;
+    tree.copyNodes(['1.2']);
+    const r = tree.pasteNodes('2');
+    return r.success ? null : r.error;
+  });
+  expect(pasteError).toBeNull();
+  const rows = t.locator('.wtv__node').filter({ hasText: 'Banana' });
+  await expect(rows).toHaveCount(2);
+  const info = await rows.evaluateAll((els) => els.map((e) => ({ id: e.id, path: e.getAttribute('data-tree-path')! })));
+  const original = info.find((r) => r.path === '1.2')!;
+  const copy = info.find((r) => r.path !== '1.2')!;
+  expect(original.id).toBeTruthy();
+  expect(copy.id).toBeTruthy();
+  expect(copy.id).not.toBe(original.id);
+  // Every rendered row id is unique.
+  const ids = await t.locator('.wtv__node').evaluateAll((els) => els.map((e) => e.id));
+  expect(new Set(ids).size).toBe(ids.length);
+
+  await nodeContent(nodeByPath(t, copy.path)).click();
+  await expect.poll(() => activePath(page, 'tree')).toBe(copy.path);
+  await expect(body(page, 'tree')).toHaveAttribute('aria-activedescendant', copy.id);
+  await nodeContent(nodeByPath(t, '1.2')).click();
+  await expect.poll(() => activePath(page, 'tree')).toBe('1.2');
+  await expect(body(page, 'tree')).toHaveAttribute('aria-activedescendant', original.id);
+});

@@ -98,7 +98,8 @@ test('id-member: node ids come from the configured field', async ({ page }) => {
   await load(page, 'default');
   const id = await page.evaluate(() => (window as any).tree.getNodeByPath('1.1')?.id);
   expect(id).toBe('k11');
-  await expect(nodeByPath(page, '1.1')).toHaveAttribute('id', /-k11$/);
+  // The row's DOM id comes from the PATH (unique per tree), not the node id (may repeat).
+  await expect(nodeByPath(page, '1.1')).toHaveAttribute('id', /-1\.1$/);
 });
 
 test('parent-path-member + level-member are read from data', async ({ page }) => {

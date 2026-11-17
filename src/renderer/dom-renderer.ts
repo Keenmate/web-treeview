@@ -38,6 +38,7 @@ import type { NodeRenderContext } from '../controller/types';
 import type { NodeTitleOverflow } from './types';
 import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 import { openTreeLayer } from './layers';
+import { rowDomId } from '../helpers/string-helpers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
@@ -1746,9 +1747,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     el.setAttribute('data-selected', String(snapshot.selectedPaths.has(node.path)));
     el.setAttribute('data-cut', String(snapshot.cutPaths.has(node.path)));
 
-    if (this.controller && node.id) {
-      el.id = `${this.controller.treeId}-${node.id}`;
-    }
+    // Row id from the PATH (unique per tree), never node.id (a pasted copy keeps its
+    // source id) — aria-activedescendant and any id lookup must hit exactly one row.
+    if (this.controller) el.id = rowDomId(this.controller.treeId, node.path);
 
     // Flat mode indent
     if (snapshot.isFlatRenderingEnabled) {

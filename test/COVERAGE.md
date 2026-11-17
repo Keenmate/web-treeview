@@ -220,6 +220,6 @@ Chromium and Firefox run them.
 | `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
 | `el.enableLogging()` turns on one tree's engine lines (`#id` label); `el.disableLogging()` silences them | ✓ | `logging.spec.ts` | `logging.html` |
 | Screen-reader announcements (core `announce()`, `[data-km-announcer]`): settled search count / no results, placed drop, refused drop + reason; `''` labels silent | ✓ | `announce.spec.ts` | `announce.html` |
-| ARIA tree: `role="tree"` body (`labels.treeLabel`, `aria-multiselectable`), `treeitem` rows (`aria-level` / `-posinset` / `-setsize` / `-expanded` / `-selected` / `-checked` incl. `mixed`), `aria-activedescendant` following ArrowDown / ArrowRight / End (core `/a11y`), posinset in a scrolled virtual window | ✓ | `aria-tree.spec.ts` | `aria-tree.html` |
+| ARIA tree: `role="tree"` body (`labels.treeLabel`, `aria-multiselectable`), `treeitem` rows (`aria-level` / `-posinset` / `-setsize` / `-expanded` / `-selected` / `-checked` incl. `mixed`), `aria-activedescendant` following ArrowDown / ArrowRight / End (core `/a11y`), posinset in a scrolled virtual window, a pasted copy (same node id) gets its own row id and `aria-activedescendant` hits it | ✓ | `aria-tree.spec.ts` | `aria-tree.html` |
 | `tree-id`; removed debug inputs (`should-display-debug-information`, `shouldDisplayContextMenuInDebugMode`) are inert | ✓ | `logging.spec.ts` | `logging.html` |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

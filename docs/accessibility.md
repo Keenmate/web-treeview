@@ -49,7 +49,7 @@ The tree follows the WAI-ARIA tree pattern with **`aria-activedescendant`**: foc
 
 Rows are rendered flat (siblings in one container, indented by level), so there are no `role="group"` containers — `aria-level` / `aria-posinset` / `aria-setsize` carry the structure. `aria-activedescendant` and the row ids come from core `/a11y` `createActiveDescendant` (ARIA-only: the tree keeps all its own keys above); the attribute is removed while the focused node's row isn't rendered (scrolled out of a virtual window, inside a collapsed branch). Keyboard moves bring the row into view first (`beforeScrollCallback` applies), so the reference resolves.
 
-Row ids are `{treeId}-{node id}`; keep node ids unique per tree (a pasted copy that keeps its source id shares the row id).
+Row ids are `{treeId}-{node path}` (characters outside `A-Z a-z 0-9 . -` written as `_<hex>_`): the path is unique per tree, so every rendered row has its own id even when node ids repeat (a pasted copy keeps its source id unless `pasteNodeTransformationCallback` changes it).
 
 ## Drag-and-drop accessibility
 

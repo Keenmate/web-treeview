@@ -1742,10 +1742,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       cssClass: 'wtv__tooltip',
       visibleClass: 'wtv__tooltip--visible',
       // Runs right before the tooltip becomes visible: resolve the content NOW. No
-      // content → hide on the microtask (before paint; show() can't be cancelled here).
-      beforeShowCallback: () => {
-        if (!this._fillTooltip(key)) queueMicrotask(() => handle.hide());
-      }
+      // content → `false` cancels the show.
+      beforeShowCallback: () => this._fillTooltip(key)
     });
     this.tooltips.set(key, handle);
     this.tooltipNodes.set(key, node);

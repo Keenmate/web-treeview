@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The tree body's scroll offset survives a DOM move through core's `keepScrollAcrossMove()` (SPEC §12.31); the renderer's own tracking + restore is gone.
 - Perf timing (`enablePerfLogging()` / `setPerfThreshold()`) runs on core's `createPerfLogger('TREEVIEW')` (still `TREEVIEW:PERF`); the own timer / formatting code is gone. Lines read `<label> took <ms>` and log at `debug` (the `insertArray` summary is one line now).
 - The progressive-render loop (`render-coordinator`) and the virtual-scroll handler schedule their frame through core's `createFrameScheduler()`; their own `requestAnimationFrame` bookkeeping is gone. The search indexer keeps its own `requestIdleCallback` loop (core has no idle scheduler).
+- A node tooltip with no content is vetoed by `beforeShowCallback` returning `false` (core `createTooltip`); the show-then-hide-on-a-microtask workaround is gone.
 
 ### Internal — page-wide node drag via core `watchPageDrag` (2026-11-17)
 - `highlight-on-page-drag` (the `armed` attribute / `:state(armed)`) now runs on core's `watchPageDrag({ types: ['application/svelte-treeview'] })` + `applyArmedState()` (SPEC §12.28); treeview's own copy (`src/page-node-drag.ts`) is gone. Same arming rules; after Escape the same drag no longer re-arms on its next `dragover`.

@@ -123,9 +123,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private get _isReadonly(): boolean {
     return !!this.config?.isReadonly;
   }
-  // Last body scroll offset while connected (a detached element reads scrollTop 0,
-  // and the browser resets it when the host's layout box is rebuilt) — restored on activate().
-  private _lastScroll = { top: 0, left: 0 };
 
   mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void {
     this.container = container;
@@ -306,9 +303,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * context menu (its positioning + document listeners), shown tooltips — and keep
    * the rendered rows and all state. The body listeners live on elements inside
    * the shadow root, so they move with it and stay attached (no duplicates on
-   * reconnect). The body scroll offset is tracked while connected (a detached
-   * element reads 0 and the browser resets it on re-insert); activate() restores
-   * it. Idempotent.
+   * reconnect). The body scroll offset survives through the element's core
+   * `keepScrollAcrossMove()`. Idempotent.
    */
   deactivate(): void {
     if (!this._isActive) return;
@@ -323,7 +319,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     document.removeEventListener('dragend', this._onDocumentDragEnd);
   }
 
-  /** The host was re-attached: restart what {@link deactivate} stopped and restore the scroll offset. Idempotent. */
+  /** The host was re-attached: restart what {@link deactivate} stopped. Idempotent. */
   activate(): void {
     if (this._isActive || !this.container) return;
     this._isActive = true;
@@ -335,15 +331,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (this.controller) this._fullRender(this.controller.getSnapshot());
     }
     this._startObservers();
-    const saved = { ...this._lastScroll };
-    if ((saved.top || saved.left) && this.bodyEl) {
-      // Force the re-inserted host's layout first: the browser builds the new
-      // scroll box (offset 0) on the next layout, which would otherwise discard
-      // a restore made against the old one.
-      void this.bodyEl.scrollHeight;
-      this.bodyEl.scrollTop = saved.top;
-      this.bodyEl.scrollLeft = saved.left;
-    }
   }
 
   /** Start the environment + container-size observers (mount / activate). */
@@ -979,11 +966,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _onContainerDrop = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.controller?.handleTreeZoneDrop(event); };
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
-  /** Remember the body scroll offset while connected (restored by activate()). */
-  private _onBodyScrollTrack = () => {
-    if (!this._isActive || !this.bodyEl || !this.bodyEl.isConnected) return;
-    this._lastScroll = { top: this.bodyEl.scrollTop, left: this.bodyEl.scrollLeft };
-  };
 
   private _onVirtualScroll = () => {
     if (this._vsRafPending || !this.bodyEl) return;
@@ -1054,7 +1036,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.addEventListener('drop', this._onBodyDrop);
     this.bodyEl.addEventListener('dragenter', this._onBodyDragEnter);
     this.bodyEl.addEventListener('touchstart', this._onBodyTouchStart, { passive: true });
-    this.bodyEl.addEventListener('scroll', this._onBodyScrollTrack, { passive: true });
     // dragend fires on the SOURCE element after any drag ends (drop, cancel, cross-tree)
     this.bodyEl.addEventListener('dragend', this._onBodyDragEnd);
     // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl —
@@ -1079,7 +1060,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.removeEventListener('drop', this._onBodyDrop);
     this.bodyEl.removeEventListener('dragenter', this._onBodyDragEnter);
     this.bodyEl.removeEventListener('touchstart', this._onBodyTouchStart);
-    this.bodyEl.removeEventListener('scroll', this._onBodyScrollTrack);
     this.bodyEl.removeEventListener('dragend', this._onBodyDragEnd);
     this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
     document.removeEventListener('dragend', this._onDocumentDragEnd);

@@ -37,6 +37,7 @@ import {
   createCustomStyles,
   watchPageDrag,
   applyArmedState,
+  keepScrollAcrossMove,
   type CustomStylesHandle,
   type InputDef,
   type EventDef,
@@ -487,6 +488,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
     // §12.8: shell CSS via one shared, cached CSSStyleSheet (per string).
     adoptStyles(this.#shadow, styles);
+    // §12.31: the body scroll offset survives a DOM move (the browser resets it on re-insert).
+    keepScrollAcrossMove(this, () => [this.#shadow.querySelector<HTMLElement>('.wtv__tree')]);
     // FOUC guard: base.css hides the host until core sets the `ready` attribute
     // (+ `:state(ready)`, `ready` event) after the first build.
   }

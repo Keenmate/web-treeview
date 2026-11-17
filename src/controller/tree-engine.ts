@@ -82,7 +82,7 @@ import {
   type ClipboardOperation,
   type PasteResult
 } from '../clipboard';
-import { initLogger, uiLogger, dragLogger, defaultTreeLoggers, type TreeLoggers } from '../logger';
+import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perf } from '../perf-logger';
 
@@ -1078,7 +1078,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     );
 
-    initLogger.debug(`[${this._treeId}] TreeEngine created`, {
+    this.log.INIT.debug(`[${this._treeId}] TreeEngine created`, {
       idMember: props.idMember,
       pathMember: props.pathMember,
       displayValueMember: props.displayValueMember,
@@ -1295,13 +1295,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     if (this._expandPending.has(path)) return;
     // Toggled again while its rows animate out = re-expand: cancel, it stays open.
     if (this._settleClosing([path])) {
-      uiLogger.debug(`Node re-expanded mid-collapse (animation cancelled): ${path}`, { path, id: node.id });
+      this.log.UI.debug(`Node re-expanded mid-collapse (animation cancelled): ${path}`, { path, id: node.id });
       return;
     }
 
     const shouldExpand = !node.isExpanded;
 
-    uiLogger.debug(`Node ${shouldExpand ? 'expanded' : 'collapsed'}: ${path}`, {
+    this.log.UI.debug(`Node ${shouldExpand ? 'expanded' : 'collapsed'}: ${path}`, {
       path,
       id: node.id,
       accordion: shouldExpand && this._shouldExpandAsAccordion
@@ -1392,7 +1392,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       if (generation !== this._revealGeneration) return;
       const row = this.containerElement?.querySelector('.wtv__node--opening');
       const ms = row ? readAnimationMs(row) : 0;
-      uiLogger.debug('Row animation: reveal', { rows: revealed.size, ms });
+      this.log.UI.debug('Row animation: reveal', { rows: revealed.size, ms });
       setTimeout(() => {
         if (generation !== this._revealGeneration) return;
         this._revealedPaths = new Set();
@@ -1456,7 +1456,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       apply();
       return Promise.resolve();
     }
-    uiLogger.debug('Row animation: closing', { targets, rows: rows.length });
+    this.log.UI.debug('Row animation: closing', { targets, rows: rows.length });
     const cleanup = () => {
       for (const t of targets) if (this._closingHandles.get(t)?.handle === handle) this._closingHandles.delete(t);
     };
@@ -3841,7 +3841,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Call from ondragstart. Sets up dataTransfer, stores drag state, fires callback. */
   startDrag(node: LTreeNode<T>, event: DragEvent): void {
-    dragLogger.debug('startDrag', { path: node.path, isDraggable: this.getNodeIsDraggable(node), dragDropMode: this._dragDropMode, hasDataTransfer: !!event.dataTransfer });
+    this.log.DRAG.debug('startDrag', { path: node.path, isDraggable: this.getNodeIsDraggable(node), dragDropMode: this._dragDropMode, hasDataTransfer: !!event.dataTransfer });
     if (this._dragDropMode === 'none' || !this.getNodeIsDraggable(node) || !event.dataTransfer) return;
     event.dataTransfer.effectAllowed = this._isCopyAllowed ? 'copyMove' : 'move';
     event.dataTransfer.setData('application/svelte-treeview', JSON.stringify(node));
@@ -4017,7 +4017,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Cancel current drag and reset all state. */
   cancelDrag(): void {
-    dragLogger.debug('Drag cancelled via public API');
+    this.log.DRAG.debug('Drag cancelled via public API');
     this._resetDragState();
   }
 
@@ -4543,7 +4543,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       const resolvedDisplayValueMember = updates.displayValueMember ?? this.tree.displayValueMember;
       const resolvedExpandLevel = updates.expandLevel ?? null;
       const data = updates.data ?? this._data;
-      initLogger.debug(`[${this._treeId}] Recreating LTree due to member mapping changes`, {
+      this.log.INIT.debug(`[${this._treeId}] Recreating LTree due to member mapping changes`, {
         idMember: resolvedIdMember,
         pathMember: resolvedPathMember,
         displayValueMember: resolvedDisplayValueMember,
@@ -4605,7 +4605,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         if (!expandLevelChanged) this._reapplyExpanded(preservedExpanded);
         this._reapplySearchFilter();
         const result = this._insertResult;
-        initLogger.debug(`[${this._treeId}] insertArray result`, {
+        this.log.INIT.debug(`[${this._treeId}] insertArray result`, {
           successful: result.successful,
           failed: result.failed?.length ?? 0,
           total: result.total,
@@ -4613,7 +4613,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           stats: this.tree.statistics
         });
         this._updateProgressiveRendering();
-        initLogger.debug(`[${this._treeId}] after progressive rendering`, {
+        this.log.INIT.debug(`[${this._treeId}] after progressive rendering`, {
           flatRenderedIds: this.flatRenderedIds.size,
           flatRenderQueue: this.flatRenderQueue.length,
           flatNodesToRender: this.flatNodesToRender.length
@@ -5023,7 +5023,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     this._applySelection(node.path, modifiers);
 
-    uiLogger.debug(`Node clicked: ${node.path}`, {
+    this.log.UI.debug(`Node clicked: ${node.path}`, {
       newPath: node.path,
       id: node.id,
       ctrl: modifiers?.ctrl,
@@ -5074,7 +5074,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   private _onNodeRightClicked(node: LTreeNode<T>, event: MouseEvent) {
-    uiLogger.debug(`Right-click on node: ${node.path}`, {
+    this.log.UI.debug(`Right-click on node: ${node.path}`, {
       hasContextMenuRenderer: this._hasContextMenuRenderer,
       hasContextMenuCallback: !!this.contextMenuCallbackCb,
     });
@@ -5082,7 +5082,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return;
     }
 
-    uiLogger.debug(`Context menu opened: ${node.path}`);
+    this.log.UI.debug(`Context menu opened: ${node.path}`);
     event.preventDefault();
     this.openContextMenu(node, event.clientX, event.clientY);
   }
@@ -5112,7 +5112,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   private _onNodeDragStartInternal(node: LTreeNode<T>, event: DragEvent) {
-    dragLogger.debug(`Drag started: ${node.path}`, {
+    this.log.DRAG.debug(`Drag started: ${node.path}`, {
       ctrlKey: event.ctrlKey,
       isCopyAllowed: this._isCopyAllowed,
       treeId: this._treeId
@@ -5137,7 +5137,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         this._draggedNode = null;
         this._isDragInProgress = false;
         this._dragSetOverride = null;
-        dragLogger.debug('[before-drag-start] drag cancelled by callback', { path: node.path });
+        this.log.DRAG.debug('[before-drag-start] drag cancelled by callback', { path: node.path });
         return;
       }
       if (Array.isArray(decision)) {
@@ -5227,7 +5227,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   _onNodeDragEnd = (event: DragEvent) => {
     this.announceRefusedDrop();
     const dropEffect = event.dataTransfer?.dropEffect;
-    dragLogger.debug('Drag ended', {
+    this.log.DRAG.debug('Drag ended', {
       dropEffect,
       operation: this._currentDropOperation
     });
@@ -5248,7 +5248,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   };
 
   private _resetDragState(): void {
-    dragLogger.debug('_resetDragState');
+    this.log.DRAG.debug('_resetDragState');
     this._isDragInProgress = false;
     this._draggedNode = null;
     this._draggedPaths = [];
@@ -5276,7 +5276,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       operation = 'copy';
     }
 
-    dragLogger.info(`Drop: ${draggedNodeRef.path} -> ${dropNode?.path ?? 'empty tree'}`, {
+    this.log.DRAG.info(`Drop: ${draggedNodeRef.path} -> ${dropNode?.path ?? 'empty tree'}`, {
       position,
       operation,
       isCrossTree: draggedNodeRef.treeId !== this._treeId
@@ -5340,7 +5340,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           const n = this.tree.getNodeByPath(p);
           return n ? this.getNodeIsDraggable(n) : false;
         });
-      dragLogger.info(`Multi-drag: moving ${topLevelPaths.length} top-level subtree(s)`, {
+      this.log.DRAG.info(`Multi-drag: moving ${topLevelPaths.length} top-level subtree(s)`, {
         topLevelPaths,
         totalSelected: this._selectedPaths.size,
         dropTarget: dropNode!.path,
@@ -5673,7 +5673,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       // Complete manifest so a touch-dragged folder dims its whole subtree, matching desktop.
       this._draggedPaths = this._completeManifest([node.path]);
       this._isDragInProgress = true;
-      dragLogger.debug(`Touch drag started: ${node.path}`);
+      this.log.DRAG.debug(`Touch drag started: ${node.path}`);
       this.createGhostElement(node, touch.clientX, touch.clientY);
       try { navigator.vibrate?.(50); } catch { /* blocked by browser policy */ }
       this._scheduleNotify();
@@ -5757,19 +5757,19 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
       const emptyTarget = dropElement?.closest('.wtv__empty-state, .wtv__empty-zone');
       if (emptyTarget && !dropNode) {
-        dragLogger.debug(`Touch drag ended: ${this._draggedNode.path} -> empty tree`);
+        this.log.DRAG.debug(`Touch drag ended: ${this._draggedNode.path} -> empty tree`);
         this._handleDrop(null, this._draggedNode, 'child', event);
       } else if (dropNode && dropNode !== this._draggedNode && dropNode.isDropAllowed) {
-        dragLogger.debug(`Touch drag ended: ${this._draggedNode.path} -> ${dropNode.path}`);
+        this.log.DRAG.debug(`Touch drag ended: ${this._draggedNode.path} -> ${dropNode.path}`);
         this._handleDrop(dropNode, this._draggedNode, 'child', event);
       } else if (dropNode && dropNode !== this._draggedNode && !this._shouldEnableTreeDropZone) {
         // Target refused the drop (isDropAllowed false / getIsDropAllowedCallback):
         // flash the 🚫 on it + fire onNodeDropDenied. Skipped when a tree drop zone
         // would catch the forwarded drop instead. (svelte-treeview rc14)
-        dragLogger.debug(`Touch drop denied: ${this._draggedNode.path} -> ${dropNode.path}`);
+        this.log.DRAG.debug(`Touch drop denied: ${this._draggedNode.path} -> ${dropNode.path}`);
         this._indicateDropDenied(dropNode);
       } else {
-        dragLogger.debug(`Touch drag cancelled: ${this._draggedNode.path}`);
+        this.log.DRAG.debug(`Touch drag cancelled: ${this._draggedNode.path}`);
       }
 
       this.removeGhostElement();
@@ -5799,7 +5799,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  always; the built-in held 🚫 badge + double-buzz only when
    *  shouldIndicateUndraggable. Torn down on release via _clearDragDenied. */
   private _indicateDragDenied(node: LTreeNode<any>) {
-    dragLogger.debug('[drag-denied] locked node long-pressed', { path: node?.path });
+    this.log.DRAG.debug('[drag-denied] locked node long-pressed', { path: node?.path });
 
     this.nodeDragDeniedCb?.(this.nodeRef(node));
 
@@ -5845,7 +5845,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    *  when shouldIndicateUndraggable. Transient (a drop is a discrete moment), so
    *  it auto-clears after a short beat. */
   private _indicateDropDenied(node: LTreeNode<any>) {
-    dragLogger.debug('[drop-denied] target refused drop', { path: node?.path });
+    this.log.DRAG.debug('[drop-denied] target refused drop', { path: node?.path });
     this._refusedDropNode = null; // announced — a later dragend must not repeat it
 
     this.nodeDropDeniedCb?.(this.nodeRef(node));

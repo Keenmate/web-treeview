@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — engine and search-index logs follow the element's own logging (2026-11-17)
+- The tree engine's `INIT` / `UI` / `DRAG` lines and the search indexer's `INDEX` lines go through the element's
+  instance loggers (`this.log`, handed to the engine / LTree / indexer) instead of the module-level ones: they read
+  `[TREEVIEW:CAT] #id …` and `el.enableLogging()` / `el.disableLogging()` on one tree now switch them too. Same
+  categories, same messages; standalone use (no element) falls back to the type loggers.
+
 ### Changed — selection runs on core `createSelection` (2026-11-17)
 - The selected set, the Shift anchor and the click / Ctrl / Shift rules come from core `createSelection` (SPEC §12.27,
   the rules every Keenmate list / tree / grid shares); the range order is the visible rows (`range-selection-mode=

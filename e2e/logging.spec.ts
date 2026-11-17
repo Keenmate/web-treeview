@@ -59,6 +59,21 @@ test('TREEVIEW:UI is silent until logging.enableLogging() turns the categories o
   await page.evaluate(() => (window as any).components['web-treeview'].logging.disableLogging());
 });
 
+test('el.enableLogging() turns on the engine lines of that one tree, labelled with its #id', async ({ page }) => {
+  const logs = collectConsole(page);
+  await load(page);
+  await page.evaluate(() => (window as any).tree.enableLogging());
+  // toggling a branch logs on the engine's TREEVIEW:UI; the drag on TREEVIEW:DRAG
+  await exercise(page);
+  await expect.poll(() => logs.some((l) => l.includes('TREEVIEW:UI') && l.includes('#tree') && l.includes('Node collapsed'))).toBe(true);
+  expect(logs.some((l) => l.includes('TREEVIEW:DRAG') && l.includes('#tree'))).toBe(true);
+  await page.evaluate(() => (window as any).tree.disableLogging());
+  logs.length = 0;
+  await nodeContent(nodeByPath(page, '2')).click();   // "Node clicked" — silent now
+  await page.waitForTimeout(100);
+  expect(logs).toEqual([]);
+});
+
 test.describe('debug smoke', () => {
   // The in-tree debug aids were removed (BREAKING, v2): no debug panel, no
   // pinned debug context menu. Diagnostics go through the logger instead.

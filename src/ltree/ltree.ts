@@ -189,7 +189,8 @@ export function createLTree<T>(
 			_searchValueMember,
 			_getSearchValueCallback,
 			_indexerBatchSize || DEFAULT_INDEXER_BATCH_SIZE, // batch size with fallback
-			_indexerTimeout || 50 // timeout with fallback
+			_indexerTimeout || 50, // timeout with fallback
+			opts?.log ?? defaultTreeLoggers
 		);
 	}
 

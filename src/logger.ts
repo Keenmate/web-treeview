@@ -88,7 +88,7 @@ export function setCategoryLevel(category: string, level: LogLevelDesc | null = 
 /** The per-category loggers the engine / LTree / renderer log through. The element
  *  passes its instance loggers (`[TREEVIEW:CAT] #id …`); standalone use (no
  *  element) falls back to the plain category loggers. */
-export type TreeLoggers = Record<Category, Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>>;
+export type TreeLoggers = Record<Category, Pick<Logger, 'trace' | 'debug' | 'info' | 'warn' | 'error'>>;
 export const defaultTreeLoggers: TreeLoggers = logging.loggers;
 
 // Back-compat default export: modules that did `import log from './logger'` use

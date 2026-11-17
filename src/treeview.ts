@@ -24,7 +24,7 @@ import type {
   ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { withComponentContext, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
 
@@ -70,38 +70,18 @@ export function createTreeViewController<T>(
   /** State reads while there is no tree yet (the element knows `isRendering` during the first build). */
   fallback: Partial<Record<string, () => unknown>> = {},
 ): TreeViewController<T> {
-  const facade: Record<string, unknown> = {};
-  for (const name of CONTROLLER_METHODS) {
-    facade[name] = (...args: unknown[]) => {
-      const target = getTarget() as unknown as Record<string, (...a: unknown[]) => unknown> | undefined;
-      if (!target) return EMPTY_RESULTS[name]?.();
-      return target[name](...args);
-    };
-  }
-  // Real state = read-only properties (the element's are writable).
-  const STATE: Record<string, () => unknown> = {
-    expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: () => null,
-    insertResult: () => undefined, nodes: () => [], isRendering: () => false, containerSize: () => null,
-  };
-  for (const [name, empty] of Object.entries(STATE)) {
-    Object.defineProperty(facade, name, {
-      get: () => {
-        const target = getTarget() as unknown as Record<string, unknown> | undefined;
-        return target ? target[name] : (fallback[name] ?? empty)();
-      },
-      enumerable: true,
-    });
-  }
-  // Writable state (also on the element).
-  Object.defineProperty(facade, 'selectionAnchor', {
-    get: () => getTarget()?.selectionAnchor ?? null,
-    set: (path: string | null) => {
-      const target = getTarget();
-      if (target) target.selectionAnchor = path;
+  // Core's facade (SPEC §12.34): frozen; methods forwarded to the current tree; read-only state
+  // answered live (empty values before the first build); `selectionAnchor` also writable.
+  return createControllerFacade<TreeViewController<T>>(getTarget, {
+    methods: CONTROLLER_METHODS,
+    state: {
+      expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: null,
+      insertResult: undefined, nodes: () => [], isRendering: false, containerSize: null,
+      ...fallback,
     },
-    enumerable: true,
+    writable: ['selectionAnchor'],
+    emptyResults: EMPTY_RESULTS as Record<string, () => unknown>,
   });
-  return facade as unknown as TreeViewController<T>;
 }
 
 /** A before-hook result → the engine's internal contract: false | value | undefined. */

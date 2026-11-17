@@ -40,7 +40,7 @@ import { EventEmitter } from './event-emitter';
 import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
 import { openTreeLayer, type TreeLayerOpener } from '../renderer/layers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
-import { animateOut, createSelection, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
+import { animateOut, computeVirtualRange, createSelection, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle, type VirtualRange } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
   NodeConfig,
@@ -898,11 +898,23 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const all = this.allVisibleFlatNodes;
     if (!this._isVirtualScrollEnabled) return all;
 
-    const rowHeight = this.resolvedRowHeight;
-    const containerHeightPx = this.virtualViewportHeightPx;
-    const startIndex = Math.max(0, Math.floor(this._vsScrollTop / rowHeight) - this._virtualOverscan);
-    const endIndex = Math.min(all.length, Math.ceil((this._vsScrollTop + containerHeightPx) / rowHeight) + this._virtualOverscan);
-    return all.slice(startIndex, endIndex);
+    const { start, end } = this.virtualRange(all.length);
+    return all.slice(start, end);
+  }
+
+  /**
+   * The rendered window over `allVisibleFlatNodes` (flat path only): core `computeVirtualRange`
+   * (SPEC §12.26). The engine owns the window and the renderer reconciles it on its own schedule
+   * (snapshot pipeline + the per-frame scroll fast path), so core's range math, not
+   * `createVirtualWindow`. The fast path passes the live `scrollTop` / viewport; otherwise the last
+   * synced ones.
+   */
+  virtualRange(
+    count: number = this.allVisibleFlatNodes.length,
+    scrollTop: number = this._vsScrollTop,
+    viewport: number = this.virtualViewportHeightPx,
+  ): VirtualRange {
+    return computeVirtualRange({ scrollTop, viewport, count, rowHeight: this.resolvedRowHeight, overscan: this._virtualOverscan });
   }
 
   get statistics() {
@@ -4619,6 +4631,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Get a snapshot of the current state for the renderer. */
   getSnapshot(): TreeEngineSnapshot<T> {
+    const virtualStart = this._isVirtualScrollEnabled ? this.virtualRange().start : 0;
     return {
       flatNodesToRender: this.flatNodesToRender,
       draggedNodePath: this._draggedNode?.path ?? null,
@@ -4652,12 +4665,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       virtualScrollItemHeight: this.resolvedRowHeight,
       virtualScrollContainerHeight: this.resolvedContainerHeight,
       virtualTotalHeight: this._isVirtualScrollEnabled ? this.allVisibleFlatNodes.length * this.resolvedRowHeight : 0,
-      virtualStartIndex: this._isVirtualScrollEnabled
-        ? Math.max(0, Math.floor(this._vsScrollTop / this.resolvedRowHeight) - this._virtualOverscan)
-        : 0,
-      virtualOffsetY: this._isVirtualScrollEnabled
-        ? Math.max(0, Math.floor(this._vsScrollTop / this.resolvedRowHeight) - this._virtualOverscan) * this.resolvedRowHeight
-        : 0,
+      virtualStartIndex: virtualStart,
+      virtualOffsetY: virtualStart * this.resolvedRowHeight,
     };
   }
 

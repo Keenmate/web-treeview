@@ -1095,12 +1095,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const scrollTop = this.bodyEl.scrollTop;
     const ctrl = this.controller;
     const rowHeight = ctrl.resolvedRowHeight;
-    const containerHeightPx = this.bodyEl.clientHeight || ctrl.virtualViewportHeightPx;
-    const overscan = ctrl.virtualScrollOverscan;
     const allNodes = ctrl.allVisibleFlatNodes;
 
-    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    const endIndex = Math.min(allNodes.length, Math.ceil((scrollTop + containerHeightPx) / rowHeight) + overscan);
+    // Core computeVirtualRange (SPEC §12.26) through the engine, with the live scroll position.
+    const { start: startIndex, end: endIndex } = ctrl.virtualRange(
+      allNodes.length, scrollTop, this.bodyEl.clientHeight || ctrl.virtualViewportHeightPx);
 
     // Early exit — window hasn't changed
     if (startIndex === this._vsLastStartIndex && endIndex === this._vsLastEndIndex) {

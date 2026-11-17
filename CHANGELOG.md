@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — virtual-scroll window on core `computeVirtualRange` (2026-11-18)
+- The flat render path's virtual window (snapshot + the per-frame scroll fast path) is core `computeVirtualRange`
+  (SPEC §12.26) instead of the tree's own `scrollTop / rowHeight` math; index jumps (`revealNode`, `scrollToPath`)
+  already ran on core `scrollContainerToBox`. Not `createVirtualWindow`: the engine owns the window and the renderer
+  reconciles it on its own schedule (snapshot pipeline + scroll fast path, its own spacer / translated content), as in
+  web-grid. No behaviour change; the nested render path is not virtual, as before.
+
 ### Fixed — a refused touch hold no longer auto-scrolls (2026-11-18)
 - A long press on a locked node (the held 🚫 badge) no longer auto-scrolls the tree when the finger slides to an
   edge: the pointer drag's `autoScroll.isEnabled` answers `false` while the hold is refused (core ccd12e1).

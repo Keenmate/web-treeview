@@ -5640,6 +5640,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._scheduleNotify();
   }
 
+  /** A held touch drag the tree refuses (a locked node showing the 🚫 badge) — the renderer
+   *  turns core's auto-scroll off for it. */
+  get isTouchDragDenied(): boolean { return this.touchDragState.isDenied; }
+
   /** The finger moved (or the list auto-scrolled under it); `target` = the deepest element under it. */
   touchDragMove(target: Element | null, x: number, y: number): void {
     if (!this.touchDragState.isDragging) return; // a denied hold: nothing moves

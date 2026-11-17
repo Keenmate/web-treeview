@@ -1040,20 +1040,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * the page doesn't scroll once it engages, auto-scroll near the body's edges, Escape /
    * pointercancel cancel, the hit test pierces shadow roots. TOUCH ONLY — `getSource` answers
    * `null` for mouse / pen, which stay on HTML5 drag-and-drop (it carries the cross-tree
-   * `dataTransfer`), so the two never fight. Recreated when `touchDragDelay` changes
-   * (core reads `longPressMs` once).
+   * `dataTransfer`), so the two never fight. `touchDragDelay` is read on every press (core
+   * reads a function `longPressMs` per press), so a change needs no rebuild. A refused hold
+   * (a locked node, the 🚫 badge) keeps the drag but switches core's auto-scroll off.
    */
   private _touchDrag: PointerDrag | null = null;
-  private _touchDragDelay = -1;
 
-  private _syncTouchDrag(): void {
-    const delay = this.controller?.touchDragDelay ?? 300;
-    if (!this.bodyEl || (this._touchDrag && delay === this._touchDragDelay) || this._touchDrag?.isDragging) return;
-    this._touchDrag?.destroy();
-    this._touchDragDelay = delay;
+  private _attachTouchDrag(): void {
+    if (!this.bodyEl || this._touchDrag) return;
     this._touchDrag = createPointerDrag(this.bodyEl, {
-      longPressMs: delay,
+      longPressMs: () => this.controller?.touchDragDelay ?? 300,
       threshold: 10, // a finger moving > 10px before the long press = a scroll
+      autoScroll: { isEnabled: () => !this.controller?.isTouchDragDenied },
       getSource: (target, event) => {
         // The touch gesture only starts a touch drag — off while disabled / read-only.
         if (event.pointerType !== 'touch' || !this.controller || this._isDisabled || this._isReadonly) return null;
@@ -1144,7 +1142,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.addEventListener('dragleave', this._onBodyDragLeave);
     this.bodyEl.addEventListener('drop', this._onBodyDrop);
     this.bodyEl.addEventListener('dragenter', this._onBodyDragEnter);
-    this._syncTouchDrag();
+    this._attachTouchDrag();
     // dragend fires on the SOURCE element after any drag ends (drop, cancel, cross-tree)
     this.bodyEl.addEventListener('dragend', this._onBodyDragEnd);
     // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl —
@@ -1273,7 +1271,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onStateChange(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.bodyEl || !this.controller) return;
-    this._syncTouchDrag(); // touchDragDelay may have changed (cheap no-op otherwise)
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
     // (filter, expand, collapse, data load), so the next scroll must not early-exit

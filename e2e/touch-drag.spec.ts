@@ -102,3 +102,32 @@ test('touchDragDelay set live re-times the long press', async ({ page }) => {
   await expect(page.locator('.wtv__touch-ghost')).toHaveCount(1, { timeout: 2000 });
   await touchDrag(page, [{ type: 'touchEnd' }]);
 });
+
+test('a long press held on a locked node near the bottom edge does not auto-scroll the tree', async ({ page }) => {
+  await page.goto(PAGE);
+  const host = page.locator('#tree-single');
+  await expect(host.locator('.wtv__node').first()).toBeVisible();
+  // Lock 1.1 and put the tree in a short scroller, so the locked row sits in core's 40px edge zone.
+  await page.evaluate(() => {
+    const el = document.getElementById('tree-single') as any;
+    el.getIsDraggableCallback = ({ node }: any) => node.path !== '1.1';
+    el.parentElement.id = 'single-scroller';
+    Object.assign(el.parentElement.style, { height: '70px', overflow: 'auto' });
+  });
+  await page.evaluate(() => (document.getElementById('tree-single') as any).whenSettled());
+  const scroller = page.locator('#single-scroller');
+  expect(await scroller.evaluate((s) => s.scrollHeight > s.clientHeight + 20)).toBe(true);
+  const box = (await scroller.boundingBox())!;
+  const row = await centerOf(pill(page, '1.1'));
+  const nearBottom = { x: row.x, y: box.y + box.height - 4 };
+  expect(nearBottom.y - row.y).toBeLessThan(40); // a slide within the threshold-free edge zone
+
+  await touchDrag(page, [{ type: 'touchStart', ...row }]);
+  await expect(pill(page, '1.1').locator('.wtv__drag-denied-badge')).toHaveCount(1);
+  const before = await scroller.evaluate((s) => s.scrollTop);
+  await touchDrag(page, [{ type: 'touchMove', ...nearBottom, waitMs: 600 }]);
+  expect(await scroller.evaluate((s) => s.scrollTop)).toBe(before);
+  await touchDrag(page, [{ type: 'touchEnd' }]);
+  await expect(pill(page, '1.1').locator('.wtv__drag-denied-badge')).toHaveCount(0);
+  await expect(page.getByTestId('single-drop-count')).toHaveText('0');
+});

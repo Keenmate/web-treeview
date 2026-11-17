@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — a refused touch hold no longer auto-scrolls (2026-11-18)
+- A long press on a locked node (the held 🚫 badge) no longer auto-scrolls the tree when the finger slides to an
+  edge: the pointer drag's `autoScroll.isEnabled` answers `false` while the hold is refused (core ccd12e1).
+  `touchDragDelay` is now read on every press (core reads `longPressMs` per press), so the drag is no longer rebuilt
+  when it changes.
+
 ### Changed — touch drag-and-drop runs on core `createPointerDrag` (2026-11-18)
 - The touch drag (long press = `touch-drag-delay`, ghost, drop-target highlight, drop) is core `createPointerDrag`
   (SPEC §12.28) instead of the tree's own TouchEvent listeners; the hit test is core's shadow-piercing

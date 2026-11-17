@@ -22,6 +22,7 @@ import {
   observeEnvironment,
   observeElementSize,
   getEnvironment,
+  deepActiveElement,
   type DeviceClass,
   type ElementSize
 } from '@keenmate/web-components-core';
@@ -495,9 +496,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (isDisabled) {
       body.removeAttribute('tabindex');
       body.setAttribute('aria-disabled', 'true');
-      const root = body.getRootNode() as Document | ShadowRoot;
-      const active = root.activeElement as HTMLElement | null;
-      if (active && (active === body || body.contains(active))) active.blur();
+      // The focused element, even inside a nested shadow root (a node template's custom element):
+      // climb its hosts to find whether it lives in the body, then blur the element itself.
+      const active = deepActiveElement() as HTMLElement | null;
+      let inside: Element | null = active;
+      while (inside && inside !== body && !body.contains(inside)) {
+        const r = inside.getRootNode();
+        inside = r instanceof ShadowRoot ? r.host : null;
+      }
+      if (active && inside) active.blur();
     } else {
       body.setAttribute('tabindex', '0');
       body.removeAttribute('aria-disabled');

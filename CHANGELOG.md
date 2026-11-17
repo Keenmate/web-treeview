@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Internal — core helpers replace own copies (2026-11-17)
 - Reduced motion: the own `@media (prefers-reduced-motion)` blocks (the `--wtv-transition-*` zeroing, the drop-zone icon bob) are gone — core's `MOTION_CSS` (adopted by `BlissElement`) zeroes `--base-duration-*` / sets `--base-scroll-behavior: auto`, which the `--wtv-*` tokens read. Same result.
 - `TreeEngine.findScrollableAncestor()` removed — dead since scrolling went through core's `findScrollContainer()` (nothing called it; the exported class loses the method).
+- Disabling a focused tree finds the focused element with core's `deepActiveElement()` (was the shadow root's `activeElement`); focus inside a nested shadow root in a node (a custom element in a node template) is now blurred too.
 
 ### Internal — page-wide node drag via core `watchPageDrag` (2026-11-17)
 - `highlight-on-page-drag` (the `armed` attribute / `:state(armed)`) now runs on core's `watchPageDrag({ types: ['application/svelte-treeview'] })` + `applyArmedState()` (SPEC §12.28); treeview's own copy (`src/page-node-drag.ts`) is gone. Same arming rules; after Escape the same drag no longer re-arms on its next `dragover`.

@@ -91,6 +91,14 @@ test.describe('disabled', () => {
     expect(await shadowFocus(page)).toBe('');
   });
 
+  test('disabling while the tree has focus moves focus out of it', async ({ page }) => {
+    await load(page);
+    await body(page).focus();
+    expect(await shadowFocus(page)).toContain('wtv__tree');
+    await setProp(page, 'isDisabled', true);
+    expect(await shadowFocus(page)).toBe('');
+  });
+
   test('keyboard does nothing (navigation, Space, Delete, Ctrl+X)', async ({ page }) => {
     await load(page, 'disabled');
     await page.evaluate(() => (window as any).tree.focusNode?.('1.1'));

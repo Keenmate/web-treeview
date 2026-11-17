@@ -24,7 +24,9 @@ import {
   getEnvironment,
   deepActiveElement,
   createFrameScheduler,
+  createElementSizeObserver,
   type DeviceClass,
+  type ElementSizeObserver,
   type ElementSize
 } from '@keenmate/web-components-core';
 import type { NodeRenderContext } from '../controller/types';
@@ -363,7 +365,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // own their layout and don't take part.
 
   private _titleOverflow: NodeTitleOverflow = 'ellipsis';
-  private _labelObserver: ResizeObserver | null = null;
+  private _labelObserver: ElementSizeObserver | null = null;
   private _reveal: { handle: PopoverHandle; button: HTMLElement } | null = null;
 
   private _applyTitleOverflow(mode: NodeTitleOverflow | null | undefined): void {
@@ -375,9 +377,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._labelObserver = null;
     const labels = this.container.querySelectorAll<HTMLElement>('.wtv__node-label');
     if (this._titleOverflow === 'info' && typeof ResizeObserver !== 'undefined') {
-      this._labelObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) this._measureLabel(entry.target as HTMLElement);
-      });
+      // Like a bare ResizeObserver: the first measure comes with the observer's initial
+      // entry (no synchronous layout per label while rows build), no throttle window.
+      this._labelObserver = createElementSizeObserver(
+        (_size, label) => this._measureLabel(label as HTMLElement),
+        { shouldFireImmediately: false, throttleMs: 0 }
+      );
       for (const label of labels) this._labelObserver.observe(label);
     } else {
       for (const label of labels) this._setLabelTruncated(label, false);

@@ -1,4 +1,4 @@
-import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, WEBKIT_NO_TOUCH_CTOR, hasNoNativeDnd } from './fixtures';
+import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, CDP_TOUCH_ONLY, touchDrag, centerOf, hasNoNativeDnd } from './fixtures';
 
 /**
  * Drag visuals, reject feedback and the tree drop zone (/test/drag-visuals.html).
@@ -249,18 +249,13 @@ test.describe('drop cursor over a refusing node (NOTES #22)', () => {
 });
 
 test.describe('touch: drag reject + touch-drag-delay', () => {
-  test.skip(({ browserName }) => browserName === 'webkit', WEBKIT_NO_TOUCH_CTOR);
+  test.skip(({ browserName }) => browserName !== 'chromium', CDP_TOUCH_ONLY);
   test.use({ hasTouch: true });
 
+  /** Put a finger on (touchstart) / lift it off (touchend) a row's pill — real touch through CDP. */
   async function touch(page: Page, type: 'touchstart' | 'touchend', path: string) {
-    await page.evaluate(({ type, path }) => {
-      const host = document.getElementById('tree')!;
-      const el = host.shadowRoot!.querySelector(`.wtv__node[data-tree-path="${path}"] .wtv__node-content`) as HTMLElement;
-      const r = el.getBoundingClientRect();
-      const t = new Touch({ identifier: 1, target: el, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 });
-      const live = type === 'touchend' ? [] : [t];
-      el.dispatchEvent(new TouchEvent(type, { touches: live, targetTouches: live, changedTouches: [t], bubbles: true, cancelable: true, composed: true }));
-    }, { type, path });
+    if (type === 'touchend') return touchDrag(page, [{ type: 'touchEnd' }]);
+    await touchDrag(page, [{ type: 'touchStart', ...(await centerOf(content(page, path))) }]);
   }
 
   test('long-pressing a locked node fires node-drag-reject and holds the 🚫 badge until release', async ({ page }) => {

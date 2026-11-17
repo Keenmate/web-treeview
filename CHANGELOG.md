@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — touch drag-and-drop runs on core `createPointerDrag` (2026-11-18)
+- The touch drag (long press = `touch-drag-delay`, ghost, drop-target highlight, drop) is core `createPointerDrag`
+  (SPEC §12.28) instead of the tree's own TouchEvent listeners; the hit test is core's shadow-piercing
+  `deepElementFromPoint`. New with it: the tree auto-scrolls while the finger is near its edges, Escape cancels a
+  touch drag, and a `touchDragDelay` change applies live.
+  Unchanged: mouse / pen keep HTML5 drag-and-drop (it carries the cross-tree `dataTransfer`; the pointer drag
+  answers touch only), a > 10 px move before the long press still scrolls, a locked node still plays the held 🚫
+  badge + double-buzz until release, and `navigator.vibrate` still buzzes on a drag start.
+- BREAKING (types): a touch drop's `event` (`onNodeDrop` / drop-callback contexts, `dropAt()`) is now the
+  `PointerEvent` that ended it — `DragEvent | PointerEvent` (was `DragEvent | TouchEvent`). The internal
+  `NodeCallbacks.onTouchDrag*` entries and the engine's `touchStart` / `touchMove` / `touchEnd` are gone.
+
 ### Fixed — every row has its own DOM id (2026-11-18)
 - A row's element id is now `{treeId}-{node path}` (was `{treeId}-{node id}`; characters outside `A-Z a-z 0-9 . -`
   are written as `_<hex>_`). Node ids are the consumer's data and may repeat — a pasted copy keeps its source id

@@ -18,9 +18,9 @@ Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --worke
 HTML5 drag-and-drop tests that need a drop (`drag-drop`, `drag-hooks`, `highlight-on-page-drag`, `drag-visuals`
 "drop reject (desktop, real drag)"; per test where a describe also holds a test that needs no drop: "grabbing a
 selected node preserves the selected set" and "enable-tree-drop-zone: a drop … lands on the tree" run on WebKit) —
-Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag — and, on every platform, the synthetic touch specs
-(`touch-drag`, `drag-visuals` "touch: …") — WebKit has no `Touch` constructor, also with `hasTouch` + `isMobile`.
-Chromium and Firefox run them.
+Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag. Chromium and Firefox run them. The touch-drag
+specs (`touch-drag`, `drag-visuals` "touch: …") send real touch input through CDP `Input.dispatchTouchEvent` (the touch
+drag is core `createPointerDrag`, driven by pointer events), so they run in Chromium only.
 
 ---
 
@@ -156,7 +156,7 @@ Chromium and Firefox run them.
 | Cross-tree `dragged` refs resolve to the source nodes (NOTES #26) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html?multi` |
 | `isDropAllowed=false`, `drag-drop-mode` self/cross | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Esc during drag restores selection | ✓ | `drag-esc-cancel.spec.ts` | `drag-esc-cancel.html` |
-| Touch drag (ghost in a core `.km-layer`, `pointer-events: none`, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
+| Touch drag via core `createPointerDrag` (ghost in a core `.km-layer`, `pointer-events: none`, highlight, drop; a move before the long press = no drag; Escape cancels; `touchDragDelay` set live) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
 | Floating drop pads as a core layer: in `<body>`, not clipped by an `overflow: hidden` ancestor, pad drop lands; host tokens (`cssVars`) + `customStyles` reach the layer | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | `beforeDropCallback` false / redirect / copy / `DropGroup[]` / async | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |

@@ -48,9 +48,6 @@ export interface NodeCallbacks<T> {
   onNodeDragLeave: (node: LTreeNode<T>, event: DragEvent) => void;
   onNodeDrop: (node: LTreeNode<T>, event: DragEvent) => void;
   onZoneDrop: (node: LTreeNode<T>, position: DropPosition, event: DragEvent) => void;
-  onTouchDragStart: (node: LTreeNode<T>, event: TouchEvent) => void;
-  onTouchDragMove: (node: LTreeNode<T>, event: TouchEvent) => void;
-  onTouchDragEnd: (node: LTreeNode<T>, event: TouchEvent) => void;
   onCheckboxToggle: (node: LTreeNode<T>, options?: { skipFocus?: boolean }) => void;
 }
 
@@ -202,7 +199,7 @@ export interface DragStartContext<T> {
   lead: NodeRef<T>;
   /** The complete flattened set — grabbed subtree(s) + every descendant. */
   dragged: NodeRef<T>[];
-  event: DragEvent | TouchEvent;
+  event: DragEvent | PointerEvent;
 }
 
 /**
@@ -228,7 +225,7 @@ export interface BeforeDropContext<T> {
   dragged: NodeRef<T>[];
   position: DropPosition;
   operation: DropOperation;
-  event: DragEvent | TouchEvent;
+  event: DragEvent | PointerEvent;
 }
 
 /**
@@ -253,7 +250,7 @@ export interface NodeDropContext<T> {
   dropped: NodeRef<T>[] | null;
   position: DropPosition;
   operation: DropOperation;
-  event: DragEvent | TouchEvent;
+  event: DragEvent | PointerEvent;
 }
 
 /**

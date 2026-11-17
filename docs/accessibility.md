@@ -57,7 +57,7 @@ Native HTML5 drag-and-drop is not keyboard-accessible by default. The component 
 
 ## Touch
 
-Long-press (300 ms) initiates a drag from a touch device. The touch ghost element follows the finger and uses the same `onNodeDrop` event as desktop drag-and-drop. Moving > 10 px before the long-press timer fires cancels the drag (allows scrolling).
+Long-press (`touch-drag-delay`, 300 ms) initiates a drag from a touch device (core `createPointerDrag`, touch only — mouse and pen use HTML5 drag-and-drop). The touch ghost element follows the finger and uses the same `onNodeDrop` event as desktop drag-and-drop; once the drag engages the page doesn't scroll, the tree auto-scrolls near its edges, and Escape cancels. Moving > 10 px before the long-press timer fires cancels the drag (allows scrolling).
 
 ## Tested patterns
 

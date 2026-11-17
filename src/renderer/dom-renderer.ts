@@ -29,6 +29,8 @@ import {
   createElementSizeObserver,
   isRtl,
   renderSlot,
+  createPointerDrag,
+  type PointerDrag,
   type DeviceClass,
   type ElementSizeObserver,
   type ElementSize,
@@ -416,6 +418,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._closeMenu();
     this._closeReveal();
     this._closeDropPads();
+    this._touchDrag?.cancel();
     for (const h of this.tooltips.values()) h.hide();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
@@ -1032,32 +1035,42 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.controller?.cancelDrag();
   };
 
-  private _onBodyTouchStart = (event: TouchEvent) => {
-    // The touch gesture only starts a touch drag — off while disabled / read-only.
-    if (!this.controller || this._isDisabled || this._isReadonly) return;
-    const target = event.target as HTMLElement;
-    const nodeEl = target.closest('.wtv__node') as HTMLElement;
-    const path = nodeEl?.getAttribute('data-tree-path');
-    if (path) {
-      const node = this.controller.getNodeByPath(path);
-      if (node) {
-        // Chromium touch-emulation fix (svelte-treeview rc14): the native
-        // `draggable` attr swallows the synthetic touchmove/touchend stream (Chrome
-        // tries to hand the gesture to its mouse-driven HTML5 drag engine). Turn it
-        // OFF synchronously for the duration of the touch gesture; restore on end.
-        // Scoped to touch — a mouse never fires touchstart, so mouse-drag is
-        // unaffected. On real phones the collision can't occur.
-        if (nodeEl.draggable) {
-          const wasDraggable = nodeEl.draggable;
-          nodeEl.draggable = false;
-          const restore = () => { nodeEl.draggable = wasDraggable; };
-          document.addEventListener('touchend', restore, { once: true });
-          document.addEventListener('touchcancel', restore, { once: true });
-        }
-        this.controller.touchStart(node, event);
-      }
-    }
-  };
+  /**
+   * Touch drag through core `createPointerDrag` (SPEC §12.28): long press = `touchDragDelay`,
+   * the page doesn't scroll once it engages, auto-scroll near the body's edges, Escape /
+   * pointercancel cancel, the hit test pierces shadow roots. TOUCH ONLY — `getSource` answers
+   * `null` for mouse / pen, which stay on HTML5 drag-and-drop (it carries the cross-tree
+   * `dataTransfer`), so the two never fight. Recreated when `touchDragDelay` changes
+   * (core reads `longPressMs` once).
+   */
+  private _touchDrag: PointerDrag | null = null;
+  private _touchDragDelay = -1;
+
+  private _syncTouchDrag(): void {
+    const delay = this.controller?.touchDragDelay ?? 300;
+    if (!this.bodyEl || (this._touchDrag && delay === this._touchDragDelay) || this._touchDrag?.isDragging) return;
+    this._touchDrag?.destroy();
+    this._touchDragDelay = delay;
+    this._touchDrag = createPointerDrag(this.bodyEl, {
+      longPressMs: delay,
+      threshold: 10, // a finger moving > 10px before the long press = a scroll
+      getSource: (target, event) => {
+        // The touch gesture only starts a touch drag — off while disabled / read-only.
+        if (event.pointerType !== 'touch' || !this.controller || this._isDisabled || this._isReadonly) return null;
+        const row = target.closest('.wtv__node') as HTMLElement | null;
+        const path = row?.getAttribute('data-tree-path');
+        return path && this.controller.getNodeByPath(path) ? row : null;
+      },
+      onStart: ({ source, x, y }) => {
+        const node = this.controller?.getNodeByPath(source.getAttribute('data-tree-path') ?? '');
+        if (!node) return false;
+        this.controller!.touchDragStart(node, x, y);
+      },
+      onMove: ({ target, x, y }) => this.controller?.touchDragMove(target, x, y),
+      onDrop: ({ target, event }) => this.controller?.touchDragDrop(target, event as PointerEvent),
+      onCancel: () => this.controller?.touchDragCancel(),
+    });
+  }
 
   // Tree-level drop zone (isTreeDropZoneEnabled): container-level fallback so a
   // drop anywhere over the tree is accepted even when every node rejects it. The
@@ -1131,7 +1144,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.addEventListener('dragleave', this._onBodyDragLeave);
     this.bodyEl.addEventListener('drop', this._onBodyDrop);
     this.bodyEl.addEventListener('dragenter', this._onBodyDragEnter);
-    this.bodyEl.addEventListener('touchstart', this._onBodyTouchStart, { passive: true });
+    this._syncTouchDrag();
     // dragend fires on the SOURCE element after any drag ends (drop, cancel, cross-tree)
     this.bodyEl.addEventListener('dragend', this._onBodyDragEnd);
     // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl —
@@ -1155,7 +1168,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.removeEventListener('dragleave', this._onBodyDragLeave);
     this.bodyEl.removeEventListener('drop', this._onBodyDrop);
     this.bodyEl.removeEventListener('dragenter', this._onBodyDragEnter);
-    this.bodyEl.removeEventListener('touchstart', this._onBodyTouchStart);
+    this._touchDrag?.destroy();
+    this._touchDrag = null;
     this.bodyEl.removeEventListener('dragend', this._onBodyDragEnd);
     this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
     document.removeEventListener('dragend', this._onDocumentDragEnd);
@@ -1259,6 +1273,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onStateChange(snapshot: TreeEngineSnapshot<T>): void {
     if (!this.bodyEl || !this.controller) return;
+    this._syncTouchDrag(); // touchDragDelay may have changed (cheap no-op otherwise)
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
     // (filter, expand, collapse, data load), so the next scroll must not early-exit

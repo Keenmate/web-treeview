@@ -372,22 +372,20 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private _dragSetOverride: string[] | null = null;
 
   // Touch drag
+  // Touch drag: the gesture (long press, scroll lock, hit test, auto-scroll, Escape) is core
+  // createPointerDrag, wired by the renderer; the engine keeps the tree side of it.
   private touchDragState: {
     node: LTreeNode<any> | null;
-    startX: number;
-    startY: number;
     isDragging: boolean;
     /** A long-press landed on a NON-draggable node: we show the held 🚫 badge
-     *  instead of starting a drag, and swallow touchmove so it stays put. */
+     *  instead of starting a drag (core still holds the gesture, so the page stays put). */
     isDenied: boolean;
     /** The touch drag ghost's core layer (placed at the finger). */
     ghostLayer: Layer | null;
     currentDropTarget: LTreeNode<any> | null;
   } = {
-    node: null, startX: 0, startY: 0,
-    isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
+    node: null, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
   };
-  private touchTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Blocked-action ("can't move this") feedback (svelte-treeview rc14). The held
   // 🚫 badge + its row's pulse class are torn down on touch release.
@@ -1119,9 +1117,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       onNodeDragLeave: this._onNodeDragLeaveInternal.bind(this),
       onNodeDrop: this._onNodeDropInternal.bind(this),
       onZoneDrop: this._onZoneDrop.bind(this),
-      onTouchDragStart: this._onTouchStart.bind(this),
-      onTouchDragMove: this._onTouchMove.bind(this),
-      onTouchDragEnd: this._onTouchEnd.bind(this),
       onCheckboxToggle: this._onCheckboxToggle.bind(this)
     };
 
@@ -4000,7 +3995,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Drop with explicit position (for custom drop zones). */
-  dropAt(node: LTreeNode<T>, position: DropPosition, event: DragEvent | TouchEvent): void {
+  dropAt(node: LTreeNode<T>, position: DropPosition, event: DragEvent | PointerEvent): void {
     if (event instanceof DragEvent) {
       event.preventDefault();
       if (!this._draggedNode) {
@@ -4020,21 +4015,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   cancelDrag(): void {
     this.log.DRAG.debug('Drag cancelled via public API');
     this._resetDragState();
-  }
-
-  /** Touch drag start */
-  touchStart(node: LTreeNode<T>, event: TouchEvent): void {
-    this._onTouchStart(node, event);
-  }
-
-  /** Touch drag move */
-  touchMove(node: LTreeNode<T>, event: TouchEvent): void {
-    this._onTouchMove(node, event);
-  }
-
-  /** Touch drag end */
-  touchEnd(node: LTreeNode<T>, event: TouchEvent): void {
-    this._onTouchEnd(node, event);
   }
 
   /** Get allowed drop positions for a node */
@@ -4690,10 +4670,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
    */
   deactivate(): void {
     if (this._contextMenuVisible) this.closeContextMenu();
-    if (typeof document !== 'undefined' && (this.touchDragState.node || this._boundDocTouchMove)) {
-      this.removeGhostElement();
-      this._resetTouchState();
-    }
+    if (typeof document !== 'undefined' && this.touchDragState.node) this.touchDragCancel();
     unregisterClipboardTree(this._treeId, this);
   }
 
@@ -4705,7 +4682,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   /** Clean up document-level listeners and ghost elements. */
   destroy() {
     if (typeof document !== 'undefined') {
-      this._removeDocumentTouchListeners();
       this.removeGhostElement();
       this._clearDragDenied();
       if (this._dropDeniedTimer) { clearTimeout(this._dropDeniedTimer); this._dropDeniedTimer = null; }
@@ -5267,7 +5243,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     dropNode: LTreeNode<T> | null,
     draggedNodeRef: LTreeNode<T>,
     position: DropPosition,
-    event: DragEvent | TouchEvent
+    event: DragEvent | PointerEvent
   ): Promise<boolean> {
     let operation: DropOperation = 'move';
     const isDragEvent = event instanceof DragEvent;
@@ -5449,7 +5425,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     dropped: LTreeNode<T>[] | null,
     position: DropPosition,
     operation: DropOperation,
-    event: DragEvent | TouchEvent
+    event: DragEvent | PointerEvent
   ): void {
     this.nodeDropCb?.({
       source: this.nodeRef(draggedNodeRef),
@@ -5638,125 +5614,44 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._onNodeDragEnd(event);
   };
 
-  // ── Touch drag handlers ─────────────────────────────────────────────
+  // ── Touch drag (core createPointerDrag, wired by the renderer) ──────
+  // Mouse / pen stay on HTML5 drag-and-drop (cross-tree dataTransfer); the renderer's
+  // createPointerDrag answers only `pointerType === 'touch'` and calls these four.
 
-  private _onTouchStart(node: LTreeNode<any>, event: TouchEvent) {
-    const draggable = this.getNodeIsDraggable(node);
-
-    const touch = event.touches[0];
-    this.touchDragState = {
-      node,
-      startX: touch.clientX,
-      startY: touch.clientY,
-      isDragging: false,
-      isDenied: false,
-      ghostLayer: null,
-      currentDropTarget: null
-    };
-
-    this._addDocumentTouchListeners();
-
-    // Non-draggable node: instead of silently doing nothing (which just feels
-    // broken), a deliberate long-press plays the "can't move this" reaction — a
-    // held 🚫 badge + double-buzz. A tap/scroll still cancels via the move
-    // threshold in _docTouchMove before the timer fires. (svelte-treeview rc14)
-    if (!draggable) {
-      this.touchTimer = setTimeout(() => {
-        this.touchDragState.isDenied = true;
-        this._indicateDragDenied(node);
-      }, this._touchDragDelay);
+  /** The long press elapsed on `node`. A NON-draggable node plays the "can't move this"
+   *  reaction instead (held 🚫 badge + double-buzz) until the finger lifts. */
+  touchDragStart(node: LTreeNode<T>, x: number, y: number): void {
+    this.touchDragState = { node, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null };
+    // (svelte-treeview rc14) a deliberate long-press on a locked node explains itself.
+    if (!this.getNodeIsDraggable(node)) {
+      this.touchDragState.isDenied = true;
+      this._indicateDragDenied(node);
       return;
     }
-
-    this.touchTimer = setTimeout(() => {
-      this.touchDragState.isDragging = true;
-      this._draggedNode = node;
-      // Complete manifest so a touch-dragged folder dims its whole subtree, matching desktop.
-      this._draggedPaths = this._completeManifest([node.path]);
-      this._isDragInProgress = true;
-      this.log.DRAG.debug(`Touch drag started: ${node.path}`);
-      this.createGhostElement(node, touch.clientX, touch.clientY);
-      try { navigator.vibrate?.(50); } catch { /* blocked by browser policy */ }
-      this._scheduleNotify();
-    }, this._touchDragDelay);
+    this.touchDragState.isDragging = true;
+    this._draggedNode = node;
+    // Complete manifest so a touch-dragged folder dims its whole subtree, matching desktop.
+    this._draggedPaths = this._completeManifest([node.path]);
+    this._isDragInProgress = true;
+    this.log.DRAG.debug(`Touch drag started: ${node.path}`);
+    this.createGhostElement(node, x, y);
+    // Haptic feedback on a real drag start (a treeview extra; core has none).
+    try { navigator.vibrate?.(50); } catch { /* blocked by browser policy */ }
+    this._scheduleNotify();
   }
 
-  private _onTouchMove(_node: LTreeNode<any>, _event: TouchEvent) {
-    // Handled by _docTouchMove
+  /** The finger moved (or the list auto-scrolled under it); `target` = the deepest element under it. */
+  touchDragMove(target: Element | null, x: number, y: number): void {
+    if (!this.touchDragState.isDragging) return; // a denied hold: nothing moves
+    this._placeGhost(x, y);
+    this.updateDropTarget(target);
   }
 
-  private _onTouchEnd(_node: LTreeNode<any>, _event: TouchEvent) {
-    // Handled by _docTouchEnd
-  }
-
-  // ── Document-level touch listeners ──────────────────────────────────
-
-  private _boundDocTouchMove: ((e: TouchEvent) => void) | null = null;
-  private _boundDocTouchEnd: ((e: TouchEvent) => void) | null = null;
-
-  private _addDocumentTouchListeners() {
-    this._removeDocumentTouchListeners();
-    this._boundDocTouchMove = (e: TouchEvent) => this._docTouchMove(e);
-    this._boundDocTouchEnd = (e: TouchEvent) => this._docTouchEnd(e);
-    document.addEventListener('touchmove', this._boundDocTouchMove, { passive: false });
-    document.addEventListener('touchend', this._boundDocTouchEnd);
-    document.addEventListener('touchcancel', this._boundDocTouchEnd);
-  }
-
-  private _removeDocumentTouchListeners() {
-    if (this._boundDocTouchMove) {
-      document.removeEventListener('touchmove', this._boundDocTouchMove);
-      this._boundDocTouchMove = null;
-    }
-    if (this._boundDocTouchEnd) {
-      document.removeEventListener('touchend', this._boundDocTouchEnd);
-      document.removeEventListener('touchcancel', this._boundDocTouchEnd);
-      this._boundDocTouchEnd = null;
-    }
-  }
-
-  private _docTouchMove(event: TouchEvent) {
-    if (!this.touchDragState.node) return;
-
-    const touch = event.touches[0];
-
-    // A denied long-press is held: keep the 🚫 badge on the row and swallow the
-    // move so the page doesn't scroll out from under it. Released in _docTouchEnd.
-    if (this.touchDragState.isDenied) {
-      event.preventDefault();
-      return;
-    }
-
-    if (!this.touchDragState.isDragging) {
-      const dx = Math.abs(touch.clientX - this.touchDragState.startX);
-      const dy = Math.abs(touch.clientY - this.touchDragState.startY);
-      if (dx > 10 || dy > 10) {
-        if (this.touchTimer) clearTimeout(this.touchTimer);
-        this._resetTouchState();
-      }
-      return;
-    }
-
-    event.preventDefault();
-
-    this._placeGhost(touch.clientX, touch.clientY);
-
-    // The ghost's layer is `pointer-events: none` — the hit test sees through it.
-    const elementUnderTouch = this._elementFromPoint(touch.clientX, touch.clientY);
-
-    this.updateDropTarget(elementUnderTouch);
-  }
-
-  private _docTouchEnd(event: TouchEvent) {
-    if (this.touchTimer) clearTimeout(this.touchTimer);
-
+  /** The finger lifted over `target`. */
+  touchDragDrop(target: Element | null, event: PointerEvent): void {
     if (this.touchDragState.isDragging && this._draggedNode) {
-      const touch = event.changedTouches[0];
-
-      const dropElement = this._elementFromPoint(touch.clientX, touch.clientY);
-      const dropNode = this.findNodeFromElement(dropElement);
-
-      const emptyTarget = dropElement?.closest('.wtv__empty-state, .wtv__empty-zone');
+      const dropNode = this.findNodeFromElement(target);
+      const emptyTarget = target?.closest('.wtv__empty-state, .wtv__empty-zone');
       if (emptyTarget && !dropNode) {
         this.log.DRAG.debug(`Touch drag ended: ${this._draggedNode.path} -> empty tree`);
         this._handleDrop(null, this._draggedNode, 'child', event);
@@ -5772,21 +5667,18 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       } else {
         this.log.DRAG.debug(`Touch drag cancelled: ${this._draggedNode.path}`);
       }
-
-      this.removeGhostElement();
-      this.clearDropTargetHighlight();
     }
-
-    this._resetTouchState();
+    this.touchDragCancel();
   }
 
-  private _resetTouchState() {
-    this._removeDocumentTouchListeners();
+  /** Escape / pointercancel / detach / a drop that ended: tear the touch drag down. Idempotent. */
+  touchDragCancel(): void {
+    this.removeGhostElement();
+    this.clearDropTargetHighlight();
     // Tear down any held "can't move this" badge/pulse.
     this._clearDragDenied();
     this.touchDragState = {
-      node: null, startX: 0, startY: 0,
-      isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
+      node: null, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
     };
     this._draggedNode = null;
     this._isDragInProgress = false;
@@ -5906,13 +5798,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return this.containerElement ?? document;
   }
 
-  /** Hit-test from the tree's root node — document.elementFromPoint stops at
-   *  the shadow host and never returns a row. */
-  private _elementFromPoint(x: number, y: number): Element | null {
-    const root = this.containerElement?.getRootNode();
-    return (root instanceof ShadowRoot ? root : document).elementFromPoint(x, y);
-  }
-
   private removeGhostElement() {
     if (this.touchDragState.ghostLayer) {
       this.touchDragState.ghostLayer.destroy();
@@ -6019,13 +5904,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this._handleDrop(null, droppedNode, 'child', event);
     }
     this._onNodeDragEnd(event);
-  };
-
-  handleEmptyTreeTouchEnd = (event: TouchEvent) => {
-    if (this._draggedNode && this._isDropPlaceholderActive) {
-      this._handleDrop(null, this._draggedNode, 'child', event);
-      this._isDropPlaceholderActive = false;
-    }
   };
 
   // ── Tree-level drag handlers ────────────────────────────────────────

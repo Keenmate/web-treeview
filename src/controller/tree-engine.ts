@@ -6096,20 +6096,4 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   private generateTreeId(): string {
     return `${Date.now()}${Math.floor(Math.random() * 10000)}`;
   }
-
-  findScrollableAncestor(element: HTMLElement): HTMLElement | null {
-    let parent = element.parentElement;
-    while (parent) {
-      const style = getComputedStyle(parent);
-      const overflowY = style.overflowY;
-      if (
-        (overflowY === 'auto' || overflowY === 'scroll') &&
-        parent.scrollHeight > parent.clientHeight
-      ) {
-        return parent;
-      }
-      parent = parent.parentElement;
-    }
-    return null;
-  }
 }

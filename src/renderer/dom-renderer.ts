@@ -23,6 +23,7 @@ import {
   observeElementSize,
   getEnvironment,
   deepActiveElement,
+  createFrameScheduler,
   type DeviceClass,
   type ElementSize
 } from '@keenmate/web-components-core';
@@ -75,7 +76,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // Virtual scroll DOM elements
   private vsSpacerEl: HTMLElement | null = null;
   private vsContentEl: HTMLElement | null = null;
-  private _vsRafPending = false;
+  /** One virtual-scroll update per animation frame (scroll bursts coalesce). */
+  private _vsFrame = createFrameScheduler(() => this._performScrollUpdate());
   private _vsMeasured = false;
   private _vsLastStartIndex = -1;
   private _vsLastEndIndex = -1;
@@ -278,6 +280,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._labelObserver?.disconnect();
     this._labelObserver = null;
     this.nodeElements.clear();
+    this._vsFrame.cancel();
     this.vsSpacerEl = null;
     this.vsContentEl = null;
     this._vsMeasured = false;
@@ -968,12 +971,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
 
   private _onVirtualScroll = () => {
-    if (this._vsRafPending || !this.bodyEl) return;
-    this._vsRafPending = true;
-    requestAnimationFrame(() => {
-      this._vsRafPending = false;
-      this._performScrollUpdate();
-    });
+    if (!this.bodyEl) return;
+    this._vsFrame.schedule();
   };
 
   /**

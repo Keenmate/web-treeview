@@ -4,6 +4,7 @@
  * instead of each node having its own RAF loop.
  */
 
+import { createFrameScheduler } from '@keenmate/web-components-core';
 import { renderLogger } from '../logger';
 
 type RenderCallback = () => boolean; // Returns true if more rendering needed
@@ -38,18 +39,14 @@ export function createRenderCoordinator(
 ): RenderCoordinator {
   const pendingNodes = new Map<string, RenderCallback>();
   const completedNodes = new Set<string>(); // Track nodes that finished rendering
-  let rafId: number | null = null;
+  const frame = createFrameScheduler(processFrame);
   let isProcessing = false;
   let processedCount = 0;
   let wasActive = false;
 
   function scheduleProcess() {
-    if (rafId !== null || pendingNodes.size === 0) return;
-
-    rafId = requestAnimationFrame(() => {
-      rafId = null;
-      processFrame();
-    });
+    if (pendingNodes.size === 0) return;
+    frame.schedule();
   }
 
   function processFrame() {
@@ -154,10 +151,7 @@ export function createRenderCoordinator(
       // Clear completed tracking when tree data changes
       completedNodes.clear();
       pendingNodes.clear();
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
+      frame.cancel();
       isProcessing = false;
       wasActive = false;
       processedCount = 0;

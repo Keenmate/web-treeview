@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   z-index tokens are copied from the host (instance overrides included), the theme attributes come along, and the
   element's `customStyles` / `getCustomStylesCallback` CSS is adopted into the layer too. The pad / ghost rules
   moved from `tree.css` to `css/layers.css`.
+- The layers' text look (font family / size / weight, line height, colour) and writing direction now come from core
+  `createLayer` (copied from the host, re-read on `syncTheme()`); treeview's own font-family / line-height / `dir`
+  copy is gone. Same visuals; an RTL tree's pads still mirror.
 - Page CSS or tests that looked for `.wtv__drop-zones` / `.wtv__touch-ghost` inside the tree's shadow root find
   them in the layer's shadow root now (`document.querySelector('.km-layer').shadowRoot`).
 

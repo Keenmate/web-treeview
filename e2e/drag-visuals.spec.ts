@@ -97,6 +97,35 @@ test.describe('drag classes', () => {
     await expect(page.locator('.km-layer')).toHaveCount(0);
   });
 
+  test('the pads layer carries the tree\'s font and writing direction (core createLayer): an RTL tree\'s pads mirror', async ({ page }) => {
+    await load(page, '?drop-zone-mode=floating&drop-zone-layout=around');
+    await page.evaluate(() => {
+      const t = document.getElementById('tree')!;
+      t.dir = 'rtl';
+      t.style.setProperty('--wtv-font-family', 'Georgia, serif');
+    });
+    await step(page, 'start', '4');
+    await step(page, 'over', '1', 0.8);
+    await expect(page.locator('.wtv__drop-zones')).toHaveCount(1);
+    const look = await page.evaluate(() => {
+      const d = (window as any).drag;
+      const center = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; };
+      const after = d.pad('after') as HTMLElement;
+      return {
+        dir: getComputedStyle(after).direction,
+        font: getComputedStyle(after).fontFamily,
+        treeFont: getComputedStyle(document.getElementById('tree')!).fontFamily,
+        // "around": after → child run along the inline axis, so in RTL the child pad sits LEFT of the after pad
+        isChildLeftOfAfter: center(d.pad('child')) < center(after),
+      };
+    });
+    expect(look.dir).toBe('rtl');
+    expect(look.font).toBe(look.treeFont);
+    expect(look.font).toContain('Georgia');
+    expect(look.isChildLeftOfAfter).toBe(true);
+    await step(page, 'end');
+  });
+
   test('the pads layer takes the host tokens (cssVars) and the custom CSS (customStyles)', async ({ page }) => {
     await load(page, '?drop-zone-mode=floating');
     await page.evaluate(() => {

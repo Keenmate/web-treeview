@@ -6,7 +6,6 @@
  * instance override on the host reaches the layer.
  */
 import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-components-core/positioning';
-import { isRtl } from '@keenmate/web-components-core';
 import layerCss from '../css/layers.css?inline';
 
 /** Opens a layer for the tree. `<web-treeview>` supplies one that also adopts its custom CSS into the layer root. */
@@ -33,18 +32,13 @@ export function openTreeLayer(
   opener?: TreeLayerOpener | null,
 ): Layer {
   const host = layerHost(container);
-  const layer = (opener ?? createLayer)(host, {
+  // Core copies the host's text look (font, line-height, colour) and its writing direction onto the
+  // layer (the pads are laid out with logical insets, so an RTL tree's pads mirror).
+  return (opener ?? createLayer)(host, {
     css: layerCss,
     className: options.className,
     isInteractive: false,
     zIndex: `var(${options.zIndexToken})`,
     cssVars: [...LAYER_VARS, options.zIndexToken],
   });
-  // The layer resets inherited styles (`all: initial`) and sits outside the tree: carry the
-  // tree's text font and its writing direction (the pads are laid out with logical insets).
-  const style = getComputedStyle(container);
-  layer.layer.style.fontFamily = style.fontFamily;
-  layer.layer.style.lineHeight = style.lineHeight;
-  layer.element.dir = isRtl(container) ? 'rtl' : 'ltr';
-  return layer;
 }

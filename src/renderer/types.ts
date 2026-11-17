@@ -1,6 +1,7 @@
 import type { Labels } from '@keenmate/web-components-core/locale';
 import type { SlotResult } from '@keenmate/web-components-core';
 import type { TreeViewLabels } from '../labels';
+import type { TreeLayerOpener } from './layers';
 /**
  * Pluggable renderer interface.
  * External packages (Svelte, React, Vue) can implement TreeViewRenderer
@@ -98,4 +99,6 @@ export interface RendererConfig<T> {
   /** Core `openMenu()` presentation + drawer side, read at every open (core `menuPresentationOptions()`
    *  over the effective config). Missing: core's defaults (`'auto'`, `'start'`). */
   menuPresentationOptions?: () => { presentation: MenuPresentation; side: MenuDrawerSide };
+  /** Opens the drop pads' / touch ghost's core layer (`<web-treeview>`: + its custom CSS). Missing: core `createLayer()`. */
+  openLayer?: TreeLayerOpener | null;
 }

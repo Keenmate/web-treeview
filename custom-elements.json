@@ -1622,10 +1622,10 @@
               "kind": "field",
               "name": "touchDragState",
               "type": {
-                "text": "{\n    node: LTreeNode<any> | null;\n    startX: number;\n    startY: number;\n    isDragging: boolean;\n    /** A long-press landed on a NON-draggable node: we show the held 🚫 badge\n     *  instead of starting a drag, and swallow touchmove so it stays put. */\n    isDenied: boolean;\n    ghostElement: HTMLElement | null;\n    currentDropTarget: LTreeNode<any> | null;\n  }"
+                "text": "{\n    node: LTreeNode<any> | null;\n    startX: number;\n    startY: number;\n    isDragging: boolean;\n    /** A long-press landed on a NON-draggable node: we show the held 🚫 badge\n     *  instead of starting a drag, and swallow touchmove so it stays put. */\n    isDenied: boolean;\n    /** The touch drag ghost's core layer (placed at the finger). */\n    ghostLayer: Layer | null;\n    currentDropTarget: LTreeNode<any> | null;\n  }"
               },
               "privacy": "private",
-              "default": "{ node: null, startX: 0, startY: 0, isDragging: false, isDenied: false, ghostElement: null, currentDropTarget: null }"
+              "default": "{ node: null, startX: 0, startY: 0, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null }"
             },
             {
               "kind": "field",
@@ -1813,6 +1813,15 @@
                 "text": "HTMLElement | null"
               },
               "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "layerOpener",
+              "type": {
+                "text": "TreeLayerOpener | null"
+              },
+              "default": "null",
+              "description": "Opens the touch ghost's core layer (set by the renderer; `<web-treeview>` adds its custom CSS)."
             },
             {
               "kind": "field",
@@ -6099,6 +6108,26 @@
             },
             {
               "kind": "method",
+              "name": "_placeGhost",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "y",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ],
+              "description": "Put the ghost's (0 × 0) layer at the finger; the ghost centres itself on it."
+            },
+            {
+              "kind": "method",
               "name": "_domScope",
               "privacy": "private",
               "return": {
@@ -9978,6 +10007,45 @@
               ]
             },
             {
+              "kind": "field",
+              "name": "_dropPads",
+              "type": {
+                "text": "Layer | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "The floating drop pads' core layer (`createLayer`), open while a drag hovers a row in `floating` mode."
+            },
+            {
+              "kind": "method",
+              "name": "_closeDropPads",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "_placeDropPads",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ],
+              "description": "Lay the pads' layer over the row of `path` (viewport coordinates, re-read on every pad dragover)."
+            },
+            {
               "kind": "method",
               "name": "_updateDropZones",
               "privacy": "private",
@@ -10082,6 +10150,53 @@
           "declaration": {
             "name": "DomRenderer",
             "module": "src/renderer/dom-renderer.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/renderer/layers.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "openTreeLayer",
+          "return": {
+            "type": {
+              "text": "Layer"
+            }
+          },
+          "parameters": [
+            {
+              "name": "container",
+              "type": {
+                "text": "HTMLElement"
+              }
+            },
+            {
+              "name": "options",
+              "type": {
+                "text": "{ className: string; zIndexToken: string }"
+              }
+            },
+            {
+              "name": "opener",
+              "optional": true,
+              "type": {
+                "text": "TreeLayerOpener | null"
+              }
+            }
+          ],
+          "description": "Open a tree layer. Both are `isInteractive: false` (`pointer-events: none` on the layer): the ghost so\nthe touch hit test sees through it; the pads' layer box covers the hovered row, which must keep\ngetting its drag events — the pads themselves opt back in (`.wtv__drop-zone { pointer-events: auto }`).\nStacks at the tree's own `zIndexToken`."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "openTreeLayer",
+          "declaration": {
+            "name": "openTreeLayer",
+            "module": "src/renderer/layers.ts"
           }
         }
       ]
@@ -13557,6 +13672,12 @@
               "description": "Build the tree config from the merged `this.config`: drop element-only\nkeys (NON_ENGINE_KEYS) via core's `engineConfig`, which **preserves `null`**\nas the clear signal (SPEC §6.1 — the engine resolves it per field), then\nadd the event bridges and the context (this element + its rebuild-proof\ncontroller, so every ctx / detail carries them)."
             },
             {
+              "kind": "field",
+              "name": "#openLayer",
+              "privacy": "private",
+              "description": "The drop pads' / touch ghost's core layer (SPEC §12.29), with this element's custom CSS adopted into\nthe layer root too — a second `createCustomStyles` on it (`shouldShareLayers: false`: it isn't one of\nthe host's managed layers), destroyed with the layer."
+            },
+            {
               "kind": "method",
               "name": "#applyCustomStyles",
               "privacy": "private",
@@ -13566,6 +13687,17 @@
                 }
               },
               "description": "Write both custom-CSS layers: the page one (`window.components['web-treeview'].customStyles`\n/ `.getCustomStylesCallback`) and this instance's (`getCustomStylesCallback` > `customStyles`),\nwhich comes after it and overrides. Core links each `@import` in the document head too, so an\nimported icon font's `@font-face` registers (Chromium ignores it inside a shadow root)."
+            },
+            {
+              "kind": "method",
+              "name": "#customStylesOptions",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "CustomStylesOptions<TreeViewContext<T>>"
+                }
+              },
+              "description": "The custom-CSS options — the shadow root's and every layer's (drop pads, touch ghost)."
             },
             {
               "kind": "field",

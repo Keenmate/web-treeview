@@ -65,6 +65,55 @@ test.describe('drag classes', () => {
     await expect(zones).toHaveCount(0);
   });
 
+  test('floating pads are a core layer (.km-layer in <body>): not clipped by an overflow: hidden ancestor, and a pad drop lands', async ({ page }) => {
+    await load(page, '?drop-zone-mode=floating&drop-zone-layout=around');
+    // Clip the tree: the "before" pad of the first row sits above the tree's box.
+    await page.evaluate(() => { const h = document.getElementById('host')!; h.style.overflow = 'hidden'; h.style.paddingTop = '0'; });
+    await step(page, 'start', '4');
+    await step(page, 'over', '1', 0.8);
+    const zones = page.locator('.wtv__drop-zones');
+    await expect(zones).toHaveCount(1);
+    const where = await page.evaluate(() => {
+      const pad = (window as any).drag.pad('before') as HTMLElement;
+      const layer = (pad.getRootNode() as ShadowRoot).host as HTMLElement;
+      const tree = document.getElementById('tree')!;
+      const r = pad.getBoundingClientRect();
+      const hit = layer.shadowRoot!.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return {
+        isLayer: layer.classList.contains('km-layer'),
+        isInBody: layer.parentElement === document.body,
+        isInTree: tree.shadowRoot!.contains(pad),
+        isAboveTree: r.top + r.height / 2 < tree.getBoundingClientRect().top,   // the old in-tree pad was clipped here
+        isHit: hit === pad,
+        bg: getComputedStyle(pad).backgroundColor,
+        dir: getComputedStyle(pad).direction,
+      };
+    });
+    expect(where).toMatchObject({ isLayer: true, isInBody: true, isInTree: false, isAboveTree: true, isHit: true, dir: 'ltr' });
+    expect(where.bg).not.toBe('rgba(0, 0, 0, 0)');
+    await page.evaluate(() => (window as any).drag.dropOnPad('before'));
+    await expect.poll(() => logLines(page, LOG)).toContain('node-drop:4:before:1');
+    await step(page, 'end');
+    await expect(page.locator('.km-layer')).toHaveCount(0);
+  });
+
+  test('the pads layer takes the host tokens (cssVars) and the custom CSS (customStyles)', async ({ page }) => {
+    await load(page, '?drop-zone-mode=floating');
+    await page.evaluate(() => {
+      const t = document.getElementById('tree')!;
+      t.style.setProperty('--wtv-drop-zone-before-bg', 'rgb(1, 2, 3)');
+      (t as any).customStyles = '.wtv__drop-zone--after { outline: 3px solid rgb(4, 5, 6); }';
+    });
+    await step(page, 'start', '4');
+    await step(page, 'over', '1', 0.8);
+    const styles = await page.evaluate(() => {
+      const d = (window as any).drag;
+      return { before: getComputedStyle(d.pad('before')).backgroundColor, after: getComputedStyle(d.pad('after')).outlineColor };
+    });
+    expect(styles).toEqual({ before: 'rgb(1, 2, 3)', after: 'rgb(4, 5, 6)' });
+    await step(page, 'end');
+  });
+
   test('drop-zone-max-width is a CSS length (toCssLength): "8rem" passes through as-is', async ({ page }) => {
     await load(page, '?drop-zone-mode=floating&drop-zone-max-width=8rem');
     expect(await page.evaluate(() => (document.querySelector('web-treeview') as any).dropZoneMaxWidth)).toBe('8rem');

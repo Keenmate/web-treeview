@@ -35,6 +35,7 @@ import {
   toFunction,
   adoptStyles,
   createCustomStyles,
+  type CustomStylesOptions,
   watchPageDrag,
   applyArmedState,
   keepScrollAcrossMove,
@@ -43,6 +44,7 @@ import {
   type EventDef,
 } from '@keenmate/web-components-core';
 import { menuPresentationInputs, menuPresentationOptions } from '@keenmate/web-components-core/menu';
+import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-components-core/positioning';
 import { WebTreeView, createTreeViewController } from './treeview';
 import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
@@ -680,8 +682,32 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     cfg.controller = this.controller;
     // menu-presentation / menu-side are on:'none' (read at open): hand the tree a live reader of the effective config.
     cfg.getMenuPresentationOptions = () => menuPresentationOptions(this.config);
+    cfg.openLayer = this.#openLayer;
     return cfg;
   }
+
+  /**
+   * The drop pads' / touch ghost's core layer (SPEC §12.29), with this element's custom CSS adopted into
+   * the layer root too — a second `createCustomStyles` on it (`shouldShareLayers: false`: it isn't one of
+   * the host's managed layers), destroyed with the layer.
+   */
+  #openLayer = (_host: HTMLElement, options: LayerOptions): Layer => {
+    const layer = createLayer(this, options);
+    const styles = createCustomStyles<TreeViewContext<T>>(this, layer.layer.shadowRoot!, {
+      ...this.#customStylesOptions(),
+      shouldShareLayers: false,
+    });
+    return {
+      element: layer.element,
+      layer: layer.layer,
+      place: (rect) => layer.place(rect),
+      syncTheme: () => layer.syncTheme(),
+      destroy: () => {
+        styles.destroy();
+        layer.destroy();
+      },
+    };
+  };
 
   // ── custom styles (core createCustomStyles, SPEC §12.8) ─────────────────
 
@@ -693,14 +719,19 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   #applyCustomStyles(): void {
     if (this.#customStyles) return this.#customStyles.refresh();
-    this.#customStyles = createCustomStyles<TreeViewContext<T>>(this, this.#shadow, { // writes both layers now
+    this.#customStyles = createCustomStyles<TreeViewContext<T>>(this, this.#shadow, this.#customStylesOptions()); // writes both layers now
+  }
+
+  /** The custom-CSS options — the shadow root's and every layer's (drop pads, touch ghost). */
+  #customStylesOptions(): CustomStylesOptions<TreeViewContext<T>> {
+    return {
       cssClass: 'wtv-custom-styles',
       getContext: () => this.withContext({}) as unknown as TreeViewContext<T>,
       getInstanceStyles: () => ({
         css: this.config.customStyles as string | null | undefined,
         callback: this.config.getCustomStylesCallback as ((ctx: TreeViewContext<T>) => string | null | undefined) | null | undefined,
       }),
-    });
+    };
   }
 
   // ── non-input property: renderer (special — swaps live without a rebuild) ──

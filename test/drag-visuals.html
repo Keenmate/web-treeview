@@ -84,6 +84,21 @@
                 el.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) }));
                 await frame();
             },
+            // The floating drop pads live in a core layer (body > .km-layer, its own shadow root).
+            pad(pos) {
+                for (const layer of document.querySelectorAll('.km-layer')) {
+                    const el = layer.shadowRoot?.querySelector(`.wtv__drop-zone--${pos}`);
+                    if (el) return el;
+                }
+                return null;
+            },
+            async dropOnPad(pos) {
+                const el = this.pad(pos);
+                for (const type of ['dragenter', 'dragover', 'drop']) {
+                    el.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, 0.5) }));
+                }
+                await frame();
+            },
             async end() {
                 row(src)?.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true, composed: true }));
                 await frame();

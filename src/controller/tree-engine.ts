@@ -38,6 +38,8 @@ import {
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
 import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
+import { openTreeLayer, type TreeLayerOpener } from '../renderer/layers';
+import type { Layer } from '@keenmate/web-components-core/positioning';
 import { animateOut, findScrollContainer, isRtl, readAnimationMs, scrollContainerToBox, scrollIntoContainer, type AnimateOutHandle } from '@keenmate/web-components-core';
 import type {
   NodeCallbacks,
@@ -367,11 +369,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     /** A long-press landed on a NON-draggable node: we show the held 🚫 badge
      *  instead of starting a drag, and swallow touchmove so it stays put. */
     isDenied: boolean;
-    ghostElement: HTMLElement | null;
+    /** The touch drag ghost's core layer (placed at the finger). */
+    ghostLayer: Layer | null;
     currentDropTarget: LTreeNode<any> | null;
   } = {
     node: null, startX: 0, startY: 0,
-    isDragging: false, isDenied: false, ghostElement: null, currentDropTarget: null
+    isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
   };
   private touchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -411,6 +414,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // Container element (set by the host component for scrollToPath)
   containerElement: HTMLElement | null = null;
+  /** Opens the touch ghost's core layer (set by the renderer; `<web-treeview>` adds its custom CSS). */
+  layerOpener: TreeLayerOpener | null = null;
   /** Where this engine logs (the element's instance loggers when hosted). */
   log: TreeLoggers = defaultTreeLoggers;
 
@@ -4738,7 +4743,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this.removeGhostElement();
       this._clearDragDenied();
       if (this._dropDeniedTimer) { clearTimeout(this._dropDeniedTimer); this._dropDeniedTimer = null; }
-      this._domScope().querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
     }
     if (this.flatRenderAnimationFrame) {
       cancelAnimationFrame(this.flatRenderAnimationFrame);
@@ -5689,7 +5693,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       startY: touch.clientY,
       isDragging: false,
       isDenied: false,
-      ghostElement: null,
+      ghostLayer: null,
       currentDropTarget: null
     };
 
@@ -5778,18 +5782,10 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     event.preventDefault();
 
-    if (this.touchDragState.ghostElement) {
-      this.touchDragState.ghostElement.style.left = `${touch.clientX}px`;
-      this.touchDragState.ghostElement.style.top = `${touch.clientY}px`;
-    }
+    this._placeGhost(touch.clientX, touch.clientY);
 
-    if (this.touchDragState.ghostElement) {
-      this.touchDragState.ghostElement.style.pointerEvents = 'none';
-    }
+    // The ghost's layer is `pointer-events: none` — the hit test sees through it.
     const elementUnderTouch = this._elementFromPoint(touch.clientX, touch.clientY);
-    if (this.touchDragState.ghostElement) {
-      this.touchDragState.ghostElement.style.pointerEvents = '';
-    }
 
     this.updateDropTarget(elementUnderTouch);
   }
@@ -5799,10 +5795,6 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     if (this.touchDragState.isDragging && this._draggedNode) {
       const touch = event.changedTouches[0];
-
-      if (this.touchDragState.ghostElement) {
-        this.touchDragState.ghostElement.style.display = 'none';
-      }
 
       const dropElement = this._elementFromPoint(touch.clientX, touch.clientY);
       const dropNode = this.findNodeFromElement(dropElement);
@@ -5837,7 +5829,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._clearDragDenied();
     this.touchDragState = {
       node: null, startX: 0, startY: 0,
-      isDragging: false, isDenied: false, ghostElement: null, currentDropTarget: null
+      isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
     };
     this._draggedNode = null;
     this._isDragInProgress = false;
@@ -5929,18 +5921,25 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   private createGhostElement(node: LTreeNode<any>, x: number, y: number) {
     this.removeGhostElement();
-    this._domScope().querySelectorAll('.wtv__touch-ghost').forEach(el => el.remove());
+    if (!this.containerElement) return;
 
+    // A core layer outside the tree (SPEC §12.29): never clipped by the tree's overflow; its
+    // own shadow root carries the ghost CSS + the host's --wtv-* tokens and theme.
+    const layer = openTreeLayer(this.containerElement, {
+      className: 'wtv__drag-layer',
+      zIndexToken: '--wtv-z-index-ghost',
+    }, this.layerOpener);
     const ghost = document.createElement('div');
     ghost.className = 'wtv__touch-ghost';
     ghost.textContent = this.tree.getNodeDisplayValue(node);
-    ghost.style.left = `${x}px`;
-    ghost.style.top = `${y}px`;
-    // Inside the tree's own container, not <body>: the ghost's CSS and --wtv-*
-    // variables live in the shadow root, and the container carries the
-    // per-instance data-theme. position: fixed still places it by viewport.
-    (this.containerElement ?? document.body).appendChild(ghost);
-    this.touchDragState.ghostElement = ghost;
+    layer.element.append(ghost);
+    this.touchDragState.ghostLayer = layer;
+    this._placeGhost(x, y);
+  }
+
+  /** Put the ghost's (0 × 0) layer at the finger; the ghost centres itself on it. */
+  private _placeGhost(x: number, y: number) {
+    this.touchDragState.ghostLayer?.place({ top: y, left: x, width: 0, height: 0 });
   }
 
   /** The tree's own DOM, for lookups by path: the .wtv__container (inside the
@@ -5958,9 +5957,9 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   private removeGhostElement() {
-    if (this.touchDragState.ghostElement) {
-      this.touchDragState.ghostElement.remove();
-      this.touchDragState.ghostElement = null;
+    if (this.touchDragState.ghostLayer) {
+      this.touchDragState.ghostLayer.destroy();
+      this.touchDragState.ghostLayer = null;
     }
   }
 

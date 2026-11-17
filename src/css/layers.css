@@ -1,0 +1,193 @@
+/* ==============================================================================
+   LAYERS — the floating drop pads and the touch drag ghost
+   ==============================================================================
+   Rendered in core `createLayer()` layers (SPEC §12.29), outside the tree, so the tree's
+   `overflow` can't clip them. This sheet is adopted into each layer's own shadow root; the
+   `--wtv-*` tokens it reads are copied from the host (`cssVars`, see renderer/layers.ts). */
+
+/* Touch drag ghost — centred on the finger: its layer is placed at the touch point (0 × 0). */
+.wtv__touch-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: var(--wtv-spacing-md) var(--wtv-spacing-lg);
+  background: var(--wtv-touch-ghost-bg);
+  color: var(--wtv-touch-ghost-text-color);
+  border-radius: var(--wtv-border-radius-sm);
+  font-size: var(--wtv-font-size-sm);
+  pointer-events: none;
+  box-shadow: var(--wtv-touch-ghost-box-shadow);
+  white-space: nowrap;
+  max-width: calc(20 * var(--wtv-rem));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==============================================================================
+   DROP ZONES
+   ============================================================================== */
+
+.wtv__drop-zones {
+  /* The layer's content box, placed over the hovered row (layer.place); the layer itself lets
+     events through to the row, the pads opt back in. */
+  pointer-events: none;
+  overflow: visible;
+}
+
+.wtv__drop-zone {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(0.6 * var(--wtv-rem)) var(--wtv-spacing-lg);
+  font-size: var(--wtv-font-size-xs);
+  font-weight: var(--wtv-font-weight-semibold);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: var(--wtv-z-index-dropdown);
+  transition: all var(--wtv-transition-normal) var(--wtv-ease-standard);
+  border-radius: var(--wtv-drop-zone-border-radius);
+}
+
+.wtv__drop-zone.wtv__drop-zone--before {
+  background: var(--wtv-drop-zone-before-bg);
+  color: var(--wtv-drop-zone-before-text-color);
+}
+.wtv__drop-zone.wtv__drop-zone--before.wtv__drop-zone--active {
+  background: var(--wtv-drop-zone-before-bg-active);
+  color: var(--wtv-drop-zone-before-text-color-active);
+  box-shadow: var(--wtv-drop-zone-before-box-shadow-active);
+}
+
+.wtv__drop-zone.wtv__drop-zone--after {
+  background: var(--wtv-drop-zone-after-bg);
+  color: var(--wtv-drop-zone-after-text-color);
+}
+.wtv__drop-zone.wtv__drop-zone--after.wtv__drop-zone--active {
+  background: var(--wtv-drop-zone-after-bg-active);
+  color: var(--wtv-drop-zone-after-text-color-active);
+  box-shadow: var(--wtv-drop-zone-after-box-shadow-active);
+}
+
+.wtv__drop-zone.wtv__drop-zone--child {
+  background: var(--wtv-drop-zone-child-bg);
+  color: var(--wtv-drop-zone-child-text-color);
+}
+.wtv__drop-zone.wtv__drop-zone--child.wtv__drop-zone--active {
+  background: var(--wtv-drop-zone-child-bg-active);
+  color: var(--wtv-drop-zone-child-text-color-active);
+  box-shadow: var(--wtv-drop-zone-child-box-shadow-active);
+}
+
+/* Layout: "around" */
+.wtv__drop-zones--around .wtv__drop-zone--before {
+  top: 0; inset-inline-start: var(--drop-zone-start, 33%); inset-inline-end: 0;
+  transform: translateY(-100%);
+}
+.wtv__drop-zones--around .wtv__drop-zone--after {
+  bottom: 0;
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 2);
+  transform: translateY(100%);
+}
+.wtv__drop-zones--around .wtv__drop-zone--child {
+  bottom: 0;
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 2);
+  inset-inline-end: 0;
+  transform: translateY(100%);
+}
+
+/* Layout: "before" — all 3 zones in a row above (before) the node */
+.wtv__drop-zones--before .wtv__drop-zone--before,
+.wtv__drop-zones--before .wtv__drop-zone--after,
+.wtv__drop-zones--before .wtv__drop-zone--child {
+  top: 0;
+  transform: translateY(-100%);
+}
+.wtv__drop-zones--before .wtv__drop-zone--before {
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  border-radius: 0 0 0 0;
+}
+.wtv__drop-zones--before .wtv__drop-zone--after {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 3);
+  border-radius: 0;
+}
+.wtv__drop-zones--before .wtv__drop-zone--child {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-end: 0;
+  border-radius: 0;
+}
+
+/* Layout: "after" — all 3 zones in a row below (after) the node */
+.wtv__drop-zones--after .wtv__drop-zone--before,
+.wtv__drop-zones--after .wtv__drop-zone--after,
+.wtv__drop-zones--after .wtv__drop-zone--child {
+  bottom: 0;
+  transform: translateY(100%);
+}
+.wtv__drop-zones--after .wtv__drop-zone--before {
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) * 2 / 3);
+}
+.wtv__drop-zones--after .wtv__drop-zone--after {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) / 3);
+  inset-inline-end: calc((100% - var(--drop-zone-start, 33%)) / 3);
+}
+.wtv__drop-zones--after .wtv__drop-zone--child {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) + (100% - var(--drop-zone-start, 33%)) * 2 / 3);
+  inset-inline-end: 0;
+}
+
+/* Layout: "wave" */
+.wtv__drop-zones--wave .wtv__drop-zone--before,
+.wtv__drop-zones--wave .wtv__drop-zone--after,
+.wtv__drop-zones--wave .wtv__drop-zone--child {
+  inset-inline-start: var(--drop-zone-start, 33%);
+  inset-inline-end: auto;
+  width: var(--drop-zone-max-width, 120px);
+  max-width: var(--drop-zone-max-width, 120px);
+  height: auto;
+  transform: none;
+}
+.wtv__drop-zones--wave .wtv__drop-zone--before {
+  top: 0; bottom: auto;
+  transform: translateY(-100%);
+  border-radius: 0 0 0 0;
+}
+.wtv__drop-zones--wave .wtv__drop-zone--child {
+  top: 0; bottom: 0;
+  border-radius: 0;
+}
+.wtv__drop-zones--wave .wtv__drop-zone--after {
+  top: auto; bottom: 0;
+  transform: translateY(100%);
+  border-radius: 0;
+}
+
+/* Layout: "wave2" */
+.wtv__drop-zones--wave2 .wtv__drop-zone--before,
+.wtv__drop-zones--wave2 .wtv__drop-zone--after,
+.wtv__drop-zones--wave2 .wtv__drop-zone--child {
+  inset-inline-end: auto;
+  width: var(--drop-zone-max-width, 120px);
+  max-width: var(--drop-zone-max-width, 120px);
+  height: auto;
+}
+.wtv__drop-zones--wave2 .wtv__drop-zone--before {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) - 7%);
+  top: 10%; bottom: auto; height: 80%;
+  transform: translateY(-100%);
+}
+.wtv__drop-zones--wave2 .wtv__drop-zone--child {
+  inset-inline-start: var(--drop-zone-start, 33%);
+  top: 10%; bottom: 10%;
+  border-radius: 0;
+}
+.wtv__drop-zones--wave2 .wtv__drop-zone--after {
+  inset-inline-start: calc(var(--drop-zone-start, 33%) - 7%);
+  top: auto; bottom: 10%; height: 80%;
+  transform: translateY(100%);
+}

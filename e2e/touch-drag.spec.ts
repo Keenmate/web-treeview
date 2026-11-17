@@ -27,7 +27,7 @@ async function touchAt(page: Page, type: 'touchstart' | 'touchmove' | 'touchend'
   }, { type, path, dx });
 }
 
-test('touch drag: styled ghost inside the shadow root, highlight and drop on the target', async ({ page }) => {
+test('touch drag: styled ghost in a core layer, highlight and drop on the target', async ({ page }) => {
   await page.goto(PAGE);
   const host = page.locator('#tree-single');
   await expect(host.locator('.wtv__node').first()).toBeVisible();
@@ -35,14 +35,23 @@ test('touch drag: styled ghost inside the shadow root, highlight and drop on the
 
   await touchAt(page, 'touchstart', '1.1');
   // The ghost appears after the long-press delay (300ms default).
-  const ghost = host.locator('.wtv__touch-ghost');
+  // A core layer (SPEC §12.29): body > .km-layer, its own shadow root, `pointer-events: none`
+  // (the hit test sees through it), so the tree's overflow can't clip it.
+  const ghost = page.locator('.km-layer .wtv__touch-ghost');
   await expect(ghost).toHaveCount(1);
-  expect(await page.locator('body > .wtv__touch-ghost').count()).toBe(0);
+  expect(await host.evaluate((h) => !!h.shadowRoot!.querySelector('.wtv__touch-ghost'))).toBe(false);
   const style = await ghost.evaluate((g) => {
     const cs = getComputedStyle(g);
-    return { position: cs.position, bg: cs.backgroundColor, shadow: cs.boxShadow };
+    const layer = (g.getRootNode() as ShadowRoot).host as HTMLElement;
+    return {
+      isInBody: layer.parentElement === document.body,
+      layerPointer: getComputedStyle(layer).pointerEvents,
+      layerPosition: getComputedStyle(layer).position,
+      bg: cs.backgroundColor,
+      shadow: cs.boxShadow,
+    };
   });
-  expect(style.position).toBe('fixed');
+  expect(style).toMatchObject({ isInBody: true, layerPointer: 'none', layerPosition: 'fixed' });
   expect(style.bg).not.toBe('rgba(0, 0, 0, 0)');
   expect(style.shadow).not.toBe('none');
 
@@ -54,4 +63,5 @@ test('touch drag: styled ghost inside the shadow root, highlight and drop on the
   await expect(page.getByTestId('single-drop-count')).toHaveText('1');
   await expect(page.getByTestId('single-drop-dragged')).toHaveText('Alpha-1');
   await expect(ghost).toHaveCount(0);
+  await expect(page.locator('.km-layer')).toHaveCount(0);
 });

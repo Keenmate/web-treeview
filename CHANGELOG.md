@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — drop pads and the touch ghost are core layers (2026-11-17)
+- The floating drop pads (`drop-zone-mode="floating"`) and the touch drag ghost render in core `createLayer()`
+  layers (SPEC §12.29) — a `div.km-layer` in `<body>` (or the open modal / popover the tree sits in) with its own
+  shadow root — instead of hand-built `position: fixed` elements inside the tree. An `overflow: hidden` / scrolling
+  ancestor no longer clips the pads that stick out of the row (the first row's "before" pad), and a transformed
+  ancestor no longer shifts them. Same look and positions: the `--wtv-drop-zone-*` / `--wtv-touch-ghost-*` /
+  z-index tokens are copied from the host (instance overrides included), the theme attributes come along, and the
+  element's `customStyles` / `getCustomStylesCallback` CSS is adopted into the layer too. The pad / ghost rules
+  moved from `tree.css` to `css/layers.css`.
+- Page CSS or tests that looked for `.wtv__drop-zones` / `.wtv__touch-ghost` inside the tree's shadow root find
+  them in the layer's shadow root now (`document.querySelector('.km-layer').shadowRoot`).
+
 ### Changed — render-callback results read by core `renderSlot` (2026-11-17)
 - **BREAKING: `renderNodeCallback`, `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyStateCallback` and
   `renderEmptyZoneCallback` RETURN their content instead of filling an element** (core `renderSlot`, SPEC §12.35):

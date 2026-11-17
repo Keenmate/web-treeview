@@ -123,6 +123,7 @@ import type {
 import type { PasteResult } from './clipboard';
 import type { TreeNavigationOverrides } from './navigation';
 import type { NodeTitleOverflow, ContainerSize } from './renderer/types';
+import type { TreeLayerOpener } from './renderer/layers';
 import type { SearchOptions } from 'flexsearch';
 import type {
   TreeViewController,
@@ -587,6 +588,9 @@ export interface TreeViewConfig<T = any> {
   menuSide?: MenuDrawerSide | null;
   /** @internal `<web-treeview>` wiring: the live `{ presentation, side }` (its effective config) at menu open. */
   getMenuPresentationOptions?: () => { presentation: MenuPresentation; side: MenuDrawerSide };
+  /** @internal `<web-treeview>` wiring: opens the drop pads' / touch ghost's core layer and adopts the
+   *  element's custom CSS into it. Standalone: plain core `createLayer()` on the container's host. */
+  openLayer?: TreeLayerOpener | null;
 
   // Context (passed by <web-treeview>; a standalone WebTreeView defaults them)
   /** The host element — `element` on every ctx / event detail. */
@@ -761,7 +765,7 @@ export interface ScrollToPathOptions {
 export type TreeViewResponsiveMap<T = any> = ResponsiveMap<TreeViewConfig<T>>;
 
 /** {@link TreeViewConfig} members that are engine wiring or live state, not `<web-treeview>` inputs. */
-type TreeViewEngineOnlyKey = `on${string}` | 'hostElement' | 'controller' | 'getMenuPresentationOptions' | 'focusedNode' | 'selectedPaths' | 'checkedPaths';
+type TreeViewEngineOnlyKey = `on${string}` | 'hostElement' | 'controller' | 'getMenuPresentationOptions' | 'openLayer' | 'focusedNode' | 'selectedPaths' | 'checkedPaths';
 
 /**
  * The `<web-treeview>` input properties (core `docs/usage.md` → "Typing the properties"): exactly the

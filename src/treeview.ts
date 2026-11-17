@@ -988,6 +988,7 @@ export class WebTreeView<T = any> {
       activateContextMenuItem: (item, ctx, trigger, event) => this.activateMenuItem(item, ctx, trigger, event),
       // Read at every open: <web-treeview> supplies its live effective config; standalone = these options.
       menuPresentationOptions: () => this.options.getMenuPresentationOptions?.() ?? menuPresentationOptions(this.options),
+      openLayer: o.openLayer,
       onContainerResize: (size, deviceClass) => {
         this.lastContainerSize = { width: size.width, height: size.height };
         this.options.onContainerResize?.(this.ctx({ size: { width: size.width, height: size.height }, deviceClass }));

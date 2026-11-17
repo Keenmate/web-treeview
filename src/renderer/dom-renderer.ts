@@ -36,6 +36,8 @@ import {
 import type { NodeRenderContext } from '../controller/types';
 import type { NodeTitleOverflow } from './types';
 import { defaultTreeLoggers, type TreeLoggers } from '../logger';
+import { openTreeLayer } from './layers';
+import type { Layer } from '@keenmate/web-components-core/positioning';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
  *  anything else (emoji, symbol, text) is rendered as the element's text. */
@@ -170,6 +172,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Set controller container for scrollToPath
     controller.containerElement = container;
+    controller.layerOpener = config.openLayer ?? null;
 
     // Responsive env for NodeRenderContext. Seed synchronously so the initial render has
     // the right device class; then observe — only a device-class FLIP forces a re-render.
@@ -303,6 +306,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this._fullRender(this.controller.getSnapshot());
       }
     }
+    if ('openLayer' in config && this.controller) this.controller.layerOpener = config.openLayer ?? null;
     if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
     if ('isReadonly' in config) this.container?.classList.toggle('wtv__container--readonly', !!config.isReadonly);
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
@@ -321,6 +325,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   destroy(): void {
+    this._closeDropPads();
     this.unsubState?.();
     this.unsubConfig?.();
     this.unsubState = null;
@@ -372,6 +377,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._isActive = false;
     this._closeMenu();
     this._closeReveal();
+    this._closeDropPads();
     for (const h of this.tooltips.values()) h.hide();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
@@ -856,18 +862,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         }
         // Refresh position for scroll tracking
         const path = parent.getAttribute('data-tree-path');
-        if (path) {
-          const key = this._findKeyByPath(path);
-          const hoveredEl = this.nodeElements.get(key);
-          const row = hoveredEl?.querySelector('.wtv__node-row') as HTMLElement;
-          if (row) {
-            const rect = row.getBoundingClientRect();
-            parent.style.top = `${rect.top}px`;
-            parent.style.left = `${rect.left}px`;
-            parent.style.width = `${rect.width}px`;
-            parent.style.height = `${rect.height}px`;
-          }
-        }
+        if (path) this._placeDropPads(path);
       }
       return;
     }
@@ -909,8 +904,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       target: target.tagName + '.' + target.className,
       related: related ? related.tagName + '.' + related.className : null
     });
-    // Don't clear hover when cursor moves to a floating drop zone
-    if (related?.closest?.('.wtv__drop-zones')) return;
+    // Don't clear hover when cursor moves to a floating drop zone (its layer, retargeted)
+    if (related && this._dropPads && (related === this._dropPads.layer || this._dropPads.layer.contains(related))) return;
     const contentEl = target.closest('.wtv__node-content') as HTMLElement;
     if (contentEl) {
       const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
@@ -939,7 +934,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.controller.isTreeDropZoneEnabled) event.stopPropagation();
     const target = event.target as HTMLElement;
 
-    // Check for drop zone (zones are appended to bodyEl, not inside .wtv__node)
+    // Check for drop zone (the pads live in their own layer, listened to like the body)
     const zoneEl = target.closest('.wtv__drop-zone') as HTMLElement;
     if (zoneEl) {
       const zonesContainer = zoneEl.closest('.wtv__drop-zones') as HTMLElement;
@@ -1993,34 +1988,43 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Drop zones (floating mode) ─────────────────────────────────────
 
+  /** The floating drop pads' core layer (`createLayer`), open while a drag hovers a row in `floating` mode. */
+  private _dropPads: Layer | null = null;
+
+  private _closeDropPads(): void {
+    if (!this._dropPads) return;
+    const el = this._dropPads.element;
+    el.removeEventListener('dragover', this._onBodyDragOver);
+    el.removeEventListener('drop', this._onBodyDrop);
+    this._dropPads.destroy();
+    this._dropPads = null;
+  }
+
+  /** Lay the pads' layer over the row of `path` (viewport coordinates, re-read on every pad dragover). */
+  private _placeDropPads(path: string): void {
+    const row = this.nodeElements.get(this._findKeyByPath(path))?.querySelector('.wtv__node-row') as HTMLElement | null;
+    if (row && this._dropPads) this._dropPads.place(row.getBoundingClientRect());
+  }
+
   private _updateDropZones(snapshot: TreeEngineSnapshot<T>): void {
-    if (!this.bodyEl || !this.controller) return;
+    if (!this.bodyEl || !this.controller || !this.container) return;
 
     const shouldShow =
       this.lastNodeConfig?.dropZoneMode === 'floating' &&
       snapshot.isDragInProgress &&
-      !!snapshot.hoveredNodeForDropPath;
+      !!snapshot.hoveredNodeForDropPath &&
+      this._isActive;
 
-    const existing = this.bodyEl.querySelector('.wtv__drop-zones') as HTMLElement | null;
-    const existingPath = existing?.getAttribute('data-tree-path') ?? null;
+    const existingPath = this._dropPads?.element.getAttribute('data-tree-path') ?? null;
 
     // If zones already exist for the same hovered path, just update position — don't recreate
-    if (shouldShow && existing && existingPath === snapshot.hoveredNodeForDropPath) {
-      const key = this._findKeyByPath(snapshot.hoveredNodeForDropPath!);
-      const hoveredEl = this.nodeElements.get(key);
-      const row = hoveredEl?.querySelector('.wtv__node-row') as HTMLElement;
-      if (row) {
-        const rect = row.getBoundingClientRect();
-        existing.style.top = `${rect.top}px`;
-        existing.style.left = `${rect.left}px`;
-        existing.style.width = `${rect.width}px`;
-        existing.style.height = `${rect.height}px`;
-      }
+    if (shouldShow && this._dropPads && existingPath === snapshot.hoveredNodeForDropPath) {
+      this._placeDropPads(existingPath);
       return;
     }
 
     // Remove stale zones (different path or conditions no longer met)
-    if (existing) existing.remove();
+    this._closeDropPads();
 
     if (!shouldShow) return;
 
@@ -2035,21 +2039,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const row = hoveredEl.querySelector('.wtv__node-row') as HTMLElement;
     if (!row) return;
 
-    const rect = row.getBoundingClientRect();
-
     const allowedPositions = this.controller.getNodeAllowedDropPositions(node);
     const layout = this.lastNodeConfig?.dropZoneLayout || 'around';
     const start = this.lastNodeConfig?.dropZoneStart ?? 33;
     const maxWidth = this.lastNodeConfig?.dropZoneMaxWidth ?? '120px';
 
-    const zones = document.createElement('div');
-    zones.className = `wtv__drop-zones wtv__drop-zones--${layout}`;
+    // A core layer outside the tree (SPEC §12.29): the tree's / a scroll parent's overflow can't clip
+    // the pads (the before / after ones sit just outside the row).
+    const pads = openTreeLayer(this.container, {
+      className: `wtv__drop-zones wtv__drop-zones--${layout}`,
+      zIndexToken: '--wtv-z-index-drop-zones',
+    }, this.config.openLayer);
+    const zones = pads.element;
     zones.setAttribute('data-tree-path', snapshot.hoveredNodeForDropPath!);
-    zones.style.position = 'fixed';
-    zones.style.top = `${rect.top}px`;
-    zones.style.left = `${rect.left}px`;
-    zones.style.width = `${rect.width}px`;
-    zones.style.height = `${rect.height}px`;
     zones.style.setProperty('--drop-zone-start', typeof start === 'number' ? `${start}%` : start);
     zones.style.setProperty('--drop-zone-max-width', maxWidth);
 
@@ -2062,7 +2064,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       zones.appendChild(zone);
     }
 
-    this.bodyEl.appendChild(zones);
+    // The pads aren't in the body any more — they take the body's dragover / drop handlers themselves.
+    zones.addEventListener('dragover', this._onBodyDragOver);
+    zones.addEventListener('drop', this._onBodyDrop);
+    this._dropPads = pads;
+    pads.place(row.getBoundingClientRect());
   }
 
   // ── Context menu (core /menu) ───────────────────────────────────────

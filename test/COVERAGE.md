@@ -155,7 +155,8 @@ Chromium and Firefox run them.
 | Cross-tree `dragged` refs resolve to the source nodes (NOTES #26) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html?multi` |
 | `isDropAllowed=false`, `drag-drop-mode` self/cross | ✓ | `drag-drop.spec.ts` | `drag-drop.html` |
 | Esc during drag restores selection | ✓ | `drag-esc-cancel.spec.ts` | `drag-esc-cancel.html` |
-| Touch drag (ghost, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
+| Touch drag (ghost in a core `.km-layer`, `pointer-events: none`, highlight, drop) | ✓ | `touch-drag.spec.ts` | `drag-drop.html` |
+| Floating drop pads as a core layer: in `<body>`, not clipped by an `overflow: hidden` ancestor, pad drop lands; host tokens (`cssVars`) + `customStyles` reach the layer | ✓ | `drag-visuals.spec.ts` | `drag-visuals.html` |
 | `beforeDropCallback` false / redirect / copy / `DropGroup[]` / async | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | `beforeDragStartCallback` prune + veto | ✓ | `drag-hooks.spec.ts` | `drag-hooks.html` |
 | Cross-tree move (consumer-owned, `dropped=null`), Ctrl-drag copy same/cross tree, `allow-copy` | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |

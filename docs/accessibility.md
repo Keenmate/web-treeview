@@ -40,7 +40,16 @@ The tree maintains three independent state sets — see [usage.md](./usage.md) f
 
 ## ARIA
 
-The component uses semantic markup but does **not** currently apply the full WAI-ARIA `role="tree"` / `role="treeitem"` model. Tracked as a follow-up. For now the keyboard-navigation model matches the pattern even though the role declarations are not in place — screen reader users will hear the visible labels but not the tree-structure announcements.
+The tree follows the WAI-ARIA tree pattern with **`aria-activedescendant`**: focus stays on the tree body (one tab stop) and the active row is referenced, never focused — rows are virtual and may not exist in the DOM.
+
+| Element | Role / state |
+|---|---|
+| Tree body (`.wtv__tree`, `tabindex="0"`) | `role="tree"`, `aria-label` = `labels.treeLabel` (`'Tree'`), `aria-multiselectable="true"` in `selection-mode="multiple"`, `aria-activedescendant` = the focused node's row, `aria-disabled="true"` when `disabled` |
+| Row (`.wtv__node`) | `role="treeitem"`, `aria-level` (1 = top level), `aria-posinset` / `aria-setsize` (among the visible siblings — counted over the whole tree, not the rendered virtual window), `aria-expanded` (parents only), `aria-selected`, `aria-checked` (`true` / `false` / `mixed` for a tri-state parent; only on rows with a checkbox) |
+
+Rows are rendered flat (siblings in one container, indented by level), so there are no `role="group"` containers — `aria-level` / `aria-posinset` / `aria-setsize` carry the structure. `aria-activedescendant` and the row ids come from core `/a11y` `createActiveDescendant` (ARIA-only: the tree keeps all its own keys above); the attribute is removed while the focused node's row isn't rendered (scrolled out of a virtual window, inside a collapsed branch). Keyboard moves bring the row into view first (`beforeScrollCallback` applies), so the reference resolves.
+
+Row ids are `{treeId}-{node id}`; keep node ids unique per tree (a pasted copy that keeps its source id shares the row id).
 
 ## Drag-and-drop accessibility
 
@@ -52,4 +61,4 @@ Long-press (300 ms) initiates a drag from a touch device. The touch ghost elemen
 
 ## Tested patterns
 
-The Playwright e2e suite covers the keyboard navigation paths above. Skipped tests are listed at the bottom of each spec file with a one-line reason. `keyboard-nav.spec.ts` covers every key above, including PageUp/PageDown, the Shift-extend variants and `navigationOverrides`.
+The Playwright e2e suite covers the keyboard navigation paths above. Skipped tests are listed at the bottom of each spec file with a one-line reason. `keyboard-nav.spec.ts` covers every key above, including PageUp/PageDown, the Shift-extend variants and `navigationOverrides`; `aria-tree.spec.ts` covers the roles, row states and `aria-activedescendant` (also in a scrolled virtual tree).

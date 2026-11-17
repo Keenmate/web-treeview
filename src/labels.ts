@@ -20,6 +20,8 @@ export interface TreeViewLabels {
   dropHere: string;
   /** Accessible label of the trailing info button on a clipped node label (`nodeTitleOverflow: 'info'`). */
   showFullLabel: string;
+  /** Accessible name (`aria-label`) of the tree body (`role="tree"`). */
+  treeLabel: string;
   /** Built-in context-menu items. */
   copy: string;
   cut: string;
@@ -76,6 +78,7 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   loading: 'Loading…',
   dropHere: 'Drop here',
   showFullLabel: 'Show full label',
+  treeLabel: 'Tree',
   copy: 'Copy',
   cut: 'Cut',
   paste: 'Paste',

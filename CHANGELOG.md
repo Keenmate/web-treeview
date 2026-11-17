@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Accessibility — ARIA tree semantics (2026-11-18)
+- The tree body is `role="tree"` (`aria-label` from the new `labels.treeLabel`, default `'Tree'`;
+  `aria-multiselectable="true"` in `selection-mode="multiple"`) and every row is `role="treeitem"` with `aria-level`,
+  `aria-posinset` / `aria-setsize` (counted over all visible siblings, so they stay right in a virtual window),
+  `aria-expanded` (parents only), `aria-selected` and, with checkboxes, `aria-checked` (`mixed` for a tri-state parent).
+- Focus stays on the body; the focused node is `aria-activedescendant` through core `/a11y` `createActiveDescendant`
+  (SPEC §12.25, ARIA-only — every key binding is unchanged). Rows are flat, so there are no `role="group"` containers.
+
 ### Added — screen-reader announcements (2026-11-18)
 - The tree speaks through core `announce()` (SPEC §12.23, the page's one polite live region shared by every
   component): a settled search ("12 results" / "1 result" / "No results found" — not while the index is still

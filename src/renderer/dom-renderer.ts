@@ -17,6 +17,7 @@ import type { DropPosition } from '../ltree/types';
 import type { TreeMenuContext, TreeMenuItem } from '../interaction';
 import { openMenu, type MenuHandle } from '@keenmate/web-components-core/menu';
 import { matchesShortcut } from '@keenmate/web-components-core/actions';
+import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { createTooltip, createPopover, type TooltipHandle, type PopoverHandle } from '@keenmate/web-components-core/positioning';
 import {
   classifyDevice,
@@ -50,6 +51,15 @@ const ICON_CLASS_LIST = /^\s*-?[A-Za-z_][\w-]*(\s+-?[A-Za-z_][\w-]*)*\s*$/;
 function addClasses(el: HTMLElement, classes: string): void {
   for (const cls of classes.split(' ')) {
     if (cls) el.classList.add(cls);
+  }
+}
+
+/** Set (or with `null` remove) an attribute, touching the DOM only on a change. */
+function setAttr(el: Element, name: string, value: string | null): void {
+  if (value === null) {
+    if (el.hasAttribute(name)) el.removeAttribute(name);
+  } else if (el.getAttribute(name) !== value) {
+    el.setAttribute(name, value);
   }
 }
 
@@ -100,6 +110,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** The node object each row was rendered for — a path can be taken over by a
    *  different node (move away + move/insert into the same slot). */
   private nodeOfElement = new WeakMap<HTMLElement, LTreeNode<T>>();
+
+  /**
+   * ARIA tree (core `/a11y` `createActiveDescendant`, ARIA-only): focus stays on the
+   * `role="tree"` body (rows are virtual and may not exist) and the tree keeps all its own
+   * keys. Core owns `aria-activedescendant` + the row ids; the tree calls `setActive(row)`
+   * when the focused node (or its row element) changes. No core scroll: keyboard moves
+   * already reveal the row through `revealNode` (virtual-aware, `beforeScrollCallback`-gated).
+   */
+  private _activeDescendant: ActiveDescendant | null = null;
+  /** `aria-posinset` / `aria-setsize` per path, for the visible-node list they were built from. */
+  private _ariaPositions: Map<string, [number, number]> | null = null;
+  private _ariaPositionsOf: readonly LTreeNode<T>[] | null = null;
 
   // Subscriptions
   private unsubState: (() => void) | null = null;
@@ -156,6 +178,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Tree body
     this.bodyEl = document.createElement('div');
     this.bodyEl.className = 'wtv__tree';
+    this.bodyEl.setAttribute('role', 'tree');
+    this.bodyEl.setAttribute('aria-label', this._label('treeLabel'));
     this.container.appendChild(this.bodyEl);
 
     // Footer
@@ -182,6 +206,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Wire event delegation
     this._attachBodyListeners();
+    // After the body's tabindex="0" (core keeps an existing one). Input and listbox are the
+    // same element: the focused tree body owns the active descendant.
+    const body = this.bodyEl;
+    this._activeDescendant = createActiveDescendant(body, body, {
+      getItems: () => this._ariaRows(),
+      shouldHandleKeys: false,
+      shouldScroll: false,
+    });
     document.addEventListener('dragend', this._onDocumentDragEnd);
     this._isDisabled = false;
     this._applyDisabled(!!config.isDisabled);
@@ -235,6 +267,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!target) return;
     const emptyState = target.querySelector<HTMLElement>('.wtv__empty-state');
     if (emptyState) this._renderEmptyState(emptyState);
+    this.bodyEl?.setAttribute('aria-label', this._label('treeLabel'));
     const showFull = this._label('showFullLabel');
     for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
     // Only the built-in zone content carries this class (a custom result replaces it).
@@ -331,6 +364,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.unsubState = null;
     this.unsubConfig = null;
     this._detachBodyListeners();
+    this._activeDescendant?.destroy();
+    this._activeDescendant = null;
+    this._ariaPositions = null;
+    this._ariaPositionsOf = null;
     this._closeMenu();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
@@ -1142,8 +1179,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.vsSpacerEl.style.position = 'relative';
       this.vsSpacerEl.style.width = '100%';
 
+      this.vsSpacerEl.setAttribute('role', 'none');
+
       this.vsContentEl = document.createElement('div');
       this.vsContentEl.className = 'wtv__vs-content';
+      this.vsContentEl.setAttribute('role', 'none');
       this.vsContentEl.style.willChange = 'transform';
 
       // Move existing children into vsContentEl
@@ -1302,6 +1342,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Handle empty tree
     if (nodes.length === 0) {
       this._renderEmpty(snapshot);
+      this._syncActiveDescendant(snapshot);
       return;
     }
 
@@ -1310,6 +1351,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (emptyState) emptyState.remove();
     const emptyZone = target.querySelector('.wtv__empty-zone');
     if (emptyZone) emptyZone.remove();
+
+    if (this.bodyEl) setAttr(this.bodyEl, 'aria-multiselectable', this.controller.selectionMode === 'multiple' ? 'true' : null);
+    const positions = this._ariaPositionMap();
 
     // Build/update nodes
     for (let i = 0; i < nodes.length; i++) {
@@ -1372,6 +1416,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this.nodeOfElement.set(el, node);
       }
 
+      this._applyRowAria(el, node, snapshot, positions);
+
       // Ensure correct order — ensure the element is parented to the render target
       const currentChild = target.children[i];
       if (currentChild !== el) {
@@ -1387,6 +1433,77 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this._destroyTooltip(key);
       }
     }
+    this._syncActiveDescendant(snapshot);
+  }
+
+  // ── ARIA tree ───────────────────────────────────────────────────────
+
+  /** The rendered `role="treeitem"` rows, in order (core `getItems`). */
+  private _ariaRows(): HTMLElement[] {
+    const target = this._renderTarget;
+    if (!target) return [];
+    const rows: HTMLElement[] = [];
+    for (const child of target.children) {
+      if (child.classList.contains('wtv__node')) rows.push(child as HTMLElement);
+    }
+    return rows;
+  }
+
+  /** `aria-activedescendant` follows the focused node's row; none when it isn't rendered
+   *  (a virtual row scrolled out, a collapsed branch, the empty tree). */
+  private _syncActiveDescendant(snapshot: TreeEngineSnapshot<T>): void {
+    const ad = this._activeDescendant;
+    if (!ad) return;
+    const path = snapshot.focusedNode?.path;
+    const row = path != null ? this.nodeElements.get(this._findKeyByPath(path)) : undefined;
+    const next = row?.isConnected ? row : null;
+    if (next !== ad.active) ad.setActive(next);
+  }
+
+  /** `[posinset, setsize]` per path over every visible node (not just the rendered virtual
+   *  window): siblings are the visible children of the same parent (search-filter aware).
+   *  Rebuilt only when the tree's cached visible list changes. */
+  private _ariaPositionMap(): Map<string, [number, number]> {
+    const all = this.controller?.tree?.visibleFlatNodes ?? [];
+    if (this._ariaPositions && this._ariaPositionsOf === all) return this._ariaPositions;
+    const counts = new Map<string, number>();
+    const map = new Map<string, [number, number]>();
+    for (const n of all) {
+      const parent = n.parentPath ?? '';
+      const pos = (counts.get(parent) ?? 0) + 1;
+      counts.set(parent, pos);
+      map.set(n.path, [pos, 0]);
+    }
+    for (const n of all) {
+      const entry = map.get(n.path)!;
+      entry[1] = counts.get(n.parentPath ?? '') ?? entry[0];
+    }
+    this._ariaPositions = map;
+    this._ariaPositionsOf = all;
+    return map;
+  }
+
+  /** The row's `role="treeitem"` + state: level, set position, expanded (parents only),
+   *  selected, checked (`mixed` = indeterminate; only on a row with a checkbox). */
+  private _applyRowAria(
+    el: HTMLElement,
+    node: LTreeNode<T>,
+    snapshot: TreeEngineSnapshot<T>,
+    positions: Map<string, [number, number]>
+  ): void {
+    setAttr(el, 'role', 'treeitem');
+    setAttr(el, 'aria-level', node.level != null ? String(node.level) : null);
+    const pos = positions.get(node.path);
+    setAttr(el, 'aria-posinset', pos ? String(pos[0]) : null);
+    setAttr(el, 'aria-setsize', pos ? String(pos[1]) : null);
+    setAttr(el, 'aria-expanded', node.hasChildren ? String(!!node.isExpanded) : null);
+    setAttr(el, 'aria-selected', String(snapshot.selectedPaths.has(node.path)));
+    const hasCheckbox = !!this.lastNodeConfig?.isCheckboxesShown && node.isSelectable;
+    setAttr(
+      el,
+      'aria-checked',
+      !hasCheckbox ? null : node.visualState === 'indeterminate' ? 'mixed' : String(snapshot.checkedPaths.has(node.path))
+    );
   }
 
   private _renderEmpty(snapshot: TreeEngineSnapshot<T>): void {

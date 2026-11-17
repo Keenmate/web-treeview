@@ -134,6 +134,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `noData`, `noResults`, `noDisplayValue`, `loading`, `dropHere` | ✓ | ✓ | same |
 | `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
 | `showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
+| `treeLabel` ("Tree" — aria-label of the `role="tree"` body) | ✓ | — | gap — svelte has no tree roles yet |
 | `dropBefore`, `dropAfter`, `dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
 | page-wide `window.components.locale.labels['web-treeview']` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |

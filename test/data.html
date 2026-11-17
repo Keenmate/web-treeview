@@ -75,11 +75,10 @@
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
             // Custom renderer: print "<name> (<path>)" so the spec can assert
             // both label and path content on the visible node.
-            tree.renderNodeCallback = ({ node, contentElement: container }) => {
-                container.innerHTML = '';
+            tree.renderNodeCallback = ({ node }) => {
                 const span = document.createElement('span');
                 span.textContent = `${node.data?.name ?? ''} (${node.path})`;
-                container.appendChild(span);
+                return span;
             };
             tree.nodes = data;
         }

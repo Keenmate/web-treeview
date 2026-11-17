@@ -1,4 +1,5 @@
 import type { Labels } from '@keenmate/web-components-core/locale';
+import type { SlotResult } from '@keenmate/web-components-core';
 import type { TreeViewLabels } from '../labels';
 /**
  * Pluggable renderer interface.
@@ -52,21 +53,23 @@ export interface RendererConfig<T> {
   isReadonly?: boolean;
   /** The tree container was resized (also once when observing starts). */
   onContainerResize?: (size: ContainerSize, deviceClass: import('@keenmate/web-components-core').DeviceClass) => void;
-  /** Custom node content renderer. Receives the node, a container element to populate,
-   *  and the NodeRenderContext (device + container + live node state). */
-  renderNodeCallback?: (node: LTreeNode<T>, container: HTMLElement, ctx: NodeRenderContext) => void;
+  /** Custom node content: returns the `.wtv__node-content` slot's content, read by core `renderSlot`
+   *  (string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden).
+   *  Receives the node and the NodeRenderContext (device + container + live node state). */
+  renderNodeCallback?: (node: LTreeNode<T>, ctx: NodeRenderContext) => SlotResult;
   /** Custom per-node icon renderer. Receives the node, the resolved icon VALUE
    *  (from iconMember/iconCallback), the `.wtv__node-icon` element to populate, and the
    *  NodeRenderContext. Wins over the default `<i class="wtv__node-icon {value}">`. */
   renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
-  /** Informational display when the tree has no data (e.g. "No items to display"). */
-  renderEmptyStateCallback?: (container: HTMLElement) => void;
+  /** Informational display when the tree has no data (e.g. "No items to display"). The result is read by
+   *  core `renderSlot` (string = HTML, Node = mounted, `null` / `undefined` = the built-in text, `false` = hidden). */
+  renderEmptyStateCallback?: () => SlotResult;
   /** The tree's UI strings — core `/locale` `createLabels` over `TreeViewLabels` (instance `labels` →
    *  page-wide `window.components.locale.labels['web-treeview']` → English). Passing it re-applies the
    *  built-in texts on the live tree (a `labels` or page-wide locale change). */
   labels?: Labels<TreeViewLabels> | null;
   /** Drop zone rendered in an empty tree during drag operations. */
-  renderEmptyZoneCallback?: (container: HTMLElement) => void;
+  renderEmptyZoneCallback?: () => SlotResult;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and make it focusable + focus-on-hover so a Ctrl/Cmd+V pastes into it. */
   isEmptyDropPlaceholderShown?: boolean | null;
@@ -74,9 +77,9 @@ export interface RendererConfig<T> {
    *  WebTreeView binds it to core `renderLoader` (instance hook → page hook → default). */
   renderLoadingCallback?: ((container: HTMLElement, label: string) => () => void) | null;
   /** Rendered above the tree body. */
-  renderHeaderCallback?: (container: HTMLElement) => void;
+  renderHeaderCallback?: () => SlotResult;
   /** Rendered below the tree body. */
-  renderFooterCallback?: (container: HTMLElement) => void;
+  renderFooterCallback?: () => SlotResult;
   /** Full context menu renderer (takes over entire menu). */
   renderContextMenuCallback?: (node: LTreeNode<T>, close: () => void, container: HTMLElement) => void;
   /** Per-item context menu renderer. Receives item, node, and container for custom item content. */

@@ -182,11 +182,8 @@ export interface SortContext<T = any> extends TreeViewContext<T> {
   nodes: LTreeNode<T>[];
 }
 
-/** ctx of `renderNodeCallback`: the node, the content element to fill, and its render state. */
-export interface NodeRenderCallbackContext<T = any> extends NodeContext<T>, NodeRenderContext {
-  /** The `.wtv__node-content` element to populate. */
-  contentElement: HTMLElement;
-}
+/** ctx of `renderNodeCallback`: the node and its render state (the callback RETURNS the content). */
+export interface NodeRenderCallbackContext<T = any> extends NodeContext<T>, NodeRenderContext {}
 
 /** ctx of `renderIconCallback`. */
 export interface IconRenderContext<T = any> extends NodeContext<T>, NodeRenderContext {
@@ -196,10 +193,8 @@ export interface IconRenderContext<T = any> extends NodeContext<T>, NodeRenderCo
   iconElement: HTMLElement;
 }
 
-/** ctx of the region render callbacks (empty state, empty drop zone, loading, header, footer). */
-export interface ContainerRenderContext<T = any> extends TreeViewContext<T> {
-  containerElement: HTMLElement;
-}
+/** ctx of the region render callbacks (empty state, empty drop zone, header, footer) — they RETURN the content. */
+export interface ContainerRenderContext<T = any> extends TreeViewContext<T> {}
 
 /**
  * The surface ctx of the context menu: the node it opened on, with its live parent and

@@ -201,17 +201,17 @@
 <!-- ================================================================ -->
 <div class="card">
 <h2>CL01 · Custom Node Template</h2>
-<p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives one <code>ctx</code>: <code>ctx.node</code> (the <code>LTreeNode</code>), <code>ctx.contentElement</code> (inside <code>.wtv__node-content</code>) and the render state (<code>isExpanded</code>, <code>level</code>, &hellip;). This example shows file-type icons and sizes.</p>
+<p>Use <code>renderNodeCallback</code> to render custom HTML for each tree node. The callback receives one <code>ctx</code>: <code>ctx.node</code> (the <code>LTreeNode</code>) and the render state (<code>isExpanded</code>, <code>level</code>, &hellip;), and <em>returns</em> the content of <code>.wtv__node-content</code>: an HTML string, a Node, <code>null</code> for the built-in label or <code>false</code> to hide it. This example shows file-type icons and sizes.</p>
 
 <div class="tree-container" id="tree1-container">
     <web-treeview id="tree1" icon-set="plus-minus"></web-treeview>
 </div>
 
 <div class="code-block" data-language="js">
-<pre><code>element.renderNodeCallback = ({ node, contentElement }) => {
+<pre><code>element.renderNodeCallback = ({ node }) => {
     const name = node.data?.name || '';
     const size = node.data?.size || '';
-    contentElement.innerHTML = `
+    return `
         &lt;div class="custom-node"&gt;
             &lt;span class="file-icon"&gt;${getIcon(name)}&lt;/span&gt;
             &lt;span class="name"&gt;${name}&lt;/span&gt;
@@ -238,19 +238,15 @@
 <!-- ================================================================ -->
 <div class="card">
 <h2>CL03 · Header &amp; Footer Slots</h2>
-<p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both receive a <code>ctx</code> whose <code>containerElement</code> you populate.</p>
+<p>Add custom chrome above and below the scroll area with <code>renderHeaderCallback</code> and <code>renderFooterCallback</code>. Both return the content (an HTML string, a Node, <code>null</code> = empty, <code>false</code> = hidden).</p>
 
 <div class="tree-container" id="tree5-container">
     <web-treeview id="tree5" icon-set="triangle"></web-treeview>
 </div>
 
 <div class="code-block" data-language="js">
-<pre><code>tree.renderHeaderCallback = ({ containerElement }) => {
-    containerElement.innerHTML = `&lt;div class="my-header"&gt;📁 File Browser&lt;/div&gt;`;
-};
-tree.renderFooterCallback = ({ containerElement }) => {
-    containerElement.innerHTML = `&lt;div class="my-footer"&gt;Right-click for context menu&lt;/div&gt;`;
-};</code></pre>
+<pre><code>tree.renderHeaderCallback = () => `&lt;div class="my-header"&gt;📁 File Browser&lt;/div&gt;`;
+tree.renderFooterCallback = () => `&lt;div class="my-footer"&gt;Right-click for context menu&lt;/div&gt;`;</code></pre>
 </div>
 </div>
 
@@ -272,9 +268,7 @@ tree.renderFooterCallback = ({ containerElement }) => {
 </div>
 
 <div class="code-block" data-language="js">
-<pre><code>tree.renderEmptyStateCallback = ({ containerElement }) => {
-    containerElement.innerHTML = `&lt;div class="empty-state"&gt;🍃 No items&lt;/div&gt;`;
-};
+<pre><code>tree.renderEmptyStateCallback = () => `&lt;div class="empty-state"&gt;🍃 No items&lt;/div&gt;`;
 tree.renderLoadingCallback = ({ containerElement }) => {
     containerElement.innerHTML = `&lt;div class="loading-state"&gt;&lt;span class="spinner"&gt;&lt;/span&gt; Loading…&lt;/div&gt;`;
 };
@@ -406,11 +400,11 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 <table class="reference-table">
     <thead><tr><th>Callback</th><th>Signature</th><th>Renders</th></tr></thead>
     <tbody>
-        <tr><td><code>renderNodeCallback</code></td><td><code>({ node, contentElement, isExpanded, level, &hellip; }) =&gt; void</code></td><td>a node row's content</td></tr>
+        <tr><td><code>renderNodeCallback</code></td><td><code>({ node, isExpanded, level, &hellip; }) =&gt; string | Node | null | undefined | false</code></td><td>a node row's content (<code>null</code> = the built-in label, <code>false</code> = hidden)</td></tr>
         <tr><td><code>renderIconCallback</code></td><td><code>({ node, value, iconElement, &hellip; }) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
-        <tr><td><code>renderHeaderCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome above the tree</td></tr>
-        <tr><td><code>renderFooterCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>chrome below the tree</td></tr>
-        <tr><td><code>renderEmptyStateCallback</code></td><td><code>({ containerElement }) =&gt; void</code></td><td>the no-data state</td></tr>
+        <tr><td><code>renderHeaderCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>chrome above the tree</td></tr>
+        <tr><td><code>renderFooterCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>chrome below the tree</td></tr>
+        <tr><td><code>renderEmptyStateCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>the no-data state (<code>null</code> = the built-in text)</td></tr>
         <tr><td><code>renderLoadingCallback</code></td><td><code>({ component, context, containerElement, element, label }) =&gt; void | (() =&gt; void)</code></td><td>the loading state (<code>isLoading=true</code>) — core's shared loader hook (beats the page-wide <code>window.components.renderLoadingCallback</code>); may return a cleanup</td></tr>
         <tr><td><code>customStyles</code> (<code>custom-styles</code>)</td><td><code>string | null</code></td><td>CSS injected into the shadow root (supports <code>@import</code>, also linked once in the document head so an icon font registers) &mdash; the instance layer</td></tr>
         <tr><td><code>getCustomStylesCallback</code></td><td><code>(ctx) =&gt; string | null</code></td><td>the same, computed per tree; wins over <code>customStyles</code></td></tr>
@@ -582,10 +576,10 @@ customElements.whenDefined('web-treeview').then(() => {
     tree1.pathMember = 'path';
     tree1.displayValueMember = 'name';
     tree1.expandLevel = 2;
-    tree1.renderNodeCallback = ({ node, contentElement }) => {
+    tree1.renderNodeCallback = ({ node }) => {
         const name = node.data?.name || '';
         const size = node.data?.size || '';
-        contentElement.innerHTML = `
+        return `
             <div class="custom-node">
                 <span class="file-icon">${getIcon(name)}</span>
                 <span class="name">${name}</span>
@@ -601,10 +595,10 @@ customElements.whenDefined('web-treeview').then(() => {
     tree2.pathMember = 'path';
     tree2.displayValueMember = 'name';
     tree2.expandLevel = 2;
-    tree2.renderNodeCallback = ({ node, contentElement }) => {
+    tree2.renderNodeCallback = ({ node }) => {
         const name = node.data?.name || '';
         const status = node.data?.status;
-        contentElement.innerHTML = `
+        return `
             <div class="custom-node">
                 <span class="file-icon">${getIcon(name)}</span>
                 <span class="name">${name}</span>
@@ -620,20 +614,16 @@ customElements.whenDefined('web-treeview').then(() => {
     tree5.pathMember = 'path';
     tree5.displayValueMember = 'name';
     tree5.expandLevel = 1;
-    tree5.renderHeaderCallback = ({ containerElement }) => {
-        containerElement.innerHTML = `
+    tree5.renderHeaderCallback = () => `
             <div class="cl-header">
                 <span>📁</span>
                 <strong>File Browser</strong>
                 <span class="cl-header__count">${menuTree.length} items</span>
             </div>`;
-    };
-    tree5.renderFooterCallback = ({ containerElement }) => {
-        containerElement.innerHTML = `
+    tree5.renderFooterCallback = () => `
             <div class="cl-footer">
                 Right-click for context menu
             </div>`;
-    };
 
     // ── CL04: empty & loading ──
     const tree4 = document.getElementById('tree4');
@@ -642,14 +632,12 @@ customElements.whenDefined('web-treeview').then(() => {
     tree4.pathMember = 'path';
     tree4.displayValueMember = 'name';
     tree4.nodes = [];
-    tree4.renderEmptyStateCallback = ({ containerElement }) => {
-        containerElement.innerHTML = `
+    tree4.renderEmptyStateCallback = () => `
             <div class="empty-state">
                 <div class="icon">🍃</div>
                 <p>No items to display</p>
                 <p class="empty-state__hint">Add some data to get started</p>
             </div>`;
-    };
     tree4.renderLoadingCallback = ({ containerElement }) => {
         containerElement.innerHTML = `
             <div class="loading-state">

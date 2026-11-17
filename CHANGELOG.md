@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — render-callback results read by core `renderSlot` (2026-11-17)
+- **BREAKING: `renderNodeCallback`, `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyStateCallback` and
+  `renderEmptyZoneCallback` RETURN their content instead of filling an element** (core `renderSlot`, SPEC §12.35):
+  a string is HTML, a Node is mounted, `null` / `undefined` draws the built-in content (the node label, the
+  `labels.noData` / `noResults` text, the `labels.dropHere` box; header / footer: empty), `false` hides the slot
+  (emptied + `hidden`). `ctx.contentElement` / `ctx.containerElement` are gone from these callbacks — move
+  `contentElement.innerHTML = html` to `return html`. Before, a callback that filled nothing left the slot empty.
+- `renderNodeCallback` is re-run only when the node's path / version or its render state (expanded, checked,
+  selected, focused, level, children, device class) changes — a repaint that changes none of them (cutting the node,
+  a sibling's update) keeps the mounted content, so a focused input inside a custom node survives.
+- Removing `renderNodeCallback` brings the built-in labels back (the rows kept the custom content before);
+  removing `renderHeaderCallback` / `renderFooterCallback` empties the header / footer.
+- `renderIconCallback` and `renderLoadingCallback` keep their shape (fill the given element, optional cleanup).
+
 ### Added — page-wide labels through core `/locale` (2026-11-17)
 - Labels resolve through core `createLabels` (D-NC-24): per key the instance `labels` → the page-wide
   `window.components.locale.labels['web-treeview']` → English. Assigning `window.components.locale` re-renders the

@@ -356,7 +356,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
         let nextId = 500;
 
         Object.assign(tree, treeConfig);
-        tree.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        tree.renderNodeCallback = ({ node }) => document.createTextNode(iconLabel(node));
         tree.nodes = data;
 
         const logEl = document.getElementById('te-log');
@@ -511,11 +511,11 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
         let cbNextId = 9000;
 
         Object.assign(source, treeConfig);
-        source.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        source.renderNodeCallback = ({ node }) => document.createTextNode(iconLabel(node));
         source.nodes = JSON.parse(JSON.stringify(sourceData));
 
         Object.assign(target, treeConfig);
-        target.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+        target.renderNodeCallback = ({ node }) => document.createTextNode(iconLabel(node));
         target.nodes = JSON.parse(JSON.stringify(targetData));
 
         const cbLog = document.getElementById('cb-log');
@@ -564,7 +564,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
         function initScenario(id, seed) {
             const el = document.getElementById(id);
             Object.assign(el, treeConfig);
-            el.renderNodeCallback = ({ node, contentElement }) => { contentElement.textContent = iconLabel(node); };
+            el.renderNodeCallback = ({ node }) => document.createTextNode(iconLabel(node));
             el.nodes = JSON.parse(JSON.stringify(seed));
             el._nextId = 7000 + Math.floor(Math.random() * 1000);
             return el;

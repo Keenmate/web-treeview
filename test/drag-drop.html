@@ -232,12 +232,11 @@
             multi.idMember = 'id';
             multi.pathMember = 'path';
             multi.displayValueMember = 'name';
-            multi.renderNodeCallback = ({ node, contentElement: container }) => {
-                container.innerHTML = '';
+            multi.renderNodeCallback = ({ node }) => {
                 const span = document.createElement('span');
                 span.setAttribute('data-testid', `multi-node-${node.data?.id}`);
                 span.textContent = node.data?.name ?? '';
-                container.appendChild(span);
+                return span;
             };
             multi.sortCallback = ({ nodes }) => sortByOrder(nodes);
             wireDrop(multi, 'multi', 'multi');
@@ -252,12 +251,11 @@
             locked.idMember = 'id';
             locked.pathMember = 'path';
             locked.displayValueMember = 'name';
-            locked.renderNodeCallback = ({ node, contentElement: container }) => {
-                container.innerHTML = '';
+            locked.renderNodeCallback = ({ node }) => {
                 const span = document.createElement('span');
                 span.setAttribute('data-testid', `locked-node-${node.data?.id}`);
                 span.textContent = node.data?.name ?? '';
-                container.appendChild(span);
+                return span;
             };
             locked.sortCallback = ({ nodes }) => sortByOrder(nodes);
             locked.getIsDraggableCallback = ({ node }) => node.data?.draggable !== false;

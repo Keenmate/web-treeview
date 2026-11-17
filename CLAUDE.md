@@ -196,7 +196,7 @@ All mounted `<web-treeview>` elements are tracked in a `Set` and exposed via `ge
 
 ## Render context (device + node state)
 
-The render callbacks take ONE ctx that includes the `NodeRenderContext` fields — `renderNodeCallback({ node, contentElement, …renderState })`, `renderIconCallback({ node, value, iconElement, …renderState })`. renderState = { deviceClass: 'mobile'|'tablet'|'desktop', container: {width,height}, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }. device/container come from `@keenmate/web-components-core/environment` (`classifyDevice` + `observeEnvironment`/`observeElementSize`, set up in the renderer's `mount`, torn down in `destroy`); a device-class FLIP forces `_fullRender`, container size updates silently (virtual-scroll-first). Built by `_buildRenderContext(node, snapshot)`; node-state from node + snapshot. Parity with svelte-treeview's NodeRenderContext. Requires core ≥ rc10. e2e `test/render-context.html` + `e2e/render-context.spec.ts`.
+The render callbacks take ONE ctx that includes the `NodeRenderContext` fields — `renderNodeCallback({ node, …renderState })` (RETURNS the content: core `renderSlot`, memo key = path + `_rev` + render state), `renderIconCallback({ node, value, iconElement, …renderState })`. renderState = { deviceClass: 'mobile'|'tablet'|'desktop', container: {width,height}, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }. device/container come from `@keenmate/web-components-core/environment` (`classifyDevice` + `observeEnvironment`/`observeElementSize`, set up in the renderer's `mount`, torn down in `destroy`); a device-class FLIP forces `_fullRender`, container size updates silently (virtual-scroll-first). Built by `_buildRenderContext(node, snapshot)`; node-state from node + snapshot. Parity with svelte-treeview's NodeRenderContext. Requires core ≥ rc10. e2e `test/render-context.html` + `e2e/render-context.spec.ts`.
 
 ## Node states — focused / selected / checked
 
@@ -255,8 +255,9 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
   `getIconColorCallback`, `getNodeClassCallback`, `getNodeContentClassCallback`,
   `getNodeTooltipCallback`, `getIs*Callback`, `getAllowedDropPositionsCallback`);
   `sortCallback({ nodes })`; `getCustomStylesCallback(ctx)`.
-- Render: `renderNodeCallback({ node, contentElement, …renderState })`,
-  `renderIconCallback({ node, value, iconElement, … })`, `render{EmptyState,EmptyZone,Loading,Header,Footer}Callback({ containerElement })`,
+- Render: `renderNodeCallback({ node, …renderState })` and `render{EmptyState,EmptyZone,Header,Footer}Callback(ctx)` RETURN
+  their content (core `renderSlot`: string = HTML, Node, `null` = built-in, `false` = hidden);
+  fill hooks `renderIconCallback({ node, value, iconElement, … })`, `renderLoadingCallback({ containerElement, … })`,
   `renderContextMenuCallback({ node, path, parent, siblings, containerElement })` (close via
   `ctx.controller.closeContextMenu()`), `renderContextMenuItemCallback({ …, menuItem, buttonElement })`.
 - Context menu: `getContextMenuItemsCallback({ node, path, parent, siblings, controller, element })`

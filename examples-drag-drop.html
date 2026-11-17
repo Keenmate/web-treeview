@@ -624,7 +624,8 @@
         const restrictedTree = initTree('tree-restricted', restrictedData, { dragDropMode: 'both' });
         restrictedTree.allowedDropPositionsMember = 'allowedDropPositions';
         restrictedTree.orderMember = 'sortOrder';
-        restrictedTree.renderNodeCallback = ({ node, contentElement: el }) => {
+        restrictedTree.renderNodeCallback = ({ node }) => {
+            const el = document.createDocumentFragment();
             const label = document.createElement('span');
             const icon = node.data?.icon ? node.data.icon + ' ' : '';
             label.textContent = icon + (node.data?.name || String(node.id));
@@ -635,6 +636,7 @@
                 hint.textContent = `(${node.data.allowedDropPositions.join('/')})`;
                 el.appendChild(hint);
             }
+            return el;
         };
         const restrictedLogEl = document.getElementById('restricted-log');
         const restrictedOutputEl = document.getElementById('restricted-output');

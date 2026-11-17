@@ -61,6 +61,43 @@ test.describe('empty tree', () => {
   });
 });
 
+test.describe('render results (core renderSlot)', () => {
+  test('renderNodeCallback: string = HTML, Node = mounted, null = the built-in label, false = hidden', async ({ page }) => {
+    const t = tree(page, 'results');
+    await expect(nodeByPath(t, '1').locator('.wtv__node-content .custom-node')).toHaveText('Custom folder');
+    await expect(nodeByPath(t, '1.2').locator('.wtv__node-content .custom-input')).toHaveCount(1);
+    await expect(nodeByPath(t, '2').locator('.wtv__node-content .wtv__node-label')).toHaveText('Other');
+    const hidden = nodeByPath(t, '1.1').locator('.wtv__node-content');
+    await expect(hidden).toBeHidden();
+    await expect(hidden).toBeEmpty();
+  });
+
+  test('renderNodeCallback is memoized: a repaint that changes nothing keeps the mounted node (focus survives)', async ({ page }) => {
+    const t = tree(page, 'results');
+    const input = nodeByPath(t, '1.2').locator('.custom-input');
+    await input.evaluate((el: any) => { el.dataset.mark = 'kept'; el.focus(); });
+    // Cut repaints the row (dimmed) without changing its version or render state.
+    await t.evaluate((el: any) => el.cutNodes(['1.2']));
+    await expect(nodeByPath(t, '1.2').locator('.wtv__node-content')).toHaveClass(/wtv__node-content--cut/);
+    await expect(input).toHaveAttribute('data-mark', 'kept');
+    expect(await input.evaluate((el) => el.getRootNode() instanceof ShadowRoot && (el.getRootNode() as ShadowRoot).activeElement === el)).toBe(true);
+  });
+
+  test('renderHeaderCallback false hides the header; renderFooterCallback null leaves the (default) empty footer', async ({ page }) => {
+    const t = tree(page, 'results');
+    await expect(t.locator('.wtv__header')).toBeHidden();
+    expect(await t.locator('.wtv__header').evaluate((el) => (el as HTMLElement).hidden)).toBe(true);
+    expect(await t.locator('.wtv__footer').evaluate((el) => (el as HTMLElement).hidden)).toBe(false);
+    await expect(t.locator('.wtv__footer')).toBeEmpty();
+  });
+
+  test('renderEmptyStateCallback null draws the built-in text; false hides the empty state', async ({ page }) => {
+    await expect(tree(page, 'empty-null').locator('.wtv__empty-state')).toHaveText('No data');
+    await expect(tree(page, 'empty-false').locator('.wtv__empty-state')).toBeHidden();
+    await expect(tree(page, 'empty-false').locator('.wtv__empty-state')).toBeEmpty();
+  });
+});
+
 test.describe('loading', () => {
   test('loading shows the loading overlay (and no empty state)', async ({ page }) => {
     const t = tree(page, 'loading');

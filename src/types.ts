@@ -1,6 +1,6 @@
 import type { TreeViewLabels } from './labels';
 import type { TreeViewContext } from './interaction';
-import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback } from '@keenmate/web-components-core';
+import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback, SlotResult } from '@keenmate/web-components-core';
 import type { MenuDrawerSide, MenuPresentation } from '@keenmate/web-components-core/menu';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
@@ -550,12 +550,17 @@ export interface TreeViewConfig<T = any> {
   isTreeDropZoneEnabled?: boolean | null;
 
   // Render callbacks (for DomRenderer) — one ctx each
-  /** Fill `ctx.contentElement` for `ctx.node` (render state on the ctx: device, container, isExpanded, …). */
-  renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => void;
-  renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => void;
+  /** Return the content of `ctx.node`'s `.wtv__node-content` (render state on the ctx: device, container,
+   *  isExpanded, …) — read by core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden (the slot is emptied + `hidden`).
+   *  Re-run only when the node's version or render state changes, so a focused input inside survives repaints. */
+  renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => SlotResult;
+  /** Return the empty-tree state — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `labels.noData` / `noResults` text, `false` = hidden (the slot is emptied + `hidden`). */
+  renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** UI strings, a partial object merged per key over the English defaults (`empty`, `dropHere`, `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`). */
   labels?: Partial<TreeViewLabels> | null;
-  renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => void;
+  /** Return the empty-tree drop zone's content — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `labels.dropHere` box, `false` = hidden (the slot is emptied + `hidden`)
+   *  (hidden = no drop target in an empty tree). */
+  renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a
    *  drag), and focus it on hover/pointerdown so a Ctrl/Cmd+V pastes into an empty tree. */
   isEmptyDropPlaceholderShown?: boolean | null;
@@ -567,8 +572,10 @@ export interface TreeViewConfig<T = any> {
    *  loader hook (SPEC §12.14): beats the page-wide `window.components.renderLoadingCallback`;
    *  `ctx.context` is `'overlay'`; may return a cleanup. */
   renderLoadingCallback?: RenderLoaderCallback | null;
-  renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => void;
-  renderFooterCallback?: (ctx: ContainerRenderContext<T>) => void;
+  /** Return the header above the tree body — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = empty (no built-in header), `false` = hidden (the slot is emptied + `hidden`). */
+  renderHeaderCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
+  /** Return the footer below the tree body — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = empty (no built-in footer), `false` = hidden (the slot is emptied + `hidden`). */
+  renderFooterCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** Take over the whole context menu: fill `ctx.containerElement` (close it via `ctx.controller.closeContextMenu()`). */
   renderContextMenuCallback?: (ctx: ContextMenuRenderContext<T>) => void;
   /** Fill one item's `ctx.buttonElement` (leave it empty for the default). */

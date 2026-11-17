@@ -181,10 +181,11 @@ Sanitize any untrusted text before passing it in:
 | Context-menu item `icon` | The menu item's icon slot (innerHTML — meant for an `<svg>` / `<i class>` / glyph) |
 | `customStyles` / `getCustomStylesCallback`, page-wide `window.components['web-treeview'].customStyles` / `.getCustomStylesCallback` | CSS injected into the shadow root |
 
-The render callbacks (`renderNodeCallback`, `renderIconCallback`, `renderContextMenuCallback`,
-`renderContextMenuItemCallback`, `render{EmptyState,EmptyZone,Loading,Header,Footer}Callback`) and a
-tooltip callback returning an `HTMLElement` hand you a DOM element — whatever you write into it
-(`innerHTML` included) is on you.
+The render callbacks are code, like a template: a string returned by `renderNodeCallback` /
+`render{EmptyState,EmptyZone,Header,Footer}Callback` is HTML, and the fill hooks (`renderIconCallback`,
+`renderLoadingCallback`, `renderContextMenuCallback`, `renderContextMenuItemCallback`) and a tooltip
+callback returning an `HTMLElement` hand you a DOM element — whatever you write (`innerHTML` included)
+is on you; escape the data you put in it.
 
 ## Browser support
 

@@ -25,7 +25,7 @@ import type {
   ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
 
@@ -957,11 +957,11 @@ export class WebTreeView<T = any> {
 
   private mapToRendererConfig(options: Partial<TreeViewConfig<T>>): RendererConfig<T> {
     const o = options;
-    const region = (src: ((ctx: any) => void) | null | undefined) =>
-      this.wrap(src, 'region', (f) => (containerElement: HTMLElement) => f(this.ctx({ containerElement })));
+    const region = (src: ((ctx: any) => SlotResult) | null | undefined) =>
+      this.wrap(src, 'region', (f) => () => f(this.ctx({})));
     const cfg: RendererConfig<T> = {
       renderNodeCallback: this.wrap(o.renderNodeCallback, 'renderNode', (f) =>
-        (node: LTreeNode<T>, contentElement: HTMLElement, rc: NodeRenderContext) => f(this.ctx({ ...rc, node, contentElement }))),
+        (node: LTreeNode<T>, rc: NodeRenderContext) => f(this.ctx({ ...rc, node }))),
       renderIconCallback: this.wrap(o.renderIconCallback, 'renderIcon', (f) =>
         (node: LTreeNode<T>, value: string | null, iconElement: HTMLElement, rc: NodeRenderContext) =>
           f(this.ctx({ ...rc, node, value, iconElement }))),

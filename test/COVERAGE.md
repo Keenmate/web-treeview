@@ -45,6 +45,7 @@ Chromium and Firefox run them.
 | `icon-set` (chevron/triangle/plus-minus/arrow, custom classes) | ✓ | `icon-set.spec.ts` | `icon-set.html` |
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| Render results (core `renderSlot`): string / Node / `null` = built-in / `false` = hidden for node, header, footer, empty state; node memo (cut repaint keeps a focused input) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `renderLoadingCallback` (NOTES #19; core `LoaderRenderContext`, cleanup, redraw on change), default `.wtv__loader`, page hook `window.components.renderLoadingCallback` (instance beats it), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `labels` (`noData`, `''` = nothing, `dropHere`, `loading` aria-label, menu built-ins; JSON attr + live), `loading` on/off; `noResults` after a no-match search (`search-config.spec.ts`) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Page-wide labels (core `/locale`): drop pads `dropBefore/After/Child` (instance wins per key), `localeChanged()` live re-render + `formatLabelCallback`, page-wide `noDisplayValue` repaint (state kept) | ✓ | `labels-locale.spec.ts` | `drag-visuals.html`, `render-callbacks.html`, `data.html` |

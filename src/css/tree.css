@@ -1240,3 +1240,13 @@
 .wtv__container:dir(rtl) .wtv__node-content--selected-brackets::after { content: '\276F'; }
 .wtv__container:dir(rtl) .wtv__scroll-arrow::before { content: '\21E6'; }
 .wtv__container:dir(rtl) .wtv__scroll-arrow::after { content: '\21E8'; }
+
+/* A render callback returning `false` hides its slot (core renderSlot sets `hidden`);
+   these slots set their own `display`, so the attribute needs the help. */
+.wtv__header[hidden],
+.wtv__footer[hidden],
+.wtv__tree .wtv__empty-state[hidden],
+.wtv__empty-zone[hidden],
+.wtv__node .wtv__node-content[hidden] {
+  display: none;
+}

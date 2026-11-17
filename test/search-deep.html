@@ -68,12 +68,11 @@
             tree.searchValueMember = 'name';
             tree.sortCallback = ({ nodes }) => sortByName(nodes);
             // Render each node with a .node-name span (the spec uses it).
-            tree.renderNodeCallback = ({ node, contentElement: container }) => {
-                container.innerHTML = '';
+            tree.renderNodeCallback = ({ node }) => {
                 const span = document.createElement('span');
                 span.className = 'node-name';
                 span.textContent = node.data?.name ?? '';
-                container.appendChild(span);
+                return span;
             };
             tree.nodes = data;
 

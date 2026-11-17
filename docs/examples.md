@@ -230,27 +230,25 @@ tree.getIconCallback = ({ node }) => {
 
 ## Render callbacks
 
-The default renderer paints the node label from `displayValueMember`. Override the content for any slot:
+The default renderer paints the node label from `displayValueMember`. Override the content for any slot by
+RETURNING it (core `renderSlot`): a string is HTML, a Node is mounted, `null` / `undefined` draws the built-in
+content, `false` hides the slot:
 
 ```javascript
-tree.renderNodeCallback = ({ node, contentElement, isExpanded, level }) => {
-  contentElement.innerHTML = `
+tree.renderNodeCallback = ({ node, isExpanded, level }) => `
     <span class="icon">${node.hasChildren ? '📁' : '📄'}</span>
     <span class="label">${node.displayValue}</span>
     <span class="badge">${node.children?.length ?? 0}</span>
   `;
-};
 
-tree.renderEmptyStateCallback = ({ containerElement }) => {
-  containerElement.innerHTML = '<p>No items to display</p>';
-};
+tree.renderEmptyStateCallback = () => '<p>No items to display</p>';
 
 tree.renderLoadingCallback = ({ containerElement }) => {
   containerElement.innerHTML = '<div class="my-spinner"></div>';
 };
 ```
 
-`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`). Other slots (all one ctx with `containerElement`): `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`; plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
+`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`) and is re-run only when the node's version or that state changes (a focused input inside survives repaints). Other returning slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`. Fill hooks (`renderLoadingCallback`, `renderIconCallback`) keep filling the element they're given; plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
 
 ## Context menu
 

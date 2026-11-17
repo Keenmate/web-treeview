@@ -282,11 +282,8 @@
             cfg.initialBatchSize = +$('opt-initial-batch').value;
             cfg.maxBatchSize = +$('opt-max-batch').value;
         }
-        cfg.renderNodeCallback = ({ node, contentElement }) => {
-            const span = document.createElement('span');
-            span.innerHTML = `<span class="node-path">[${node.path}]</span> ${node.data?.name ?? node.path}`;
-            contentElement.appendChild(span);
-        };
+        cfg.renderNodeCallback = ({ node }) =>
+            `<span><span class="node-path">[${node.path}]</span> ${node.data?.name ?? node.path}</span>`;
         return cfg;
     }
 

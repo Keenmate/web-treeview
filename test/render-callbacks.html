@@ -20,6 +20,9 @@
     <section><web-treeview id="loading-cb" loading="true"></web-treeview></section>
     <section><web-treeview id="icons" expand-level="2" icon-member="icon" align-node-icons="false"></web-treeview></section>
     <section><web-treeview id="icons-aligned" expand-level="2" icon-member="icon"></web-treeview></section>
+    <section><web-treeview id="results" expand-level="2"></web-treeview></section>
+    <section><web-treeview id="empty-null"></web-treeview></section>
+    <section><web-treeview id="empty-false"></web-treeview></section>
 
     <script type="module">
         import '/src/index.ts';
@@ -37,20 +40,16 @@
         setupTree($('empty-default'), []);
         setupTree($('empty-text'), []);
         setupTree($('empty-cb'), [], {
-            renderEmptyStateCallback: ({ containerElement }) => {
-                containerElement.innerHTML = '<b class="custom-empty">Custom empty</b>';
-            }
+            renderEmptyStateCallback: () => '<b class="custom-empty">Custom empty</b>'
         });
         // Render first, assign the zone callback afterwards (deterministic order).
         setupTree($('empty-zone'), []);
         await $('empty-zone').whenSettled();
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-        $('empty-zone').renderEmptyZoneCallback = ({ containerElement }) => {
-            containerElement.innerHTML = '<i class="custom-zone">Paste or drop here</i>';
-        };
+        $('empty-zone').renderEmptyZoneCallback = () => '<i class="custom-zone">Paste or drop here</i>';
         setupTree($('chrome'), data, {
-            renderHeaderCallback: ({ containerElement }) => { containerElement.innerHTML = '<h4 class="custom-header">Header</h4>'; },
-            renderFooterCallback: ({ containerElement }) => { containerElement.innerHTML = '<small class="custom-footer">Footer</small>'; },
+            renderHeaderCallback: () => '<h4 class="custom-header">Header</h4>',
+            renderFooterCallback: () => '<small class="custom-footer">Footer</small>',
             getCustomStylesCallback: () => '.wtv__node-label { letter-spacing: 3px; }'
         });
         setupTree($('loading'), []);
@@ -63,6 +62,23 @@
         });
         setupTree($('icons'), data);
         setupTree($('icons-aligned'), data);
+        // renderSlot results (core SPEC §12.35): string = HTML, Node = mounted, null = built-in, false = hidden.
+        setupTree($('results'), data, {
+            renderNodeCallback: ({ node }) => {
+                if (node.path === '1') return '<b class="custom-node">Custom folder</b>';
+                if (node.path === '1.1') return false;
+                if (node.path === '1.2') {
+                    const input = document.createElement('input');
+                    input.className = 'custom-input';
+                    return input;
+                }
+                return null;
+            },
+            renderHeaderCallback: () => false,
+            renderFooterCallback: () => null
+        });
+        setupTree($('empty-null'), [], { renderEmptyStateCallback: () => null });
+        setupTree($('empty-false'), [], { renderEmptyStateCallback: () => false });
     </script>
 </body>
 </html>

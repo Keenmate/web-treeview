@@ -27,9 +27,11 @@ import {
   createFrameScheduler,
   createElementSizeObserver,
   isRtl,
+  renderSlot,
   type DeviceClass,
   type ElementSizeObserver,
-  type ElementSize
+  type ElementSize,
+  type SlotResult
 } from '@keenmate/web-components-core';
 import type { NodeRenderContext } from '../controller/types';
 import type { NodeTitleOverflow } from './types';
@@ -147,9 +149,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.headerEl = document.createElement('div');
     this.headerEl.className = 'wtv__header';
     this.container.appendChild(this.headerEl);
-    if (config.renderHeaderCallback) {
-      config.renderHeaderCallback(this.headerEl);
-    }
+    this._renderRegion(this.headerEl, config.renderHeaderCallback);
 
     // Tree body
     this.bodyEl = document.createElement('div');
@@ -160,9 +160,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.footerEl = document.createElement('div');
     this.footerEl.className = 'wtv__footer';
     this.container.appendChild(this.footerEl);
-    if (config.renderFooterCallback) {
-      config.renderFooterCallback(this.footerEl);
-    }
+    this._renderRegion(this.footerEl, config.renderFooterCallback);
 
     // Loading overlay
     this.loadingEl = document.createElement('div');
@@ -232,19 +230,69 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _refreshLabels(): void {
     const target = this._renderTarget;
     if (!target) return;
-    if (!this.config.renderEmptyStateCallback) {
-      const emptyState = target.querySelector('.wtv__empty-state');
-      if (emptyState) emptyState.textContent = this._label(this._emptyLabelKey);
-    }
+    const emptyState = target.querySelector<HTMLElement>('.wtv__empty-state');
+    if (emptyState) this._renderEmptyState(emptyState);
     const showFull = this._label('showFullLabel');
     for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
-    if (!this.config.renderEmptyZoneCallback) {
-      const content = target.querySelector('.wtv__empty-zone-content');
-      if (content) content.textContent = this._label('dropHere');
+    // Only the built-in zone content carries this class (a custom result replaces it).
+    const content = target.querySelector('.wtv__empty-zone-content');
+    if (content) content.textContent = this._label('dropHere');
+  }
+
+  /** A header / footer region: its callback's result through core `renderSlot` (no built-in content). */
+  private _renderRegion(el: HTMLElement | null, cb: (() => SlotResult) | undefined): void {
+    if (el) renderSlot(el, cb ?? null);
+  }
+
+  /** The empty state: `renderEmptyStateCallback`'s result through core `renderSlot`; the built-in text by default. */
+  private _renderEmptyState(el: HTMLElement): void {
+    renderSlot(el, this.config.renderEmptyStateCallback ?? null, {
+      renderDefault: (c) => { c.textContent = this._label(this._emptyLabelKey); },
+    });
+  }
+
+  /** Bumped when `renderNodeCallback` changes — part of every node slot's memo key. */
+  private _nodeRenderGen = 0;
+
+  /**
+   * A row's `.wtv__node-content`: `renderNodeCallback`'s result through core `renderSlot` (SPEC §12.35).
+   * Memoized on the node's identity + version + render state (not the container size — like today, a
+   * resize alone never re-renders rows; a device-class flip does), so a repaint that changes none of
+   * them doesn't re-run the hook (a focused input inside a custom node survives).
+   */
+  private _renderNodeContent(content: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
+    const cb = this.config.renderNodeCallback;
+    renderSlot(content, cb ? () => cb(node, ctx) : null, {
+      memoKey: cb
+        ? [this._nodeRenderGen, node.path, node._rev, ctx.isExpanded, ctx.isChecked, ctx.isSelected, ctx.isFocused,
+           ctx.level, ctx.hasChildren, ctx.deviceClass].join('|')
+        : undefined,
+      renderDefault: (c) => this._renderDefaultLabel(c, node),
+    });
+  }
+
+  /** The built-in `.wtv__node-label` (kept, its text patched, when it already is the content). */
+  private _renderDefaultLabel(content: HTMLElement, node: LTreeNode<T>): void {
+    const text = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
+    const first = content.firstChild;
+    const isOwn = first instanceof HTMLElement && first.classList.contains('wtv__node-label') &&
+      Array.from(content.childNodes).every((n, i) => i === 0 || (n instanceof HTMLElement && n.classList.contains('wtv__node-info')));
+    if (isOwn) {
+      if (first.textContent !== text) {
+        first.textContent = text;
+        if (this._titleOverflow === 'info') this._measureLabel(first);
+      }
+      return;
     }
+    const label = document.createElement('span');
+    label.className = 'wtv__node-label';
+    label.textContent = text;
+    content.replaceChildren(label);
+    this._trackLabel(label);
   }
 
   updateConfig(config: Partial<RendererConfig<T>>): void {
+    const prevNodeCb = this.config.renderNodeCallback;
     Object.assign(this.config, config);
     if ('labels' in config) this._refreshLabels();
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
@@ -260,17 +308,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
       this._applyTitleOverflow(config.nodeTitleOverflow);
     }
-    if (config.renderHeaderCallback && this.headerEl) {
-      this.headerEl.innerHTML = '';
-      config.renderHeaderCallback(this.headerEl);
-    }
-    if (config.renderFooterCallback && this.footerEl) {
-      this.footerEl.innerHTML = '';
-      config.renderFooterCallback(this.footerEl);
-    }
+    if ('renderHeaderCallback' in config) this._renderRegion(this.headerEl, this.config.renderHeaderCallback);
+    if ('renderFooterCallback' in config) this._renderRegion(this.footerEl, this.config.renderFooterCallback);
     // Re-render nodes if renderNodeCallback / renderIconCallback changed (so a callback
-    // assigned after the initial data render re-paints the rows / icons).
-    if ((config.renderNodeCallback || config.renderIconCallback) && this.controller) {
+    // assigned after the initial data render re-paints the rows / icons; a removed one
+    // brings the built-in label back).
+    const isNodeCbChanged = 'renderNodeCallback' in config && config.renderNodeCallback !== prevNodeCb;
+    if (isNodeCbChanged) this._nodeRenderGen++;
+    if ((isNodeCbChanged || config.renderNodeCallback || config.renderIconCallback) && this.controller) {
       this._fullRender(this.controller.getSnapshot());
     }
   }
@@ -1386,14 +1431,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         zone = document.createElement('div');
         zone.className = 'wtv__empty-zone';
         this._emptyZoneCb = this.config.renderEmptyZoneCallback;
-        if (this.config.renderEmptyZoneCallback) {
-          this.config.renderEmptyZoneCallback(zone);
-        } else {
-          const content = document.createElement('div');
-          content.className = 'wtv__empty-zone-content';
-          content.textContent = this._label('dropHere');
-          zone.appendChild(content);
-        }
+        renderSlot(zone, this.config.renderEmptyZoneCallback ?? null, {
+          renderDefault: (c) => {
+            const content = document.createElement('div');
+            content.className = 'wtv__empty-zone-content';
+            content.textContent = this._label('dropHere');
+            c.replaceChildren(content);
+          },
+        });
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
         // (routed through the body keydown listener) pastes into the empty tree.
         if (this.config.isEmptyDropPlaceholderShown) {
@@ -1427,11 +1472,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         emptyState.className = 'wtv__empty-state';
         target.appendChild(emptyState);
       }
-      if (this.config.renderEmptyStateCallback) {
-        this.config.renderEmptyStateCallback(emptyState as HTMLElement);
-      } else {
-        emptyState.textContent = this._label(this._emptyLabelKey);
-      }
+      this._renderEmptyState(emptyState as HTMLElement);
     }
   }
 
@@ -1679,15 +1720,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const ctx = this._buildRenderContext(node, snapshot);
 
     // Custom or default content
-    if (this.config.renderNodeCallback) {
-      this.config.renderNodeCallback(node, content, ctx);
-    } else {
-      const label = document.createElement('span');
-      label.className = 'wtv__node-label';
-      label.textContent = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
-      content.appendChild(label);
-      this._trackLabel(label);
-    }
+    this._renderNodeContent(content, node, ctx);
 
     row.appendChild(content);
     el.appendChild(row);
@@ -1894,20 +1927,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         nodeConfig?.clickBehavior !== 'expand' && node.hasChildren;
       content.classList.toggle('wtv__clickable', clickable);
 
-      // Re-render content if using template
-      if (this.config.renderNodeCallback) {
-        content.innerHTML = '';
-        this.config.renderNodeCallback(node, content, ctx);
-      } else {
-        const label = content.querySelector('.wtv__node-label') as HTMLElement;
-        if (label) {
-          const text = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
-          if (label.textContent !== text) {
-            label.textContent = text;
-            if (this._titleOverflow === 'info') this._measureLabel(label);
-          }
-        }
-      }
+      // Re-render the content (memoized: an unchanged node + render state skips the hook)
+      this._renderNodeContent(content, node, ctx);
     }
 
     // Update draggable — on the content pill (matches _createNodeElement)

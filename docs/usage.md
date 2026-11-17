@@ -282,13 +282,13 @@ applied right after it. For a silent replace use `clearSelection(undefined, { is
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `renderNodeCallback` | `({ node, contentElement, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }) => void` | Custom node content rendering into `contentElement` |
+| `renderNodeCallback` | `({ node, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }) => string \| Node \| null \| undefined \| false` | The row's content: string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden. Re-run only when the node's version or render state changes |
 | `renderIconCallback` | `({ node, value, iconElement, …renderState }) => void` | Custom per-node icon (SVG / unicode / markup) into `iconElement` |
-| `renderEmptyStateCallback` | `({ containerElement }) => void` | "No items to display" rendering |
-| `renderEmptyZoneCallback` | `({ containerElement }) => void` | Drop zone in an empty tree |
+| `renderEmptyStateCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | "No items to display" (`null` = the built-in `labels.noData` / `noResults` text, `false` = hidden) |
+| `renderEmptyZoneCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Drop zone in an empty tree (`null` = the built-in box, `false` = hidden) |
 | `renderLoadingCallback` | `({ component, context, containerElement, element, label }) => void \| (() => void)` | The `isLoading` overlay (core `LoaderRenderContext`, `context: 'overlay'`); may return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; neither → the default `.wtv__loader` |
-| `renderHeaderCallback` | `({ containerElement }) => void` | Tree header rendering |
-| `renderFooterCallback` | `({ containerElement }) => void` | Tree footer rendering |
+| `renderHeaderCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Tree header (`null` = empty, `false` = hidden) |
+| `renderFooterCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Tree footer (`null` = empty, `false` = hidden) |
 | `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, entries, controller }) => void` | Take over the whole context menu (see [Custom menu renderer](#custom-menu-renderer)); close via `controller.closeContextMenu()` |
 | `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item (`buttonElement` is the item `<div role="menuitem">`); leave it empty for the default |
 

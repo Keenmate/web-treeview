@@ -1328,8 +1328,8 @@
               },
               {
                 "name": "renderNodeCallback",
-                "description": "Custom render for a node row: fill `ctx.contentElement` (render state on the ctx).",
-                "type": "(ctx: NodeRenderCallbackContext) => void"
+                "description": "Custom content of a node row (render state on the ctx). Returns string (HTML) / Node (mounted) / `null` | `undefined` (the built-in label) / `false` (hidden). Re-run only when the node or its render state changes.",
+                "type": "(ctx: NodeRenderCallbackContext) => string | Node | null | undefined | false"
               },
               {
                 "name": "renderIconCallback",
@@ -1338,13 +1338,13 @@
               },
               {
                 "name": "renderEmptyStateCallback",
-                "description": "Custom render for the empty-tree state into `ctx.containerElement`.",
-                "type": "(ctx: ContainerRenderContext) => void"
+                "description": "Custom empty-tree state. Returns string (HTML) / Node (mounted) / `null` | `undefined` (the built-in text) / `false` (hidden).",
+                "type": "(ctx: ContainerRenderContext) => string | Node | null | undefined | false"
               },
               {
                 "name": "renderEmptyZoneCallback",
-                "description": "Custom render for an empty drop zone.",
-                "type": "(ctx: ContainerRenderContext) => void"
+                "description": "Custom content of the empty-tree drop zone. Returns string (HTML) / Node (mounted) / `null` | `undefined` (the built-in box) / `false` (hidden).",
+                "type": "(ctx: ContainerRenderContext) => string | Node | null | undefined | false"
               },
               {
                 "name": "renderLoadingCallback",
@@ -1353,13 +1353,13 @@
               },
               {
                 "name": "renderHeaderCallback",
-                "description": "Custom render for the tree header.",
-                "type": "(ctx: ContainerRenderContext) => void"
+                "description": "Header above the tree. Returns string (HTML) / Node (mounted) / `null` | `undefined` (empty) / `false` (hidden).",
+                "type": "(ctx: ContainerRenderContext) => string | Node | null | undefined | false"
               },
               {
                 "name": "renderFooterCallback",
-                "description": "Custom render for the tree footer.",
-                "type": "(ctx: ContainerRenderContext) => void"
+                "description": "Footer below the tree. Returns string (HTML) / Node (mounted) / `null` | `undefined` (empty) / `false` (hidden).",
+                "type": "(ctx: ContainerRenderContext) => string | Node | null | undefined | false"
               },
               {
                 "name": "renderContextMenuCallback",

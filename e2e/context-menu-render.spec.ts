@@ -30,7 +30,7 @@ test.describe('renderContextMenuItemCallback', () => {
     await expect(menu(page)).toBeVisible();
     await expect(menu(page).locator('.custom-item')).toHaveText('★ Star Readme');
     await expect(menu(page).locator('.km-menu__item[data-id="open"]')).toContainText('Open');
-    await expect(menu(page).locator('.km-menu__item[data-id="open"] .km-menu__shortcut')).toHaveText('o');
+    await expect(menu(page).locator('.km-menu__item[data-id="open"] .km-menu__shortcut')).toHaveText('O');
   });
 
   test('a custom-rendered item still activates its onClick', async ({ page }) => {

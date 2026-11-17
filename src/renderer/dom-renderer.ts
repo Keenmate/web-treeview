@@ -365,10 +365,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     });
   }
 
-  // ── Theme ───────────────────────────────────────────────────────────
-
-  /** Forward the `theme` prop onto `.wtv__container` as `data-theme="..."`.
-   *  The dark-mode partial keys off this attribute for per-instance overrides. */
   // ── Node title overflow (wrap | ellipsis | info) ────────────────────
   // wrap / ellipsis are pure CSS (gated by data-node-title-overflow on the container).
   // `info` also measures each built-in label (one ResizeObserver) and, when it is

@@ -229,6 +229,41 @@ await tree.collapseNodes('1');</code></pre>
     </p>
 </div>
 
+<!-- Page-wide labels (core /locale) -->
+<div class="card">
+    <h2>BU08 · Page-wide labels &mdash; <code>window.components.locale</code></h2>
+    <p>Every UI string goes through core <code>/locale</code>: the instance <code>labels</code> win, then the page-wide <code>window.components.locale.labels['web-treeview']</code>, then English. Assigning the page object re-renders every live tree &mdash; texts only, expansion and selection are kept. Right-click a node for the built-in menu items, drag a node over another for the floating drop pads (<code>dropBefore</code> / <code>dropAfter</code> / <code>dropChild</code>); the empty tree on the right keeps its own <code>noData</code>.</p>
+
+    <div class="controls">
+        <label><input type="radio" name="loc-lang" value="en" checked> English (unset)</label>
+        <label><input type="radio" name="loc-lang" value="cs"> Czech, page-wide</label>
+    </div>
+
+    <div class="tree-container">
+        <web-treeview id="tree-locale" expand-level="1" drag-drop-mode="self" drop-zone-mode="floating"></web-treeview>
+    </div>
+    <div class="tree-container mt-1">
+        <web-treeview id="tree-locale-empty" labels='{"noData": "My own empty text"}'></web-treeview>
+    </div>
+    <div class="tree-container mt-1">
+        <web-treeview id="tree-locale-empty-page"></web-treeview>
+    </div>
+
+    <div class="code-block" data-language="js">
+<pre><code>window.components.locale = {
+  labels: {
+    'web-treeview': {
+      noData: 'Žádná data', copy: 'Kopírovat', cut: 'Vyjmout', paste: 'Vložit', delete: 'Smazat',
+      dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř',
+    },
+  },
+  // optional: ICU / i18next for every label
+  // formatLabelCallback: ({ component, key, params }) =&gt; i18next.t(`${component}.${key}`, params),
+};
+window.components.locale = null;   // back to English</code></pre>
+    </div>
+</div>
+
 <script type="module">
     import { appendLogLine, attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
@@ -498,6 +533,23 @@ await tree.collapseNodes('1');</code></pre>
             await raTree.collapseAll();
             status.textContent = `collapsed — the Promise settled after ${Math.round(performance.now() - start)} ms`;
         };
+
+        // BU08 · page-wide labels
+        const localeTree = document.getElementById('tree-locale');
+        localeTree.nodes = fileTree;
+        localeTree.idMember = 'id';
+        localeTree.pathMember = 'path';
+        localeTree.displayValueMember = 'name';
+        localeTree.getContextMenuItemsCallback = () => ['copy', 'cut', 'paste', 'delete', 'expand-all', 'collapse-all'];
+        const LOCALE_CS = {
+            noData: 'Žádná data', copy: 'Kopírovat', cut: 'Vyjmout', paste: 'Vložit', delete: 'Smazat',
+            expandAll: 'Rozbalit vše', collapseAll: 'Sbalit vše',
+            dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř',
+        };
+        document.querySelectorAll('input[name="loc-lang"]').forEach((r) => r.addEventListener('change', () => {
+            window.components.locale = r.value === 'cs' ? { labels: { 'web-treeview': LOCALE_CS } } : null;
+        }));
+        window.addEventListener('pagehide', () => { window.components.locale = null; });
 
         // Persist .controls across reloads (shared helper — parity with web-multiselect).
         attachControlsPersistence('basic');

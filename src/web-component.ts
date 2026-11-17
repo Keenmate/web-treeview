@@ -239,7 +239,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'isTreeDropZoneEnabled', attribute: 'enable-tree-drop-zone', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Make the whole populated tree one drop target (drop lands target=null regardless of per-node drop rules).' },
 
   // ── Rendering ──────────────────────────────────────────────────────────────
-  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute) merged per key over the English defaults (an empty string = render nothing): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items), `back` ("Back") / `close` ("Close") (the context menu as a phone sheet / drawer: submenu back row, header close button). `{name}` placeholders.' },
+  { configKey: 'labels', attribute: 'labels', converter: toObject(), on: 'update', type: 'Partial<TreeViewLabels>', description: 'UI strings — a partial object (JSON attribute), resolved per key by core `/locale`: this `labels` → the page-wide `window.components.locale.labels["web-treeview"]` → English (an empty string = render nothing; a page-wide `formatLabelCallback` formats every label): `noData` ("No data" — no nodes), `noResults` ("No results found" — the search filter left nothing), `noDisplayValue` ("[N/A]" — node without a display value), `loading` ("Loading…" — spinner aria-label), `dropHere` ("Drop here"), `showFullLabel` ("Show full label" — the node-title-overflow="info" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items), `back` ("Back") / `close` ("Close") (the context menu as a phone sheet / drawer: submenu back row, header close button), `dropBefore` / `dropAfter` / `dropChild` ("Before" / "After" / "Child" — the floating drop pads). `{name}` placeholders.' },
   { configKey: 'isEmptyDropPlaceholderShown', attribute: 'show-empty-drop-placeholder', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'Show a drop placeholder when the tree is empty.' },
   { configKey: 'shouldHighlightOnPageDrag', attribute: 'highlight-on-page-drag', converter: toBool('default-false'), on: 'update', type: 'boolean', description: 'Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode="none"`, disabled or read-only. One shared page listener for all instances (same option as web-dropzone).' },
   { configKey: 'isFlatRenderingEnabled', attribute: 'enable-flat-rendering', converter: toBool('tristate'), default: true, on: 'update', type: 'boolean', description: 'Render the visible nodes as a flat list (perf).' },
@@ -541,6 +541,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   protected override disconnect(): void {
     this.#treeview?.deactivate();
     this.#syncPageDrag();
+  }
+
+  /** The page-wide `window.components.locale` changed (core `/locale`): re-apply every built-in
+   *  label on the live tree — texts only, all tree state kept. */
+  protected override localeChanged(): void {
+    this.#treeview?.refreshLabels();
   }
 
   /** The effective disabled state flipped on the built tree (core SPEC §6.4): apply it in place. */

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — page-wide labels through core `/locale` (2026-11-17)
+- Labels resolve through core `createLabels` (D-NC-24): per key the instance `labels` → the page-wide
+  `window.components.locale.labels['web-treeview']` → English. Assigning `window.components.locale` re-renders the
+  texts of every live tree (core `localeChanged()` → `WebTreeView.refreshLabels()`; expansion, selection, focus and
+  scroll are kept); a page-wide `formatLabelCallback` (ICU / i18next) formats every label.
+- New keys `dropBefore` / `dropAfter` / `dropChild` ("Before" / "After" / "Child") — the floating drop pads were
+  hard-coded English.
+- **BREAKING: the `resolveLabel()` export is gone** (core `/locale` is the seam now; `DEFAULT_LABELS` and
+  `TreeViewLabels` stay). A custom renderer's `RendererConfig.labels` is now the core `Labels<TreeViewLabels>`
+  object (`.text(key)`), not the partial map.
+
 ### Internal — keyboard shortcuts via core `/actions` (2026-11-17)
 - The built-in clipboard / delete shortcuts (Ctrl/Cmd+C/X/V, Ctrl+Insert, Shift+Insert, Shift+Delete, Delete, Escape cancel-cut), Ctrl/Cmd+A and Shift+F10 / ContextMenu are matched with core's `matchesShortcut()` (one table, `TREE_SHORTCUTS`); the own key comparisons are gone. Same keys. Modifiers now match exactly (Ctrl+Shift+C no longer copies, Ctrl+Delete no longer deletes), and a key typed into a text field inside a node (`isTypingTarget`) is left to the field (Delete / Ctrl+C there no longer act on the selected nodes).
 

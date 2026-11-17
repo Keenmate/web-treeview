@@ -221,7 +221,7 @@ BlissFramework `naming-conventions.md` D-NC-13..27 apply; the svelte-treeview mi
   family; `selectionMode: 'multiple'`; search text = `searchTerm` / `term`.
 - Events: `<state>-change` for sets (`selection-change`, `checked-change`, `expanded-change`,
   `focus-change`), `node-<verb>` for acts. ctx nouns: `nodes` (never `items`), no bare `index`.
-- UI strings: `labels` (`src/labels.ts`, `resolveLabel` is the seam for core `/locale`).
+- UI strings: `labels` (`src/labels.ts` = keys + English) resolved by core `/locale` `createLabels` in `WebTreeView` (`this.labels.text(key)`; the renderer gets the same object as `RendererConfig.labels`). Page-wide change → `localeChanged()` → `refreshLabels()`.
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 

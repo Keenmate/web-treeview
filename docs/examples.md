@@ -336,6 +336,19 @@ tree.contextMenuXOffset = 10;  // Shift menu 10px right
 tree.contextMenuYOffset = -30; // Shift menu 30px up
 ```
 
+## Page-wide labels
+
+Every UI string resolves per key: the instance `labels` → the page-wide
+`window.components.locale.labels['web-treeview']` (core `/locale`) → English. Assigning the page object
+re-renders every live tree (texts only — expansion, selection and scroll are kept). Basic Usage BU08.
+
+```js
+window.components.locale = {
+  labels: { 'web-treeview': { noData: 'Žádná data', copy: 'Kopírovat', dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř' } },
+  // formatLabelCallback: ({ component, key, params }) => i18next.t(`${component}.${key}`, params),
+};
+```
+
 ## Rendering modes
 
 | Mode | Config | DOM Nodes | Best For |

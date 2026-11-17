@@ -134,13 +134,15 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `noData`, `noResults`, `noDisplayValue`, `loading`, `dropHere` | ✓ | ✓ | same |
 | `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
 | `showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
+| `dropBefore`, `dropAfter`, `dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
+| page-wide `window.components.locale.labels['web-treeview']` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |
 
 ## 8. Exports
 
 | web | svelte | status |
 |---|---|---|
-| `createMenuDivider`, `DEFAULT_LABELS`, `resolveLabel`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats`, `ScrollToPathOptions` | same | same |
+| `createMenuDivider`, `DEFAULT_LABELS`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats`, `ScrollToPathOptions` | same | same |
 | menu types `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`, `TreeViewActionEventDetail` | `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeAction`, `TreeActionEventDetail` | intentional — named after each library's component (like `TreeViewLabels` / `TreeLabels`) |
 | ctx `controller` + `element` (core component context, non-enumerable) | ctx `controller` (non-enumerable) | intentional — no host element in svelte |
 | `createLTree`, `TreeEngine`, `EventEmitter`, `DomRenderer`, `createRenderCoordinator`, clipboard / drag-set registry helpers, per-category loggers | — | intentional — web is renderer-pluggable / headless-capable |

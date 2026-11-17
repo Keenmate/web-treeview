@@ -1,4 +1,5 @@
-import { resolveLabel, type TreeViewLabels } from './labels';
+import { createLabels, type Labels } from '@keenmate/web-components-core/locale';
+import { DEFAULT_LABELS, type TreeViewLabels } from './labels';
 import { TreeEngine } from './controller/tree-engine';
 import type { TreeLoggers } from './logger';
 import type { TreeEngineConfig, NodeRef, NodeRenderContext, NodeTransformContext } from './controller/types';
@@ -111,6 +112,9 @@ export class WebTreeView<T = any> {
   private lastContainerSize: ContainerSize | null = null;
   /** False between deactivate() and activate() (the host is detached). */
   private isActive = true;
+  /** The UI strings (core `/locale`, D-NC-24): instance `labels` → page-wide
+   *  `window.components.locale.labels['web-treeview']` → English. Read live on every call. */
+  private labels!: Labels<TreeViewLabels>;
 
   constructor(
     element: HTMLElement,
@@ -122,6 +126,7 @@ export class WebTreeView<T = any> {
   ) {
     this.element = element;
     this.options = { ...options };
+    this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, { tag: 'web-treeview' });
 
     this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(options), log });
 
@@ -235,7 +240,7 @@ export class WebTreeView<T = any> {
 
   /** Built-in state of the default actions (text, disabled, danger). */
   private menuItemDefaults(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>): Partial<ResolvedActionItem<TreeViewAction>> | undefined {
-    const label = (key: keyof TreeViewLabels) => resolveLabel(this.options.labels, key);
+    const label = (key: keyof TreeViewLabels) => this.labels.text(key);
     const targets = () => this.actionTargets(ctx.node).map((p) => this.engine.getNodeByPath(p)).filter((n): n is LTreeNode<T> => !!n && !!n.hasChildren);
     switch (item.action) {
       case 'copy': return { text: label('copy') };
@@ -337,6 +342,16 @@ export class WebTreeView<T = any> {
     if (Object.keys(rendererConfig).length > 0) {
       this.renderer.updateConfig(rendererConfig);
     }
+  }
+
+  /**
+   * Re-apply every built-in UI string (the page-wide `window.components.locale` changed —
+   * `<web-treeview>` calls it from core `localeChanged()`). Re-renders texts only; expansion,
+   * selection, checks, focus and scroll are kept.
+   */
+  refreshLabels(): void {
+    this.engine.updateProps({ displayValueFallback: this.labels.text('noDisplayValue') });
+    this.renderer.updateConfig({ labels: this.labels });
   }
 
   expandNodes(paths: string | string[], options?: ExpandOptions): void {
@@ -795,8 +810,8 @@ export class WebTreeView<T = any> {
       isSortingEnabled: o.isSortingEnabled,
       displayValueMember: o.displayValueMember,
       getDisplayValueCallback: this.nodeCallback(o.getDisplayValueCallback),
-      // labels.noDisplayValue → the Ltree's display fallback (only when labels are (re)set).
-      displayValueFallback: 'labels' in o ? resolveLabel(o.labels, 'noDisplayValue') : undefined,
+      // labels.noDisplayValue → the Ltree's display fallback (the engine repaints only when it changed).
+      displayValueFallback: this.labels.text('noDisplayValue'),
       searchValueMember: o.searchValueMember,
       getSearchValueCallback: this.nodeCallback(o.getSearchValueCallback),
       orderMember: o.orderMember,
@@ -951,7 +966,7 @@ export class WebTreeView<T = any> {
         (node: LTreeNode<T>, value: string | null, iconElement: HTMLElement, rc: NodeRenderContext) =>
           f(this.ctx({ ...rc, node, value, iconElement }))),
       renderEmptyStateCallback: region(o.renderEmptyStateCallback),
-      labels: o.labels,
+      labels: this.labels,
       renderEmptyZoneCallback: region(o.renderEmptyZoneCallback),
       isEmptyDropPlaceholderShown: o.isEmptyDropPlaceholderShown,
       renderLoadingCallback: this.loaderDrawer(o.renderLoadingCallback),

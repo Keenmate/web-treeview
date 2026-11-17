@@ -1,3 +1,4 @@
+import type { Labels } from '@keenmate/web-components-core/locale';
 import type { TreeViewLabels } from '../labels';
 /**
  * Pluggable renderer interface.
@@ -60,8 +61,10 @@ export interface RendererConfig<T> {
   renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
   /** Informational display when the tree has no data (e.g. "No items to display"). */
   renderEmptyStateCallback?: (container: HTMLElement) => void;
-  /** UI strings (partial; `empty` = empty-tree text, `dropHere` = empty drop-zone text) — see `resolveLabel`. */
-  labels?: Partial<TreeViewLabels> | null;
+  /** The tree's UI strings — core `/locale` `createLabels` over `TreeViewLabels` (instance `labels` →
+   *  page-wide `window.components.locale.labels['web-treeview']` → English). Passing it re-applies the
+   *  built-in texts on the live tree (a `labels` or page-wide locale change). */
+  labels?: Labels<TreeViewLabels> | null;
   /** Drop zone rendered in an empty tree during drag operations. */
   renderEmptyZoneCallback?: (container: HTMLElement) => void;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a

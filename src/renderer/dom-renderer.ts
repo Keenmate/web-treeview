@@ -8,7 +8,7 @@
  * - Virtual scroll: three-div structure (scroll container → spacer → translateY content)
  */
 
-import { resolveLabel } from '../labels';
+import { DEFAULT_LABELS, type TreeViewLabels } from '../labels';
 import type { TreeViewRenderer, RendererConfig } from './types';
 import type { TreeEngine } from '../controller/tree-engine';
 import type { TreeEngineSnapshot, NodeConfig } from '../controller/types';
@@ -37,6 +37,9 @@ import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
  *  anything else (emoji, symbol, text) is rendered as the element's text. */
+/** The drop pad a position shows (`labels.dropBefore` / `dropAfter` / `dropChild`). */
+const DROP_PAD_LABEL = { before: 'dropBefore', after: 'dropAfter', child: 'dropChild' } as const satisfies Record<DropPosition, keyof TreeViewLabels>;
+
 const ICON_CLASS_LIST = /^\s*-?[A-Za-z_][\w-]*(\s+-?[A-Za-z_][\w-]*)*\s*$/;
 
 /** Add space-separated class string to an element (classList.add doesn't support spaces) */
@@ -200,7 +203,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _loaderLabel = '';
   private _syncLoader(isLoading: boolean): void {
     const draw = this.config.renderLoadingCallback;
-    const label = resolveLabel(this.config.labels, 'loading');
+    const label = this._label('loading');
     const isStale = draw !== this._loaderDrawer || label !== this._loaderLabel;
     if (this._removeLoader && (!isLoading || isStale)) {
       this._removeLoader();
@@ -211,6 +214,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this._loaderLabel = label;
       this._removeLoader = draw(this.loadingEl, label);
     }
+  }
+
+  /** One UI string through the tree's core `/locale` labels (instance → page-wide → English);
+   *  a renderer mounted without them (custom wiring) falls back to English. */
+  private _label(key: keyof TreeViewLabels): string {
+    return this.config.labels?.text(key) ?? DEFAULT_LABELS[key];
   }
 
   /** Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing). */
@@ -225,13 +234,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!target) return;
     if (!this.config.renderEmptyStateCallback) {
       const emptyState = target.querySelector('.wtv__empty-state');
-      if (emptyState) emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
+      if (emptyState) emptyState.textContent = this._label(this._emptyLabelKey);
     }
-    const showFull = resolveLabel(this.config.labels, 'showFullLabel');
+    const showFull = this._label('showFullLabel');
     for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
     if (!this.config.renderEmptyZoneCallback) {
       const content = target.querySelector('.wtv__empty-zone-content');
-      if (content) content.textContent = resolveLabel(this.config.labels, 'dropHere');
+      if (content) content.textContent = this._label('dropHere');
     }
   }
 
@@ -422,7 +431,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'wtv__node-info';
-    btn.setAttribute('aria-label', resolveLabel(this.config.labels, 'showFullLabel'));
+    btn.setAttribute('aria-label', this._label('showFullLabel'));
     btn.disabled = this._isDisabled;
     const stop = (e: Event) => e.stopPropagation();
     btn.addEventListener('pointerdown', stop);
@@ -1382,7 +1391,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         } else {
           const content = document.createElement('div');
           content.className = 'wtv__empty-zone-content';
-          content.textContent = resolveLabel(this.config.labels, 'dropHere');
+          content.textContent = this._label('dropHere');
           zone.appendChild(content);
         }
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
@@ -1421,7 +1430,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (this.config.renderEmptyStateCallback) {
         this.config.renderEmptyStateCallback(emptyState as HTMLElement);
       } else {
-        emptyState.textContent = resolveLabel(this.config.labels, this._emptyLabelKey);
+        emptyState.textContent = this._label(this._emptyLabelKey);
       }
     }
   }
@@ -2028,7 +2037,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const zone = document.createElement('div');
       zone.className = `wtv__drop-zone wtv__drop-zone--${pos}`;
       zone.setAttribute('data-drop-position', pos);
-      zone.textContent = pos.charAt(0).toUpperCase() + pos.slice(1);
+      zone.textContent = this._label(DROP_PAD_LABEL[pos]);
       zones.appendChild(zone);
     }
 
@@ -2072,9 +2081,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       ...config.menuPresentationOptions?.(),
       // The tree's own strings: a lazy submenu's loading row, the sheet header's back / close buttons.
       labels: {
-        loading: resolveLabel(config.labels, 'loading'),
-        back: resolveLabel(config.labels, 'back'),
-        close: resolveLabel(config.labels, 'close'),
+        loading: this._label('loading'),
+        back: this._label('back'),
+        close: this._label('close'),
       },
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
       renderItemCallback: config.renderContextMenuItemCallback

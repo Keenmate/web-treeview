@@ -1,11 +1,9 @@
 /**
  * UI strings (BlissFramework D-NC-24). Every built-in text the tree renders is a
- * `labels` key: the `labels` input is a PARTIAL object (also a JSON attribute),
- * merged per key over the English defaults below. Placeholders use `{name}`.
- *
- * {@link resolveLabel} is the single resolving seam — when core `/locale` lands,
- * the page-wide `window.components.locale.labels['web-treeview']` layer goes in
- * there (instance → page → built-in English).
+ * `labels` key: the `labels` input is a PARTIAL object (also a JSON attribute).
+ * Resolved per key by core `/locale` `createLabels` (see `WebTreeView`): the
+ * instance `labels` → the page-wide `window.components.locale.labels['web-treeview']`
+ * → the English defaults below. Placeholders use `{name}`.
  */
 
 /** Every UI string of `<web-treeview>`. */
@@ -40,6 +38,12 @@ export interface TreeViewLabels {
   back: string;
   /** Context menu as a phone sheet / drawer: the accessible name of the header's close button. */
   close: string;
+  /** Drag-and-drop pads over a hovered node (`drop-zone-mode="floating"`): drop before the node. */
+  dropBefore: string;
+  /** Drop pad: drop after the node. */
+  dropAfter: string;
+  /** Drop pad: drop as the node's child. */
+  dropChild: string;
 }
 
 /** Built-in English strings. */
@@ -65,23 +69,7 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   sortAll: 'Sort all',
   back: 'Back',
   close: 'Close',
+  dropBefore: 'Before',
+  dropAfter: 'After',
+  dropChild: 'Child',
 });
-
-/**
- * Resolve one UI string: instance `labels[key]` → built-in English, then fill
- * `{name}` placeholders from `vars` (unknown placeholders are left as-is).
- * A string — including `''` (deliberately empty: render nothing) — wins;
- * `undefined` / missing / non-string falls back to the English default.
- * Every label is inserted as text (`textContent` / attributes), so placeholder
- * values need no HTML escaping.
- */
-export function resolveLabel(
-  labels: Partial<TreeViewLabels> | null | undefined,
-  key: keyof TreeViewLabels,
-  vars?: Record<string, string | number>,
-): string {
-  const own = labels?.[key];
-  const text = typeof own === 'string' ? own : DEFAULT_LABELS[key];
-  if (!vars) return text;
-  return text.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m));
-}

@@ -81,7 +81,7 @@ import {
 } from '../clipboard';
 import { initLogger, uiLogger, dragLogger, defaultTreeLoggers, type TreeLoggers } from '../logger';
 import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
-import { perfStart, perfEnd } from '../perf-logger';
+import { perf } from '../perf-logger';
 
 // ─── TreeEngine ───────────────────────────────────────────────────────
 
@@ -4141,7 +4141,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       shouldRevealContainer?: boolean;
     }
   ): Promise<boolean> {
-    perfStart(`[${this._treeId}] scrollToPath`);
+    perf.start(`[${this._treeId}] scrollToPath`);
     const {
       shouldExpandAncestors = true,
       shouldHighlight = false,
@@ -4157,7 +4157,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     const node = this.tree.getNodeByPath(path);
     if (!node || !node.id) {
       this.log.UI.warn(`scrollToPath: node not found for path ${path}`);
-      perfEnd(`[${this._treeId}] scrollToPath`);
+      perf.end(`[${this._treeId}] scrollToPath`);
       return false;
     }
 
@@ -4212,7 +4212,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     if (!contentDiv) {
-      perfEnd(`[${this._treeId}] scrollToPath`);
+      perf.end(`[${this._treeId}] scrollToPath`);
       // Skipped by beforeScrollCallback in virtual scroll: the node exists, its row just isn't
       // in the rendered window — found, nothing to highlight.
       if (scroll === null) return true;
@@ -4251,7 +4251,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       this.currentSelection = { element: contentDiv, timeoutId };
     }
 
-    perfEnd(`[${this._treeId}] scrollToPath`);
+    perf.end(`[${this._treeId}] scrollToPath`);
     return true;
   }
 

@@ -17,7 +17,7 @@ import { Indexer, DEFAULT_INDEXER_BATCH_SIZE } from './indexer';
 /** Default max matches a search/filter returns (FlexSearch's silent default is 100).
  *  Override with `searchResultLimit` or a per-call `{ limit }`. */
 export const DEFAULT_SEARCH_RESULT_LIMIT = 1000;
-import { perfStart, perfEnd, perfSummary } from '../perf-logger';
+import { perf } from '../perf-logger';
 import { defaultTreeLoggers } from '../logger';
 
 /** Display-value comparator of the default sibling rule (numeric-aware: "Item 2" < "Item 10"). */
@@ -422,7 +422,7 @@ export function createLTree<T>(
 			nodeCount = 0;
 			maxLevel = 0;
 
-			perfStart(`[${_treeId}] insertArray:conversion`);
+			perf.start(`[${_treeId}] insertArray:conversion`);
 
 			const conversionFailures: Array<{ node: LTreeNode<T>; originalData: T; error: string }> = [];
 
@@ -456,18 +456,18 @@ export function createLTree<T>(
 			// then the per-node flags, whose callbacks / expandLevel read the level.
 			resolveLevels(mappedData);
 			for (const node of mappedData) seedFlags(node, node.data as T);
-			const conversionTime = perfEnd(`[${_treeId}] insertArray:conversion`, data.length);
+			const conversionTime = perf.end(`[${_treeId}] insertArray:conversion`, data.length);
 
-			perfStart(`[${_treeId}] insertArray:sort`);
+			perf.start(`[${_treeId}] insertArray:sort`);
 			// isSorted = the caller's hint that the data is already in insert order
 			// (parents first, siblings ordered) — skip sorting entirely.
 			if (!this.isSorted) {
 				mappedData = this.isSortingEnabled ? this._defaultSort(this, mappedData) : this._sortByLevel(mappedData);
 			}
 
-			const sortTime = perfEnd(`[${_treeId}] insertArray:sort`, data.length);
+			const sortTime = perf.end(`[${_treeId}] insertArray:sort`, data.length);
 
-			perfStart(`[${_treeId}] insertArray:insert`);
+			perf.start(`[${_treeId}] insertArray:insert`);
 
 			const failedNodes: Array<{ node: LTreeNode<T>; originalData: T; error: string }> = [...conversionFailures];
 
@@ -553,10 +553,10 @@ export function createLTree<T>(
 				this._emitTreeChanged();
 			}
 
-			const insertTime = perfEnd(`[${_treeId}] insertArray:insert`, data.length);
+			const insertTime = perf.end(`[${_treeId}] insertArray:insert`, data.length);
 
 			// Log performance summary
-			perfSummary(_treeId || 'unknown', {
+			perf.summarize(`[${_treeId || 'unknown'}] insertArray`, {
 				'Conversion': conversionTime,
 				'Sort': sortTime,
 				'Insert': insertTime
@@ -628,10 +628,10 @@ export function createLTree<T>(
 				return;
 			}
 
-			perfStart(`[${_treeId}] filterNodes:search`);
+			perf.start(`[${_treeId}] filterNodes:search`);
 			const { nodes, isLimited, limit } = this._runSearch(_searchText!, _searchOptions);
 			const foundPaths = nodes.map((n) => n.path);
-			perfEnd(`[${_treeId}] filterNodes:search`, nodes.length);
+			perf.end(`[${_treeId}] filterNodes:search`, nodes.length);
 
 			this.createFilteredTree(foundPaths);
 			this.onSearchStatus?.({
@@ -677,7 +677,7 @@ export function createLTree<T>(
 		},
 
 		createFilteredTree(targetPaths: string[]): void {
-			perfStart(`[${_treeId}] createFilteredTree`);
+			perf.start(`[${_treeId}] createFilteredTree`);
 			filteredRoot.children = [];
 			filteredIndex.clear();
 			filteredTree = null;
@@ -723,7 +723,7 @@ export function createLTree<T>(
 			this.isFiltered = true;
 			this._emitTreeChanged();
 
-			perfEnd(`[${_treeId}] createFilteredTree`, rootNodes.length);
+			perf.end(`[${_treeId}] createFilteredTree`, rootNodes.length);
 
 		},
 
@@ -776,7 +776,7 @@ export function createLTree<T>(
 			nodePath?: string | string[] | null | undefined,
 			options?: ExpandOptions
 		): void {
-			perfStart(`[${_treeId}] expandAll`);
+			perf.start(`[${_treeId}] expandAll`);
 			const self = this;
 			const exclusive = options?.isExclusive ?? false;
 			function setExpandedRecursive(node: LTreeNode<T>, value: boolean) {
@@ -840,14 +840,14 @@ export function createLTree<T>(
 
 			// isSilent = no events only; the tree always re-renders.
 			this._emitTreeChanged();
-			perfEnd(`[${_treeId}] expandAll`);
+			perf.end(`[${_treeId}] expandAll`);
 		},
 
 		collapseAll(
 			nodePath?: string | string[] | null | undefined,
 			options?: ExpandOptions
 		): void {
-			perfStart(`[${_treeId}] collapseAll`);
+			perf.start(`[${_treeId}] collapseAll`);
 			const self = this;
 
 			function collapseRecursive(node: LTreeNode<T>) {
@@ -874,14 +874,14 @@ export function createLTree<T>(
 			}
 
 			this._emitTreeChanged(); // isSilent = no events only; always re-render
-			perfEnd(`[${_treeId}] collapseAll`);
+			perf.end(`[${_treeId}] collapseAll`);
 		},
 
 		expandNodes: function (
 			path: string | string[],
 			options?: ExpandOptions
 		) {
-			perfStart(`[${_treeId}] expandNodes`);
+			perf.start(`[${_treeId}] expandNodes`);
 			const self = this;
 			const exclusive = options?.isExclusive ?? false;
 			const rootNode = this.isFiltered ? filteredRoot : root;
@@ -929,7 +929,7 @@ export function createLTree<T>(
 				this._emitTreeChanged();
 			}
 
-			perfEnd(`[${_treeId}] expandNodes`);
+			perf.end(`[${_treeId}] expandNodes`);
 			return this; // Return the API object for chaining
 		},
 

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — page-wide node drag via core `watchPageDrag` (2026-11-17)
+- `highlight-on-page-drag` (the `armed` attribute / `:state(armed)`) now runs on core's `watchPageDrag({ types: ['application/svelte-treeview'] })` + `applyArmedState()` (SPEC §12.28); treeview's own copy (`src/page-node-drag.ts`) is gone. Same arming rules; after Escape the same drag no longer re-arms on its next `dragover`.
+
 ### Fixed — node paths escaped in the drag selectors (2026-11-16)
 - The touch-drag drop-target highlight and the "can't drag" indicator built `[data-tree-path="…"]` selectors
   from the raw path; a path with a quote or a backslash threw a `SyntaxError` from `querySelector`. They

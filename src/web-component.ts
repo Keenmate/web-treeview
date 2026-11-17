@@ -35,6 +35,8 @@ import {
   toFunction,
   adoptStyles,
   createCustomStyles,
+  watchPageDrag,
+  applyArmedState,
   type CustomStylesHandle,
   type InputDef,
   type EventDef,
@@ -73,7 +75,12 @@ import type {
 import type { ContainerSize } from './renderer/types';
 import type { SearchOptions } from 'flexsearch';
 import styles from './css/main.css?inline';
-import { subscribePageNodeDrag, isPageNodeDragActive, applyArmedState } from './page-node-drag';
+
+/**
+ * The `dataTransfer` type every treeview node drag carries (set in the engine's
+ * `dragstart`) — what the page-wide `watchPageDrag` arms on.
+ */
+const NODE_DRAG_TYPE = 'application/svelte-treeview';
 
 /** Any callback input. */
 const cb = (): ReturnType<typeof toFunction> => toFunction();
@@ -541,8 +548,10 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── armed (highlight-on-page-drag) ───────────────────────────────────────
 
-  /** Unsubscribe from the shared page-drag tracker (set while `highlight-on-page-drag` is live). */
+  /** Unsubscribe from core's shared page-drag watcher (set while `highlight-on-page-drag` is live). */
   #unsubscribePageDrag?: () => void;
+  /** A node drag is over the page (core `watchPageDrag`, only while subscribed). */
+  #isNodeDragOverPage = false;
   #isArmed = false;
 
   /**
@@ -554,17 +563,24 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /**
-   * Join / leave the shared page-drag tracker per `highlight-on-page-drag` and the
+   * Join / leave core's shared page-drag watcher (`watchPageDrag`) per `highlight-on-page-drag` and the
    * connection state (one page listener set for every instance), then re-derive
    * the armed state.
    */
   #syncPageDrag(): void {
     const shouldTrack = this.isConnected && !!(this.config as { shouldHighlightOnPageDrag?: boolean }).shouldHighlightOnPageDrag;
     if (shouldTrack && !this.#unsubscribePageDrag) {
-      this.#unsubscribePageDrag = subscribePageNodeDrag(() => this.#syncArmed());
+      this.#unsubscribePageDrag = watchPageDrag({
+        types: [NODE_DRAG_TYPE],
+        onChange: (isActive) => {
+          this.#isNodeDragOverPage = isActive;
+          this.#syncArmed();
+        },
+      });
     } else if (!shouldTrack && this.#unsubscribePageDrag) {
       this.#unsubscribePageDrag();
       this.#unsubscribePageDrag = undefined;
+      this.#isNodeDragOverPage = false;
     }
     this.#syncArmed();
   }
@@ -572,7 +588,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   /** Armed = tracking + a node drag over the page + the tree accepts drops. */
   #syncArmed(): void {
     const isArmed = !!this.#unsubscribePageDrag
-      && isPageNodeDragActive()
+      && this.#isNodeDragOverPage
       && (this.config as { dragDropMode?: string | null }).dragDropMode !== 'none'
       && !this.isEffectivelyDisabled
       && !(this.config as { isReadonly?: boolean }).isReadonly;

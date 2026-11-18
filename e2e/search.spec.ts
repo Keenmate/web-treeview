@@ -129,3 +129,34 @@ test.describe('Filter', () => {
     await fillUntilCounter(page, 'london', '2/2');
   });
 });
+
+test.describe('Search folding (core normalizeSearchText)', () => {
+  test('an unaccented query finds accented nodes (Český, Łódź, Straße)', async ({ page }) => {
+    await gotoSearch(page);
+    const out = await page.evaluate(async () => {
+      const el = document.createElement('web-treeview') as any;
+      el.setAttribute('use-internal-search-index', 'true');
+      el.displayValueMember = 'name';
+      el.searchValueMember = 'name';
+      el.nodes = [
+        { id: 1, path: '1', name: 'Český Krumlov' },
+        { id: 2, path: '2', name: 'Łódź' },
+        { id: 3, path: '3', name: 'Hauptstraße' },
+        { id: 4, path: '4', name: 'Brno' },
+      ];
+      const indexed = new Promise<void>((resolve) => el.addEventListener('index-progress', (e: CustomEvent) => {
+        if (e.detail.isComplete) resolve();
+      }));
+      document.body.appendChild(el);
+      await indexed;
+      const names = (q: string) => el.searchNodes(q).map((n: any) => n.data.name);
+      const result = { ces: names('ces'), lodz: names('lodz'), strasse: names('strasse'), accentedQuery: names('ČESKÝ') };
+      el.remove();
+      return result;
+    });
+    expect(out.ces).toEqual(['Český Krumlov']);
+    expect(out.lodz).toEqual(['Łódź']);
+    expect(out.strasse).toEqual(['Hauptstraße']);
+    expect(out.accentedQuery).toEqual(['Český Krumlov']);
+  });
+});

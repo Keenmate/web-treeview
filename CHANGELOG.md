@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — search folds text like the other Keenmate components (2026-11-18)
+- The built-in FlexSearch index folds indexed values and the query with core `normalizeSearchText` (SPEC §12.11) —
+  the folding web-multiselect, the web-grid filter row and web-commandpalette use — as FlexSearch's `normalize`
+  step; its `full` tokenisation, numeric split and dedupe are unchanged. 5000 nodes index in about the same time
+  (ASCII ~17 ms vs ~18 ms, accented ~40 ms vs ~34 ms).
+- BREAKING (search results): letters with no Unicode decomposition now fold too — `lodz` finds `Łódź`, `strasse`
+  finds `Straße`, `aerobic` finds `Ærobic` (`ł ø đ ð ħ ı ß æ œ ŧ þ ĳ ŀ`). Plain accents already folded (`ces` finds
+  `Český`). A custom `initializeIndexCallback` index keeps its own encoder.
+
 ### Changed — virtual-scroll window on core `computeVirtualRange` (2026-11-18)
 - The flat render path's virtual window (snapshot + the per-frame scroll fast path) is core `computeVirtualRange`
   (SPEC §12.26) instead of the tree's own `scrollTop / rowHeight` math; index jumps (`revealNode`, `scrollToPath`)

@@ -30,6 +30,7 @@ import {
   toFloat,
   toText,
   toValue,
+  toList,
   toObject,
   toCustom,
   toFunction,
@@ -42,6 +43,7 @@ import {
   type CustomStylesHandle,
   type InputDef,
   type EventDef,
+  type Converter,
 } from '@keenmate/web-components-core';
 import { menuPresentationInputs, menuPresentationOptions } from '@keenmate/web-components-core/menu';
 import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-components-core/positioning';
@@ -145,6 +147,43 @@ const toTooltipDelay = () =>
 /** Live `el.nodes` (core `getLiveValue`, SPEC §4.1): the built tree's current node data.
  *  Assigned in a static block so it can reach the private `#treeview`. */
 let readLiveNodes: (el: HTMLElement) => unknown[] | undefined = () => undefined;
+
+/** The tree-state inputs (`expandedPaths` / `selectedPaths` / `checkedPaths`): applied on the built tree
+ *  directly, never through the engine config (it would re-apply the assigned set on every update). */
+type StateKey = 'expandedPaths' | 'selectedPaths' | 'checkedPaths';
+const STATE_KEYS: readonly StateKey[] = ['expandedPaths', 'selectedPaths', 'checkedPaths'];
+
+/** Live state sets (core `getLiveValue`): the built tree's current set. Assigned in the static block. */
+let readLiveState: (el: HTMLElement, key: StateKey) => string[] | undefined = () => undefined;
+
+/**
+ * "Never set" for a state input — its default and its absent-attribute value. One shared frozen `[]`, so it
+ * reads as an empty set and the first build can still tell it from an assigned `[]` (which it applies: an empty
+ * set overrides `expandLevel` / the data's `selected` flags). After the build it clears the set (attribute
+ * removed, `el.x = undefined`).
+ */
+const UNSET_PATHS = Object.freeze([]) as unknown as string[];
+
+/**
+ * A path set: a JSON array or a comma-separated list on the attribute (core `toList`), any iterable of strings
+ * on the property (a `Set` is copied to an array; `null` = the empty set).
+ */
+function toPathSet(): Converter<string[]> {
+  const list = toList({ itemType: 'string' });
+  return {
+    fromAttribute(raw, el, attr, reportInvalid) {
+      return raw === null || raw.trim() === '' ? UNSET_PATHS : list.fromAttribute!(raw, el, attr, reportInvalid);
+    },
+    normalize(value) {
+      if (value === null) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'object' && Symbol.iterator in value) return [...(value as Iterable<unknown>)];
+      return value;
+    },
+    validate: list.validate,
+    toAttribute: list.toAttribute,
+  };
+}
 
 const INPUTS: readonly InputDef[] = [
   // ── Tree identification ────────────────────────────────────────────────────
@@ -275,6 +314,11 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'shouldClickToggleCheckbox', attribute: 'click-toggle-checkbox', converter: toBool('tristate'), default: false, on: 'update', type: 'boolean', description: 'A node-row click also toggles its checkbox.' },
 
   // ── Complex property (nodes; too large for an attribute) ───────────────────
+  // ── Tree state (applied on the built tree; reading returns the live set) ──
+  { configKey: 'expandedPaths', attribute: 'expanded-paths', converter: toPathSet(), default: UNSET_PATHS, on: 'update', getLiveValue: (el) => readLiveState(el, 'expandedPaths'), type: 'string[]', description: 'The expanded set. Assigning (any iterable of paths) replaces it — branches not listed collapse — silently: no `expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce). Attribute: a JSON array (`["1","1.2"]`) or a comma-separated list. Reading returns the live set once built. Set before the first build it replaces the `expand-level` expansion; never set, the tree keeps its own; removing the attribute (or `el.expandedPaths = undefined`) after the build collapses all.' },
+  { configKey: 'selectedPaths', attribute: 'selected-paths', converter: toPathSet(), default: UNSET_PATHS, on: 'update', getLiveValue: (el) => readLiveState(el, 'selectedPaths'), type: 'string[]', description: 'The selected set. Assigning (any iterable of paths) replaces it silently: no `selection-change` / `checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce). Attribute: a JSON array or a comma-separated list. Reading returns the live set once built. Never set, the data\'s `selected` flags apply; removing the attribute (or `el.selectedPaths = undefined`) after the build clears it.' },
+  { configKey: 'checkedPaths', attribute: 'checked-paths', converter: toPathSet(), default: UNSET_PATHS, on: 'update', getLiveValue: (el) => readLiveState(el, 'checkedPaths'), type: 'string[]', description: 'The checked set (checkbox data state). Reading returns it as emitted (projected through `cascade-check-policy`) once built. Assigning (any iterable of paths) replaces it silently: no `checked-change` (use `checkNodes` / `uncheckAll` to announce). Attribute: a JSON array or a comma-separated list. Never set, the data\'s checked flags apply; removing the attribute (or `el.checkedPaths = undefined`) after the build clears it.' },
+
   { configKey: 'nodes', converter: toValue({ validate: (v): v is unknown[] => Array.isArray(v) }), on: 'update', getLiveValue: (el) => readLiveNodes(el), type: 'ReadonlyArray<Record<string, unknown>>', description: 'The node objects. Assigning replaces the tree (JS API); reading returns the current state once built — every node data object in tree order, mutations included (also `el.controller.nodes`).' },
 
   // ── Custom styles (element-only; injected, not passed to the engine) ───────
@@ -399,7 +443,7 @@ const EVENTS: readonly EventDef[] = [
 
 /** configKey the engine does NOT own — injected/handled by this element. `isDisabled` is sent as
  *  the EFFECTIVE state by #assembleConfig and flipped in place by disabledChanged() (SPEC §6.4). */
-const NON_ENGINE_KEYS = new Set(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag', 'isDisabled', 'menuPresentation', 'menuSide']);
+const NON_ENGINE_KEYS = new Set<string>(['customStyles', 'getCustomStylesCallback', 'shouldHighlightOnPageDrag', 'isDisabled', 'menuPresentation', 'menuSide', ...STATE_KEYS]);
 
 export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, TreeViewController<T>> {
   protected static override inputs = INPUTS;
@@ -407,6 +451,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   static {
     readLiveNodes = (el) => (el instanceof WebTreeViewElement ? el.#treeview?.nodes : undefined);
+    readLiveState = (el, key) => (el instanceof WebTreeViewElement ? el.#treeview?.[key] : undefined);
   }
 
   // Type-only: core installs the `on<Name>` twins at runtime (§12.5); each is
@@ -481,9 +526,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   /** Core custom CSS (SPEC §12.8): the page layer for the tag, then this instance's. */
   #customStyles: CustomStylesHandle | null = null;
 
-  /** State assigned before the first build (`expandedPaths` / `selectedPaths` / `checkedPaths`), applied right after it. */
-  #pendingState: { expandedPaths?: string[]; selectedPaths?: string[]; checkedPaths?: string[] } = {};
-
   constructor() {
     super();
     this.#shadow = this.attachShadow({ mode: 'open' });
@@ -512,15 +554,19 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * `expandLevel` auto-expansion when `data` arrives) only fire when the relevant
    * keys are present together. A changed-keys-only partial would drop them.
    * `this.config` already holds every value in `partial`. A batch of element-only keys
-   * (NON_ENGINE_KEYS: custom styles, page-drag highlight) doesn't reach the engine.
+   * (NON_ENGINE_KEYS: custom styles, page-drag highlight, the state sets) doesn't reach the engine.
+   * A state set (`expandedPaths` / `selectedPaths` / `checkedPaths`) in the batch is assigned on the
+   * tree after the engine update, so `el.nodes = d; el.expandedPaths = p` expands paths of `d`.
    */
   protected override update(partial: Record<string, unknown>): void {
     if ('getCustomStylesCallback' in partial || 'customStyles' in partial) this.#customStyles?.refresh();
     if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial || 'isReadonly' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
     const keys = Object.keys(partial);
-    if (keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key))) return;
-    this.#treeview.update(this.#assembleConfig());
+    if (!(keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key)))) this.#treeview.update(this.#assembleConfig());
+    for (const key of STATE_KEYS) {
+      if (key in partial) this.#treeview[key] = partial[key] === UNSET_PATHS ? [] : (partial[key] as string[]);
+    }
   }
 
   /**
@@ -641,11 +687,11 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#isRendering = false;
     this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
     this.#applyCustomStyles();
-    const pending = this.#pendingState;
-    this.#pendingState = {};
-    if (pending.expandedPaths) this.#treeview.expandedPaths = pending.expandedPaths;
-    if (pending.selectedPaths) this.#treeview.selectedPaths = pending.selectedPaths;
-    if (pending.checkedPaths) this.#treeview.checkedPaths = pending.checkedPaths;
+    // State sets assigned before the build (property or attribute); a set never assigned leaves the tree's own.
+    for (const key of STATE_KEYS) {
+      const paths = this.config[key];
+      if (paths !== UNSET_PATHS) this.#treeview[key] = paths as string[];
+    }
   }
 
   /** The element's instance loggers for the engine / LTree / renderer, resolved
@@ -754,14 +800,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#treeview;
   }
 
-  /** Assign a state set on the live tree, or hold it until the first build. */
-  #setState(key: 'expandedPaths' | 'selectedPaths' | 'checkedPaths', paths: Iterable<string>): void {
-    const list = [...(paths ?? [])];
-    const tree = this.#live;
-    if (tree) tree[key] = list;
-    else this.#pendingState[key] = list;
-  }
-
   expandAll(paths?: string | string[] | null, options?: ExpandOptions): void {
     this.#live?.expandAll(paths, options);
   }
@@ -806,17 +844,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   activateMenuItem(item: TreeMenuItem<T>, ctx: TreeMenuContext<T>, trigger?: HTMLElement, event?: Event): Promise<boolean> {
     return this.#live?.activateMenuItem(item, ctx, trigger, event) ?? Promise.resolve(false);
-  }
-
-  /** The expanded set. Assigning replaces it (branches not listed collapse) silently — no
-   *  `expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce); before
-   *  the first build the value is held and applied once the tree exists. */
-  get expandedPaths(): string[] {
-    return this.#live?.expandedPaths ?? [...(this.#pendingState.expandedPaths ?? [])];
-  }
-
-  set expandedPaths(paths: Iterable<string>) {
-    this.#setState('expandedPaths', paths);
   }
 
   getVisibleFlatNodes(): LTreeNode<T>[] {
@@ -972,16 +999,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getSelectedNodes() ?? [];
   }
 
-  /** The selected set (a snapshot). Assigning replaces it silently — no `selection-change` /
-   *  `checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce). */
-  get selectedPaths(): string[] {
-    return this.#live?.selectedPaths ?? [...(this.#pendingState.selectedPaths ?? [])];
-  }
-
-  set selectedPaths(paths: Iterable<string>) {
-    this.#setState('selectedPaths', paths);
-  }
-
   isNodeSelected(path: string): boolean {
     return this.#live?.isNodeSelected(path) ?? false;
   }
@@ -1030,16 +1047,6 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   getCheckedNodes(): LTreeNode<T>[] {
     return this.#live?.getCheckedNodes() ?? [];
-  }
-
-  /** The checked set as emitted (projected through `cascadeCheckPolicy`). Assigning
-   *  replaces it silently — no `checked-change` (use `checkNodes` / `uncheckAll` to announce). */
-  get checkedPaths(): string[] {
-    return this.#live?.checkedPaths ?? [...(this.#pendingState.checkedPaths ?? [])];
-  }
-
-  set checkedPaths(paths: Iterable<string>) {
-    this.#setState('checkedPaths', paths);
   }
 
   isNodeChecked(path: string): boolean {
@@ -1157,4 +1164,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 }
 
 // Every input-table row as a typed property (core docs/usage.md → "Typing the properties", rulebook C-CA-16).
-export interface WebTreeViewElement<T = any> extends TreeViewElementConfig<T> {}
+export interface WebTreeViewElement<T = any> extends TreeViewElementConfig<T> {
+  /** The expanded set (live once built). Assigning (any iterable) replaces it silently — no `expanded-change`. */
+  get expandedPaths(): string[];
+  set expandedPaths(paths: Iterable<string> | null | undefined);
+  /** The selected set (live once built). Assigning (any iterable) replaces it silently — no `selection-change`. */
+  get selectedPaths(): string[];
+  set selectedPaths(paths: Iterable<string> | null | undefined);
+  /** The checked set as emitted (live once built). Assigning (any iterable) replaces it silently — no `checked-change`. */
+  get checkedPaths(): string[];
+  set checkedPaths(paths: Iterable<string> | null | undefined);
+}

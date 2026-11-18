@@ -391,7 +391,7 @@
         },
         {
           "name": "labels",
-          "description": "UI strings — a partial object (JSON attribute), resolved per key by core `/locale`: this `labels` → the page-wide `window.components.locale.labels[\"web-treeview\"]` → English (an empty string = render nothing; a page-wide `formatLabelCallback` formats every label): `noData` (\"No data\" — no nodes), `noResults` (\"No results found\" — the search filter left nothing), `noDisplayValue` (\"[N/A]\" — node without a display value), `loading` (\"Loading…\" — spinner aria-label), `dropHere` (\"Drop here\"), `showFullLabel` (\"Show full label\" — the node-title-overflow=\"info\" button), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items), `back` (\"Back\") / `close` (\"Close\") (the context menu as a phone sheet / drawer: submenu back row, header close button), `dropBefore` / `dropAfter` / `dropChild` (\"Before\" / \"After\" / \"Child\" — the floating drop pads); screen-reader announcements (core `announce()`, `\"\"` silences one): `announceSearchResults` / `announceSearchResultsOne` (\"{count} results\" / \"1 result\" — a settled search), `announceSearchNoResults` (\"No results found\"), `announceMovedInto` / `announceMovedBefore` / `announceMovedAfter` / `announceCopiedInto` / `announceCopiedBefore` / `announceCopiedAfter` (\"{name} moved into {target}\" … — a drop the tree placed), `announceDropItems` (\"{count} items\" — the `{name}` of a multi-node drop), `announceDropTreeRoot` (\"the tree\" — the `{target}` of a drop on the top level), `announceDropDenied` (\"Cannot drop here: {target} does not accept dropped items\"). `{name}` placeholders.",
+          "description": "UI strings — a partial object (JSON attribute), resolved per key by core `/locale`: this `labels` → the page-wide `window.components.locale.labels[\"web-treeview\"]` → English (an empty string = render nothing; a page-wide `formatLabelCallback` formats every label): `noData` (\"No data\" — no nodes), `noResults` (\"No results found\" — the search filter left nothing), `noDisplayValue` (\"[N/A]\" — node without a display value), `loading` (\"Loading…\" — spinner aria-label), `dropHere` (\"Drop here\"), `showFullLabel` (\"Show full label\" — the node-title-overflow=\"info\" button), `treeLabel` (\"Tree\" — aria-label of the tree body), `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` (built-in context-menu items), `back` (\"Back\") / `close` (\"Close\") (the context menu as a phone sheet / drawer: submenu back row, header close button), `dropBefore` / `dropAfter` / `dropChild` (\"Before\" / \"After\" / \"Child\" — the floating drop pads); screen-reader announcements (core `announce()`, `\"\"` silences one): `announceSearchResults` / `announceSearchResultsOne` (\"{count} results\" / \"1 result\" — a settled search), `announceSearchNoResults` (\"No results found\"), `announceMovedInto` / `announceMovedBefore` / `announceMovedAfter` / `announceCopiedInto` / `announceCopiedBefore` / `announceCopiedAfter` (\"{name} moved into {target}\" … — a drop the tree placed), `announceDropItems` (\"{count} items\" — the `{name}` of a multi-node drop), `announceDropTreeRoot` (\"the tree\" — the `{target}` of a drop on the top level), `announceDropDenied` (\"Cannot drop here: {target} does not accept dropped items\"). `{name}` placeholders.",
           "values": [{ "name": "Partial<TreeViewLabels>" }]
         },
         {
@@ -487,6 +487,21 @@
           "name": "click-toggle-checkbox",
           "description": "A node-row click also toggles its checkbox.",
           "values": []
+        },
+        {
+          "name": "expanded-paths",
+          "description": "The expanded set. Assigning (any iterable of paths) replaces it — branches not listed collapse — silently: no `expanded-change` / `tree-change` (use `expandNodes` / `collapseNodes` to announce). Attribute: a JSON array (`[\"1\",\"1.2\"]`) or a comma-separated list. Reading returns the live set once built. Set before the first build it replaces the `expand-level` expansion; never set, the tree keeps its own; removing the attribute (or `el.expandedPaths = undefined`) after the build collapses all.",
+          "values": [{ "name": "string[]" }]
+        },
+        {
+          "name": "selected-paths",
+          "description": "The selected set. Assigning (any iterable of paths) replaces it silently: no `selection-change` / `checked-change` / `focus-change` (use `selectNodes` / `clearSelection` to announce). Attribute: a JSON array or a comma-separated list. Reading returns the live set once built. Never set, the data's `selected` flags apply; removing the attribute (or `el.selectedPaths = undefined`) after the build clears it.",
+          "values": [{ "name": "string[]" }]
+        },
+        {
+          "name": "checked-paths",
+          "description": "The checked set (checkbox data state). Reading returns it as emitted (projected through `cascade-check-policy`) once built. Assigning (any iterable of paths) replaces it silently: no `checked-change` (use `checkNodes` / `uncheckAll` to announce). Attribute: a JSON array or a comma-separated list. Never set, the data's checked flags apply; removing the attribute (or `el.checkedPaths = undefined`) after the build clears it.",
+          "values": [{ "name": "string[]" }]
         },
         {
           "name": "custom-styles",

@@ -238,7 +238,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `navigationOverrides` | `TreeNavigationOverrides<T> \| null` | Replace individual keyboard-navigation methods — see [Keyboard navigation overrides](#keyboard-navigation-overrides). Reassign to swap at runtime; `null` restores the defaults |
 | `controller` | `TreeViewController<T>` (read-only) | The public facade: every element method + the state properties below (read-only there) + `getNodeRef(path)`, `getChildren(path)`, `getSiblings(path)`, `openContextMenu(path, x, y)`, `applyChanges(changes)`. Replaces the removed `getController()` |
 
-### State (element: read / assign; `el.controller`: read-only)
+### State (element: read / assign, also as attributes; `el.controller`: read-only)
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -250,8 +250,13 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `isRendering` | `boolean` | Read-only: `true` while a progressive (batched) render is in flight (`render-start` … `render-complete`) |
 | `containerSize` | `{ width, height } \| null` | Read-only: the tree container's last measured size (`container-resize`); `null` before the first measure |
 
-Assigned before the first build, `expandedPaths` / `selectedPaths` / `checkedPaths` are held and
-applied right after it. For a silent replace use `clearSelection(undefined, { isSilent: true })` +
+The three sets are also attributes — `expanded-paths`, `selected-paths`, `checked-paths` — taking a JSON
+array (`expanded-paths='["1","1.2"]'`) or a comma-separated list; an invalid value warns, fires
+`input-rejected` and keeps the previous set. Set before the first build (attribute or property), a set is
+applied right after it and replaces the tree's own (`expand-level`, the data's selected / checked flags); never
+set, the tree keeps its own. Reading returns the live set once built (right after an assignment, until the
+coalesced update runs, the assigned value). Removing the attribute (or assigning `undefined` / `null`) after the
+build empties the set. For a silent replace use `clearSelection(undefined, { isSilent: true })` +
 `selectNodes(paths, { isSilent: true })` (and `uncheckAll` / `checkNodes` likewise).
 
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`

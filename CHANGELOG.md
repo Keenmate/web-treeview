@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — `expanded-paths` / `selected-paths` / `checked-paths` attributes (2026-11-18)
+- `expandedPaths`, `selectedPaths` and `checkedPaths` are core input-table rows now (`getLiveValue`, SPEC §4.1)
+  instead of hand-staged element state, so each is also an attribute: a JSON array (`checked-paths='["1.2"]'`) or a
+  comma-separated list. An invalid value warns, fires `input-rejected` and keeps the previous set; removing the
+  attribute after the build empties the set. Properties work as before (any iterable; reading returns the live set
+  once built) — except that a read right after an assignment, before the coalesced update, returns the assigned
+  value (core's read-after-write rule), and several sets assigned together go into one update. They take part in
+  `setAttributes()` / `batch()`.
+
 ### Changed — search folds text like the other Keenmate components (2026-11-18)
 - The built-in FlexSearch index folds indexed values and the query with core `normalizeSearchText` (SPEC §12.11) —
   the folding web-multiselect, the web-grid filter row and web-commandpalette use — as FlexSearch's `normalize`

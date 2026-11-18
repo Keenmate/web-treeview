@@ -303,3 +303,83 @@ test('el.nodes: the assigned input before the build, the live state after it (mu
   expect(out.staged).toEqual(['9']);
   expect(out.replaced).toEqual(['9']);
 });
+
+test.describe('state inputs: expanded-paths / selected-paths / checked-paths', () => {
+  const NODES = [{ id: 1, path: '1', name: 'A' }, { id: 11, path: '1.1', name: 'A1' }, { id: 12, path: '1.2', name: 'A2' }, { id: 2, path: '2', name: 'B' }];
+
+  test('each attribute sets its state (JSON array) — before the build and live', async ({ page }) => {
+    const consoleLines: string[] = [];
+    page.on('console', (m) => consoleLines.push(m.text()));
+    await load(page);
+    const out = await page.evaluate(async (nodes) => {
+      const el = document.createElement('web-treeview') as any;
+      el.setAttribute('show-checkboxes', '');
+      el.setAttribute('selection-mode', 'multiple');
+      el.setAttribute('expanded-paths', '["1"]');
+      el.setAttribute('selected-paths', '["1.1","2"]');
+      el.setAttribute('checked-paths', '["1.2"]');
+      el.nodes = nodes;
+      document.body.appendChild(el);
+      await el.whenReady();
+      const built = { expanded: el.expandedPaths, selected: [...el.selectedPaths].sort(), checked: el.checkedPaths };
+      el.setAttribute('expanded-paths', '[]');
+      el.setAttribute('selected-paths', '2');
+      el.setAttribute('checked-paths', '["1.1","1.2"]');
+      await el.whenSettled();
+      const live = { expanded: el.expandedPaths, selected: el.selectedPaths, checked: [...el.checkedPaths].sort() };
+      el.removeAttribute('selected-paths');
+      await el.whenSettled();
+      const removed = el.selectedPaths;
+      el.remove();
+      return { built, live, removed };
+    }, NODES);
+    expect(out.built).toEqual({ expanded: ['1'], selected: ['1.1', '2'], checked: ['1.2'] });
+    expect(out.live).toEqual({ expanded: [], selected: ['2'], checked: ['1.1', '1.2'] });
+    expect(out.removed).toEqual([]);
+    // Core's input-table sanity check (dead default, getLiveValue on on:'none', shadowed member) stays quiet.
+    expect(consoleLines.filter((l) => l.includes('input table'))).toEqual([]);
+  });
+
+  test('an invalid JSON value warns (input-rejected) and keeps the previous set', async ({ page }) => {
+    const consoleLines: string[] = [];
+    page.on('console', (m) => { if (m.type() === 'warning') consoleLines.push(m.text()); });
+    await load(page);
+    const out = await page.evaluate(async () => {
+      const el = (window as any).tree;
+      el.setAttribute('expanded-paths', '["1"]');
+      await el.whenSettled();
+      const rejected: any[] = [];
+      el.addEventListener('input-rejected', (e: CustomEvent) => rejected.push(e.detail));
+      el.setAttribute('expanded-paths', '["2",');
+      el.setAttribute('checked-paths', '[1,2]');
+      await el.whenSettled();
+      return { expanded: el.expandedPaths, checked: el.checkedPaths, rejected: rejected.map((d) => [d.configKey, d.source]) };
+    });
+    expect(out.expanded).toEqual(['1']);
+    expect(out.checked).toEqual([]);
+    expect(out.rejected).toEqual([['expandedPaths', 'attribute'], ['checkedPaths', 'attribute']]);
+    expect(consoleLines.some((l) => l.includes('expanded-paths'))).toBe(true);
+  });
+
+  test('property read-back returns the live state after a user click', async ({ page }) => {
+    await load(page);
+    await page.evaluate(() => {
+      const el = (window as any).tree;
+      el.expandedPaths = new Set(['1']);
+      el.selectedPaths = ['2'];
+      el.checkedPaths = ['2.1'];
+    });
+    await expect(nodeByPath(page, '1.1')).toBeVisible();
+    await nodeContent(nodeByPath(page, '1.1')).click();
+    await nodeByPath(page, '1.2').locator('.wtv__checkbox').first().click();
+    await toggleOf(page, '2').click();
+    await expect(nodeByPath(page, '2.1')).toBeVisible();
+    const out = await page.evaluate(() => {
+      const el = (window as any).tree;
+      return { expanded: [...el.expandedPaths].sort(), selected: el.selectedPaths, checked: [...el.checkedPaths].sort() };
+    });
+    expect(out.expanded).toEqual(['1', '2']);
+    expect(out.selected).toEqual(['1.1']);
+    expect(out.checked).toEqual(['1.2', '2.1']);
+  });
+});

@@ -18,27 +18,27 @@ test.describe('empty tree', () => {
     await expect(tree(page, 'empty-default').locator('.wtv__empty-state')).toHaveText('No data');
   });
 
-  test('labels.noData (JSON attribute) replaces the default text', async ({ page }) => {
+  test('messages.noData (JSON attribute) replaces the default text', async ({ page }) => {
     await expect(tree(page, 'empty-text').locator('.wtv__empty-state')).toHaveText('Nothing here');
   });
 
   test('labels are live: assigning el.labels re-texts the empty state; an unset key falls back to English', async ({ page }) => {
     const t = tree(page, 'empty-text');
-    await t.evaluate((el: any) => { el.labels = { noData: 'Prázdné' }; });
+    await t.evaluate((el: any) => { el.labels = { 'messages.noData': 'Prázdné' }; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('Prázdné');
-    await t.evaluate((el: any) => { el.labels = { copy: 'Kopírovat' }; });
+    await t.evaluate((el: any) => { el.labels = { 'menuItems.copy': 'Kopírovat' }; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
   });
 
   test("a '' label renders nothing (deliberately empty); a missing key is the English default", async ({ page }) => {
     const t = tree(page, 'empty-text');
-    await t.evaluate((el: any) => { el.labels = { noData: '' }; });
+    await t.evaluate((el: any) => { el.labels = { 'messages.noData': '' }; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('');
     await t.evaluate((el: any) => { el.labels = {}; });
     await expect(t.locator('.wtv__empty-state')).toHaveText('No data');
   });
 
-  test('labels.dropHere texts the default empty drop zone (live)', async ({ page }) => {
+  test('messages.dropHere texts the default empty drop zone (live)', async ({ page }) => {
     const t = tree(page, 'empty-zone-labels');
     await expect(t.locator('.wtv__empty-zone-content')).toHaveText('Drop it');
     await t.evaluate((el: any) => el.removeAttribute('labels'));
@@ -105,12 +105,12 @@ test.describe('loading', () => {
     await expect(t.locator('.wtv__empty-state')).toHaveCount(0);
   });
 
-  test('the loading overlay is a status with labels.loading as its accessible name (live)', async ({ page }) => {
+  test('the loading overlay is a status with ariaLabels.loading as its accessible name (live)', async ({ page }) => {
     const t = tree(page, 'loading');
     const overlay = t.locator('.wtv__loading-overlay');
     await expect(overlay).toHaveAttribute('role', 'status');
     await expect(overlay).toHaveAttribute('aria-label', 'Loading…');
-    await t.evaluate((el: any) => { el.labels = { loading: 'Načítám…' }; });
+    await t.evaluate((el: any) => { el.labels = { 'ariaLabels.loading': 'Načítám…' }; });
     await expect(overlay).toHaveAttribute('aria-label', 'Načítám…');
   });
 

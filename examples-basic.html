@@ -232,7 +232,7 @@ await tree.collapseNodes('1');</code></pre>
 <!-- Page-wide labels (core /locale) -->
 <div class="card">
     <h2>BU08 · Page-wide labels &mdash; <code>window.components.locale</code></h2>
-    <p>Every UI string goes through core <code>/locale</code>: the instance <code>labels</code> win, then the page-wide <code>window.components.locale.labels['web-treeview']</code>, then English. Assigning the page object re-renders every live tree &mdash; texts only, expansion and selection are kept. Right-click a node for the built-in menu items, drag a node over another for the floating drop pads (<code>dropBefore</code> / <code>dropAfter</code> / <code>dropChild</code>); the empty tree on the right keeps its own <code>noData</code>.</p>
+    <p>Every UI string goes through core <code>/locale</code>: the instance <code>labels</code> win, then the page-wide flat dictionary <code>window.components.locale.labels['web-treeview.&lt;key&gt;']</code>, then English. Assigning the page object re-renders every live tree &mdash; texts only, expansion and selection are kept. Right-click a node for the built-in menu items, drag a node over another for the floating drop pads (<code>labels.dropBefore</code> / <code>labels.dropAfter</code> / <code>labels.dropChild</code>); the empty tree on the right keeps its own <code>messages.noData</code>.</p>
 
     <div class="controls">
         <label><input type="radio" name="loc-lang" value="en" checked> English (unset)</label>
@@ -243,7 +243,7 @@ await tree.collapseNodes('1');</code></pre>
         <web-treeview id="tree-locale" expand-level="1" drag-drop-mode="self" drop-zone-mode="floating"></web-treeview>
     </div>
     <div class="tree-container mt-1">
-        <web-treeview id="tree-locale-empty" labels='{"noData": "My own empty text"}'></web-treeview>
+        <web-treeview id="tree-locale-empty" labels='{"messages.noData": "My own empty text"}'></web-treeview>
     </div>
     <div class="tree-container mt-1">
         <web-treeview id="tree-locale-empty-page"></web-treeview>
@@ -252,13 +252,13 @@ await tree.collapseNodes('1');</code></pre>
     <div class="code-block" data-language="js">
 <pre><code>window.components.locale = {
   labels: {
-    'web-treeview': {
-      noData: 'Žádná data', copy: 'Kopírovat', cut: 'Vyjmout', paste: 'Vložit', delete: 'Smazat',
-      dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř',
-    },
+    'web-treeview.messages.noData': 'Žádná data',
+    'web-treeview.menuItems.copy': 'Kopírovat', 'web-treeview.menuItems.cut': 'Vyjmout',
+    'web-treeview.menuItems.paste': 'Vložit', 'web-treeview.menuItems.delete': 'Smazat',
+    'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
   },
-  // optional: ICU / i18next for every label
-  // formatLabelCallback: ({ component, key, params }) =&gt; i18next.t(`${component}.${key}`, params),
+  // optional: i18next / ICU for every label (key = the full key, 'web-treeview.menuItems.copy')
+  // translateCallback: ({ key, params }) =&gt; i18next.t(key, params),
 };
 window.components.locale = null;   // back to English</code></pre>
     </div>
@@ -542,12 +542,14 @@ window.components.locale = null;   // back to English</code></pre>
         localeTree.displayValueMember = 'name';
         localeTree.getContextMenuItemsCallback = () => ['copy', 'cut', 'paste', 'delete', 'expand-all', 'collapse-all'];
         const LOCALE_CS = {
-            noData: 'Žádná data', copy: 'Kopírovat', cut: 'Vyjmout', paste: 'Vložit', delete: 'Smazat',
-            expandAll: 'Rozbalit vše', collapseAll: 'Sbalit vše',
-            dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř',
+            'web-treeview.messages.noData': 'Žádná data',
+            'web-treeview.menuItems.copy': 'Kopírovat', 'web-treeview.menuItems.cut': 'Vyjmout',
+            'web-treeview.menuItems.paste': 'Vložit', 'web-treeview.menuItems.delete': 'Smazat',
+            'web-treeview.menuItems.expandAll': 'Rozbalit vše', 'web-treeview.menuItems.collapseAll': 'Sbalit vše',
+            'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
         };
         document.querySelectorAll('input[name="loc-lang"]').forEach((r) => r.addEventListener('change', () => {
-            window.components.locale = r.value === 'cs' ? { labels: { 'web-treeview': LOCALE_CS } } : null;
+            window.components.locale = r.value === 'cs' ? { labels: LOCALE_CS } : null;
         }));
         window.addEventListener('pagehide', () => { window.components.locale = null; });
 

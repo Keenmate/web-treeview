@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — label keys are flat `<elementType>.<name>` (2026-11-19)
+- BREAKING: every `labels` key is renamed to the core `/locale` shape (rulebook D-NC-24): `messages.*`, `labels.*`,
+  `ariaLabels.*`, `menuItems.*`. English defaults are unchanged. The `loading` string fed both the visible loading
+  row of a lazy context submenu and the `aria-label` of the `isLoading` overlay; it is now two keys
+  (`messages.loading` + `ariaLabels.loading`).
+- BREAKING: the page-wide labels are one flat dictionary of full keys —
+  `window.components.locale.labels['web-treeview.messages.noData']` instead of
+  `labels: { 'web-treeview': { noData } }`. The instance `labels` take the short key (`messages.noData`) or the
+  full key (`web-treeview.messages.noData`).
+- BREAKING: the page-wide `formatLabelCallback` is now core's `translateCallback({ component, key, template, params,
+  locale })`, `key` = the full key; return `null` / `undefined` to leave a label to the built-in formatting. It is
+  never asked for a key the instance set.
+
+| old key | new key |
+|---|---|
+| `noData` | `messages.noData` |
+| `noResults` | `messages.noResults` |
+| `dropHere` | `messages.dropHere` |
+| `loading` | `messages.loading` (lazy submenu row) + `ariaLabels.loading` (overlay `aria-label`) |
+| `noDisplayValue` | `labels.noDisplayValue` |
+| `dropBefore` / `dropAfter` / `dropChild` | `labels.dropBefore` / `labels.dropAfter` / `labels.dropChild` |
+| `treeLabel` | `ariaLabels.tree` |
+| `showFullLabel` | `ariaLabels.showFullLabel` |
+| `close` | `ariaLabels.closeSheet` |
+| `back` | `menuItems.back` |
+| `copy` `cut` `paste` `delete` `expand` `collapse` `expandSubtree` `collapseSubtree` `expandAll` `collapseAll` `sort` `sortSubtree` `sortAll` | `menuItems.<same>` |
+| `announceSearchResults` / `announceSearchResultsOne` / `announceSearchNoResults` | `ariaLabels.searchResults` / `ariaLabels.searchResultsOne` / `ariaLabels.searchNoResults` |
+| `announceMovedInto` / `Before` / `After`, `announceCopiedInto` / `Before` / `After` | `ariaLabels.movedInto` / `movedBefore` / `movedAfter`, `ariaLabels.copiedInto` / `copiedBefore` / `copiedAfter` |
+| `announceDropItems` / `announceDropTreeRoot` / `announceDropDenied` | `ariaLabels.dropItems` / `ariaLabels.dropTreeRoot` / `ariaLabels.dropDenied` |
+
 ### Added — `expanded-paths` / `selected-paths` / `checked-paths` attributes (2026-11-18)
 - `expandedPaths`, `selectedPaths` and `checkedPaths` are core input-table rows now (`getLiveValue`, SPEC §4.1)
   instead of hand-staged element state, so each is also an attribute: a JSON array (`checked-paths='["1.2"]'`) or a

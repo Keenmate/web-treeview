@@ -7,7 +7,7 @@ import { test, expect, type Page, nodeByPath, nodeContent } from './fixtures';
  *
  * Fixture: test/aria-tree.html
  *   #tree   — 1 Fruit (1.1 Apple, 1.2 Banana, 1.3 Cherry) · 2 Veg (2.1 Carrot) · 3 Leaf; single selection
- *   #multi  — same data, selection-mode="multiple", labels.treeLabel = "Food"
+ *   #multi  — same data, selection-mode="multiple", labels['ariaLabels.tree'] = "Food"
  *   #checks — same data, checkboxes, checkbox-mode="cascade"
  *   #big    — virtual scroll, 50 roots × 99 children
  */
@@ -38,7 +38,7 @@ test('the body is a labelled tree; aria-multiselectable only in multiple mode', 
   await expect(body(page, 'multi')).toHaveAttribute('aria-multiselectable', 'true');
   await expect(body(page, 'multi')).toHaveAttribute('aria-label', 'Food');
   // A labels change applies live.
-  await page.evaluate(() => { (window as any).tree.labels = { treeLabel: 'Pantry' }; });
+  await page.evaluate(() => { (window as any).tree.labels = { 'ariaLabels.tree': 'Pantry' }; });
   await expect(body(page, 'tree')).toHaveAttribute('aria-label', 'Pantry');
 });
 

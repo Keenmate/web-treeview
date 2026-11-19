@@ -45,8 +45,8 @@ import type { Layer } from '@keenmate/web-components-core/positioning';
 
 /** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
  *  anything else (emoji, symbol, text) is rendered as the element's text. */
-/** The drop pad a position shows (`labels.dropBefore` / `dropAfter` / `dropChild`). */
-const DROP_PAD_LABEL = { before: 'dropBefore', after: 'dropAfter', child: 'dropChild' } as const satisfies Record<DropPosition, keyof TreeViewLabels>;
+/** The drop pad a position shows (`labels.dropBefore` / `labels.dropAfter` / `labels.dropChild` keys). */
+const DROP_PAD_LABEL = { before: 'labels.dropBefore', after: 'labels.dropAfter', child: 'labels.dropChild' } as const satisfies Record<DropPosition, keyof TreeViewLabels>;
 
 const ICON_CLASS_LIST = /^\s*-?[A-Za-z_][\w-]*(\s+-?[A-Za-z_][\w-]*)*\s*$/;
 
@@ -182,7 +182,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl = document.createElement('div');
     this.bodyEl.className = 'wtv__tree';
     this.bodyEl.setAttribute('role', 'tree');
-    this.bodyEl.setAttribute('aria-label', this._label('treeLabel'));
+    this.bodyEl.setAttribute('aria-label', this._label('ariaLabels.tree'));
     this.container.appendChild(this.bodyEl);
 
     // Footer
@@ -233,13 +233,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while
    *  `isLoading`, removed after; redrawn when the drawer (instance `renderLoadingCallback`)
-   *  or the `labels.loading` text changes. */
+   *  or the `ariaLabels.loading` label changes. */
   private _removeLoader: (() => void) | null = null;
   private _loaderDrawer: unknown = undefined;
   private _loaderLabel = '';
   private _syncLoader(isLoading: boolean): void {
     const draw = this.config.renderLoadingCallback;
-    const label = this._label('loading');
+    const label = this._label('ariaLabels.loading');
     const isStale = draw !== this._loaderDrawer || label !== this._loaderLabel;
     if (this._removeLoader && (!isLoading || isStale)) {
       this._removeLoader();
@@ -258,8 +258,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     return this.config.labels?.text(key) ?? DEFAULT_LABELS[key];
   }
 
-  /** Label key of the built-in empty state: `noData` (no nodes) or `noResults` (filtered to nothing). */
-  private _emptyLabelKey: 'noData' | 'noResults' = 'noData';
+  /** Label key of the built-in empty state: `messages.noData` (no nodes) or `messages.noResults` (filtered to nothing). */
+  private _emptyLabelKey: 'messages.noData' | 'messages.noResults' = 'messages.noData';
 
   /** The callback the current `.wtv__empty-zone` was built with (NOTES #20). */
   private _emptyZoneCb: unknown = undefined;
@@ -270,12 +270,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (!target) return;
     const emptyState = target.querySelector<HTMLElement>('.wtv__empty-state');
     if (emptyState) this._renderEmptyState(emptyState);
-    this.bodyEl?.setAttribute('aria-label', this._label('treeLabel'));
-    const showFull = this._label('showFullLabel');
+    this.bodyEl?.setAttribute('aria-label', this._label('ariaLabels.tree'));
+    const showFull = this._label('ariaLabels.showFullLabel');
     for (const btn of target.querySelectorAll('.wtv__node-info')) btn.setAttribute('aria-label', showFull);
     // Only the built-in zone content carries this class (a custom result replaces it).
     const content = target.querySelector('.wtv__empty-zone-content');
-    if (content) content.textContent = this._label('dropHere');
+    if (content) content.textContent = this._label('messages.dropHere');
   }
 
   /** A header / footer region: its callback's result through core `renderSlot` (no built-in content). */
@@ -523,7 +523,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'wtv__node-info';
-    btn.setAttribute('aria-label', this._label('showFullLabel'));
+    btn.setAttribute('aria-label', this._label('ariaLabels.showFullLabel'));
     btn.disabled = this._isDisabled;
     const stop = (e: Event) => e.stopPropagation();
     btn.addEventListener('pointerdown', stop);
@@ -1529,8 +1529,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.nodeElements.clear();
     this._destroyAllTooltips();
 
-    // No nodes at all → `noData`; nodes exist but the search filter hid them all → `noResults`.
-    this._emptyLabelKey = snapshot.hasNodes ? 'noResults' : 'noData';
+    // No nodes at all → `messages.noData`; nodes exist but the search filter hid them all → `messages.noResults`.
+    this._emptyLabelKey = snapshot.hasNodes ? 'messages.noResults' : 'messages.noData';
     // Show empty zone (drop target during drag) or empty state (informational)
     const emptyState = `${snapshot.isDragInProgress}|${snapshot.isDropPlaceholderActive}|${snapshot.isLoading}|${snapshot.isArmed}`;
     if (this._lastEmptyState !== emptyState) {
@@ -1559,7 +1559,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           renderDefault: (c) => {
             const content = document.createElement('div');
             content.className = 'wtv__empty-zone-content';
-            content.textContent = this._label('dropHere');
+            content.textContent = this._label('messages.dropHere');
             c.replaceChildren(content);
           },
         });
@@ -2237,9 +2237,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       ...config.menuPresentationOptions?.(),
       // The tree's own strings: a lazy submenu's loading row, the sheet header's back / close buttons.
       labels: {
-        loading: this._label('loading'),
-        back: this._label('back'),
-        close: this._label('close'),
+        loading: this._label('messages.loading'),
+        back: this._label('menuItems.back'),
+        close: this._label('ariaLabels.closeSheet'),
       },
       defaults: (item) => config.contextMenuItemDefaults?.(item as TreeMenuItem<T>, ctx),
       renderItemCallback: config.renderContextMenuItemCallback

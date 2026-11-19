@@ -61,7 +61,7 @@ test('menu items render from core action items: built-in defaults, data-action /
 });
 
 test('built-in menu item texts come from labels', async ({ page }) => {
-  await page.evaluate(() => { (document.querySelector('web-treeview') as any).labels = { copy: 'Kopírovat', delete: 'Smazat' }; });
+  await page.evaluate(() => { (document.querySelector('web-treeview') as any).labels = { 'menuItems.copy': 'Kopírovat', 'menuItems.delete': 'Smazat' }; });
   await openMenu(page, '1');
   await expect(item(page, '[data-action="copy"]')).toHaveText('Kopírovat');
   await expect(item(page, '[data-action="delete"]')).toHaveText('Smazat');

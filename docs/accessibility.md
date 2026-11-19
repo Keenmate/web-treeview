@@ -44,7 +44,7 @@ The tree follows the WAI-ARIA tree pattern with **`aria-activedescendant`**: foc
 
 | Element | Role / state |
 |---|---|
-| Tree body (`.wtv__tree`, `tabindex="0"`) | `role="tree"`, `aria-label` = `labels.treeLabel` (`'Tree'`), `aria-multiselectable="true"` in `selection-mode="multiple"`, `aria-activedescendant` = the focused node's row, `aria-disabled="true"` when `disabled` |
+| Tree body (`.wtv__tree`, `tabindex="0"`) | `role="tree"`, `aria-label` = the `ariaLabels.tree` label (`'Tree'`), `aria-multiselectable="true"` in `selection-mode="multiple"`, `aria-activedescendant` = the focused node's row, `aria-disabled="true"` when `disabled` |
 | Row (`.wtv__node`) | `role="treeitem"`, `aria-level` (1 = top level), `aria-posinset` / `aria-setsize` (among the visible siblings — counted over the whole tree, not the rendered virtual window), `aria-expanded` (parents only), `aria-selected`, `aria-checked` (`true` / `false` / `mixed` for a tri-state parent; only on rows with a checkbox) |
 
 Rows are rendered flat (siblings in one container, indented by level), so there are no `role="group"` containers — `aria-level` / `aria-posinset` / `aria-setsize` carry the structure. `aria-activedescendant` and the row ids come from core `/a11y` `createActiveDescendant` (ARIA-only: the tree keeps all its own keys above); the attribute is removed while the focused node's row isn't rendered (scrolled out of a virtual window, inside a collapsed branch). Keyboard moves bring the row into view first (`beforeScrollCallback` applies), so the reference resolves.

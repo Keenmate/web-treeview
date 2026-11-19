@@ -175,7 +175,7 @@ tree.addEventListener('action', ({ detail }) =&gt; log(detail.id, detail.node));
                 <td><code>menu-presentation</code></td>
                 <td><code>'auto' | 'floating' | 'sheet' | 'drawer'</code></td>
                 <td><code>'auto'</code></td>
-                <td>How the menu opens (core <code>openMenu()</code>): <code>auto</code> = a bottom sheet on a phone, else floating at the pointer. Read when the menu opens. The sheet / drawer use <code>labels.back</code> / <code>labels.close</code>.</td>
+                <td>How the menu opens (core <code>openMenu()</code>): <code>auto</code> = a bottom sheet on a phone, else floating at the pointer. Read when the menu opens. The sheet / drawer use the <code>menuItems.back</code> / <code>ariaLabels.closeSheet</code> labels.</td>
             </tr>
             <tr>
                 <td><code>menuSide</code></td>

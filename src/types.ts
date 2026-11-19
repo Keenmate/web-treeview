@@ -556,11 +556,11 @@ export interface TreeViewConfig<T = any> {
    *  isExpanded, …) — read by core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden (the slot is emptied + `hidden`).
    *  Re-run only when the node's version or render state changes, so a focused input inside survives repaints. */
   renderNodeCallback?: (ctx: NodeRenderCallbackContext<T>) => SlotResult;
-  /** Return the empty-tree state — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `labels.noData` / `noResults` text, `false` = hidden (the slot is emptied + `hidden`). */
+  /** Return the empty-tree state — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `messages.noData` / `messages.noResults` label, `false` = hidden (the slot is emptied + `hidden`). */
   renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
-  /** UI strings, a partial object merged per key over the English defaults (`empty`, `dropHere`, `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`). */
+  /** UI strings, a partial object of flat `<elementType>.<name>` keys (`messages.noData`, `menuItems.copy`, … — see `TreeViewLabels`) merged per key over the English defaults. */
   labels?: Partial<TreeViewLabels> | null;
-  /** Return the empty-tree drop zone's content — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `labels.dropHere` box, `false` = hidden (the slot is emptied + `hidden`)
+  /** Return the empty-tree drop zone's content — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `messages.dropHere` box, `false` = hidden (the slot is emptied + `hidden`)
    *  (hidden = no drop target in an empty tree). */
   renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** Keep the empty drop zone visible whenever the tree is empty (not only during a

@@ -141,7 +141,7 @@ test.describe('Insert Result and Validation', () => {
 // ── Display Value Fallback ─────────────────────────────────────────────────
 
 test.describe('Display Value Fallback', () => {
-  test('a missing display member resolves to labels.noDisplayValue and does not crash the sort', async ({ page }) => {
+  test('a missing display member resolves to the labels.noDisplayValue label and does not crash the sort', async ({ page }) => {
     await gotoData(page);
     const tree = treeInCard(fallbackCard(page));
 

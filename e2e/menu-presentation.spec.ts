@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 
 /**
  * Core /menu host inputs (SPEC §12.13): `menu-presentation` / `menu-side` reach the context
- * menu's core `openMenu()`, and the tree's `labels.back` / `labels.close` name the sheet's
+ * menu's core `openMenu()`, and the tree's `menuItems.back` / `ariaLabels.closeSheet` labels name the sheet's
  * back row and close button. Fixture: /test/menu-presentation.html (drawer, end side, Czech labels).
  */
 const PAGE = '/test/menu-presentation.html';
@@ -30,7 +30,7 @@ test.describe('context menu presentation (menu-presentation / menu-side)', () =>
     const close = sheet.locator('.km-sheet-close');
     await expect(close).toHaveAttribute('aria-label', 'Zavřít');
 
-    // Drill into a submenu: the back row speaks labels.back.
+    // Drill into a submenu: the back row speaks menuItems.back.
     await sheet.locator('.km-menu__item', { hasText: 'More' }).click();
     await expect(sheet.locator('.km-menu__item--back')).toHaveText('Zpět');
 

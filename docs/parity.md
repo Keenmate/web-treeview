@@ -129,14 +129,16 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 
 ## 7. Labels (`labels` input, partial, English defaults)
 
+web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte column compares the same strings under its own (pre-rename) key names.
+
 | key | web | svelte | status |
 |---|---|---|---|
-| `noData`, `noResults`, `noDisplayValue`, `loading`, `dropHere` | ✓ | ✓ | same |
-| `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
-| `showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
-| `treeLabel` ("Tree" — aria-label of the `role="tree"` body) | ✓ | — | gap — svelte has no tree roles yet |
-| `dropBefore`, `dropAfter`, `dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
-| page-wide `window.components.locale.labels['web-treeview']` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
+| `messages.noData`, `messages.noResults`, `labels.noDisplayValue`, `messages.loading` / `ariaLabels.loading`, `messages.dropHere` | ✓ | ✓ | same |
+| `menuItems.*`: `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
+| `ariaLabels.showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
+| `ariaLabels.tree` ("Tree" — aria-label of the `role="tree"` body) | ✓ | — | gap — svelte has no tree roles yet |
+| `labels.dropBefore`, `labels.dropAfter`, `labels.dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
+| page-wide flat `window.components.locale.labels['web-treeview.<key>']` + `translateCallback` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |
 
 ## 8. Exports
@@ -160,7 +162,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 - svelte only: callbacks invoked while rendering (`getContextMenuItemsCallback`, per-node `get*Callback`s) must not write `$state` synchronously (Svelte's `state_unsafe_mutation`) — defer with `queueMicrotask` if needed. Intentional (framework rule).
 - Class prefixes `wtv__` vs `stv__`, CSS custom properties `--wtv-*` vs `--stv-*` — intentional prefix.
 - Neither exposes `::part()` / `<slot>` (render callbacks vs snippets) — intentional.
-- Loader (`isLoading` overlay, per-node lazy-load toggle): web draws the shared Keenmate loader — a `currentColor` mask from `--wtv-loader-*` → `--base-loader-*` (one look across components, slows under reduced motion, never stops); the overlay is `role="status"` + `aria-label` = `labels.loading` while loading, removed after — same in svelte (`--stv-loader-*`). Sizes: `loader-size` (→ `--base-loader-size`), the overlay `loader-overlay-size` (2×) and the per-node `loader-inline-size` (0.75×, CSS-only, `aria-busy` on the row) — same.
+- Loader (`isLoading` overlay, per-node lazy-load toggle): web draws the shared Keenmate loader — a `currentColor` mask from `--wtv-loader-*` → `--base-loader-*` (one look across components, slows under reduced motion, never stops); the overlay is `role="status"` + `aria-label` = the `ariaLabels.loading` label while loading, removed after — same in svelte (`--stv-loader-*`). Sizes: `loader-size` (→ `--base-loader-size`), the overlay `loader-overlay-size` (2×) and the per-node `loader-inline-size` (0.75×, CSS-only, `aria-busy` on the row) — same.
 - Scrolling — keyboard moves (`navTo`: arrows, PageUp / PageDown, Home / End, Shift range moves; virtual scroll included) **always scroll instantly** (`behavior: 'auto'`), never with the token, so a held key never lags behind an animation — same (Keenmate rule, 2026-10-29). Programmatic jumps — `scrollToPath` with no `behavior` passed — read `--*-scroll-behavior` (→ `--base-scroll-behavior`: `smooth`, `auto` under reduced motion); an explicit `behavior` always wins — same.
 - Scroll target — **web**: keyboard moves, `scrollToPath` and the paste reveal all go through core's `scrollIntoContainer` (2026-11-02, core rc16): only the row's scroll container moves (the tree's own or a wrapper around the element — slots walked, `scroll-padding` / `scroll-margin` honoured, RTL-aware `inline`, no `scrollTo()` when nothing moves); with no container the page gets the caller's `block` (a `center` jump centres the row in the window). **svelte**: keyboard moves use its own container scroll, but the public `scrollToPath` still calls `scrollIntoView` (scrolls the page too) — **to mirror** (2026-11-02): port core's algorithm (no core dependency).
 - Keyboard scroll position: `block: 'nearest'` — a visible row doesn't scroll, an off-screen one is brought in to the nearest edge (svelte: inside the tree's scroll container only, never the page; virtual scroll included) — same.

@@ -158,7 +158,7 @@ test.describe('sort menu built-ins', () => {
     await page.evaluate(async () => {
       const t = (window as any).tree;
       t.getContextMenuItemsCallback = () => ['sort', 'sort-subtree', 'sort-all'];
-      t.labels = { sortAll: 'Sort everything' };
+      t.labels = { 'menuItems.sortAll': 'Sort everything' };
       await t.whenSettled();
     });
     await openMenu(page, '1.2');

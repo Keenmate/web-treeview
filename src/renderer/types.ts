@@ -66,7 +66,7 @@ export interface RendererConfig<T> {
    *  core `renderSlot` (string = HTML, Node = mounted, `null` / `undefined` = the built-in text, `false` = hidden). */
   renderEmptyStateCallback?: () => SlotResult;
   /** The tree's UI strings — core `/locale` `createLabels` over `TreeViewLabels` (instance `labels` →
-   *  page-wide `window.components.locale.labels['web-treeview']` → English). Passing it re-applies the
+   *  page-wide `window.components.locale.labels['web-treeview.<key>']` → English). Passing it re-applies the
    *  built-in texts on the live tree (a `labels` or page-wide locale change). */
   labels?: Labels<TreeViewLabels> | null;
   /** Drop zone rendered in an empty tree during drag operations. */

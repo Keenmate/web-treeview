@@ -32,7 +32,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Dot-path hierarchy (`path-member`) | ✓ | `data.spec.ts` | `data.html` |
 | Custom `tree-path-separator` (`/`, `::`) | ✓ | `data.spec.ts` | `data.html` |
 | `insertResult` diagnostics (orphans, empty, duplicate) | ✓ | `data.spec.ts` | `data.html` |
-| `labels.noDisplayValue` (display fallback) | ✓ | `data.spec.ts` | `data.html` |
+| `labels` key `labels.noDisplayValue` (display fallback) | ✓ | `data.spec.ts` | `data.html` |
 | Default display-value order, `order-member`, sibling `sortCallback` (descending, children kept) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sortCallback` called once per sibling group, never on the flat list (NOTES #16) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | `sorted` hint: pre-sorted data rendered as given, no sort runs, misordered child → `failed`; `addBranch` still re-sorts the affected parent | ✓ | `data-members.spec.ts` | `data-members.html` |
@@ -47,8 +47,8 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Render results (core `renderSlot`): string / Node / `null` = built-in / `false` = hidden for node, header, footer, empty state; node memo (cut repaint keeps a focused input) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | `renderLoadingCallback` (NOTES #19; core `LoaderRenderContext`, cleanup, redraw on change), default `.wtv__loader`, page hook `window.components.renderLoadingCallback` (instance beats it), late `renderEmptyZoneCallback` (NOTES #20) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| `labels` (`noData`, `''` = nothing, `dropHere`, `loading` aria-label, menu built-ins; JSON attr + live), `loading` on/off; `noResults` after a no-match search (`search-config.spec.ts`) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
-| Page-wide labels (core `/locale`): drop pads `dropBefore/After/Child` (instance wins per key), `localeChanged()` live re-render + `formatLabelCallback`, page-wide `noDisplayValue` repaint (state kept) | ✓ | `labels-locale.spec.ts` | `drag-visuals.html`, `render-callbacks.html`, `data.html` |
+| `labels` (`messages.noData`, `''` = nothing, `messages.dropHere`, `ariaLabels.loading` aria-label, `menuItems.*`; JSON attr + live), `loading` on/off; `messages.noResults` after a no-match search (`search-config.spec.ts`) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
+| Page-wide labels (core `/locale`): flat full-key dictionary: drop pads `labels.dropBefore/After/Child` (instance wins per key), `localeChanged()` live re-render + `translateCallback`, page-wide `labels.noDisplayValue` repaint (state kept) | ✓ | `labels-locale.spec.ts` | `drag-visuals.html`, `render-callbacks.html`, `data.html` |
 | `getCustomStylesCallback` lands in the shadow root | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Custom CSS (core `createCustomStyles`): `custom-styles` / `customStyles` (callback wins), page-wide `window.components['web-treeview'].customStyles` on every tree + instance override (page `<style>` first), page `getCustomStylesCallback(ctx)` per tree, `@import` linked once in the document head and released on `destroy()` | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` (+ `custom-import.css`) |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
@@ -220,6 +220,6 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | `logging.enableLogging()` turns categories on | ✓ | `logging.spec.ts` | `logging.html` |
 | `el.enableLogging()` turns on one tree's engine lines (`#id` label); `el.disableLogging()` silences them | ✓ | `logging.spec.ts` | `logging.html` |
 | Screen-reader announcements (core `announce()`, `[data-km-announcer]`): settled search count / no results, placed drop, refused drop + reason; `''` labels silent | ✓ | `announce.spec.ts` | `announce.html` |
-| ARIA tree: `role="tree"` body (`labels.treeLabel`, `aria-multiselectable`), `treeitem` rows (`aria-level` / `-posinset` / `-setsize` / `-expanded` / `-selected` / `-checked` incl. `mixed`), `aria-activedescendant` following ArrowDown / ArrowRight / End (core `/a11y`), posinset in a scrolled virtual window, a pasted copy (same node id) gets its own row id and `aria-activedescendant` hits it | ✓ | `aria-tree.spec.ts` | `aria-tree.html` |
+| ARIA tree: `role="tree"` body (`ariaLabels.tree`, `aria-multiselectable`), `treeitem` rows (`aria-level` / `-posinset` / `-setsize` / `-expanded` / `-selected` / `-checked` incl. `mixed`), `aria-activedescendant` following ArrowDown / ArrowRight / End (core `/a11y`), posinset in a scrolled virtual window, a pasted copy (same node id) gets its own row id and `aria-activedescendant` hits it | ✓ | `aria-tree.spec.ts` | `aria-tree.html` |
 | `tree-id`; removed debug inputs (`should-display-debug-information`, `shouldDisplayContextMenuInDebugMode`) are inert | ✓ | `logging.spec.ts` | `logging.html` |
 | Uncaught page errors fail every test (`e2e/fixtures.ts`) | ✓ | all | — |

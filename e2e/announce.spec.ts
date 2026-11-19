@@ -6,7 +6,7 @@ import { test, expect, type Page, type Locator, nodeByPath, WEBKIT_NO_NATIVE_DND
  * drop. Selection / expand-collapse are NOT announced (they have ARIA state).
  * A label set to `''` stays silent.
  *
- * Fixture: test/announce.html — #tree (default labels), #silent (announce* = '').
+ * Fixture: test/announce.html — #tree (default labels), #silent (the ariaLabels.* announcements = '').
  *   1 Apple ── 1.1 Apricot
  *   2 Banana
  *   3 Locked (does not accept drops)

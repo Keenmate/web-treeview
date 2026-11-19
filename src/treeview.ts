@@ -113,7 +113,7 @@ export class WebTreeView<T = any> {
   /** False between deactivate() and activate() (the host is detached). */
   private isActive = true;
   /** The UI strings (core `/locale`, D-NC-24): instance `labels` → page-wide
-   *  `window.components.locale.labels['web-treeview']` → English. Read live on every call. */
+   *  `window.components.locale.labels['web-treeview.<key>']` → English. Read live on every call. */
   private labels!: Labels<TreeViewLabels>;
 
   constructor(
@@ -177,8 +177,8 @@ export class WebTreeView<T = any> {
    *  filling — a fresh status follows when it completes; a cleared search is silent). */
   private readonly searchStatusBridge = (s: SearchStatus): void => {
     if (s.searchTerm && !s.isIndexing) {
-      if (s.matchCount === 0) this.say('announceSearchNoResults');
-      else this.say(s.matchCount === 1 ? 'announceSearchResultsOne' : 'announceSearchResults', { count: s.matchCount });
+      if (s.matchCount === 0) this.say('ariaLabels.searchNoResults');
+      else this.say(s.matchCount === 1 ? 'ariaLabels.searchResultsOne' : 'ariaLabels.searchResults', { count: s.matchCount });
     }
     this.options.onSearchStatusChange?.(this.ctx({ searchTerm: s.searchTerm, matchCount: s.matchCount, isLimited: s.isLimited, limit: s.limit, isIndexing: s.isIndexing }));
   };
@@ -188,18 +188,18 @@ export class WebTreeView<T = any> {
   private readonly nodeDropBridge = (d: NodeDropContext<T>): void => {
     if (d.dropped?.length) {
       const name = d.dragged.length > 1
-        ? this.labels.text('announceDropItems', { count: d.dragged.length })
+        ? this.labels.text('ariaLabels.dropItems', { count: d.dragged.length })
         : this.nodeName(d.dropped[0].node);
-      const target = d.target?.node ? this.nodeName(d.target.node) : this.labels.text('announceDropTreeRoot');
+      const target = d.target?.node ? this.nodeName(d.target.node) : this.labels.text('ariaLabels.dropTreeRoot');
       const where = !d.target || d.position === 'child' ? 'Into' : d.position === 'before' ? 'Before' : 'After';
-      this.say(`announce${d.operation === 'copy' ? 'Copied' : 'Moved'}${where}` as keyof TreeViewLabels, { name, target });
+      this.say(`ariaLabels.${d.operation === 'copy' ? 'copied' : 'moved'}${where}` as keyof TreeViewLabels, { name, target });
     }
     this.options.onNodeDrop?.(this.ctx(d));
   };
 
   /** `node-drop-reject` bridge: say the drop was refused, and why. */
   private readonly nodeDropDeniedBridge = (ref: NodeRef<T>): void => {
-    this.say('announceDropDenied', { target: this.nodeName(ref.node) });
+    this.say('ariaLabels.dropDenied', { target: this.nodeName(ref.node) });
     this.options.onNodeDropReject?.(this.ctx(ref));
   };
 
@@ -286,19 +286,19 @@ export class WebTreeView<T = any> {
     const label = (key: keyof TreeViewLabels) => this.labels.text(key);
     const targets = () => this.actionTargets(ctx.node).map((p) => this.engine.getNodeByPath(p)).filter((n): n is LTreeNode<T> => !!n && !!n.hasChildren);
     switch (item.action) {
-      case 'copy': return { text: label('copy') };
-      case 'cut': return { text: label('cut'), isDisabled: this.isReadonly() };
-      case 'paste': return { text: label('paste'), isDisabled: this.isReadonly() || !this.engine.hasClipboardContent() };
-      case 'delete': return { text: label('delete'), isDanger: true, isDisabled: this.isReadonly() };
-      case 'expand': return { text: label('expand'), isDisabled: !targets().some((n) => !n.isExpanded) };
-      case 'collapse': return { text: label('collapse'), isDisabled: !targets().some((n) => n.isExpanded) };
-      case 'expand-subtree': return { text: label('expandSubtree'), isDisabled: targets().length === 0 };
-      case 'collapse-subtree': return { text: label('collapseSubtree'), isDisabled: targets().length === 0 };
-      case 'expand-all': return { text: label('expandAll') };
-      case 'collapse-all': return { text: label('collapseAll') };
-      case 'sort': return { text: label('sort'), isDisabled: this.isReadonly() || targets().length === 0 };
-      case 'sort-subtree': return { text: label('sortSubtree'), isDisabled: this.isReadonly() || targets().length === 0 };
-      case 'sort-all': return { text: label('sortAll'), isDisabled: this.isReadonly() };
+      case 'copy': return { text: label('menuItems.copy') };
+      case 'cut': return { text: label('menuItems.cut'), isDisabled: this.isReadonly() };
+      case 'paste': return { text: label('menuItems.paste'), isDisabled: this.isReadonly() || !this.engine.hasClipboardContent() };
+      case 'delete': return { text: label('menuItems.delete'), isDanger: true, isDisabled: this.isReadonly() };
+      case 'expand': return { text: label('menuItems.expand'), isDisabled: !targets().some((n) => !n.isExpanded) };
+      case 'collapse': return { text: label('menuItems.collapse'), isDisabled: !targets().some((n) => n.isExpanded) };
+      case 'expand-subtree': return { text: label('menuItems.expandSubtree'), isDisabled: targets().length === 0 };
+      case 'collapse-subtree': return { text: label('menuItems.collapseSubtree'), isDisabled: targets().length === 0 };
+      case 'expand-all': return { text: label('menuItems.expandAll') };
+      case 'collapse-all': return { text: label('menuItems.collapseAll') };
+      case 'sort': return { text: label('menuItems.sort'), isDisabled: this.isReadonly() || targets().length === 0 };
+      case 'sort-subtree': return { text: label('menuItems.sortSubtree'), isDisabled: this.isReadonly() || targets().length === 0 };
+      case 'sort-all': return { text: label('menuItems.sortAll'), isDisabled: this.isReadonly() };
       default: return undefined;
     }
   }
@@ -393,7 +393,7 @@ export class WebTreeView<T = any> {
    * selection, checks, focus and scroll are kept.
    */
   refreshLabels(): void {
-    this.engine.updateProps({ displayValueFallback: this.labels.text('noDisplayValue') });
+    this.engine.updateProps({ displayValueFallback: this.labels.text('labels.noDisplayValue') });
     this.renderer.updateConfig({ labels: this.labels });
   }
 
@@ -853,8 +853,8 @@ export class WebTreeView<T = any> {
       isSortingEnabled: o.isSortingEnabled,
       displayValueMember: o.displayValueMember,
       getDisplayValueCallback: this.nodeCallback(o.getDisplayValueCallback),
-      // labels.noDisplayValue → the Ltree's display fallback (the engine repaints only when it changed).
-      displayValueFallback: this.labels.text('noDisplayValue'),
+      // labels['labels.noDisplayValue'] → the Ltree's display fallback (the engine repaints only when it changed).
+      displayValueFallback: this.labels.text('labels.noDisplayValue'),
       searchValueMember: o.searchValueMember,
       getSearchValueCallback: this.nodeCallback(o.getSearchValueCallback),
       orderMember: o.orderMember,

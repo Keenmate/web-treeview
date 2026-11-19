@@ -197,7 +197,7 @@ tree.pasteNodes('1.2', ({ data }) => ({ ...data, id: crypto.randomUUID() }));
 
 ### Empty-tree paste
 
-Set `highlight-on-page-drag` to arm a tree as soon as a node is dragged anywhere on the page — an empty tree shows its drop zone right away (DD01 "Highlight on page drag"). Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `labels` (`labels='{"noData":"Nothing here"}'`).
+Set `highlight-on-page-drag` to arm a tree as soon as a node is dragged anywhere on the page — an empty tree shows its drop zone right away (DD01 "Highlight on page drag"). Set `show-empty-drop-placeholder` to keep the empty drop zone visible and focusable, so a Ctrl/Cmd+V pastes into an empty tree after the user hovers or clicks the zone. Customize the empty-state text with `labels` (`labels='{"messages.noData":"Nothing here"}'`).
 
 ## Per-node icons
 
@@ -337,13 +337,16 @@ tree.contextMenuYOffset = -30; // Shift menu 30px up
 ## Page-wide labels
 
 Every UI string resolves per key: the instance `labels` → the page-wide
-`window.components.locale.labels['web-treeview']` (core `/locale`) → English. Assigning the page object
+flat dictionary `window.components.locale.labels['web-treeview.<key>']` (core `/locale`) → English. Assigning the page object
 re-renders every live tree (texts only — expansion, selection and scroll are kept). Basic Usage BU08.
 
 ```js
 window.components.locale = {
-  labels: { 'web-treeview': { noData: 'Žádná data', copy: 'Kopírovat', dropBefore: 'Před', dropAfter: 'Za', dropChild: 'Dovnitř' } },
-  // formatLabelCallback: ({ component, key, params }) => i18next.t(`${component}.${key}`, params),
+  labels: {
+    'web-treeview.messages.noData': 'Žádná data', 'web-treeview.menuItems.copy': 'Kopírovat',
+    'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
+  },
+  // translateCallback: ({ key, params }) => i18next.t(key, params), // key = 'web-treeview.messages.noData'
 };
 ```
 

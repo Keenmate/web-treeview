@@ -9,14 +9,14 @@
     </style>
 </head>
 <body>
-    <!-- ARIA tree semantics: role="tree" body (aria-label from labels.treeLabel, aria-multiselectable),
+    <!-- ARIA tree semantics: role="tree" body (aria-label from labels['ariaLabels.tree'], aria-multiselectable),
          role="treeitem" rows (aria-level / -posinset / -setsize / -expanded / -selected / -checked),
          aria-activedescendant through core /a11y createActiveDescendant (ARIA-only).
          #tree — small tree, single selection, collapsed (expand-level 1):
            1 Fruit ── 1.1 Apple, 1.2 Banana, 1.3 Cherry
            2 Veg ── 2.1 Carrot
            3 Leaf
-         #multi — same data, selection-mode multiple, labels.treeLabel "Food".
+         #multi — same data, selection-mode multiple, ariaLabels.tree "Food".
          #checks — same data, checkboxes, cascade, expand-level 2.
          #big — virtual scroll, 50 roots × 99 children, all expanded.
          Targeted by e2e/aria-tree.spec.ts. -->
@@ -54,7 +54,7 @@
             return tree;
         };
         window.tree = make('tree', { 'expand-level': '1' }, data());
-        window.multi = make('multi', { 'expand-level': '1', 'selection-mode': 'multiple' }, data(), { labels: { treeLabel: 'Food' } });
+        window.multi = make('multi', { 'expand-level': '1', 'selection-mode': 'multiple' }, data(), { labels: { 'ariaLabels.tree': 'Food' } });
         window.checks = make('checks', { 'expand-level': '2', 'show-checkboxes': 'true', 'checkbox-mode': 'cascade' }, data());
         window.big = make('big', {
             'expand-level': '1',

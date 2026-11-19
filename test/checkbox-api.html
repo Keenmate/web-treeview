@@ -28,6 +28,13 @@
             { id: 22, path: '2.2', name: 'B2', selectable: true },
             { id: 3, path: '3', name: 'Fixed', selectable: false }
         ];
+        // ?deep=1 — a third level under A1 (root → region → country)
+        if (params.get('deep')) {
+            data.push(
+                { id: 111, path: '1.1.1', name: 'A1a', selectable: true },
+                { id: 112, path: '1.1.2', name: 'A1b', selectable: true }
+            );
+        }
 
         await customElements.whenDefined('web-treeview');
         const tree = document.getElementById('tree');

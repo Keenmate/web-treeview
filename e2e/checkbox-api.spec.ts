@@ -7,6 +7,7 @@ import { test, expect, type Page, nodeByPath, logLines } from './fixtures';
  *   1 A ── 1.1 A1, 1.2 A2
  *   2 B ── 2.1 B1, 2.2 B2
  *   3 Fixed (not selectable → no checkbox)
+ *   ?deep=1 adds 1.1.1 A1a, 1.1.2 A1b (A1 becomes a middle branch)
  */
 
 const PAGE = '/test/checkbox-api.html';
@@ -157,5 +158,41 @@ test.describe('beforeCheckboxToggleCallback', () => {
     await expect.poll(() => lastChecked(page)).toBe('checked-change:2.2');
     await expect(box(page, '2.2')).toBeChecked();
     await expect(box(page, '1.1')).not.toBeChecked();
+  });
+});
+
+test.describe('cascade over three levels (?deep=1)', () => {
+  // Check a leaf → A1 + A [-]; then check the ROOT → A1 must be fully checked. It used to keep
+  // its stale [-]: only the clicked node and its ancestors were re-derived, not the
+  // descendants the cascade had just checked.
+  const ALL = ['1', '1.1', '1.1.1', '1.1.2', '1.2'];
+  async function expectAll(page: Page, checked: boolean) {
+    for (const path of ALL) {
+      if (checked) await expect(box(page, path), path).toBeChecked();
+      else await expect(box(page, path), path).not.toBeChecked();
+      await expect(box(page, path), path).not.toHaveClass(/wtv__checkbox--indeterminate/);
+    }
+  }
+  async function checkLeaf(page: Page) {
+    await load(page, '?deep=1');
+    await box(page, '1.1.1').click();
+    await expect(box(page, '1.1')).toHaveClass(/wtv__checkbox--indeterminate/);
+    await expect(box(page, '1')).toHaveClass(/wtv__checkbox--indeterminate/);
+  }
+
+  test('click: leaf, then root → the middle branch is checked, not [-]', async ({ page }) => {
+    await checkLeaf(page);
+    await box(page, '1').click();
+    await expectAll(page, true);
+    await box(page, '1').click();
+    await expectAll(page, false);
+  });
+
+  test('API: checkNode / uncheckNode on the root re-derive the middle branch', async ({ page }) => {
+    await checkLeaf(page);
+    await call(page, 'checkNode', '1');
+    await expectAll(page, true);
+    await call(page, 'uncheckNode', '1');
+    await expectAll(page, false);
   });
 });

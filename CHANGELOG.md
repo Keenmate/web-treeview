@@ -62,6 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   reconciles it on its own schedule (snapshot pipeline + scroll fast path, its own spacer / translated content), as in
   web-grid. No behaviour change; the nested render path is not virtual, as before.
 
+### Fixed — cascade checkbox leaves a middle branch `[-]` (2026-11-19)
+- Three or more levels (root → region → country): check a country → region and root `[-]`; then check the ROOT →
+  the region stayed `[-]` although all its children were now checked (same for `checkNode` / `checkNodes` /
+  `uncheckNode` …). The cascade set `isChecked` on every descendant but re-derived `visualState` only for the
+  clicked node and its ancestors; now every node it touched is re-derived, deepest first
+  (`_rederiveVisualStates`; `e2e/checkbox-api.spec.ts` "cascade over three levels", fixture `?deep=1`).
+  Same fix in svelte-treeview.
+
 ### Fixed — a refused touch hold no longer auto-scrolls (2026-11-18)
 - A long press on a locked node (the held 🚫 badge) no longer auto-scrolls the tree when the finger slides to an
   edge: the pointer drag's `autoScroll.isEnabled` answers `false` while the hold is refused (core ccd12e1).

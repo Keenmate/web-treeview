@@ -108,7 +108,7 @@ test.describe('Custom Path Separators', () => {
 // ── Insert Result and Validation ───────────────────────────────────────────
 
 test.describe('Insert Result and Validation', () => {
-  test('valid items render; orphans + empty paths land in insertResult.failed; duplicate path overrides', async ({ page }) => {
+  test('valid items render; orphans, empty paths and duplicate paths land in insertResult.failed', async ({ page }) => {
     await gotoData(page);
     const card = insertCard(page);
     const tree = treeInCard(card);
@@ -126,15 +126,17 @@ test.describe('Insert Result and Validation', () => {
     await expect(output).not.toHaveText('');
     const json = JSON.parse((await output.textContent()) ?? '{}');
     expect(json.total).toBe(6);
-    expect(json.successful).toBe(4);
-    expect(json.failed).toBe(2);
+    // A duplicate path is a failure (2026-11-19, REVIEW B19; it used to be dropped yet counted as
+    // successful). The first occurrence wins: the tree keeps 'Valid Child' at 1.1.
+    expect(json.successful).toBe(3);
+    expect(json.failed).toBe(3);
 
     const failedNames = (json.failedDetails as Array<{ originalData?: { name?: string } }>).
       map((d) => d.originalData?.name);
     expect(failedNames).toEqual(
-      expect.arrayContaining(['Orphan (parent 2 missing)', 'Empty Path'])
+      expect.arrayContaining(['Orphan (parent 2 missing)', 'Empty Path', 'X Duplicate Path'])
     );
-    expect(json.failedDetails).toHaveLength(2);
+    expect(json.failedDetails).toHaveLength(3);
   });
 });
 

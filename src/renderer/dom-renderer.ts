@@ -16,7 +16,7 @@ import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition } from '../ltree/types';
 import type { TreeMenuContext, TreeMenuItem } from '../interaction';
 import { openMenu, type MenuHandle } from '@keenmate/web-components-core/menu';
-import { matchesShortcut } from '@keenmate/web-components-core/actions';
+import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { createTooltip, createPopover, type TooltipHandle, type PopoverHandle } from '@keenmate/web-components-core/positioning';
 import {
@@ -749,6 +749,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       event.preventDefault();
       return;
     }
+
+    // A key typed into a field inside a row (an <input> a renderNodeCallback drew) belongs to
+    // that field — no navigation (arrows, Home / End, Backspace, Enter / Space, Ctrl+A).
+    // The built-in clipboard / Delete shortcuts were already guarded (handleShortcutKeydown).
+    // (svelte-treeview REVIEW-2026-11-19 B18)
+    if (isTypingTarget(event)) return;
 
     // Shift+F10 / the ContextMenu key open the focused node's context menu.
     if (matchesShortcut(event, 'ContextMenu') || matchesShortcut(event, 'Shift+F10')) {

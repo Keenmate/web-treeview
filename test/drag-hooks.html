@@ -30,6 +30,8 @@
             { id: 4, path: '4', name: 'Trash' }
         ];
 
+        if (params.get('start') === 'hole') data.push({ id: 311, path: '3.1.1', name: 'D1 note' }, { id: 312, path: '3.1.2', name: 'D1 keep' });
+
         const names = (refs) => (refs ?? []).map((r) => r?.node?.data?.name ?? r?.data?.name ?? r?.path).join('+');
         const delay = (ms, v) => new Promise((r) => setTimeout(() => r(v), ms));
 
@@ -61,8 +63,15 @@
                 logTo('dh-log', `before-drag-start:${(ctx.paths ?? ctx.dragged?.map((r) => r.path) ?? []).join('+')}`);
                 if (start === 'veto') return false;
                 if (start === 'prune') return [(ctx.paths ?? ctx.dragged.map((r) => r.path))[0]];
+                // A curated manifest with a hole: "D1 note" (3.1.1) stays under Drafts when D1 moves.
+                if (start === 'hole') return ctx.dragged.map((r) => r.path).filter((p) => p !== '3.1.1');
+                // A ONE-entry manifest with a hole: dragging Archive (2) without its only child
+                // Old (2.1) → ['2']; Old stays behind, re-homed to the root (Archive's old parent).
+                if (start === 'solo-hole') return ctx.dragged.map((r) => r.path).filter((p) => p !== '2.1');
             };
         }
+        // ?locked=1: Old (2.1) is not draggable (getIsDraggableCallback).
+        if (params.get('locked')) extra.getIsDraggableCallback = ({ node }) => node.data?.name !== 'Old';
 
         await customElements.whenDefined('web-treeview');
         const tree = document.getElementById('tree');

@@ -103,6 +103,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   reconciles it on its own schedule (snapshot pipeline + scroll fast path, its own spacer / translated content), as in
   web-grid. No behaviour change; the nested render path is not virtual, as before.
 
+### Fixed — svelte-treeview review batch (2026-11-19)
+Mirrors of the shared-logic bugs from svelte-treeview's `docs/REVIEW-2026-11-19.md` (ids below); regression
+tests in `e2e/regressions.spec.ts` (fixture `test/regressions.html`) and `e2e/drag-hooks.spec.ts`
+("review 2026-11-19 regressions"). Same fix in svelte-treeview.
+- **R1** `uncheckAll()` / assigning `checkedPaths` left an indeterminate `[-]` branch: the reset walked only the
+  checked set (never contains a `[-]` branch); it now resets `isChecked` + `visualState` on the whole real tree.
+- **R2** `pasteNodes` dropped grandchildren when `nodeInputTransformationCallback` minted ids: descendants were
+  re-parented at `<new root> + <old relative path>`, but `addNode` names a segment after the NEW id. Each pasted
+  node's new path is now tracked by its old relative path; a descendant that fails to land skips its subtree.
+- **R3** A node removed / moved / added / sorted while a filter is active stayed in (or missing from) the rendered
+  filtered view until the filter changed — edits already hit the real tree (path index), but the filtered copy was
+  not rebuilt. Every ltree mutator now schedules one re-filter per microtask.
+- **R5** Focus made while filtered pointed at the filtered COPY: `focusedNode` (+ the snapshot / `focus-change`)
+  now returns the real node, and the internal focus re-resolves to the current view's node on every tree change.
+- **B1** The Delete command reported the wrong paths to `node-delete` when a removal in the middle failed
+  (`targets.slice(0, removed)`); it now reports the paths actually removed.
+- **B3** Keyboard Enter / Space (`navToggle`) re-implemented the toggle — ignored accordion mode and
+  `getNodeIsCollapsible`; it now calls `toggleNodeExpanded`. Backspace (`navBackOut`) no longer collapses a
+  non-collapsible parent.
+- **B7** A curated `beforeDragStartCallback` manifest (holes) was lost whenever a `beforeDropCallback` was set: the
+  drop paths reset the drag state right after calling `_handleDrop`, so after its `await` the override was `null`
+  and whole subtrees moved. The override is now read before the await.
+- **B9** A same-tree drag-COPY of a multi-selection copied locked (`getIsDraggableCallback` false) selected nodes
+  the MOVE leaves out; both now share `_getDraggableTopLevelSelection`.
+- **B18** Navigation keys (arrows, Home / End, Backspace, Enter / Space, Ctrl+A) fired while typing in an
+  `<input>` a `renderNodeCallback` drew inside a row (the clipboard / Delete shortcuts were already guarded); the
+  renderer now returns on core `isTypingTarget` after `beforeKeydownCallback`.
+- **B19** `insertArray` counted a duplicate path as inserted (and queued it for the search index); it is now a
+  failure (`Duplicate path: …`) in `insertResult.failed` (the first occurrence still wins; `e2e/data.spec.ts`
+  "Insert Result and Validation" updated to 3 successful / 3 failed).
+- **B20** `removeNode(path, false)` (the subtree goes with it) decremented `statistics.nodeCount` by 1;
+  `statistics.filteredNodeCount` was always 0 (read a never-written closure flag).
+- Checked, no change needed: R4 (the reconciler compares `data-expanded`, so an `expandedPaths` assignment
+  re-renders the arrow), R7 (core `openMenu` matches item shortcuts with `matchesShortcut`), B6 (the touch drag
+  never replaces the selection; the HTML5 path restores it on `dropEffect: 'none'`), B13 (the indexer already
+  falls back to `setTimeout` without `requestIdleCallback`), double-click toggle (already `toggleNodeExpanded`).
+- Found while mirroring (guarded in `e2e/drag-hooks.spec.ts`, `?start=solo-hole` / `?drop=veto`):
+  - A ONE-entry `beforeDragStartCallback` manifest ignored its holes: `['folder']` with the folder's only child
+    omitted took the single-node move and carried the child along. Any override now goes through `moveNodes`.
+    (Also in svelte-treeview.)
+  - A hole whose dragged root was top-level could not be re-homed: `moveNode(path, '', 'child')` failed with
+    "Target node not found" (the path index has no entry for the root). `''` as a `'child'` target is now the root.
+  - A mouse drop onto a valid node that `beforeDropCallback` vetoed (or that refused the drop, or failed) left the
+    grabbed node selected: the drop reports `dropEffect: 'move'`, so `dragend` discarded the pre-drag selection.
+    `drop()` now hands the snapshot to the drop's result and restores it unless the drop landed.
+
 ### Fixed — cascade checkbox leaves a middle branch `[-]` (2026-11-19)
 - Three or more levels (root → region → country): check a country → region and root `[-]`; then check the ROOT →
   the region stayed `[-]` although all its children were now checked (same for `checkNode` / `checkNodes` /

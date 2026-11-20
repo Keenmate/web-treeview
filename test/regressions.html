@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Review regressions (2026-11-19)</title>
+    <style>
+        main { padding: 1rem; font-family: sans-serif; display: grid; grid-template-columns: repeat(3, 320px); gap: 1rem; }
+        section { border: 1px solid #e2e8f0; padding: 0.5rem; }
+        pre { font-size: 0.75rem; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <!--
+        Regressions from svelte-treeview's 2026-11-19 review (svelte-treeview
+        docs/REVIEW-2026-11-19.md — R… / B… ids), mirrored here. e2e: e2e/regressions.spec.ts.
+
+        main:  1 Alpha → 1.1 Beta → 1.1.1 Gamma, 1.1.2 Delta; 1.2 Eta match; 2 Epsilon → 2.1 Zeta match
+               cascade checkboxes, internal search, an id-minting input transform, a context menu
+               with F2 / Del item shortcuts, beforeDeleteCallback (?delete=gap widens the set).
+        acc:   accordion; 1 Open (expanded) → 1.1, 2 Closed → 2.1, 3 Locked (not collapsible) → 3.1
+        inp:   a renderNodeCallback row with an <input> inside it.
+    -->
+    <main>
+        <section data-testid="main-section">
+            <web-treeview id="main" expand-level="5" show-checkboxes="true" checkbox-mode="cascade"
+                use-internal-search-index="true" click-behavior="select" selection-mode="multiple"></web-treeview>
+            <pre data-testid="log"></pre>
+        </section>
+        <section data-testid="acc-section">
+            <web-treeview id="acc" expand-level="1" expand-as-accordion="true" click-behavior="select"></web-treeview>
+        </section>
+        <section data-testid="input-section">
+            <web-treeview id="inp" expand-level="1" click-behavior="select"></web-treeview>
+        </section>
+    </main>
+
+    <script type="module">
+        import '/src/index.ts';
+        import { setupTree, logTo } from './fixture-kit.js';
+
+        const params = new URLSearchParams(location.search);
+        await customElements.whenDefined('web-treeview');
+
+        // ── main ──
+        const main = document.getElementById('main');
+        let nextId = 100;
+        setupTree(main, [
+            { id: 1, path: '1', name: 'Alpha' },
+            { id: 2, path: '1.1', name: 'Beta' },
+            { id: 3, path: '1.1.1', name: 'Gamma' },
+            { id: 4, path: '1.1.2', name: 'Delta' },
+            { id: 5, path: '1.2', name: 'Eta match' },
+            { id: 6, path: '2', name: 'Epsilon' },
+            { id: 7, path: '2.1', name: 'Zeta match' }
+        ], {
+            searchValueMember: 'name',
+            // Mints a fresh id per pasted node → addNode names the new segment after it.
+            nodeInputTransformationCallback: ({ data }) => ({ ...data, id: nextId++ }),
+            getContextMenuItemsCallback: ({ node }) => [
+                { id: 'rename', text: 'Rename', shortcut: 'F2', onClick: () => logTo('log', `menu:F2:${node.path}`) },
+                { id: 'del', text: 'Delete', shortcut: 'Del', onClick: () => logTo('log', `menu:Del:${node.path}`) }
+            ],
+            // ?delete=gap: the Delete command targets 1.2, a missing 9.9, then 2.1.
+            beforeDeleteCallback: params.get('delete') === 'gap' ? () => ['1.2', '9.9', '2.1'] : undefined,
+            onNodeDelete: (ctx) => logTo('log', `delete:${ctx.paths.join(',')}`)
+        });
+        window.__main = main;
+        /** Every REAL node (the unfiltered tree), in tree order: `path=name`. */
+        window.__real = () => {
+            const out = [];
+            const walk = (n) => { for (const c of n.children) { out.push(`${c.path}=${c.data?.name}`); walk(c); } };
+            walk(main.getTree().root);
+            return out;
+        };
+
+        // ── acc ──
+        const acc = document.getElementById('acc');
+        setupTree(acc, [
+            { id: 1, path: '1', name: 'Open' },
+            { id: 11, path: '1.1', name: 'Open child' },
+            { id: 2, path: '2', name: 'Closed' },
+            { id: 21, path: '2.1', name: 'Closed child' },
+            { id: 3, path: '3', name: 'Locked' },
+            { id: 31, path: '3.1', name: 'Locked child' }
+        ], {
+            getIsCollapsibleCallback: ({ node }) => node.data?.name !== 'Locked'
+        });
+        window.__acc = acc;
+
+        // ── inp ──
+        const inp = document.getElementById('inp');
+        setupTree(inp, [
+            { id: 1, path: '1', name: 'Editable' },
+            { id: 11, path: '1.1', name: 'Child' }
+        ], {
+            renderNodeCallback: ({ node }) => {
+                if (node.path !== '1') return null;
+                const input = document.createElement('input');
+                input.value = 'text';
+                input.dataset.testid = 'row-input';
+                return input;
+            }
+        });
+        window.__inp = inp;
+        window.__ready = true;
+    </script>
+</body>
+</html>

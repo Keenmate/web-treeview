@@ -480,7 +480,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._onDataChanged();
   }
 
-  get focusedNode() { return this._focusedNode; }
+  /** The focused node — always the REAL node: focus made while filtered lands on the filtered
+   *  COPY (the rendered row), which is thrown away when the filter clears.
+   *  (svelte-treeview REVIEW-2026-11-19 R5) */
+  get focusedNode() {
+    const node = this._focusedNode;
+    return node && this.tree ? (this._realNode(node.path) ?? node) : node;
+  }
   set focusedNode(v: LTreeNode<T> | null | undefined) {
     this._focusedNode = v;
     this._scheduleNotify();
@@ -2515,16 +2521,24 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return changed;
   }
 
-  /** Clear `isChecked` + reset visualState on every node in the checkbox set. */
+  /**
+   * Reset checkbox state on the whole REAL tree: `isChecked` AND visualState. Walking only
+   * the checked set missed indeterminate branches (a [-] branch is never in the canonical
+   * set), so `uncheckAll()` / assigning `checkedPaths` left their dash behind.
+   * (svelte-treeview REVIEW-2026-11-19 R1)
+   */
   private _clearCheckedFlags(): void {
-    for (const path of this._checkedPaths) {
-      const node = this._realNode(path);
-      if (node) {
+    const root = this.tree?.root;
+    if (!root) return;
+    const visit = (node: LTreeNode<T>) => {
+      if (node.isChecked || node.visualState !== VisualState.unchecked) {
         node.isChecked = false;
         node.visualState = VisualState.unchecked;
         node._rev++;
       }
-    }
+      for (const child of node.children) visit(child);
+    };
+    for (const child of root.children) visit(child);
   }
 
   /** Check a single node (cascades to descendants in cascade mode).
@@ -3084,15 +3098,19 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         if (!node) return;
         const parentPath = parentPathOf(node.path);
         if (!parentPath) return;
-        this.collapseNodes(parentPath);
+        // A non-collapsible parent (getNodeIsCollapsible) stays open — only focus moves.
+        const parent = this.tree?.getNodeByPath(parentPath);
+        if (parent && this.getNodeIsCollapsible(parent)) this.collapseNodes(parentPath);
         this._navigation.navTo(parentPath);
       },
 
+      // Enter / Space = the toggle glyph: accordion, the pending beforeExpand guard,
+      // getNodeIsCollapsible and a mid-collapse cancel all apply.
+      // (svelte-treeview REVIEW-2026-11-19 B3)
       navToggle: () => {
         const node = this._focusedNode;
         if (!node || !node.hasChildren) return;
-        if (node.isExpanded) this.collapseNodes(node.path);
-        else this.expandNodes(node.path);
+        this.toggleNodeExpanded(node.path);
         this._scheduleNotify();
       },
 
@@ -3545,7 +3563,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       firstPasted ??= addResult.node;
 
       // Descendants (parent-first). A vetoed descendant takes its subtree with it.
+      // Each pasted node's NEW path by its old relative path: addNode names a new segment
+      // after the (possibly re-minted) id, so `<new root> + <old relative path>` didn't
+      // exist from the 3rd level down and every grandchild was skipped.
+      // (svelte-treeview REVIEW-2026-11-19 R2)
       const skippedDescRel = new Set<string>();
+      const newPathByRel = new Map<string, string>([['', addResult.node.path]]);
       for (const desc of entry.descendants) {
         const parentRel = desc.relativePath.substring(0, desc.relativePath.lastIndexOf(sep));
         if (parentRel && skippedDescRel.has(parentRel)) {
@@ -3553,7 +3576,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           skipped++;
           continue;
         }
-        const descParentPath = parentRel ? addResult.node.path + parentRel : addResult.node.path;
+        const descParentPath = newPathByRel.get(parentRel) ?? addResult.node.path;
         const descData = apply(
           desc.data,
           ctxFor(descParentPath, 'child', false, index, entry.sourcePath + desc.relativePath)
@@ -3564,8 +3587,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
           continue;
         }
         const descResult = this.tree.addNode(descParentPath, descData);
-        if (descResult.success) totalCount++;
-        else skipped++;
+        if (descResult.success && descResult.node) {
+          totalCount++;
+          newPathByRel.set(desc.relativePath, descResult.node.path);
+        } else {
+          // Its subtree has no parent to land in — skip it like a vetoed one.
+          skippedDescRel.add(desc.relativePath);
+          skipped++;
+        }
       }
     }
 
@@ -3694,16 +3723,17 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     // Snapshot targets BEFORE removal so onDelete can hand back resolved nodes.
     const preRemoval = new Map(targets.map((p) => [p, this.tree.getNodeByPath(p)]));
 
-    let removed = 0;
-    let blocked = 0;
+    // Collect the paths that were actually removed — a failure in the middle used to shift
+    // `targets.slice(0, removed)` onto the wrong paths. (svelte-treeview REVIEW-2026-11-19 B1)
+    const removedPaths: string[] = [];
     for (const p of targets) {
-      if (this.removeNode(p, true).success) removed++;
-      else blocked++;
+      if (this.removeNode(p, true).success) removedPaths.push(p);
     }
+    const removed = removedPaths.length;
+    const blocked = targets.length - removed;
     if (removed > 0) {
       this.clearSelection();
       this.clearFocus();
-      const removedPaths = targets.slice(0, removed);
       this.onDeleteCb?.({
         paths: removedPaths,
         nodes: removedPaths
@@ -3991,6 +4021,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     }
 
+    let drop: Promise<boolean> = Promise.resolve(false);
     if (this._draggedNode) {
       const dropAllowed = isCrossTreeDrag
         ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
@@ -4005,10 +4036,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         this._indicateDropDenied(node);
       } else if (dropAllowed && (isCrossTreeDrag || this._draggedNode.path !== node.path)) {
         const position = this._activeDropPosition || 'child';
-        this._handleDrop(node, this._draggedNode, position, event);
+        drop = this._handleDrop(node, this._draggedNode, position, event);
       }
     }
 
+    // Vetoed / denied / failed / onto itself → the grab's selection change is undone.
+    this._settlePreDragSelection(drop);
     this._resetDragState();
   }
 
@@ -4661,7 +4694,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       bodyClass: this._bodyClass,
       isFlatRenderingEnabled: this._isFlatRenderingEnabled,
       flatIndentSize: this._flatIndentSize,
-      focusedNode: this._focusedNode,
+      focusedNode: this.focusedNode,
       selectedPaths: this._selectedPaths,
       checkedPaths: this._checkedPaths,
       cutPaths: this._cutPaths,
@@ -4774,6 +4807,14 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   private _onTreeChanged() {
+    // Keep the internal focus on the node of the CURRENT view (the filtered copy while
+    // filtered, the real node otherwise): a copy kept after the filter cleared carried stale
+    // flags (isExpanded of the filtered view) into keyboard navigation. (REVIEW-2026-11-19 R5)
+    const focused = this._focusedNode;
+    if (focused) {
+      const live = this.tree?.getNodeByPath(focused.path);
+      if (live && live !== focused && live.id === focused.id) this._focusedNode = live;
+    }
     this._expandedDirty = true;
     this._updateProgressiveRendering();
     this._scheduleNotify();
@@ -5216,28 +5257,65 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return result;
   }
 
-  _onNodeDragEnd = (event: DragEvent) => {
+  /**
+   * The top-level selected paths a multi-drag carries (move AND copy): minus the drop target,
+   * minus locked nodes (getIsDraggableCallback false). The single-drag path is gated at drag
+   * start, but a multi-drag reads straight from the selected set, so a locked node that merely
+   * sits in the selection must not ride along — the copy branch used to skip this gate.
+   * (svelte-treeview REVIEW-2026-11-19 B9)
+   */
+  private _getDraggableTopLevelSelection(dropPath: string): string[] {
+    return this._getTopLevelSelectedPaths().filter((p) => {
+      if (p === dropPath) return false;
+      const n = this.tree.getNodeByPath(p);
+      return n ? this.getNodeIsDraggable(n) : false;
+    });
+  }
+
+  /**
+   * End of a native (HTML5) drag. `drop` = the pending `_handleDrop` when this runs from a
+   * drop handler: a drop onto a valid node reports dropEffect 'move' even when
+   * beforeDropCallback then vetoes it, so the restore waits for the drop's result.
+   */
+  _onNodeDragEnd = (event: DragEvent, drop?: Promise<boolean>) => {
     this.announceRefusedDrop();
     const dropEffect = event.dataTransfer?.dropEffect;
     this.log.DRAG.debug('Drag ended', {
       dropEffect,
       operation: this._currentDropOperation
     });
-    // Esc-cancel / drop-on-invalid-target: restore the pre-drag selection so
-    // the dragged node doesn't end up "stuck" selected. Mirrors svelte-treeview.
-    if (dropEffect === 'none' && this._preDragSelectionSnapshot) {
-      const prior = this._preDragSelectionSnapshot;
-      this._selection.set(prior, { isSilent: true });
-      this._syncSelection();
-      // When the snapshot was empty, focus also belonged to nobody — clear it.
-      if (prior.size === 0) this._focusedNode = null;
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
-      this.tree.refresh();
-    }
+    // Esc-cancel / drop-on-invalid-target / vetoed or failed drop: restore the pre-drag
+    // selection so the dragged node doesn't end up "stuck" selected. Mirrors svelte-treeview.
+    if (dropEffect === 'none') this._settlePreDragSelection(Promise.resolve(false));
+    else if (drop) this._settlePreDragSelection(drop);
     this._preDragSelectionSnapshot = null;
     this._resetDragState();
   };
+
+  /**
+   * Hand the pre-drag selection snapshot to a drop's outcome: restored when the drop didn't
+   * land (vetoed / denied / failed). Takes the snapshot, so the later `dragend` (whose
+   * dropEffect is 'move' for any drop the tree accepted at the DOM level) can't drop it.
+   */
+  private _settlePreDragSelection(drop: Promise<boolean>): void {
+    const prior = this._preDragSelectionSnapshot;
+    if (!prior) return;
+    this._preDragSelectionSnapshot = null;
+    void drop.then((isDropped) => {
+      if (!isDropped) this._restorePreDragSelection(prior);
+    });
+  }
+
+  private _restorePreDragSelection(prior: Set<string>): void {
+    this._selection.set(prior, { isSilent: true });
+    this._syncSelection();
+    // When the snapshot was empty, focus also belonged to nobody — clear it.
+    if (prior.size === 0) this._focusedNode = null;
+    this._emitSelectionChange();
+    this._mirrorSelectedToChecked();
+    this.tree.refresh();
+    this._scheduleNotify();
+  }
 
   private _resetDragState(): void {
     this.log.DRAG.debug('_resetDragState');
@@ -5276,6 +5354,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
     const isSameTreeDrag = draggedNodeRef.treeId === this._treeId;
 
+    // The beforeDragStart override, read BEFORE the await below: every drop path calls
+    // _handleDrop without awaiting it and resets the drag state right after (dragend /
+    // _resetDragState), so after an (async) beforeDropCallback `this._dragSetOverride` was
+    // already null and a curated manifest with holes silently became whole subtrees.
+    // (svelte-treeview REVIEW-2026-11-19 B7)
+    const dragSetOverride = this._dragSetOverride;
+
     // Full top-level dragged set as NodeRefs — captured BEFORE any move mutates
     // the selected set (same-tree) or the source clears its published set
     // (cross-tree). Feeds ctx.dragged on every drop, single- or multi-origin.
@@ -5309,29 +5394,26 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     }
 
     // Multi-drag: when the dragged node is in a multi-selection set (or a
-    // beforeDragStart override carries >1 top-level path), move the whole set as
-    // top-level subtrees via moveNodes, which resolves refs up front, picks the
-    // roots, and chains them in source order under the target. (svelte-treeview rc13)
+    // beforeDragStart override exists), move the whole set as top-level subtrees via
+    // moveNodes, which resolves refs up front, picks the roots, and chains them in
+    // source order under the target. (svelte-treeview rc13) An override ALWAYS goes
+    // here, even a ONE-entry one: ['folder'] with its only child omitted is a manifest
+    // with a hole, and the single-node moveNode below would carry that child along.
     const isMultiDrag =
       isSameTreeDrag &&
       operation === 'move' &&
       dropNode &&
       this._shouldAutoHandleMove &&
-      (this._dragSetOverride
-        ? this._dragSetOverride.length > 1
+      (dragSetOverride
+        ? dragSetOverride.length > 0
         : this._selectedPaths.has(draggedNodeRef.path) && this._selectedPaths.size > 1);
 
     if (isMultiDrag) {
-      const topLevelPaths = (this._dragSetOverride ?? this._getTopLevelSelectedPaths())
-        .filter((p) => p !== dropNode!.path)
-        // Respect per-node draggability: a locked node merely in the selected set
-        // must NOT ride along. An explicit override skips this gate (the consumer
-        // forced these in on purpose).
-        .filter((p) => {
-          if (this._dragSetOverride) return !!this.tree.getNodeByPath(p);
-          const n = this.tree.getNodeByPath(p);
-          return n ? this.getNodeIsDraggable(n) : false;
-        });
+      // drop target can't be moved onto itself. An explicit override skips the draggability
+      // gate — the consumer forced these in on purpose.
+      const topLevelPaths = dragSetOverride
+        ? dragSetOverride.filter((p) => p !== dropNode!.path && !!this.tree.getNodeByPath(p))
+        : this._getDraggableTopLevelSelection(dropNode!.path);
       this.log.DRAG.info(`Multi-drag: moving ${topLevelPaths.length} top-level subtree(s)`, {
         topLevelPaths,
         totalSelected: this._selectedPaths.size,
@@ -5341,7 +5423,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       // A curated override IS the manifest as-is (its omissions are holes moveNodes
       // leaves behind); a plain selected set has no holes, so complete it → whole
       // subtrees move.
-      const manifest = this._dragSetOverride ? topLevelPaths : this._completeManifest(topLevelPaths);
+      const manifest = dragSetOverride ? topLevelPaths : this._completeManifest(topLevelPaths);
       const result = this.moveNodes(manifest, dropNode!.path, position);
       fireDrop(result.movedNodes);
       return result.success;
@@ -5365,15 +5447,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       // duplicateNodes runs the INPUT transform per node — the consumer's
       // pasteNodeTransformationCallback, else a default id-uniquifier.
       const transform = this.inputTransformCb ?? this._defaultCopyTransform;
-      const isMulti = this._dragSetOverride
-        ? this._dragSetOverride.length > 1
+      const isMulti = dragSetOverride
+        ? dragSetOverride.length > 1
         : this._selectedPaths.has(draggedNodeRef.path) && this._selectedPaths.size > 1;
-      const manifest = this._dragSetOverride
-        ? this._dragSetOverride
+      const manifest = dragSetOverride
+        ? dragSetOverride
         : isMulti
-          ? this._completeManifest(
-              this._getTopLevelSelectedPaths().filter((p) => p !== dropNode.path)
-            )
+          ? this._completeManifest(this._getDraggableTopLevelSelection(dropNode.path))
           : this._completeManifest([draggedNodeRef.path]);
       const result = this.duplicateNodes(
         manifest, dropNode.path, position, transform, undefined,
@@ -5542,12 +5622,13 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return;
     }
 
+    let drop: Promise<boolean> | undefined;
     if (this._draggedNode && (isCrossTreeDrag || this._draggedNode !== node)) {
       const position = this._activeDropPosition || 'child';
-      this._handleDrop(node, this._draggedNode, position, event);
+      drop = this._handleDrop(node, this._draggedNode, position, event);
     }
 
-    this._onNodeDragEnd(event);
+    this._onNodeDragEnd(event, drop);
   }
 
   private _onZoneDrop(node: LTreeNode<T>, position: DropPosition, event: DragEvent) {
@@ -5584,11 +5665,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       return;
     }
 
+    let drop: Promise<boolean> | undefined;
     if (isCrossTreeDrag || this._draggedNode !== node) {
-      this._handleDrop(node, this._draggedNode, position, event);
+      drop = this._handleDrop(node, this._draggedNode, position, event);
     }
 
-    this._onNodeDragEnd(event);
+    this._onNodeDragEnd(event, drop);
   }
 
   // ── Tree-level drop zone (isTreeDropZoneEnabled) ─────────────────────
@@ -5625,8 +5707,8 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
         try { dragged = JSON.parse(data); } catch { /* malformed payload */ }
       }
     }
-    if (dragged) this._handleDrop(null, dragged, 'child', event);
-    this._onNodeDragEnd(event);
+    const drop = dragged ? this._handleDrop(null, dragged, 'child', event) : undefined;
+    this._onNodeDragEnd(event, drop);
   };
 
   // ── Touch drag (core createPointerDrag, wired by the renderer) ──────
@@ -5918,11 +6000,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     this._isDropPlaceholderActive = false;
 
     const draggedNodeData = event.dataTransfer?.getData('application/svelte-treeview');
+    let drop: Promise<boolean> | undefined;
     if (draggedNodeData) {
       const droppedNode = JSON.parse(draggedNodeData);
-      this._handleDrop(null, droppedNode, 'child', event);
+      drop = this._handleDrop(null, droppedNode, 'child', event);
     }
-    this._onNodeDragEnd(event);
+    this._onNodeDragEnd(event, drop);
   };
 
   // ── Tree-level drag handlers ────────────────────────────────────────

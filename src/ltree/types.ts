@@ -251,6 +251,8 @@ export interface Ltree<T> {
 	/** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
 	sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[];
 
+	/** While filtered, rebuild the filtered view after an edit (once per microtask). */
+	_scheduleRefilter(): void;
 	_emitTreeChanged(): void;
 
 	refresh(): void;

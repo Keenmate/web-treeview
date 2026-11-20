@@ -1884,7 +1884,8 @@
             },
             {
               "kind": "field",
-              "name": "focusedNode"
+              "name": "focusedNode",
+              "description": "The focused node — always the REAL node: focus made while filtered lands on the filtered\nCOPY (the rendered row), which is thrown away when the filter clears.\n(svelte-treeview REVIEW-2026-11-19 R5)"
             },
             {
               "kind": "field",
@@ -4014,7 +4015,7 @@
                   "text": "void"
                 }
               },
-              "description": "Clear `isChecked` + reset visualState on every node in the checkbox set."
+              "description": "Reset checkbox state on the whole REAL tree: `isChecked` AND visualState. Walking only\nthe checked set missed indeterminate branches (a [-] branch is never in the canonical\nset), so `uncheckAll()` / assigning `checkedPaths` left their dash behind.\n(svelte-treeview REVIEW-2026-11-19 R1)"
             },
             {
               "kind": "method",
@@ -4308,6 +4309,25 @@
                 }
               ],
               "description": "Collect every descendant path of a node (depth-first)."
+            },
+            {
+              "kind": "method",
+              "name": "_rederiveVisualStates",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "paths",
+                  "type": {
+                    "text": "Iterable<string>"
+                  }
+                }
+              ],
+              "description": "Re-derive visualState for every node a cascade check / uncheck touched, deepest first.\nNot just the clicked node: a branch BELOW it that was [-] (root → region → country,\none country checked, then the root) gets all its children checked by the cascade and\nmust flip to checked too — it used to keep its stale [-]."
             },
             {
               "kind": "method",
@@ -5697,6 +5717,25 @@
                 }
               },
               "description": "Pick out the \"top-level selected\" subset of `selectedPaths`:\nevery path whose nearest selected ancestor is NOT in the set.\nDescendants whose ancestor is also selected are absorbed — they\nride along inside the ancestor's subtree during multi-drag."
+            },
+            {
+              "kind": "method",
+              "name": "_getDraggableTopLevelSelection",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "dropPath",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ],
+              "description": "The top-level selected paths a multi-drag carries (move AND copy): minus the drop target,\nminus locked nodes (getIsDraggableCallback false). The single-drag path is gated at drag\nstart, but a multi-drag reads straight from the selected set, so a locked node that merely\nsits in the selection must not ride along — the copy branch used to skip this gate.\n(svelte-treeview REVIEW-2026-11-19 B9)"
             },
             {
               "kind": "field",

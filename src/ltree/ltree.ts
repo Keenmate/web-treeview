@@ -165,13 +165,13 @@ export function createLTree<T>(
 		return out;
 	}
 	let filteredTree: LTreeNode<T>[] | null = null;
-	let isFiltered = false;
 
 	// Last search text passed to filterNodes. The index fills asynchronously, so a filter
 	// applied while it is still warming up (e.g. a tree that STARTS with a searchTerm) sees
 	// an incomplete index - the indexer's completion callback re-applies it.
 	let _lastFilterSearchText: string | null | undefined = null;
 	let _lastFilterSearchOptions: SearchOptions | undefined = undefined;
+	let _isRefilterScheduled = false;
 
 	// Cache for visibleFlatNodes - only recompute when tree changes
 	let cachedVisibleFlatNodes: LTreeNode<T>[] = [];
@@ -325,7 +325,7 @@ export function createLTree<T>(
 
 		// Properties for filtering
 		filteredTree,
-		isFiltered,
+		isFiltered: false,
 
 		// onChange callback — replaces Svelte's $state reactivity
 		set onChange(cb: (() => void) | null) { onChangeCallback = cb; },
@@ -392,7 +392,9 @@ export function createLTree<T>(
 		},
 
 		get statistics() {
-			const filteredNodeCount = isFiltered ? filteredTree?.length || 0 : 0;
+			// Count the filtered view's nodes (the closure `isFiltered` was never written → always 0).
+			// (svelte-treeview REVIEW-2026-11-19 B20)
+			const filteredNodeCount = this.isFiltered ? filteredIndex.size : 0;
 			const indexerStatus = indexer?.getStatus() || { isProcessing: false, queueSize: 0 };
 
 			return (
@@ -585,18 +587,21 @@ export function createLTree<T>(
 				newNode.level = (parentNode.level || 0) + 1;
 			}
 
-			// A path clash keeps the existing node (first one wins).
-			if (!index.has(newNode.path)) {
-				parentNode.children.push(newNode);
-				index.set(newNode.path, newNode);
-				if (shouldCalculateHasChildren && !parentNode.hasChildren) {
-					parentNode.hasChildren = true;
-				}
-
-				// Update statistics
-				nodeCount++;
-				maxLevel = Math.max(maxLevel, newNode.level || 0);
+			// A path clash keeps the existing node (first one wins) and is a FAILURE, not a silent
+			// success: insertArray used to count it as inserted and queue it for the search index
+			// (an orphan the search could return). (svelte-treeview REVIEW-2026-11-19 B19)
+			if (index.has(newNode.path)) {
+				return `Duplicate path: ${newNode.path}`;
 			}
+			parentNode.children.push(newNode);
+			index.set(newNode.path, newNode);
+			if (shouldCalculateHasChildren && !parentNode.hasChildren) {
+				parentNode.hasChildren = true;
+			}
+
+			// Update statistics
+			nodeCount++;
+			maxLevel = Math.max(maxLevel, newNode.level || 0);
 
 			if (!noEmitChanges) {
 				this._emitTreeChanged();
@@ -1099,13 +1104,16 @@ export function createLTree<T>(
 		 * @returns Object with success status and optional error message
 		 */
 		moveNode(sourcePath: string, targetPath: string, position: DropPosition): { success: boolean; error?: string } {
+			this._scheduleRefilter();
 			const sep = this.treePathSeparator;
 			const sourceNode = index.get(sourcePath);
 			if (!sourceNode) {
 				return { success: false, error: `Source node not found: ${sourcePath}` };
 			}
 
-			const targetNode = index.get(targetPath);
+			// '' as a 'child' target = the tree root (moveNodes re-homes a hole there when its
+			// moved root was top-level); the index holds no entry for the root itself.
+			const targetNode = targetPath ? index.get(targetPath) : position === 'child' ? root : undefined;
 			if (!targetNode) {
 				return { success: false, error: `Target node not found: ${targetPath}` };
 			}
@@ -1222,6 +1230,7 @@ export function createLTree<T>(
 		 * last child (`'child'`, same as {@link addNode} under it). Positioning is moveNode's.
 		 */
 		insertNode(targetPath: string, data: T, position: DropPosition): { success: boolean; node?: LTreeNode<T>; error?: string } {
+			this._scheduleRefilter();
 			const targetNode = index.get(targetPath);
 			if (!targetNode) return { success: false, error: `Target node not found: ${targetPath}` };
 			if (position === 'child') return this.addNode(targetPath, data);
@@ -1264,6 +1273,7 @@ export function createLTree<T>(
 		 * @returns Object with success status and the removed node
 		 */
 		removeNode(path: string, includeDescendants: boolean = true): { success: boolean; node?: LTreeNode<T>; error?: string } {
+			this._scheduleRefilter();
 			const node = index.get(path);
 			if (!node) {
 				return { success: false, error: `Node not found: ${path}` };
@@ -1280,7 +1290,10 @@ export function createLTree<T>(
 			dropFromSearch(removedPaths);
 			detachChild(parent, node);
 
-			nodeCount -= includeDescendants ? removedPaths.size : 1;
+			// The whole subtree leaves the tree either way (the node keeps its children), so the
+			// count drops by all of it — `includeDescendants=false` used to subtract just 1.
+			// (svelte-treeview REVIEW-2026-11-19 B20)
+			nodeCount -= removedPaths.size;
 
 			this._emitTreeChanged();
 			return { success: true, node };
@@ -1294,6 +1307,7 @@ export function createLTree<T>(
 		 * @returns Object with success status and the created node
 		 */
 		addNode(parentPath: string, data: T, pathSegment?: string): { success: boolean; node?: LTreeNode<T>; error?: string } {
+			this._scheduleRefilter();
 			const parent = nodeAt(parentPath);
 			if (!parent) {
 				return { success: false, error: `Parent not found: ${parentPath}` };
@@ -1386,6 +1400,7 @@ export function createLTree<T>(
 		 * @returns Object with success status and the updated node
 		 */
 		updateNode(path: string, dataUpdates: Partial<T>): { success: boolean; node?: LTreeNode<T>; error?: string } {
+			this._scheduleRefilter();
 			const node = index.get(path);
 			if (!node) {
 				return { success: false, error: `Node not found: ${path}` };
@@ -1608,6 +1623,7 @@ export function createLTree<T>(
 		 * @param data - Data rows to insert (each with its full path)
 		 */
 		addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
+			this._scheduleRefilter();
 			const parentNode = nodeAt(parentPath);
 			if (!parentNode) {
 				return { success: false, count: 0, failed: [], parentNode: null, error: 'Parent not found: ' + parentPath };
@@ -1738,6 +1754,7 @@ export function createLTree<T>(
 		 * `orderMember` they get order values spread between the target and its neighbour.
 		 */
 		insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
+			this._scheduleRefilter();
 			const targetNode = index.get(targetPath);
 			if (!targetNode) {
 				return { success: false, count: 0, failed: [], parentNode: null, error: 'Target not found: ' + targetPath };
@@ -1763,6 +1780,7 @@ export function createLTree<T>(
 		 * @returns the insertBranch result plus `removed` (descendants removed) and `added` (= count)
 		 */
 		replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
+			this._scheduleRefilter();
 			const parentNode = nodeAt(parentPath);
 			if (!parentNode) {
 				return { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Parent not found: ' + parentPath };
@@ -1799,6 +1817,7 @@ export function createLTree<T>(
 		 * @returns Object with success status and count of removed nodes
 		 */
 		removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
+			this._scheduleRefilter();
 			const node = index.get(path);
 			if (!node) {
 				return { success: false, count: 0, error: 'Node not found: ' + path };
@@ -1959,6 +1978,7 @@ export function createLTree<T>(
 		},
 
 		sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
+			this._scheduleRefilter();
 			const out: NodesReorderContext<T>[] = [];
 			for (const p of Array.isArray(paths) ? paths : [paths]) {
 				const node = isEmptyString(p) ? root : index.get(p);
@@ -1969,6 +1989,7 @@ export function createLTree<T>(
 		},
 
 		sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
+			this._scheduleRefilter();
 			const out: NodesReorderContext<T>[] = [];
 			const list = paths == null ? [] : (Array.isArray(paths) ? paths : [paths]).filter((p) => !isEmptyString(p));
 			const targets = list.length === 0 ? [root] : list.map((p) => index.get(p));
@@ -2008,6 +2029,24 @@ export function createLTree<T>(
 				for (const node of self._sortSiblings(g.items)) result.push(node);
 			}
 			return result;
+		},
+
+		/**
+		 * While a filter is active, rebuild the filtered view after an edit (once per microtask,
+		 * so a batch rebuilds once). Edits always resolve against the REAL tree (the path index),
+		 * but the rendered filtered COPY kept a removed / moved node until the filter changed.
+		 * An added node shows once it is indexed (the indexer re-applies the filter on completion).
+		 * (svelte-treeview REVIEW-2026-11-19 R3)
+		 */
+		_scheduleRefilter(): void {
+			if (!this.isFiltered || _isRefilterScheduled) return;
+			_isRefilterScheduled = true;
+			queueMicrotask(() => {
+				_isRefilterScheduled = false;
+				if (this.isFiltered && !isEmptyString(_lastFilterSearchText)) {
+					this.filterNodes(_lastFilterSearchText as string, _lastFilterSearchOptions);
+				}
+			});
 		},
 
 		_emitTreeChanged: function () {

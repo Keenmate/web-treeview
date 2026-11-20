@@ -28,6 +28,7 @@ import type { SearchOptions } from 'flexsearch';
 import { adoptStyles, ICON_CSS, renderIcon, type RenderIconCallback, announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
+import { ENGINE_DEFAULTS } from './inputs';
 
 /** Built-in menu actions that change the data — greyed out and inert while `isReadonly`. */
 const READONLY_BLOCKED_ACTIONS = new Set(['cut', 'paste', 'delete', 'sort', 'sort-subtree', 'sort-all']);
@@ -85,6 +86,18 @@ export function createTreeViewController<T>(
   });
 }
 
+/**
+ * `options` with every missing / `undefined` option filled from `ENGINE_DEFAULTS` (the element's input-table
+ * defaults). `onlyPresent`: fill only keys present in `options` (an `update()` partial — an absent key is unchanged).
+ */
+function withDefaults<T>(options: Partial<TreeViewConfig<T>>, onlyPresent = false): Partial<TreeViewConfig<T>> {
+  const out: Record<string, unknown> = { ...options };
+  for (const key of Object.keys(ENGINE_DEFAULTS)) {
+    if (out[key] === undefined && (!onlyPresent || key in out)) out[key] = ENGINE_DEFAULTS[key];
+  }
+  return out as Partial<TreeViewConfig<T>>;
+}
+
 /** A before-hook result → the engine's internal contract: false | value | undefined. */
 function internalGate(result: BeforeCallbackResult): unknown {
   if (result.isRejected) return false;
@@ -95,7 +108,8 @@ function internalGate(result: BeforeCallbackResult): unknown {
  * TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeEngine + a TreeViewRenderer.
  * Public as the seam for your own UI (docs/usage.md "Build your own UI"): `new TreeViewEngine(container,
  * options, renderer?)` — the same options as the element (every per-element hook / setting the element
- * passes through), a custom `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx
+ * passes through) with the same defaults (`ENGINE_DEFAULTS`, read from the element's input table), a custom
+ * `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx
  * callbacks, events with the component context) and adapts it to the engine's
  * internal callbacks — memoized per source function, so an unchanged callback keeps
  * its identity across updates (the engine rebuilds the tree when one changes).
@@ -127,18 +141,19 @@ export class TreeViewEngine<T = any> {
     log?: TreeLoggers
   ) {
     this.element = element;
-    this.options = { ...options };
+    // Every option the caller leaves out (or `undefined`) gets <web-treeview>'s default — one source, the input table (C-CA-37).
+    this.options = withDefaults(options);
     this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, {
       tag: 'web-treeview',
       // This tree's own translateCallback (the element's input, or a plain TreeViewEngine option) → the page-wide one.
       getTranslateCallback: () => this.options.translateCallback ?? undefined,
     });
 
-    this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(options), log });
+    this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(this.options), log });
 
     // Use provided renderer or default DomRenderer
     this.renderer = renderer ?? new DomRenderer<T>();
-    this.renderer.mount(element, this.engine, this.mapToRendererConfig(options));
+    this.renderer.mount(element, this.engine, this.mapToRendererConfig(this.options));
 
     // Expand / collapse methods announce `expanded-change` synchronously.
     this.engine.on('expanded-change', (paths: string[]) => {
@@ -399,6 +414,8 @@ export class TreeViewEngine<T = any> {
   // ── Public API (proxy to engine) ────────────────────────────────────
 
   update(props: Partial<TreeViewConfig<T>>): void {
+    // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
+    props = withDefaults(props, true);
     Object.assign(this.options, props);
     const engineConfig = this.mapToEngineConfig(props);
     // If context menu callbacks changed, update the engine's awareness

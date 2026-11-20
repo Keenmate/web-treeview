@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — `TreeViewEngine` has the element's defaults (2026-11-20)
+- A standalone `TreeViewEngine` now fills every option it isn't given (or given as `undefined`, also in
+  `update()`) with `<web-treeview>`'s default — one source: the input table moved to `src/inputs.ts`, and the
+  engine reads `ENGINE_DEFAULTS` derived from it the same way the element seeds its config (rulebook C-CA-37).
+  Before, a default that lived only in the element's input table was missing: an engine without
+  `displayValueMember` rendered every row as "[N/A]". The element behaves exactly as before. The "Build your own
+  UI" example no longer names `displayValueMember`; new e2e: an engine given only `nodes` renders like the element.
+
 ### Changed — the public engine is `TreeViewEngine` (2026-11-20)
 - BREAKING: `WebTreeView` (the class behind `<web-treeview>`, exported for building your own UI) is renamed
   `TreeViewEngine` — no alias: `import { TreeViewEngine } from '@keenmate/web-treeview'`;

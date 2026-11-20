@@ -8,8 +8,13 @@
 <body>
     <!-- The public engine seam (docs/usage.md "Build your own UI"): `new TreeViewEngine(container, options,
          renderer)` without <web-treeview>. #list = a minimal custom renderer (the usage.md example) —
-         click toggles; its aria-label comes from config.labels. Targeted by e2e/engine-custom-renderer.spec.ts. -->
+         click toggles; its aria-label comes from config.labels. #bare = an engine with ONLY `nodes` (built-in
+         renderer) next to #element (<web-treeview>, same nodes, no attributes): every option the engine isn't
+         given has the element's default (displayValueMember 'displayValue', …). Targeted by
+         e2e/engine-custom-renderer.spec.ts. -->
     <div id="list"></div>
+    <div id="bare"></div>
+    <web-treeview id="element"></web-treeview>
 
     <script type="module">
         import { TreeViewEngine } from '/src/index.ts';
@@ -54,17 +59,22 @@
             }
         }
 
+        const nodes = () => [
+            { id: 1, path: '1',   displayValue: 'Documents' },
+            { id: 2, path: '1.1', displayValue: 'Projects' },
+            { id: 3, path: '2',   displayValue: 'Photos' },
+        ];
+
         window.expanded = [];
         window.engine = new TreeViewEngine(document.getElementById('list'), {
-            displayValueMember: 'displayValue',
-            nodes: [
-                { id: 1, path: '1',   displayValue: 'Documents' },
-                { id: 2, path: '1.1', displayValue: 'Projects' },
-                { id: 3, path: '2',   displayValue: 'Photos' },
-            ],
+            nodes: nodes(),
             onNodeExpand: ({ node }) => window.expanded.push(node.path),
             translateCallback: ({ key }) => (key === 'web-treeview.ariaLabels.tree' ? 'own' : null),
         }, new ListRenderer());
+
+        // No options but the data: the element's defaults apply (one source, the input table).
+        window.bareEngine = new TreeViewEngine(document.getElementById('bare'), { nodes: nodes() });
+        document.getElementById('element').nodes = nodes();
         window.fixtureReady = true;
     </script>
 </body>

@@ -3,9 +3,11 @@ import { test, expect } from './fixtures';
 /**
  * The public engine seam (docs/usage.md "Build your own UI"): `TreeViewEngine` without the element,
  * drawn by a custom `TreeViewRenderer`. User input goes back through engine calls, so the `on*` options
- * fire; the engine's own `translateCallback` beats the page-wide one.
+ * fire; the engine's own `translateCallback` beats the page-wide one. An option the engine isn't given has
+ * the element's default (C-CA-37 — one source, the input table).
  *
- * Fixture: test/engine-custom-renderer.html — #list
+ * Fixture: test/engine-custom-renderer.html — #list (custom renderer), #bare (engine with only `nodes`,
+ * built-in renderer), #element (<web-treeview>, same nodes, no attributes)
  *   1 Documents ── 1.1 Projects
  *   2 Photos
  */
@@ -40,4 +42,16 @@ test("the engine's own translateCallback beats the page-wide one; labels beat bo
   await expect(list).toHaveAttribute('aria-label', 'page');
   await page.evaluate(() => (window as any).engine.update({ labels: { 'ariaLabels.tree': 'mine' } }));
   await expect(list).toHaveAttribute('aria-label', 'mine');
+});
+
+test("an engine given only nodes renders like the element (the element's defaults: display value shown)", async ({ page }) => {
+  const bare = page.locator('#bare .wtv__node-label');
+  const element = page.locator('#element .wtv__node-label');
+  await expect(element).toHaveText(['Documents', 'Photos']);
+  await expect(bare).toHaveText(['Documents', 'Photos']);
+  // Same default behaviour, not just the label: a row click (clickBehavior 'expand-and-focus') expands it.
+  await page.locator('#bare .wtv__node-content').first().click();
+  await page.locator('#element .wtv__node-content').first().click();
+  await expect(element).toHaveText(['Documents', 'Projects', 'Photos']);
+  await expect(bare).toHaveText(['Documents', 'Projects', 'Photos']);
 });

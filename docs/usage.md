@@ -721,6 +721,9 @@ new TreeViewEngine(container, options, renderer?)
   `*Callback`, the `on*` event twins, `labels`, `translateCallback`, `renderIconCallback`, `renderLoadingCallback`,
   `menuPresentation` / `menuSide`, …) — no attributes, no `customStyles` (style your own container), and no events
   on a host: the `on*` options are the events.
+  Every option you leave out (or set to `undefined`) has the element's default — `idMember` `'id'`, `pathMember`
+  `'path'`, `displayValueMember` `'displayValue'`, `clickBehavior` `'expand-and-focus'`, … (one source: the
+  element's input table), so an engine given only `nodes` behaves like a bare `<web-treeview>`.
 - `renderer` — a `TreeViewRenderer`; omitted = the built-in `DomRenderer` (the element's own UI in your container).
 
 **What the engine does:** owns the data (`LTree`: paths, members, sorting, branch ops), expand / select / check /
@@ -788,7 +791,6 @@ class ListRenderer<T> implements TreeViewRenderer<T> {
 }
 
 const tree = new TreeViewEngine(document.getElementById('tree')!, {
-  displayValueMember: 'displayValue',               // no element defaults here: name your members
   nodes: [
     { id: 1, path: '1',   displayValue: 'Documents' },
     { id: 2, path: '1.1', displayValue: 'Projects' },

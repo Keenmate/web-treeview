@@ -393,12 +393,12 @@
     },
     {
       "kind": "javascript-module",
-      "path": "src/controller/tree-engine.ts",
+      "path": "src/controller/tree-view-state.ts",
       "declarations": [
         {
           "kind": "class",
           "description": "",
-          "name": "TreeEngine",
+          "name": "TreeViewState",
           "members": [
             {
               "kind": "field",
@@ -842,7 +842,7 @@
               "kind": "field",
               "name": "beforeCheckboxToggleCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeCheckboxToggleCallback']"
+                "text": "TreeViewStateConfig<T>['beforeCheckboxToggleCallback']"
               },
               "privacy": "private"
             },
@@ -859,7 +859,7 @@
               "kind": "field",
               "name": "checkedChangeCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onCheckedChange']"
+                "text": "TreeViewStateConfig<T>['onCheckedChange']"
               },
               "privacy": "private"
             },
@@ -867,7 +867,7 @@
               "kind": "field",
               "name": "selectionChangeCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onSelectionChange']"
+                "text": "TreeViewStateConfig<T>['onSelectionChange']"
               },
               "privacy": "private"
             },
@@ -875,7 +875,7 @@
               "kind": "field",
               "name": "nodeClickedCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeClick']"
+                "text": "TreeViewStateConfig<T>['onNodeClick']"
               },
               "privacy": "private"
             },
@@ -883,7 +883,7 @@
               "kind": "field",
               "name": "onNodeDoubleClickCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDoubleClick']"
+                "text": "TreeViewStateConfig<T>['onNodeDoubleClick']"
               },
               "privacy": "private"
             },
@@ -891,7 +891,7 @@
               "kind": "field",
               "name": "beforeExpandCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeExpandCallback']"
+                "text": "TreeViewStateConfig<T>['beforeExpandCallback']"
               },
               "privacy": "private"
             },
@@ -899,7 +899,7 @@
               "kind": "field",
               "name": "nodeExpandCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeExpand']"
+                "text": "TreeViewStateConfig<T>['onNodeExpand']"
               },
               "privacy": "private"
             },
@@ -907,7 +907,7 @@
               "kind": "field",
               "name": "nodeCollapseCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeCollapse']"
+                "text": "TreeViewStateConfig<T>['onNodeCollapse']"
               },
               "privacy": "private"
             },
@@ -922,7 +922,7 @@
               "kind": "field",
               "name": "beforeCopyCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeCopyCallback']"
+                "text": "TreeViewStateConfig<T>['beforeCopyCallback']"
               },
               "privacy": "private"
             },
@@ -930,7 +930,7 @@
               "kind": "field",
               "name": "beforeCutCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeCutCallback']"
+                "text": "TreeViewStateConfig<T>['beforeCutCallback']"
               },
               "privacy": "private"
             },
@@ -938,7 +938,7 @@
               "kind": "field",
               "name": "beforePasteCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforePasteCallback']"
+                "text": "TreeViewStateConfig<T>['beforePasteCallback']"
               },
               "privacy": "private"
             },
@@ -946,7 +946,7 @@
               "kind": "field",
               "name": "beforeDeleteCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeDeleteCallback']"
+                "text": "TreeViewStateConfig<T>['beforeDeleteCallback']"
               },
               "privacy": "private"
             },
@@ -954,7 +954,7 @@
               "kind": "field",
               "name": "onCopyCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onCopy']"
+                "text": "TreeViewStateConfig<T>['onCopy']"
               },
               "privacy": "private"
             },
@@ -962,7 +962,7 @@
               "kind": "field",
               "name": "onCutCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onCut']"
+                "text": "TreeViewStateConfig<T>['onCut']"
               },
               "privacy": "private"
             },
@@ -970,7 +970,7 @@
               "kind": "field",
               "name": "onPasteCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onPaste']"
+                "text": "TreeViewStateConfig<T>['onPaste']"
               },
               "privacy": "private"
             },
@@ -978,7 +978,7 @@
               "kind": "field",
               "name": "onDeleteCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onDelete']"
+                "text": "TreeViewStateConfig<T>['onDelete']"
               },
               "privacy": "private"
             },
@@ -986,7 +986,7 @@
               "kind": "field",
               "name": "outputTransformCb",
               "type": {
-                "text": "TreeEngineConfig<T>['nodeOutputTransformationCallback']"
+                "text": "TreeViewStateConfig<T>['nodeOutputTransformationCallback']"
               },
               "privacy": "private"
             },
@@ -994,7 +994,7 @@
               "kind": "field",
               "name": "inputTransformCb",
               "type": {
-                "text": "TreeEngineConfig<T>['nodeInputTransformationCallback']"
+                "text": "TreeViewStateConfig<T>['nodeInputTransformationCallback']"
               },
               "privacy": "private"
             },
@@ -1020,7 +1020,7 @@
               "kind": "field",
               "name": "nodeDragStartCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDragStart']"
+                "text": "TreeViewStateConfig<T>['onNodeDragStart']"
               },
               "privacy": "private"
             },
@@ -1028,7 +1028,7 @@
               "kind": "field",
               "name": "nodeDragOverCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDragOver']"
+                "text": "TreeViewStateConfig<T>['onNodeDragOver']"
               },
               "privacy": "private"
             },
@@ -1036,7 +1036,7 @@
               "kind": "field",
               "name": "beforeDropCallbackCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeDropCallback']"
+                "text": "TreeViewStateConfig<T>['beforeDropCallback']"
               },
               "privacy": "private"
             },
@@ -1044,7 +1044,7 @@
               "kind": "field",
               "name": "beforeDragStartCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeDragStartCallback']"
+                "text": "TreeViewStateConfig<T>['beforeDragStartCallback']"
               },
               "privacy": "private"
             },
@@ -1052,7 +1052,7 @@
               "kind": "field",
               "name": "nodeDropCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDrop']"
+                "text": "TreeViewStateConfig<T>['onNodeDrop']"
               },
               "privacy": "private"
             },
@@ -1060,7 +1060,7 @@
               "kind": "field",
               "name": "nodeDragDeniedCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDragDenied']"
+                "text": "TreeViewStateConfig<T>['onNodeDragDenied']"
               },
               "privacy": "private"
             },
@@ -1068,7 +1068,7 @@
               "kind": "field",
               "name": "nodeDropDeniedCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onNodeDropDenied']"
+                "text": "TreeViewStateConfig<T>['onNodeDropDenied']"
               },
               "privacy": "private"
             },
@@ -1076,7 +1076,7 @@
               "kind": "field",
               "name": "onTreeKeydownCb",
               "type": {
-                "text": "TreeEngineConfig<T>['onTreeKeydown']"
+                "text": "TreeViewStateConfig<T>['onTreeKeydown']"
               },
               "privacy": "private"
             },
@@ -1084,7 +1084,7 @@
               "kind": "field",
               "name": "beforeScrollCb",
               "type": {
-                "text": "TreeEngineConfig<T>['beforeScrollCallback']"
+                "text": "TreeViewStateConfig<T>['beforeScrollCallback']"
               },
               "privacy": "private"
             },
@@ -5351,7 +5351,7 @@
                 {
                   "name": "updates",
                   "type": {
-                    "text": "Partial<TreeEngineConfig<T>>"
+                    "text": "Partial<TreeViewStateConfig<T>>"
                   }
                 }
               ],
@@ -5364,7 +5364,7 @@
                 {
                   "name": "updates",
                   "type": {
-                    "text": "Partial<TreeEngineConfig<T>>"
+                    "text": "Partial<TreeViewStateConfig<T>>"
                   }
                 }
               ]
@@ -5385,7 +5385,7 @@
               "name": "getSnapshot",
               "return": {
                 "type": {
-                  "text": "TreeEngineSnapshot<T>"
+                  "text": "TreeViewStateSnapshot<T>"
                 }
               },
               "description": "Get a snapshot of the current state for the renderer."
@@ -6333,10 +6333,10 @@
       "exports": [
         {
           "kind": "js",
-          "name": "TreeEngine",
+          "name": "TreeViewState",
           "declaration": {
-            "name": "TreeEngine",
-            "module": "src/controller/tree-engine.ts"
+            "name": "TreeViewState",
+            "module": "src/controller/tree-view-state.ts"
           }
         }
       ]
@@ -6730,10 +6730,10 @@
         },
         {
           "kind": "js",
-          "name": "TreeEngine",
+          "name": "TreeViewState",
           "declaration": {
-            "name": "TreeEngine",
-            "module": "./controller/tree-engine"
+            "name": "TreeViewState",
+            "module": "./controller/tree-view-state"
           }
         },
         {
@@ -6786,25 +6786,25 @@
         },
         {
           "kind": "js",
-          "name": "TreeEngineConfig",
+          "name": "TreeViewStateConfig",
           "declaration": {
-            "name": "TreeEngineConfig",
+            "name": "TreeViewStateConfig",
             "module": "./controller/types"
           }
         },
         {
           "kind": "js",
-          "name": "TreeEngineSnapshot",
+          "name": "TreeViewStateSnapshot",
           "declaration": {
-            "name": "TreeEngineSnapshot",
+            "name": "TreeViewStateSnapshot",
             "module": "./controller/types"
           }
         },
         {
           "kind": "js",
-          "name": "TreeEngineEvents",
+          "name": "TreeViewStateEvents",
           "declaration": {
-            "name": "TreeEngineEvents",
+            "name": "TreeViewStateEvents",
             "module": "./controller/types"
           }
         },
@@ -8673,7 +8673,7 @@
               "kind": "field",
               "name": "controller",
               "type": {
-                "text": "TreeEngine<T> | null"
+                "text": "TreeViewState<T> | null"
               },
               "privacy": "private",
               "default": "null"
@@ -8878,7 +8878,7 @@
               "kind": "field",
               "name": "lastSnapshot",
               "type": {
-                "text": "TreeEngineSnapshot<T> | null"
+                "text": "TreeViewStateSnapshot<T> | null"
               },
               "privacy": "private",
               "default": "null"
@@ -9005,7 +9005,7 @@
                 {
                   "name": "controller",
                   "type": {
-                    "text": "TreeEngine<T>"
+                    "text": "TreeViewState<T>"
                   }
                 },
                 {
@@ -9561,7 +9561,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9579,7 +9579,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9607,7 +9607,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9653,7 +9653,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9682,7 +9682,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ],
@@ -9724,7 +9724,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 },
                 {
@@ -9749,7 +9749,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9916,7 +9916,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -9990,7 +9990,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ],
@@ -10104,7 +10104,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -10122,7 +10122,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -10179,7 +10179,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -10197,7 +10197,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ],
@@ -10238,7 +10238,7 @@
                 {
                   "name": "snapshot",
                   "type": {
-                    "text": "TreeEngineSnapshot<T>"
+                    "text": "TreeViewStateSnapshot<T>"
                   }
                 }
               ]
@@ -10400,17 +10400,17 @@
         },
         {
           "kind": "class",
-          "description": "TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeEngine + a TreeViewRenderer.\nPublic as the seam for your own UI (docs/usage.md \"Build your own UI\"): `new TreeViewEngine(container,\noptions, renderer?)` — the same options as the element (every per-element hook / setting the element\npasses through), a custom `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx\ncallbacks, events with the component context) and adapts it to the engine's\ninternal callbacks — memoized per source function, so an unchanged callback keeps\nits identity across updates (the engine rebuilds the tree when one changes).",
+          "description": "TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeViewState + a TreeViewRenderer.\nPublic as the seam for your own UI (docs/usage.md \"Build your own UI\"): `new TreeViewEngine(container,\noptions, renderer?)` — the same options as the element (every per-element hook / setting the element\npasses through), a custom `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx\ncallbacks, events with the component context) and adapts it to the engine's\ninternal callbacks — memoized per source function, so an unchanged callback keeps\nits identity across updates (the engine rebuilds the tree when one changes).",
           "name": "TreeViewEngine",
           "members": [
             {
               "kind": "field",
               "name": "engine",
               "type": {
-                "text": "TreeEngine<T>"
+                "text": "TreeViewState<T>"
               },
               "privacy": "private",
-              "default": "new TreeEngine<T>({ ...this.mapToEngineConfig(options), log })"
+              "default": "new TreeViewState<T>({ ...this.mapToEngineConfig(options), log })"
             },
             {
               "kind": "field",
@@ -11378,7 +11378,7 @@
               "name": "getEngine",
               "return": {
                 "type": {
-                  "text": "TreeEngine<T>"
+                  "text": "TreeViewState<T>"
                 }
               },
               "description": "The internal engine — for renderer authors / advanced use; not part of the public API."
@@ -12539,7 +12539,7 @@
               "privacy": "private",
               "return": {
                 "type": {
-                  "text": "TreeEngineConfig<T>"
+                  "text": "TreeViewStateConfig<T>"
                 }
               },
               "parameters": [
@@ -13138,25 +13138,25 @@
         },
         {
           "kind": "js",
-          "name": "TreeEngineConfig",
+          "name": "TreeViewStateConfig",
           "declaration": {
-            "name": "TreeEngineConfig",
+            "name": "TreeViewStateConfig",
             "module": "./controller/types"
           }
         },
         {
           "kind": "js",
-          "name": "TreeEngineSnapshot",
+          "name": "TreeViewStateSnapshot",
           "declaration": {
-            "name": "TreeEngineSnapshot",
+            "name": "TreeViewStateSnapshot",
             "module": "./controller/types"
           }
         },
         {
           "kind": "js",
-          "name": "TreeEngineEvents",
+          "name": "TreeViewStateEvents",
           "declaration": {
-            "name": "TreeEngineEvents",
+            "name": "TreeViewStateEvents",
             "module": "./controller/types"
           }
         },

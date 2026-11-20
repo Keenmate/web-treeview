@@ -1,5 +1,8 @@
 /**
- * TreeEngine — all tree state & logic.
+ * TreeViewState — all tree state & logic, headless: data, expand / select / check / focus, search,
+ * keyboard, clipboard, drag-and-drop. Public: every `TreeViewRenderer` gets it in `mount()`, and a fully
+ * custom UI can drive one directly (`new TreeViewState({ data, … })`, docs/usage.md "Build your own UI").
+ * Its callbacks keep their positional signatures (`TreeViewEngine` adapts the element's one-ctx ones).
  * Ported from TreeEngine.svelte.ts to vanilla TypeScript.
  *
  * Svelte → vanilla conversions:
@@ -37,6 +40,7 @@ import {
   type RenderStats
 } from '../renderer/render-coordinator';
 import { EventEmitter } from './event-emitter';
+import { withEngineDefaults } from '../inputs';
 import { isTypingTarget, matchesShortcut } from '@keenmate/web-components-core/actions';
 import { openTreeLayer, type TreeLayerOpener } from '../renderer/layers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
@@ -47,9 +51,9 @@ import type {
   SelectionModifiers,
   SelectMode,
   TreeMutationOptions,
-  TreeEngineConfig,
-  TreeEngineSnapshot,
-  TreeEngineEvents,
+  TreeViewStateConfig,
+  TreeViewStateSnapshot,
+  TreeViewStateEvents,
   NodeRef,
   NodeDragContext,
   NodeDropContext,
@@ -87,7 +91,7 @@ import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perf } from '../perf-logger';
 import { rowDomId } from '../helpers/string-helpers';
 
-// ─── TreeEngine ───────────────────────────────────────────────────────
+// ─── TreeViewState ───────────────────────────────────────────────────────
 
 /** Rows a PageUp / PageDown (and their Shift variants) jumps in the visible flat list. */
 const NAV_PAGE_SIZE = 10;
@@ -106,7 +110,7 @@ const TREE_SHORTCUTS = {
 } as const satisfies Record<string, readonly string[]>;
 type TreeShortcutCommand = keyof typeof TREE_SHORTCUTS;
 
-export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
+export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // ── LTree instance ──────────────────────────────────────────────────
   tree!: Ltree<T>;
 
@@ -235,47 +239,47 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   // _checkedPaths). Only applies when checkboxMode === 'cascade'. rc14.
   private _cascadeCheckPolicy: import('./types').CascadeCheckPolicy = 'rolled-up';
   private _shouldClickToggleCheckbox: boolean = false;
-  private beforeCheckboxToggleCb: TreeEngineConfig<T>['beforeCheckboxToggleCallback'];
+  private beforeCheckboxToggleCb: TreeViewStateConfig<T>['beforeCheckboxToggleCallback'];
 
   // Clipboard (cut paths for dimming)
   private _cutPaths: Set<string> = new Set();
 
   // Events / callbacks (ctx-object signatures — rc07 parity)
-  private checkedChangeCb: TreeEngineConfig<T>['onCheckedChange'];
-  private selectionChangeCb: TreeEngineConfig<T>['onSelectionChange'];
-  private nodeClickedCb: TreeEngineConfig<T>['onNodeClick'];
-  private onNodeDoubleClickCb: TreeEngineConfig<T>['onNodeDoubleClick'];
-  private beforeExpandCb: TreeEngineConfig<T>['beforeExpandCallback'];
-  private nodeExpandCb: TreeEngineConfig<T>['onNodeExpand'];
-  private nodeCollapseCb: TreeEngineConfig<T>['onNodeCollapse'];
+  private checkedChangeCb: TreeViewStateConfig<T>['onCheckedChange'];
+  private selectionChangeCb: TreeViewStateConfig<T>['onSelectionChange'];
+  private nodeClickedCb: TreeViewStateConfig<T>['onNodeClick'];
+  private onNodeDoubleClickCb: TreeViewStateConfig<T>['onNodeDoubleClick'];
+  private beforeExpandCb: TreeViewStateConfig<T>['beforeExpandCallback'];
+  private nodeExpandCb: TreeViewStateConfig<T>['onNodeExpand'];
+  private nodeCollapseCb: TreeViewStateConfig<T>['onNodeCollapse'];
   /** Paths whose async beforeExpandCallback is in flight (loading state; repeat toggles ignored). */
   private _expandPending = new Set<string>();
-  private beforeCopyCb: TreeEngineConfig<T>['beforeCopyCallback'];
-  private beforeCutCb: TreeEngineConfig<T>['beforeCutCallback'];
-  private beforePasteCb: TreeEngineConfig<T>['beforePasteCallback'];
-  private beforeDeleteCb: TreeEngineConfig<T>['beforeDeleteCallback'];
-  private onCopyCb: TreeEngineConfig<T>['onCopy'];
-  private onCutCb: TreeEngineConfig<T>['onCut'];
-  private onPasteCb: TreeEngineConfig<T>['onPaste'];
-  private onDeleteCb: TreeEngineConfig<T>['onDelete'];
-  private outputTransformCb: TreeEngineConfig<T>['nodeOutputTransformationCallback'];
-  private inputTransformCb: TreeEngineConfig<T>['nodeInputTransformationCallback'];
+  private beforeCopyCb: TreeViewStateConfig<T>['beforeCopyCallback'];
+  private beforeCutCb: TreeViewStateConfig<T>['beforeCutCallback'];
+  private beforePasteCb: TreeViewStateConfig<T>['beforePasteCallback'];
+  private beforeDeleteCb: TreeViewStateConfig<T>['beforeDeleteCallback'];
+  private onCopyCb: TreeViewStateConfig<T>['onCopy'];
+  private onCutCb: TreeViewStateConfig<T>['onCut'];
+  private onPasteCb: TreeViewStateConfig<T>['onPaste'];
+  private onDeleteCb: TreeViewStateConfig<T>['onDelete'];
+  private outputTransformCb: TreeViewStateConfig<T>['nodeOutputTransformationCallback'];
+  private inputTransformCb: TreeViewStateConfig<T>['nodeInputTransformationCallback'];
   // Manual double-click detection — the flat diff reconciler patches a row's
   // attributes on the first click (focus/selection bumps _rev), which makes the
   // browser's native dblclick unreliable. Tracks the last plain UI click.
   private _lastClickPath: string | null = null;
   private _lastClickTime: number = 0;
-  private nodeDragStartCb: TreeEngineConfig<T>['onNodeDragStart'];
-  private nodeDragOverCb: TreeEngineConfig<T>['onNodeDragOver'];
-  private beforeDropCallbackCb: TreeEngineConfig<T>['beforeDropCallback'];
-  private beforeDragStartCb: TreeEngineConfig<T>['beforeDragStartCallback'];
-  private nodeDropCb: TreeEngineConfig<T>['onNodeDrop'];
-  private nodeDragDeniedCb: TreeEngineConfig<T>['onNodeDragDenied'];
-  private nodeDropDeniedCb: TreeEngineConfig<T>['onNodeDropDenied'];
-  private onTreeKeydownCb: TreeEngineConfig<T>['onTreeKeydown'];
-  private beforeScrollCb: TreeEngineConfig<T>['beforeScrollCallback'];
+  private nodeDragStartCb: TreeViewStateConfig<T>['onNodeDragStart'];
+  private nodeDragOverCb: TreeViewStateConfig<T>['onNodeDragOver'];
+  private beforeDropCallbackCb: TreeViewStateConfig<T>['beforeDropCallback'];
+  private beforeDragStartCb: TreeViewStateConfig<T>['beforeDragStartCallback'];
+  private nodeDropCb: TreeViewStateConfig<T>['onNodeDrop'];
+  private nodeDragDeniedCb: TreeViewStateConfig<T>['onNodeDragDenied'];
+  private nodeDropDeniedCb: TreeViewStateConfig<T>['onNodeDropDenied'];
+  private onTreeKeydownCb: TreeViewStateConfig<T>['onTreeKeydown'];
+  private beforeScrollCb: TreeViewStateConfig<T>['beforeScrollCallback'];
   /** @internal Used by renderers to check if a callback is available */
-  contextMenuCallbackCb: TreeEngineConfig<T>['contextMenuCallback'];
+  contextMenuCallbackCb: TreeViewStateConfig<T>['contextMenuCallback'];
   private renderStartCb: (() => void) | undefined;
   private renderProgressCb: ((stats: RenderStats) => void) | undefined;
   private renderCompleteCb: ((stats: RenderStats) => void) | undefined;
@@ -929,8 +933,12 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   // ── Constructor ─────────────────────────────────────────────────────
 
-  constructor(props: TreeEngineConfig<T>) {
+  constructor(props: TreeViewStateConfig<T>) {
     super();
+    // C-CA-37: every option left out (or `undefined`) gets <web-treeview>'s default — one source, the
+    // element's input table (`ENGINE_DEFAULTS`), for the keys this config shares with the element. A bare
+    // `new TreeViewState({ data })` reads `id` / `path` / `displayValue` like the element does.
+    props = withEngineDefaults(props) as TreeViewStateConfig<T> & Required<Pick<TreeViewStateConfig<T>, 'idMember' | 'pathMember'>>;
 
     // Assign prop values (with defaults)
     this._treeId = props.treeId || this.generateTreeId();
@@ -1095,7 +1103,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
       }
     );
 
-    this.log.INIT.debug(`[${this._treeId}] TreeEngine created`, {
+    this.log.INIT.debug(`[${this._treeId}] TreeViewState created`, {
       idMember: props.idMember,
       pathMember: props.pathMember,
       displayValueMember: props.displayValueMember,
@@ -4272,7 +4280,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
 
   /** Apply `shouldUseInternalSearchIndex` (null → default true) / `initializeIndexCallback`
    *  (null clears; undefined = unchanged). True when either changed — the LTree is rebuilt. */
-  private _applyIndexProps(updates: Partial<TreeEngineConfig<T>>): boolean {
+  private _applyIndexProps(updates: Partial<TreeViewStateConfig<T>>): boolean {
     let isChanged = false;
     if (updates.shouldUseInternalSearchIndex !== undefined) {
       const next = updates.shouldUseInternalSearchIndex ?? true;
@@ -4285,7 +4293,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
     return isChanged;
   }
 
-  updateProps(updates: Partial<TreeEngineConfig<T>>) {
+  updateProps(updates: Partial<TreeViewStateConfig<T>>) {
     {
       const has = (k: string) => k in updates;
       this.log.INIT.debug('updateProps: node classes',
@@ -4669,7 +4677,7 @@ export class TreeEngine<T> extends EventEmitter<TreeEngineEvents<T>> {
   }
 
   /** Get a snapshot of the current state for the renderer. */
-  getSnapshot(): TreeEngineSnapshot<T> {
+  getSnapshot(): TreeViewStateSnapshot<T> {
     const virtualStart = this._isVirtualScrollEnabled ? this.virtualRange().start : 0;
     return {
       flatNodesToRender: this.flatNodesToRender,

@@ -194,7 +194,7 @@ Both trees, same shape:
 
 ## Phase 2 — as built (2026-11-16)
 
-Both trees, same shape (svelte `TreeController`, web `TreeEngine`):
+Both trees, same shape (svelte `TreeController`, web `TreeViewState`):
 
 - `collapseNodes()` and `collapseAll()` go through `_animateCollapse(targets, apply)` and **return a
   Promise** that settles once the collapse applied. Targets = the expanded nodes that close
@@ -260,7 +260,7 @@ Both trees, same shape (svelte `TreeController`, web `TreeEngine`):
   row recreated (~1280).
 - **Engine:** add a snapshot field `rowMotion: { generation, opening: string[], closing: string[] } | null`
   set in `_expandWithEvents`, `_toggleExpandApply`, `expandAll` / `collapseAll`, `collapseNodes`
-  (tree-engine.ts ~1111-1291); `getSnapshot()` (~4466) carries it. Today the snapshot has no delta or
+  (tree-view-state.ts ~1111-1291); `getSnapshot()` (~4466) carries it. Today the snapshot has no delta or
   cause — this is the one new field.
 - **Core:** bump to core rc24 (tarball `_core-tarballs/keenmate-web-components-core-1.0.0-rc24-pre.4.tgz`
   until it's published) and import `animateOut` / `readAnimationMs`.

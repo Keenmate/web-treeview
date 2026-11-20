@@ -5,10 +5,10 @@ import type { TreeLayerOpener } from './layers';
 /**
  * Pluggable renderer interface.
  * External packages (Svelte, React, Vue) can implement TreeViewRenderer
- * to provide framework-native rendering while using the shared TreeEngine.
+ * to provide framework-native rendering over the shared TreeViewState (the headless tree state).
  */
 
-import type { TreeEngine } from '../controller/tree-engine';
+import type { TreeViewState } from '../controller/tree-view-state';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { NodeRenderContext } from '../controller/types';
 import type { ResolvedActionItem } from '@keenmate/web-components-core/actions';
@@ -16,8 +16,8 @@ import type { MenuDrawerSide, MenuPresentation } from '@keenmate/web-components-
 import type { TreeMenuContext, TreeMenuItem, TreeViewAction } from '../interaction';
 
 export interface TreeViewRenderer<T = any> {
-  /** Mount the renderer into a container, subscribing to controller state changes. */
-  mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void;
+  /** Mount the renderer into a container, subscribing to the state's `state-change` snapshots. */
+  mount(container: HTMLElement, state: TreeViewState<T>, config: RendererConfig<T>): void;
   /** Update renderer configuration without full re-mount. */
   updateConfig(config: Partial<RendererConfig<T>>): void;
   /** Tear down DOM and unsubscribe from controller events. */

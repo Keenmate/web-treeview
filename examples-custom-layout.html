@@ -317,11 +317,11 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 </div>
 
 <!-- ================================================================ -->
-<!-- CL06 · iOS Files Explorer (headless TreeEngine)              -->
+<!-- CL06 · iOS Files Explorer (headless TreeViewState)              -->
 <!-- ================================================================ -->
 <div class="card">
-<h2>CL06 · iOS Files Explorer (headless <code>TreeEngine</code>)</h2>
-<p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeEngine</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
+<h2>CL06 · iOS Files Explorer (headless <code>TreeViewState</code>)</h2>
+<p>This whole UI renders <strong>without</strong> the <code>&lt;web-treeview&gt;</code> element. One headless <code>TreeViewState</code> owns the hierarchy; a custom renderer draws the iOS phone frame, nav, search, sort, breadcrumbs, file list, and detail sheet. The toggle below swaps the render path &mdash; <strong>Vanilla</strong> (imperative <code>createElement</code>) vs <strong>lit-html</strong> (declarative templates) &mdash; both drive the <em>same</em> controller + dataset + state.</p>
 
 <div class="controls" role="group" aria-label="Renderer">
     <button id="rtVanilla" type="button" aria-pressed="true">Vanilla</button>
@@ -360,7 +360,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 
         <div class="note">
             <div class="note-title">No web component used</div>
-            <code>TreeEngine</code> (the element's internal engine, exported for renderer authors) is imported directly and used as a headless data engine. Everything visible is custom DOM.
+            <code>TreeViewState</code> (the headless tree state every renderer mounts on, public) is imported directly and used as the data engine. Everything visible is custom DOM.
         </div>
 
         <h3>Vanilla render path</h3>
@@ -394,7 +394,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 <!-- ================================================================ -->
 <div class="card">
 <h2>CL07 · How it works</h2>
-<p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeEngine</code></strong> for a 100%-custom UI (CL06).</p>
+<p>Two complementary patterns power this page: <strong>per-node render callbacks</strong> on the <code>&lt;web-treeview&gt;</code> element (CL01&ndash;CL05), and the <strong>headless <code>TreeViewState</code></strong> for a 100%-custom UI (CL06).</p>
 
 <h3>Render callbacks (on the element)</h3>
 <table class="reference-table">
@@ -414,9 +414,9 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
 
 <h3>Headless controller (no element)</h3>
 <div class="code-block" data-language="js">
-<pre><code>import { TreeEngine } from '/src/index.ts';
+<pre><code>import { TreeViewState } from '/src/index.ts';
 
-const ctrl = new TreeEngine({
+const ctrl = new TreeViewState({
   data: myData,
   idMember: 'id',
   pathMember: 'path',
@@ -672,7 +672,7 @@ attachControlsPersistence('custom-layout');
 <!-- ==================================================================== -->
 <script type="module">
 import { html, render as litRender } from 'https://esm.run/lit-html@3';
-import { TreeEngine } from '/src/index.ts';
+import { TreeViewState } from '/src/index.ts';
 
 // ── Notepad++ sample data (shared by both renderers) ───────────────
 const notepadppData = [
@@ -728,7 +728,7 @@ const notepadppData = [
 ];
 
 // ── ONE headless controller ────────────────────────────────────────
-const ctrl = new TreeEngine({
+const ctrl = new TreeViewState({
   data: notepadppData,
   idMember: 'id',
   pathMember: 'path',

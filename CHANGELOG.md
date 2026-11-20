@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — the headless state is `TreeViewState` (2026-11-21)
+- BREAKING: `TreeEngine` (the headless tree state every renderer mounts on) is renamed `TreeViewState` and is
+  public; its types follow — no aliases:
+  - `TreeEngine` → `TreeViewState` (`import { TreeViewState } from '@keenmate/web-treeview'`)
+  - `TreeEngineConfig` → `TreeViewStateConfig`
+  - `TreeEngineSnapshot` → `TreeViewStateSnapshot`
+  - `TreeEngineEvents` → `TreeViewStateEvents`
+  - `TreeViewRenderer.mount(container, controller: TreeEngine<T>, config)` →
+    `mount(container, state: TreeViewState<T>, config)` (same object, renamed parameter)
+
+  Before: `new TreeEngine({ data, idMember: 'id', pathMember: 'path' })` — after:
+  `new TreeViewState({ data })`. The source file moved `src/controller/tree-engine.ts` →
+  `src/controller/tree-view-state.ts`. `TreeViewEngine.getEngine()` keeps its name and returns the `TreeViewState`.
+- `TreeViewState` gets the element's defaults (rulebook C-CA-37, one source: `ENGINE_DEFAULTS` from the input
+  table, the same helper `TreeViewEngine` uses) for every config key it shares with the element: a bare
+  `new TreeViewState({ data })` reads `id` / `path` / `displayValue` (before: no `idMember` / `pathMember` was a
+  broken tree and a missing `displayValueMember` rendered "[N/A]"). `idMember` / `pathMember` are optional in
+  `TreeViewStateConfig` now. Through `TreeViewEngine` / the element nothing changes (they already passed them).
+- Docs: "Build your own UI" (`docs/usage.md`) shows the layers (`<web-treeview>` → `TreeViewEngine` →
+  `TreeViewState` + renderer) and both levels — level 1 a custom renderer on `TreeViewEngine`, level 2 fully
+  headless on `TreeViewState` (minimal example; CL06 the full-size one).
+
 ### Fixed — `TreeViewEngine` has the element's defaults (2026-11-20)
 - A standalone `TreeViewEngine` now fills every option it isn't given (or given as `undefined`, also in
   `update()`) with `<web-treeview>`'s default — one source: the input table moved to `src/inputs.ts`, and the

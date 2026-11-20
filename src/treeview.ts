@@ -1,8 +1,8 @@
 import { createLabels, type Labels } from '@keenmate/web-components-core/locale';
 import { DEFAULT_LABELS, type TreeViewLabels } from './labels';
-import { TreeEngine } from './controller/tree-engine';
+import { TreeViewState } from './controller/tree-view-state';
 import type { TreeLoggers } from './logger';
-import type { TreeEngineConfig, NodeRef, NodeDropContext, NodeRenderContext, NodeTransformContext } from './controller/types';
+import type { TreeViewStateConfig, NodeRef, NodeDropContext, NodeRenderContext, NodeTransformContext } from './controller/types';
 import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer/types';
 import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
@@ -28,7 +28,7 @@ import type { SearchOptions } from 'flexsearch';
 import { adoptStyles, ICON_CSS, renderIcon, type RenderIconCallback, announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
-import { ENGINE_DEFAULTS } from './inputs';
+import { withEngineDefaults } from './inputs';
 
 /** Built-in menu actions that change the data — greyed out and inert while `isReadonly`. */
 const READONLY_BLOCKED_ACTIONS = new Set(['cut', 'paste', 'delete', 'sort', 'sort-subtree', 'sort-all']);
@@ -86,18 +86,6 @@ export function createTreeViewController<T>(
   });
 }
 
-/**
- * `options` with every missing / `undefined` option filled from `ENGINE_DEFAULTS` (the element's input-table
- * defaults). `onlyPresent`: fill only keys present in `options` (an `update()` partial — an absent key is unchanged).
- */
-function withDefaults<T>(options: Partial<TreeViewConfig<T>>, onlyPresent = false): Partial<TreeViewConfig<T>> {
-  const out: Record<string, unknown> = { ...options };
-  for (const key of Object.keys(ENGINE_DEFAULTS)) {
-    if (out[key] === undefined && (!onlyPresent || key in out)) out[key] = ENGINE_DEFAULTS[key];
-  }
-  return out as Partial<TreeViewConfig<T>>;
-}
-
 /** A before-hook result → the engine's internal contract: false | value | undefined. */
 function internalGate(result: BeforeCallbackResult): unknown {
   if (result.isRejected) return false;
@@ -105,7 +93,7 @@ function internalGate(result: BeforeCallbackResult): unknown {
 }
 
 /**
- * TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeEngine + a TreeViewRenderer.
+ * TreeViewEngine<T> — the class behind `<web-treeview>`: connects a TreeViewState + a TreeViewRenderer + a container.
  * Public as the seam for your own UI (docs/usage.md "Build your own UI"): `new TreeViewEngine(container,
  * options, renderer?)` — the same options as the element (every per-element hook / setting the element
  * passes through) with the same defaults (`ENGINE_DEFAULTS`, read from the element's input table), a custom
@@ -115,7 +103,7 @@ function internalGate(result: BeforeCallbackResult): unknown {
  * its identity across updates (the engine rebuilds the tree when one changes).
  */
 export class TreeViewEngine<T = any> {
-  private engine: TreeEngine<T>;
+  private engine: TreeViewState<T>;
   private renderer: TreeViewRenderer<T>;
   private element: HTMLElement;
   /** The public config as last assigned (events, before-hooks, element/controller). */
@@ -142,14 +130,14 @@ export class TreeViewEngine<T = any> {
   ) {
     this.element = element;
     // Every option the caller leaves out (or `undefined`) gets <web-treeview>'s default — one source, the input table (C-CA-37).
-    this.options = withDefaults(options);
+    this.options = withEngineDefaults(options);
     this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, {
       tag: 'web-treeview',
       // This tree's own translateCallback (the element's input, or a plain TreeViewEngine option) → the page-wide one.
       getTranslateCallback: () => this.options.translateCallback ?? undefined,
     });
 
-    this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(this.options), log });
+    this.engine = new TreeViewState<T>({ ...this.mapToEngineConfig(this.options), log });
 
     // Use provided renderer or default DomRenderer
     this.renderer = renderer ?? new DomRenderer<T>();
@@ -415,7 +403,7 @@ export class TreeViewEngine<T = any> {
 
   update(props: Partial<TreeViewConfig<T>>): void {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
-    props = withDefaults(props, true);
+    props = withEngineDefaults(props, true);
     Object.assign(this.options, props);
     const engineConfig = this.mapToEngineConfig(props);
     // If context menu callbacks changed, update the engine's awareness
@@ -554,8 +542,8 @@ export class TreeViewEngine<T = any> {
     this.engine.toggleFocusedSelect();
   }
 
-  /** The internal engine — for renderer authors / advanced use; not part of the public API. */
-  getEngine(): TreeEngine<T> {
+  /** The tree's `TreeViewState` (the headless state the renderer mounts on) — for renderer authors / advanced use. */
+  getEngine(): TreeViewState<T> {
     return this.engine;
   }
 
@@ -872,7 +860,7 @@ export class TreeViewEngine<T = any> {
 
   // ── Config adapters (public single-ctx shape → engine internals) ────
 
-  private mapToEngineConfig(options: Partial<TreeViewConfig<T>>): TreeEngineConfig<T> {
+  private mapToEngineConfig(options: Partial<TreeViewConfig<T>>): TreeViewStateConfig<T> {
     const o = options;
     return {
       idMember: o.idMember || 'id',
@@ -1040,7 +1028,7 @@ export class TreeViewEngine<T = any> {
           internalGate(runBeforeCallbackSync(f, this.ctx({ node, isChecked, affectedPaths }), 'beforeCheckboxToggleCallback'))),
       onCheckedChange: this.event(o.onCheckedChange),
       onSelectionChange: this.event(o.onSelectionChange),
-    } as unknown as TreeEngineConfig<T>;
+    } as unknown as TreeViewStateConfig<T>;
   }
 
   private mapToRendererConfig(options: Partial<TreeViewConfig<T>>): RendererConfig<T> {

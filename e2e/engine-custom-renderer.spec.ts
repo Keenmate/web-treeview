@@ -55,3 +55,12 @@ test("an engine given only nodes renders like the element (the element's default
   await expect(element).toHaveText(['Documents', 'Projects', 'Photos']);
   await expect(bare).toHaveText(['Documents', 'Projects', 'Photos']);
 });
+
+test("a headless TreeViewState given only data has the element's defaults (id / path / displayValue)", async ({ page }) => {
+  const rows = await page.evaluate(() => {
+    const state = (window as any).bareState;
+    state.expandAll();
+    return state.getSnapshot().flatNodesToRender.map((n: any) => [n.path, state.tree.getNodeDisplayValue(n)]);
+  });
+  expect(rows).toEqual([['1', 'Documents'], ['1.1', 'Projects'], ['2', 'Photos']]);
+});

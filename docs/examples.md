@@ -390,4 +390,4 @@ tree.setRenderer(customRenderer);
 
 What the engine does, what a renderer implements and a complete minimal example:
 [usage.md → Build your own UI](./usage.md#build-your-own-ui). `examples-custom-layout.html` CL06 shows the lower
-level — a whole custom UI on a bare headless `TreeEngine`.
+level — a whole custom UI on a bare headless `TreeViewState`.

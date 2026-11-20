@@ -396,12 +396,12 @@ export interface BeforePasteContext<T> {
 
 // ─── Controller props ─────────────────────────────────────────────────────
 
-export interface TreeEngineConfig<T> {
+export interface TreeViewStateConfig<T> {
   /** Loggers to log through (the element's instance loggers); defaults to the TREEVIEW category loggers. */
   log?: import('../logger').TreeLoggers;
-  // MAPPINGS
-  idMember: string;
-  pathMember: string;
+  // MAPPINGS — a key left out gets <web-treeview>'s default (`id`, `path`, `displayValue`, …; C-CA-37).
+  idMember?: string;
+  pathMember?: string;
   parentPathMember?: string | null | undefined;
   levelMember?: string | null | undefined;
   isExpandedMember?: string | null | undefined;
@@ -647,7 +647,7 @@ export interface TreeEngineConfig<T> {
 
 // ─── Snapshot ─────────────────────────────────────────────────────────────
 
-export interface TreeEngineSnapshot<T> {
+export interface TreeViewStateSnapshot<T> {
   flatNodesToRender: LTreeNode<T>[];
   draggedNodePath: string | null;
   /** Every TRAVELING path in the active drag — the complete placement manifest (lead +
@@ -691,10 +691,10 @@ export interface TreeEngineSnapshot<T> {
   virtualOffsetY: number;
 }
 
-// ─── Events emitted by TreeEngine ─────────────────────────────────────
+// ─── Events emitted by TreeViewState ─────────────────────────────────────
 
-export interface TreeEngineEvents<T> {
-  'state-change': TreeEngineSnapshot<T>;
+export interface TreeViewStateEvents<T> {
+  'state-change': TreeViewStateSnapshot<T>;
   /** The expanded set changed through an expand / collapse method — emitted synchronously
    *  (after that call's node-expand / node-collapse); the whole new set. */
   'expanded-change': string[];

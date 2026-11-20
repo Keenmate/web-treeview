@@ -10,7 +10,7 @@
  * Core owns parsing, validation, reactivity coalescing, and reflection. This file
  * keeps only what is genuinely treeview-specific: the bridge from the merged
  * `config` to the tree (`TreeViewEngine` in `treeview.ts`, which adapts the public
- * single-ctx callbacks to the internal `TreeEngine`), the public `el.controller`
+ * single-ctx callbacks to the headless `TreeViewState`), the public `el.controller`
  * facade and the event bridges. Custom CSS goes through core's `createCustomStyles()`.
  *
  * Reactivity model: the tree (`TreeViewEngine` → engine + renderer) applies every

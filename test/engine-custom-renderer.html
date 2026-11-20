@@ -11,13 +11,14 @@
          click toggles; its aria-label comes from config.labels. #bare = an engine with ONLY `nodes` (built-in
          renderer) next to #element (<web-treeview>, same nodes, no attributes): every option the engine isn't
          given has the element's default (displayValueMember 'displayValue', …). Targeted by
-         e2e/engine-custom-renderer.spec.ts. -->
+         e2e/engine-custom-renderer.spec.ts. window.bareState = a headless TreeViewState given only `data`
+         (level 2) — the same defaults (id / path / displayValue). -->
     <div id="list"></div>
     <div id="bare"></div>
     <web-treeview id="element"></web-treeview>
 
     <script type="module">
-        import { TreeViewEngine } from '/src/index.ts';
+        import { TreeViewEngine, TreeViewState } from '/src/index.ts';
 
         // A page-wide hook the engine's own translateCallback must beat.
         window.components = window.components || {};
@@ -26,7 +27,7 @@
         };
 
         class ListRenderer {
-            mount(container, engine, config) {
+            mount(container, state, config) {
                 this.container = container;
                 this.config = config;
                 container.setAttribute('role', 'tree');
@@ -37,14 +38,14 @@
                         row.dataset.path = node.path;
                         if (node.hasChildren) row.setAttribute('aria-expanded', String(node.isExpanded));
                         row.style.paddingInlineStart = `${((node.level ?? 1) - 1) * 16}px`;
-                        row.textContent = engine.tree.getNodeDisplayValue(node);
-                        row.addEventListener('click', () => engine.toggleNodeExpanded(node.path));
+                        row.textContent = state.tree.getNodeDisplayValue(node);
+                        row.addEventListener('click', () => state.toggleNodeExpanded(node.path));
                         return row;
                     }));
                 };
                 this.applyLabels();
-                this.off = engine.on('state-change', paint);
-                paint(engine.getSnapshot());
+                this.off = state.on('state-change', paint);
+                paint(state.getSnapshot());
             }
             applyLabels() {
                 this.container.setAttribute('aria-label', this.config.labels?.text('ariaLabels.tree') ?? 'Tree');
@@ -74,6 +75,8 @@
 
         // No options but the data: the element's defaults apply (one source, the input table).
         window.bareEngine = new TreeViewEngine(document.getElementById('bare'), { nodes: nodes() });
+        // Level 2: a bare headless TreeViewState — no engine, no renderer; the same defaults.
+        window.bareState = new TreeViewState({ data: nodes() });
         document.getElementById('element').nodes = nodes();
         window.fixtureReady = true;
     </script>

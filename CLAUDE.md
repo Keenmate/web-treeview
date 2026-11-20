@@ -112,7 +112,7 @@ src/
 ├── vite-env.d.ts         # Vite environment types
 ├── controller/
 │   ├── types.ts          # Controller config, snapshot, SelectionModifiers
-│   ├── tree-engine.ts    # TreeEngine (internal: state, multi-select, clipboard, nav, DnD)
+│   ├── tree-view-state.ts # TreeViewState (public, headless: state, multi-select, clipboard, nav, DnD)
 │   └── event-emitter.ts  # Typed EventEmitter base class
 ├── ltree/
 │   ├── types.ts          # Ltree interface, bulk ops, context menu types
@@ -134,8 +134,8 @@ src/
 
 ### Three-Layer Architecture
 1. **`WebTreeViewElement<T>`** (`web-component.ts`) — Custom element wrapper. Extends core `BlissElement`, uses Shadow DOM, proxies attributes/properties to the facade, dispatches `CustomEvent`s via `emit()` (each with an `on*` twin). `el.controller` is the public `TreeViewController` facade.
-2. **`TreeViewEngine<T>`** (`treeview.ts`) — Facade wrapping TreeEngine + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Can be used standalone without the web component (`getEngine()` exposes the engine).
-3. **`TreeEngine<T>`** (`controller/tree-engine.ts`, internal) — All state & logic: multi-select, clipboard, navigation, drag-and-drop, context menu, progressive rendering. Uses `LTree` for tree data.
+2. **`TreeViewEngine<T>`** (`treeview.ts`) — Facade wrapping TreeViewState + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Public: `new TreeViewEngine(container, options, renderer?)` for a custom renderer, same defaults as the element (`ENGINE_DEFAULTS`); `getEngine()` returns its `TreeViewState`.
+3. **`TreeViewState<T>`** (`controller/tree-view-state.ts`, public, headless; was `TreeEngine`) — All state & logic: multi-select, clipboard, navigation, drag-and-drop, context menu, progressive rendering. Uses `LTree` for tree data.
 4. **`DomRenderer<T>`** (`renderer/dom-renderer.ts`) — Default renderer with flat DOM, event delegation, keyed reconciliation, keyboard handling.
 
 ### Data Flow
@@ -249,7 +249,7 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
 **Every callback takes ONE ctx**; every ctx and event detail carries `controller` (the public
 `TreeViewController` facade = `el.controller`) and `element`, both non-enumerable. Types live in
 `src/interaction.ts`; the adapters (public ctx → engine signature, memoized per function) in
-`src/treeview.ts`. The engine (`TreeEngine`) keeps its internal positional signatures.
+`src/treeview.ts`. The state (`TreeViewState`) keeps its positional callback signatures.
 
 - Per-node: `get*Callback({ node })` (`getDisplayValueCallback`, `getIconCallback`,
   `getIconColorCallback`, `getNodeClassCallback`, `getNodeContentClassCallback`,

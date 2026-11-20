@@ -708,6 +708,23 @@ tree.addEventListener('node-expand', (e) => console.log('expanded', e.detail.pat
 
 ## Build your own UI
 
+`<web-treeview>` is three layers, and the two below the element are public — build on whichever level fits:
+
+```
+<web-treeview>          ← the custom element (attributes, styles, lifecycle)
+   └─ TreeViewEngine    ← connects state + a renderer + a container (labels, icons, menus, loader, defaults)
+        ├─ TreeViewState ← the tree: data, expand/select/check/focus, search, keyboard, clipboard, drag-and-drop
+        └─ renderer      ← draws rows (built-in DomRenderer, or yours)
+```
+
+- **Level 1 — your renderer** (`new TreeViewEngine(container, options, renderer)`): you draw the rows; the engine
+  keeps everything else the element has (one-ctx callbacks + events, labels / `translateCallback`, icons, context
+  menus, loader, announcements, the element's defaults, `el.controller`-style facade).
+- **Level 2 — fully headless** (`new TreeViewState({ … })`): no engine, no renderer seam — you draw AND wire
+  everything (input, menus, strings, announcements); the state gives you the tree, its state and its logic.
+
+### Level 1: a custom renderer on `TreeViewEngine`
+
 `TreeViewEngine` is the class behind `<web-treeview>`, exported as a seam for a UI the element doesn't draw — a
 framework-native tree (Svelte / React / Vue), a canvas, a file browser. It runs WITHOUT the custom element:
 
@@ -739,14 +756,14 @@ Its methods are the element's controller methods (`expandNodes`, `selectNode`, `
 
 | Member | When | Does |
 |---|---|---|
-| `mount(container, engine, config)` | once (and on `setRenderer`) | builds the DOM, subscribes to `engine.on('state-change', snapshot => …)`, paints `engine.getSnapshot()` |
+| `mount(container, state, config)` | once (and on `setRenderer`) | builds the DOM, subscribes to `state.on('state-change', snapshot => …)`, paints `state.getSnapshot()` |
 | `updateConfig(partial)` | an option changed | applies the changed `RendererConfig` keys (`labels`, `isDisabled`, render callbacks, …) |
 | `destroy()` | teardown | unsubscribes, removes its DOM |
 | `deactivate?()` / `activate?()` | host detached / re-attached | stop / restart LIVE resources only (document listeners, observers) |
 
-`engine` is the internal state engine (`TreeEngine`): the snapshot's `flatNodesToRender` is the visible rows in
+`state` is the tree's `TreeViewState` (level 2 below): the snapshot's `flatNodesToRender` is the visible rows in
 order (each an `LTreeNode`: `path`, `level`, `data`, `hasChildren`, `isExpanded`, `isSelected`, `isChecked`, …);
-user input goes back as engine calls (`toggleNodeExpanded(path)`, `selectNode(path)`, `focusNode(path)`,
+user input goes back as state calls (`toggleNodeExpanded(path)`, `selectNode(path)`, `focusNode(path)`,
 `handleKeydown(event)`, …) so the hooks, events and announcements fire exactly as in the element. `config` carries the
 resolved UI strings (`config.labels.text(key)`), the node-icon drawer (`config.renderNodeIcon(value, node, ctx)` —
 core `renderIcon` with your `renderIconCallback`) and the loader drawer (`config.renderLoadingCallback` — core
@@ -757,29 +774,29 @@ Minimal example — an indented list, click toggles:
 ```ts
 import '@keenmate/web-treeview';                     // the CSS + the element (unused here)
 import { TreeViewEngine } from '@keenmate/web-treeview';
-import type { TreeViewRenderer, TreeEngine, TreeEngineSnapshot, RendererConfig } from '@keenmate/web-treeview';
+import type { TreeViewRenderer, TreeViewState, TreeViewStateSnapshot, RendererConfig } from '@keenmate/web-treeview';
 
 class ListRenderer<T> implements TreeViewRenderer<T> {
   private container!: HTMLElement;
   private off?: () => void;
 
-  mount(container: HTMLElement, engine: TreeEngine<T>, config: RendererConfig<T>): void {
+  mount(container: HTMLElement, state: TreeViewState<T>, config: RendererConfig<T>): void {
     this.container = container;
     container.setAttribute('role', 'tree');
     container.setAttribute('aria-label', config.labels?.text('ariaLabels.tree') ?? 'Tree');
-    const paint = (snapshot: TreeEngineSnapshot<T>) => {
+    const paint = (snapshot: TreeViewStateSnapshot<T>) => {
       container.replaceChildren(...snapshot.flatNodesToRender.map((node) => {
         const row = document.createElement('div');
         row.setAttribute('role', 'treeitem');
         if (node.hasChildren) row.setAttribute('aria-expanded', String(node.isExpanded));
         row.style.paddingInlineStart = `${((node.level ?? 1) - 1) * 16}px`;
-        row.textContent = engine.tree.getNodeDisplayValue(node);
-        row.addEventListener('click', () => engine.toggleNodeExpanded(node.path));
+        row.textContent = state.tree.getNodeDisplayValue(node);
+        row.addEventListener('click', () => state.toggleNodeExpanded(node.path));
         return row;
       }));
     };
-    this.off = engine.on('state-change', paint);
-    paint(engine.getSnapshot());
+    this.off = state.on('state-change', paint);
+    paint(state.getSnapshot());
   }
 
   updateConfig(): void {}
@@ -802,21 +819,65 @@ const tree = new TreeViewEngine(document.getElementById('tree')!, {
 tree.expandAll();
 ```
 
-`examples-custom-layout.html` CL06 goes one level lower: a whole iOS-style file browser on a bare `TreeEngine` (no
-`TreeViewEngine`, no renderer seam).
+### Level 2: fully headless on `TreeViewState`
+
+`new TreeViewState(config)` is the tree with no UI at all: the data (`LTree`), expand / select / check / focus,
+search + filtering, keyboard shortcuts (`handleKeydown(event)`), clipboard and drag-and-drop logic. It emits a
+`state-change` snapshot (coalesced) whenever something visible changed; you draw from it and call its methods.
+
+What you take over from `TreeViewEngine`: rendering, input wiring, UI strings (`labels`), icons, context menus,
+the loader, screen-reader announcements, and the callback shape — `TreeViewStateConfig` takes `data` (not
+`nodes`) and the state's own callback shapes (`onSelectionChange({ paths, nodes })`, `onNodeClick({ path, node,
+parent, siblings })`, a few positional ones like `beforeCheckboxToggleCallback(node, isChecked, affectedPaths)`) —
+no `controller` / `element` on the ctx, no `before*` result normalisation, no DOM events. Options you leave out get the
+element's defaults where the key is shared (`idMember` `'id'`, `pathMember` `'path'`, `displayValueMember`
+`'displayValue'`, `clickBehavior`, `selectionMode`, … — same source as `TreeViewEngine`).
+
+```ts
+import '@keenmate/web-treeview';                     // the CSS + the element (unused here)
+import { TreeViewState } from '@keenmate/web-treeview';
+
+const list = document.getElementById('tree')!;
+const state = new TreeViewState({
+  data: [
+    { id: 1, path: '1',   displayValue: 'Documents' },
+    { id: 2, path: '1.1', displayValue: 'Projects' },
+  ],
+  onSelectionChange: ({ paths }) => console.log('selected', paths),
+});
+
+state.on('state-change', (snapshot) => {
+  list.replaceChildren(...snapshot.flatNodesToRender.map((node) => {
+    const row = document.createElement('button');
+    row.style.paddingInlineStart = `${((node.level ?? 1) - 1) * 16}px`;
+    row.textContent = (node.hasChildren ? (node.isExpanded ? '▾ ' : '▸ ') : '  ') + state.tree.getNodeDisplayValue(node);
+    row.classList.toggle('is-selected', snapshot.selectedPaths.has(node.path));
+    row.addEventListener('click', () => {
+      state.selectNode(node.path);
+      if (node.hasChildren) state.toggleNodeExpanded(node.path);
+    });
+    return row;
+  }));
+});
+
+// later: state.updateProps({ searchTerm: 'proj' }); … state.destroy();
+```
+
+`examples-custom-layout.html` CL06 is the full-size version: a whole iOS-style file browser (navigation, search,
+sort, breadcrumbs, detail sheet) on one bare `TreeViewState`, drawn twice — vanilla DOM and lit-html.
 
 ## Architecture
 
 ```
 WebTreeViewElement (custom element, BlissElement)
   └── TreeViewEngine (public engine; adapts one-ctx callbacks, builds el.controller)
-        ├── TreeEngine (internal: state, logic, DnD)
+        ├── TreeViewState (public, headless: state, logic, DnD)
         │     └── LTree (path-based tree engine)
         └── TreeViewRenderer (pluggable rendering)
               └── DomRenderer (default, flat DOM + event delegation)
 ```
 
-- **TreeEngine** owns all state and emits snapshots via `EventEmitter`. It is internal (exported only for renderer authors); app code drives the tree through `el.controller`.
+- **TreeViewState** owns all state and emits snapshots via `EventEmitter`. Public (every renderer mounts on it; a fully headless UI drives it directly); element apps drive the tree through `el.controller`.
 - **TreeViewRenderer** subscribes to snapshots and renders the DOM.
 - **LTree** is the pure data engine — usable headlessly without any DOM.
 - **WebTreeViewElement** is the custom-element wrapper. Inputs and events are table-driven (`INPUTS` / `EVENTS` in `src/web-component.ts`).

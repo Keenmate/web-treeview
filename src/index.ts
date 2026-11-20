@@ -19,9 +19,10 @@ export type { Ltree, ExpandOptions, SortOptions, SortCompareContext, NodesReorde
 export type { LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
 
-// Engine (internal state; for renderer authors / advanced use — element consumers use
-// `el.controller`, the public TreeViewController facade)
-export { TreeEngine } from './controller/tree-engine';
+// TreeViewState — the headless tree state (data, expand / select / check / focus, search, keyboard,
+// clipboard, drag-and-drop) every renderer mounts on; public for custom renderers and fully headless UIs
+// (docs/usage.md "Build your own UI"). Element consumers use `el.controller` (the TreeViewController facade).
+export { TreeViewState } from './controller/tree-view-state';
 export { EventEmitter } from './controller/event-emitter';
 export type {
   NodeCallbacks,
@@ -29,9 +30,9 @@ export type {
   ClickBehavior,
   SelectionModifiers,
   RangeSelectionMode,
-  TreeEngineConfig,
-  TreeEngineSnapshot,
-  TreeEngineEvents,
+  TreeViewStateConfig,
+  TreeViewStateSnapshot,
+  TreeViewStateEvents,
   // engine-side shapes the public ctx / detail types build on
   NodeRef,
   NodeEventContext,

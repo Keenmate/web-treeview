@@ -10,8 +10,8 @@
 
 import { DEFAULT_LABELS, type TreeViewLabels } from '../labels';
 import type { TreeViewRenderer, RendererConfig } from './types';
-import type { TreeEngine } from '../controller/tree-engine';
-import type { TreeEngineSnapshot, NodeConfig } from '../controller/types';
+import type { TreeViewState } from '../controller/tree-view-state';
+import type { TreeViewStateSnapshot, NodeConfig } from '../controller/types';
 import type { LTreeNode } from '../ltree/ltree-node';
 import type { DropPosition } from '../ltree/types';
 import type { TreeMenuContext, TreeMenuItem } from '../interaction';
@@ -77,7 +77,7 @@ function toggleClasses(el: HTMLElement, classes: string, force: boolean): void {
 
 export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private container: HTMLElement | null = null;
-  private controller: TreeEngine<T> | null = null;
+  private controller: TreeViewState<T> | null = null;
   private config: RendererConfig<T> = {};
 
   // DOM elements
@@ -127,7 +127,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private unsubConfig: (() => void) | null = null;
 
   // Last snapshot for diffing
-  private lastSnapshot: TreeEngineSnapshot<T> | null = null;
+  private lastSnapshot: TreeViewStateSnapshot<T> | null = null;
   private lastNodeConfig: NodeConfig | null = null;
   // Hover/focus tooltip handles, keyed like nodeElements (id || path). Created per
   // row via the shared core createTooltip, destroyed when the row leaves. The content
@@ -158,9 +158,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     return !!this.config?.isReadonly;
   }
 
-  mount(container: HTMLElement, controller: TreeEngine<T>, config: RendererConfig<T>): void {
+  mount(container: HTMLElement, state: TreeViewState<T>, config: RendererConfig<T>): void {
     this.container = container;
-    this.controller = controller;
+    this.controller = state;
     this.config = config;
 
     // Build skeleton
@@ -193,9 +193,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.loadingEl.style.display = 'none';
     this.container.appendChild(this.loadingEl);
 
-    // Set controller container for scrollToPath
-    controller.containerElement = container;
-    controller.layerOpener = config.openLayer ?? null;
+    // Set the state's container for scrollToPath
+    state.containerElement = container;
+    state.layerOpener = config.openLayer ?? null;
 
     // Responsive env for NodeRenderContext. Seed synchronously so the initial render has
     // the right device class; then observe — only a device-class FLIP forces a re-render.
@@ -218,13 +218,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._applyDisabled(!!config.isDisabled);
     this.container.classList.toggle('wtv__container--readonly', !!config.isReadonly);
 
-    // Subscribe to controller
-    this.unsubState = controller.on('state-change', (snapshot) => this._onStateChange(snapshot));
-    this.unsubConfig = controller.on('config-change', (nodeConfig) => this._onConfigChange(nodeConfig));
+    // Subscribe to the state
+    this.unsubState = state.on('state-change', (snapshot) => this._onStateChange(snapshot));
+    this.unsubConfig = state.on('config-change', (nodeConfig) => this._onConfigChange(nodeConfig));
 
     // Initial render from current state
-    this.lastNodeConfig = controller.nodeConfig;
-    this._onStateChange(controller.getSnapshot());
+    this.lastNodeConfig = state.nodeConfig;
+    this._onStateChange(state.getSnapshot());
   }
 
   /** The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while
@@ -1182,7 +1182,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Virtual scroll structure ───────────────────────────────────────
 
-  private _ensureVirtualScrollStructure(snapshot: TreeEngineSnapshot<T>): void {
+  private _ensureVirtualScrollStructure(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.bodyEl) return;
 
     if (snapshot.isVirtualScrollEnabled && !this.vsSpacerEl) {
@@ -1237,7 +1237,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _updateVirtualScrollPositioning(snapshot: TreeEngineSnapshot<T>): void {
+  private _updateVirtualScrollPositioning(snapshot: TreeViewStateSnapshot<T>): void {
     if (!snapshot.isVirtualScrollEnabled || !this.vsSpacerEl || !this.vsContentEl || !this.bodyEl) return;
 
     // Update container height if changed
@@ -1272,7 +1272,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── State change handler ────────────────────────────────────────────
 
-  private _onStateChange(snapshot: TreeEngineSnapshot<T>): void {
+  private _onStateChange(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.bodyEl || !this.controller) return;
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
@@ -1348,7 +1348,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     return this.vsContentEl ?? this.bodyEl;
   }
 
-  private _reconcileNodes(snapshot: TreeEngineSnapshot<T>): void {
+  private _reconcileNodes(snapshot: TreeViewStateSnapshot<T>): void {
     const target = this._renderTarget;
     if (!target || !this.controller) return;
 
@@ -1467,7 +1467,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** `aria-activedescendant` follows the focused node's row; none when it isn't rendered
    *  (a virtual row scrolled out, a collapsed branch, the empty tree). */
-  private _syncActiveDescendant(snapshot: TreeEngineSnapshot<T>): void {
+  private _syncActiveDescendant(snapshot: TreeViewStateSnapshot<T>): void {
     const ad = this._activeDescendant;
     if (!ad) return;
     const path = snapshot.focusedNode?.path;
@@ -1504,7 +1504,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _applyRowAria(
     el: HTMLElement,
     node: LTreeNode<T>,
-    snapshot: TreeEngineSnapshot<T>,
+    snapshot: TreeViewStateSnapshot<T>,
     positions: Map<string, [number, number]>
   ): void {
     setAttr(el, 'role', 'treeitem');
@@ -1522,7 +1522,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     );
   }
 
-  private _renderEmpty(snapshot: TreeEngineSnapshot<T>): void {
+  private _renderEmpty(snapshot: TreeViewStateSnapshot<T>): void {
     const target = this._renderTarget;
     if (!target) return;
 
@@ -1729,7 +1729,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _createNodeElement(node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): HTMLElement {
+  private _createNodeElement(node: LTreeNode<T>, snapshot: TreeViewStateSnapshot<T>): HTMLElement {
     const el = document.createElement('div');
     el.className = 'wtv__node';
     // Row animation: a row the last expand revealed plays the enter keyframes (tree.css).
@@ -1876,7 +1876,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   /** Build the NodeRenderContext for the render callbacks: device + container + live state. */
-  private _buildRenderContext(node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): NodeRenderContext {
+  private _buildRenderContext(node: LTreeNode<T>, snapshot: TreeViewStateSnapshot<T>): NodeRenderContext {
     return {
       deviceClass: this._deviceClass,
       container: { width: this._containerBox.width, height: this._containerBox.height },
@@ -1959,7 +1959,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.tooltipNodes.clear();
   }
 
-  private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeEngineSnapshot<T>): void {
+  private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeViewStateSnapshot<T>): void {
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
     this._applyExpandPending(el, node);
@@ -2074,7 +2074,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Drag CSS classes ────────────────────────────────────────────────
 
-  private _updateDragClasses(snapshot: TreeEngineSnapshot<T>): void {
+  private _updateDragClasses(snapshot: TreeViewStateSnapshot<T>): void {
     // Dragged node
     for (const [, el] of this.nodeElements) {
       const path = el.getAttribute('data-tree-path');
@@ -2129,7 +2129,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (row && this._dropPads) this._dropPads.place(row.getBoundingClientRect());
   }
 
-  private _updateDropZones(snapshot: TreeEngineSnapshot<T>): void {
+  private _updateDropZones(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.bodyEl || !this.controller || !this.container) return;
 
     const shouldShow =
@@ -2201,7 +2201,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * positioning, dismiss, keyboard — is core `openMenu()`; it opens once per
    * (node, point) and reports its own close back to the engine.
    */
-  private _updateContextMenu(snapshot: TreeEngineSnapshot<T>): void {
+  private _updateContextMenu(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.controller || !this.container) return;
     const node = snapshot.contextMenuNode;
     if (!snapshot.isContextMenuVisible || !node || !this._isActive) {
@@ -2289,7 +2289,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Full render (for config changes) ────────────────────────────────
 
-  private _fullRender(snapshot: TreeEngineSnapshot<T>): void {
+  private _fullRender(snapshot: TreeViewStateSnapshot<T>): void {
     // Clear all node elements and re-create
     for (const [, el] of this.nodeElements) {
       el.remove();

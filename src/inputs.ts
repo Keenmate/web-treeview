@@ -335,3 +335,16 @@ export const ENGINE_DEFAULTS: Readonly<Record<string, unknown>> = Object.freeze(
       .filter(([, value]) => value !== undefined),
   ),
 );
+
+/**
+ * `options` with every missing / `undefined` option filled from `ENGINE_DEFAULTS` (the element's input-table
+ * defaults) — used by `TreeViewEngine` (its public options) and `TreeViewState` (its config; the keys the two
+ * share by name). `onlyPresent`: fill only keys present in `options` (an update partial — an absent key is unchanged).
+ */
+export function withEngineDefaults<O extends object>(options: O, onlyPresent = false): O {
+  const out = { ...options } as Record<string, unknown>;
+  for (const key of Object.keys(ENGINE_DEFAULTS)) {
+    if (out[key] === undefined && (!onlyPresent || key in out)) out[key] = ENGINE_DEFAULTS[key];
+  }
+  return out as O;
+}

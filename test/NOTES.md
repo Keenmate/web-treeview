@@ -87,7 +87,7 @@ removed descendants (sum of `removeNode` results).
 
 ## 3. ~~(TV-3) `selectAll` ignores `selectionMode='single'` and moves focus silently~~ — fixed
 
-**Where:** `src/controller/tree-engine.ts` `selectAll()` (~1664-1679).
+**Where:** `src/controller/tree-view-state.ts` `selectAll()` (~1664-1679).
 
 **Symptom:** in `selectionMode="single"` `selectAll()` still selects every
 visible node; it also sets `_focusedNode` to the last visible node without
@@ -107,7 +107,7 @@ rule is multi-only — `selectAll()` / Ctrl+A are no-ops in single mode; the tes
 ## 4. ~~(TV-4) PageUp / PageDown / Shift-extend keyboard selection unimplemented~~ — resolved
 
 **Where:** `src/renderer/dom-renderer.ts` keyboard handler +
-`src/controller/tree-engine.ts` `createDefaultNavigation()`.
+`src/controller/tree-view-state.ts` `createDefaultNavigation()`.
 
 **Was:** feature gap vs the Svelte build — PageUp/PageDown didn't move focus,
 Shift+Arrow/Home/End/PageUp/PageDown didn't extend the selection.
@@ -133,7 +133,7 @@ Shift+End, click on a partly hidden row, `navTo` override, virtual End/Home + Pa
 
 ## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — closed (not reproducible)
 
-**Where:** multi-drag in `src/controller/tree-engine.ts` (drop of a selected set
+**Where:** multi-drag in `src/controller/tree-view-state.ts` (drop of a selected set
 where one selected node is a descendant of another selected node).
 
 **Symptom:** dragging a selection that contains an ancestor and one of its
@@ -164,7 +164,7 @@ different setup (e.g. absorption with an `after` drop or cross-tree).
 Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` keyed reconcile (~945-963) +
-`src/controller/tree-engine.ts` `cutNodes()` / `cancelCut()`.
+`src/controller/tree-view-state.ts` `cutNodes()` / `cancelCut()`.
 
 **Symptom:** Ctrl+X / `cutNodes()` sets `engine.cutPaths` but the row never
 gets `.wtv__node-content--cut`. The reconciler only calls
@@ -188,7 +188,7 @@ never runs. The same goes for removing the class on `cancelCut()` / Escape
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` `_rangeSelect()` (~1697-1700) uses
+**Where:** `src/controller/tree-view-state.ts` `_rangeSelect()` (~1697-1700) uses
 `this.tree.tree` for logical mode; `ltree.ts` `get tree()` (~168) returns
 `Object.values(root.children)` — the ROOTS only, not a flat depth-first list.
 
@@ -213,7 +213,7 @@ Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` reconcile keys rows by
 `String(node.id || node.path)` (~931); copy paths
-(`tree-engine.ts` paste / `duplicateNodes` / copy-drop) keep `data.id` unless
+(`tree-view-state.ts` paste / `duplicateNodes` / copy-drop) keep `data.id` unless
 the consumer's `nodeInputTransformationCallback` / `transform` assigns a new one.
 
 **Symptom:** after a default copy + paste (Ctrl+C / Ctrl+V, `pasteNodes`,
@@ -229,7 +229,7 @@ original Fruits/Apple/Banana rows vanish.
 **Suggested fix:** key rows by `path` (unique by construction) or by
 `treeId + path`, or have the copy path assign fresh ids when no transform did
 — copy-DROP already does this via `_defaultCopyTransform`
-(`tree-engine.ts` ~4325), paste / `duplicateNodes` don't (and warn on
+(`tree-view-state.ts` ~4325), paste / `duplicateNodes` don't (and warn on
 duplicate ids in `insertArray`).
 
 **Test status:** `test.fail` in `keyboard-clipboard.spec.ts` ("both the
@@ -242,7 +242,7 @@ original and the copy are rendered") and `mutation-api.spec.ts`
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` — `flatIndentSize`,
+**Where:** `src/controller/tree-view-state.ts` — `flatIndentSize`,
 `isFlatRenderingEnabled`, `isProgressiveRenderEnabled`, `initialBatchSize`,
 `maxBatchSize` are read in the constructor (~744-748) but the `update(updates)`
 handler (~3440-3460) never applies them, although the inputs are declared
@@ -264,7 +264,7 @@ runtime re-indents the rows" is `test.fail`.
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` `_updateProgressiveRendering()`
+**Where:** `src/controller/tree-view-state.ts` `_updateProgressiveRendering()`
 (~3753-3815). Likely cause: when it runs again while a batch queue is still
 pending, it *replaces* `flatRenderQueue` with the new call's remainder
 (`this.flatRenderQueue = [...remaining]`) instead of appending, so the old
@@ -372,7 +372,7 @@ Original report:
 
 **Where:** `src/web-component.ts` ~116 — `expandLevel` has no `default`, so
 removing the attribute resets it to `undefined`; the engine's update guard
-(`updates.expandLevel !== undefined`, `tree-engine.ts` ~3310) then ignores it.
+(`updates.expandLevel !== undefined`, `tree-view-state.ts` ~3310) then ignores it.
 
 **Symptom:** `<web-treeview expand-level="2">` → `removeAttribute('expand-level')`
 keeps level 2 open; core's contract is "absent == default" (roots only).
@@ -475,7 +475,7 @@ is-sorted keeps every node" was `test.fail`.
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` `_reapplyExpanded()` (~3726):
+**Where:** `src/controller/tree-view-state.ts` `_reapplyExpanded()` (~3726):
 `if (... expanded.size === 0) return;` — an EMPTY preserved set is treated as
 "nothing to restore", so the fresh insert's `expand-level` seed stands.
 
@@ -496,7 +496,7 @@ expansion" is `test.fail`.
 Original report:
 
 **Where:** `src/web-component.ts` `update()` (~384-396) sends the FULL config
-(incl. `data`) on every batch; `tree-engine.ts` `updateProps()` applies
+(incl. `data`) on every batch; `tree-view-state.ts` `updateProps()` applies
 `searchText` (~3348 → `tree.filterNodes`) and later, because `updates.data`
 is always present, `this.data = updates.data` (~3575) → `_onDataChanged()`
 (~3648) → `insertArray()`, which rebuilds the tree and drops the filter.
@@ -563,7 +563,7 @@ after markup upgrade) fills the zone" is `test.fail`.
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` — the output transform runs only in
+**Where:** `src/controller/tree-view-state.ts` — the output transform runs only in
 `_collectClipboardEntry()` (~2841, clipboard copy/cut). The copy-drop branches
 of `_handleDrop()` (~4320 same-tree, ~4341 cross-tree) call `duplicateNodes()`
 with only the INPUT transform (or `_defaultCopyTransform`).
@@ -587,7 +587,7 @@ transform over each manifest node before the input transform (phase
 Original report:
 
 **Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a
-node drop to the engine's public `drop()` (`tree-engine.ts` ~2986), which
+node drop to the engine's public `drop()` (`tree-view-state.ts` ~2986), which
 silently skips a node with `isDropAllowed=false`. The reject feedback
 (`_indicateDropDenied` → `onNodeDropDenied` → `node-drop-reject`, 🚫 flash)
 and the `enable-tree-drop-zone` rerouting live in `_onNodeDropInternal`
@@ -639,11 +639,11 @@ Original report:
   (`km-log:TREEVIEW:INIT`), so it sticks even after a later default change.
 - Raw `console.log` calls bypassing `/logging`: `renderer/dom-renderer.ts`
   ~458, 506, 511, 521, 593, 1005 (`[DomRenderer] _onBodyDragOver/…/renderEmpty`)
-  and `controller/tree-engine.ts` ~4930, 4942, 4973, 4990 (`[Controller]
+  and `controller/tree-view-state.ts` ~4930, 4942, 4973, 4990 (`[Controller]
   handleTree*Drag*`), plus `[wtv:cfg]` ones gated by `globalThis.__WTV_DEBUG`.
 
 **Symptom:** a plain page logs `[TREEVIEW:INIT] build engine …`,
-`TreeEngine created …`, and every drag spams `[DomRenderer] …` /
+`TreeViewState created …`, and every drag spams `[DomRenderer] …` /
 `[Controller] …` lines to the console.
 
 **Suggested fix:** leave INIT silent like the other categories (enable via
@@ -658,7 +658,7 @@ through `dragLogger.debug` (or delete them).
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` `detectDoubleClick()` (~4137) — only
+**Where:** `src/controller/tree-view-state.ts` `detectDoubleClick()` (~4137) — only
 plain clicks update `_lastClickPath` / `_lastClickTime`.
 
 **Symptom:** plain-click A1, Ctrl+click B, click A2's checkbox, then plain-click
@@ -680,7 +680,7 @@ registered (e.g. detached). The pin is a passing test now.
 
 Original report:
 
-**Where:** `src/controller/tree-engine.ts` `_draggedRefs()` (~1117-1120) —
+**Where:** `src/controller/tree-view-state.ts` `_draggedRefs()` (~1117-1120) —
 the cross-tree branch maps the published source paths through
 `this.nodeRef(p)`, which looks the path up in THIS (the target) tree.
 

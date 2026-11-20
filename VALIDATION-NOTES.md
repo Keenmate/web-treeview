@@ -16,7 +16,7 @@ decisions belong here.
 The component's Logic class is organized across folder-scoped subsystems
 (`src/controller/`, `src/renderer/`, `src/ltree/`) rather than a flat
 `src/<feature>.ts`. The `EventEmitter` (`src/controller/event-emitter.ts`)
-is a Side-layer base class consumed by `TreeEngine`, not a Service.
+is a Side-layer base class consumed by `TreeViewState`, not a Service.
 The `flex` / `indexer` / `ltree-node` files inside `src/ltree/` are pure
 data-structure helpers composed by `ltree.ts`, not independent Service
 classes; `interaction.ts` → `clipboard.ts` is a type-only import of the

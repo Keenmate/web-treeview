@@ -148,7 +148,7 @@ web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte c
 | `createMenuDivider`, `DEFAULT_LABELS`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats`, `ScrollToPathOptions` | same | same |
 | menu types `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeViewAction`, `TreeViewActionEventDetail` | `TreeMenuContext`, `TreeMenuItem`, `TreeMenuEntry`, `TreeAction`, `TreeActionEventDetail` | intentional — named after each library's component (like `TreeViewLabels` / `TreeLabels`) |
 | ctx `controller` + `element` (core component context, non-enumerable) | ctx `controller` (non-enumerable) | intentional — no host element in svelte |
-| `createLTree`, `TreeEngine`, `EventEmitter`, `DomRenderer`, `createRenderCoordinator`, clipboard / drag-set registry helpers, per-category loggers | — | intentional — web is renderer-pluggable / headless-capable |
+| `createLTree`, `TreeViewState`, `EventEmitter`, `DomRenderer`, `createRenderCoordinator`, clipboard / drag-set registry helpers, per-category loggers | — | intentional — web is renderer-pluggable / headless-capable |
 | `getMenuChildren`, `ResolvedMenuEntry` (re-exported from core `/actions`) | `resolveMenuEntries`, `getMenuChildren`, `ResolvedMenuEntry` (vendored core `/actions` resolvers) | `getMenuChildren` / `ResolvedMenuEntry` same; `resolveMenuEntries` svelte-only (web resolves for its renderer — `ctx.entries`; or import it from `@keenmate/web-components-core/actions`) |
 | — | `TreeProvider`, `createTreeController`, `TreeController`, `ContextMenuItem` / divider components, `tooltip` action, environment helpers | intentional — Svelte framework exports |
 

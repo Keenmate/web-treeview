@@ -112,8 +112,8 @@ export class WebTreeView<T = any> {
   private lastContainerSize: ContainerSize | null = null;
   /** False between deactivate() and activate() (the host is detached). */
   private isActive = true;
-  /** The UI strings (core `/locale`, D-NC-24): instance `labels` → page-wide
-   *  `window.components.locale.labels['web-treeview.<key>']` → English. Read live on every call. */
+  /** The UI strings (core `/locale`, D-NC-24): instance `labels` → own `translateCallback` → page-wide
+   *  `translateCallback` → `window.components.locale.labels['web-treeview.<key>']` → English. Read live on every call. */
   private labels!: Labels<TreeViewLabels>;
 
   constructor(
@@ -126,7 +126,11 @@ export class WebTreeView<T = any> {
   ) {
     this.element = element;
     this.options = { ...options };
-    this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, { tag: 'web-treeview' });
+    this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, {
+      tag: 'web-treeview',
+      // This tree's own translateCallback (the element's input, or a plain WebTreeView option) → the page-wide one.
+      getTranslateCallback: () => this.options.translateCallback ?? undefined,
+    });
 
     this.engine = new TreeEngine<T>({ ...this.mapToEngineConfig(options), log });
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — instance `translateCallback` (2026-11-20)
+- `translateCallback` (property, core `/locale` `TranslateCallback`): this tree's own translation hook, asked for every
+  label key the instance `labels` did not set, BEFORE the page-wide `window.components.locale.translateCallback`
+  (`null` / `undefined` = not mine → the page-wide hook → the page dictionary → English). One tree needs no
+  `window.components` setup; assigning it re-renders the texts live (tree state kept). Also a plain `WebTreeView` option.
+
 ### Added — node icons through core `renderIcon` (2026-11-20)
 - Node icons are drawn by core `renderIcon` (SPEC §12.33) into the `.wtv__node-icon` wrapper — the same rule as every
   Keenmate component: markup (`<svg …>`) as is → a built-in name (`check`, `user`, `settings`, … — the

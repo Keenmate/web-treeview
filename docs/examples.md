@@ -336,8 +336,8 @@ tree.contextMenuYOffset = -30; // Shift menu 30px up
 
 ## Page-wide labels
 
-Every UI string resolves per key: the instance `labels` → the page-wide
-flat dictionary `window.components.locale.labels['web-treeview.<key>']` (core `/locale`) → English. Assigning the page object
+Every UI string resolves per key: the instance `labels` → this tree's `translateCallback` → the page-wide
+`translateCallback` → the flat dictionary `window.components.locale.labels['web-treeview.<key>']` (core `/locale`) → English. Assigning the page object
 re-renders every live tree (texts only — expansion, selection and scroll are kept). Basic Usage BU08.
 
 ```js
@@ -348,6 +348,8 @@ window.components.locale = {
   },
   // translateCallback: ({ key, params }) => i18next.t(key, params), // key = 'web-treeview.messages.noData'
 };
+// One tree only, no page setup — its own hook (asked first; null = not mine):
+tree.translateCallback = ({ key, params }) => (i18next.exists(key) ? i18next.t(key, params) : null);
 ```
 
 ## Rendering modes

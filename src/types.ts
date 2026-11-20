@@ -2,6 +2,7 @@ import type { TreeViewLabels } from './labels';
 import type { TreeViewContext } from './interaction';
 import type { RenderLoaderCallback, ResponsiveMap, ResponsiveCallback, SlotResult } from '@keenmate/web-components-core';
 import type { MenuDrawerSide, MenuPresentation } from '@keenmate/web-components-core/menu';
+import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 // Re-export core types from LTree engine
 export type { LTreeNode as TreeNode, LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
@@ -561,6 +562,11 @@ export interface TreeViewConfig<T = any> {
   renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** UI strings, a partial object of flat `<elementType>.<name>` keys (`messages.noData`, `menuItems.copy`, … — see `TreeViewLabels`) merged per key over the English defaults. */
   labels?: Partial<TreeViewLabels> | null;
+  /** This tree's translation hook (core `/locale` `TranslateCallback`): asked for every label key this
+   *  instance's `labels` did not set, before the page-wide `window.components.locale.translateCallback`;
+   *  `null` / `undefined` = not mine (the page-wide hook, then the page dictionary / English decide).
+   *  `ctx.key` = the full `web-treeview.<elementType>.<name>`. */
+  translateCallback?: TranslateCallback | null;
   /** Return the empty-tree drop zone's content — core `renderSlot`: a string = HTML, a Node = mounted, `null` / `undefined` = the built-in `messages.dropHere` box, `false` = hidden (the slot is emptied + `hidden`)
    *  (hidden = no drop target in an empty tree). */
   renderEmptyZoneCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;

@@ -2,6 +2,7 @@ import { test, expect, type Page, nodeByPath } from './fixtures';
 
 /**
  * Page-wide labels through core `/locale` (D-NC-24): per key the instance `labels` →
+ * the element's own `translateCallback` → the page-wide one →
  * the flat page dictionary `window.components.locale.labels['web-treeview.<key>']` → English, and assigning
  * `window.components.locale` re-renders live trees (core `localeChanged()` → `refreshLabels()`,
  * tree state kept). Reuses /test/drag-visuals.html, /test/render-callbacks.html and /test/data.html.
@@ -55,6 +56,37 @@ test('assigning window.components.locale re-renders live texts (localeChanged); 
   });
   await expect(plain).toHaveText('web-treeview.messages.noData: No data');
 
+  await setPageLocale(page, null);
+  await expect(plain).toHaveText('No data');
+});
+
+test("the element's own translateCallback beats the page-wide one; null passes on; instance labels beat both", async ({ page }) => {
+  await page.goto('/test/render-callbacks.html');
+  const plain = page.locator('web-treeview#empty-default .wtv__empty-state');
+  const own = page.locator('web-treeview#empty-text .wtv__empty-state');
+  await expect(plain).toHaveText('No data');
+
+  await page.evaluate(() => {
+    (window as any).components.locale = {
+      translateCallback: ({ key }: any) => (key === 'web-treeview.messages.noData' ? 'page' : null),
+    };
+  });
+  await expect(plain).toHaveText('page');
+
+  // The element's own hook wins (assigning it re-renders live) …
+  await page.locator('web-treeview#empty-default').evaluate((el: any) => {
+    el.translateCallback = ({ key }: any) => (key === 'web-treeview.messages.noData' ? 'element' : null);
+  });
+  await expect(plain).toHaveText('element');
+  // … `null` = not mine → the page-wide hook decides.
+  await page.locator('web-treeview#empty-default').evaluate((el: any) => { el.translateCallback = () => null; });
+  await expect(plain).toHaveText('page');
+
+  // The instance labels beat both hooks.
+  await page.locator('web-treeview#empty-text').evaluate((el: any) => { el.translateCallback = () => 'element'; });
+  await expect(own).toHaveText('Nothing here');
+
+  await page.locator('web-treeview#empty-default').evaluate((el: any) => { el.translateCallback = null; });
   await setPageLocale(page, null);
   await expect(plain).toHaveText('No data');
 });

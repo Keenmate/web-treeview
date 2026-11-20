@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test — TreeViewEngine + a custom renderer (no element)</title>
+    <style>body { font-family: sans-serif; padding: 1rem; }</style>
+</head>
+<body>
+    <!-- The public engine seam (docs/usage.md "Build your own UI"): `new TreeViewEngine(container, options,
+         renderer)` without <web-treeview>. #list = a minimal custom renderer (the usage.md example) —
+         click toggles; its aria-label comes from config.labels. Targeted by e2e/engine-custom-renderer.spec.ts. -->
+    <div id="list"></div>
+
+    <script type="module">
+        import { TreeViewEngine } from '/src/index.ts';
+
+        // A page-wide hook the engine's own translateCallback must beat.
+        window.components = window.components || {};
+        window.components.locale = {
+            translateCallback: ({ key }) => (key === 'web-treeview.ariaLabels.tree' ? 'page' : null),
+        };
+
+        class ListRenderer {
+            mount(container, engine, config) {
+                this.container = container;
+                this.config = config;
+                container.setAttribute('role', 'tree');
+                const paint = (snapshot) => {
+                    container.replaceChildren(...snapshot.flatNodesToRender.map((node) => {
+                        const row = document.createElement('div');
+                        row.setAttribute('role', 'treeitem');
+                        row.dataset.path = node.path;
+                        if (node.hasChildren) row.setAttribute('aria-expanded', String(node.isExpanded));
+                        row.style.paddingInlineStart = `${((node.level ?? 1) - 1) * 16}px`;
+                        row.textContent = engine.tree.getNodeDisplayValue(node);
+                        row.addEventListener('click', () => engine.toggleNodeExpanded(node.path));
+                        return row;
+                    }));
+                };
+                this.applyLabels();
+                this.off = engine.on('state-change', paint);
+                paint(engine.getSnapshot());
+            }
+            applyLabels() {
+                this.container.setAttribute('aria-label', this.config.labels?.text('ariaLabels.tree') ?? 'Tree');
+            }
+            updateConfig(partial) {
+                Object.assign(this.config, partial);
+                if ('labels' in partial) this.applyLabels();
+            }
+            destroy() {
+                this.off?.();
+                this.container.replaceChildren();
+            }
+        }
+
+        window.expanded = [];
+        window.engine = new TreeViewEngine(document.getElementById('list'), {
+            displayValueMember: 'displayValue',
+            nodes: [
+                { id: 1, path: '1',   displayValue: 'Documents' },
+                { id: 2, path: '1.1', displayValue: 'Projects' },
+                { id: 3, path: '2',   displayValue: 'Photos' },
+            ],
+            onNodeExpand: ({ node }) => window.expanded.push(node.path),
+            translateCallback: ({ key }) => (key === 'web-treeview.ariaLabels.tree' ? 'own' : null),
+        }, new ListRenderer());
+        window.fixtureReady = true;
+    </script>
+</body>
+</html>

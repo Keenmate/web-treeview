@@ -2,7 +2,7 @@
  * UI strings (BlissFramework D-NC-24). Every built-in text the tree renders is a
  * `labels` key: the `labels` input is a PARTIAL object (also a JSON attribute).
  * Keys are flat `<elementType>.<name>` (`menuItems.copy`, `ariaLabels.tree`), resolved
- * per key by core `/locale` `createLabels` (see `WebTreeView`): the instance `labels`
+ * per key by core `/locale` `createLabels` (see `TreeViewEngine`): the instance `labels`
  * (short `messages.noData` or full `web-treeview.messages.noData` key) → the page-wide
  * flat dictionary `window.components.locale.labels['web-treeview.<key>']` → the English
  * defaults below. Placeholders use `{name}`.

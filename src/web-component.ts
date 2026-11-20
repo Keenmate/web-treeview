@@ -9,15 +9,15 @@
  * as a core input table (`static inputs`) plus an event table (`static events`).
  * Core owns parsing, validation, reactivity coalescing, and reflection. This file
  * keeps only what is genuinely treeview-specific: the bridge from the merged
- * `config` to the tree (`WebTreeView` in `treeview.ts`, which adapts the public
+ * `config` to the tree (`TreeViewEngine` in `treeview.ts`, which adapts the public
  * single-ctx callbacks to the internal `TreeEngine`), the public `el.controller`
  * facade and the event bridges. Custom CSS goes through core's `createCustomStyles()`.
  *
- * Reactivity model: the tree (`WebTreeView` → engine + renderer) applies every
+ * Reactivity model: the tree (`TreeViewEngine` → engine + renderer) applies every
  * config change in place via `update()`; it is built once (first connect) and
  * kept across a DOM move — disconnect()/connect() only deactivate/activate its
  * live resources, so all runtime state survives (D1). Every input is `on:'update'`:
- * `update()` sends the full config, and WebTreeView memoizes its callback
+ * `update()` sends the full config, and TreeViewEngine memoizes its callback
  * adapters, so re-sending an unchanged callback costs nothing.
  */
 import type { TreeLoggers } from './logger';
@@ -47,7 +47,7 @@ import {
 } from '@keenmate/web-components-core';
 import { menuPresentationInputs, menuPresentationOptions } from '@keenmate/web-components-core/menu';
 import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-components-core/positioning';
-import { WebTreeView, createTreeViewController } from './treeview';
+import { TreeViewEngine, createTreeViewController } from './treeview';
 import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
@@ -486,7 +486,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   /**
    * The tree's notifications → `emit()` (which calls the twin, then dispatches). Built
-   * once, so WebTreeView's memoized adapters keep their identity across updates.
+   * once, so TreeViewEngine's memoized adapters keep their identity across updates.
    */
   readonly #bridges: Partial<TreeViewConfig<T>> = {
     onNodeClick: (d) => this.emit('node-click', d),
@@ -518,7 +518,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   };
 
   #shadow: ShadowRoot;
-  #treeview?: WebTreeView<T>;
+  #treeview?: TreeViewEngine<T>;
   /** Mirrors render-start / render-complete — also valid while the first build is still constructing the tree. */
   #isRendering = false;
   #container?: HTMLDivElement;
@@ -686,7 +686,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     });
 
     this.#isRendering = false;
-    this.#treeview = new WebTreeView<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
+    this.#treeview = new TreeViewEngine<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
     this.#applyCustomStyles();
     // State sets assigned before the build (property or attribute); a set never assigned leaves the tree's own.
     for (const key of STATE_KEYS) {
@@ -796,7 +796,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   /** The live tree after applying pending property writes (`flush()`), so
    *  `el.prop = x; el.method()` sees `x` (core rule; NOTES #13). */
-  get #live(): WebTreeView<T> | undefined {
+  get #live(): TreeViewEngine<T> | undefined {
     this.flush();
     return this.#treeview;
   }

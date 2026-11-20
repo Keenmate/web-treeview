@@ -369,22 +369,25 @@ tree.translateCallback = ({ key, params }) => (i18next.exists(key) ? i18next.t(k
 
 ## Pluggable renderers
 
-The default `DomRenderer` handles flat DOM rendering with event delegation. Replace it with a framework-specific renderer:
+The default `DomRenderer` draws the element's own UI. To draw your own (a framework-native tree, a file browser),
+give `TreeViewEngine` — the class behind `<web-treeview>` — a `TreeViewRenderer`:
 
 ```typescript
-import { WebTreeView } from '@keenmate/web-treeview';
+import { TreeViewEngine } from '@keenmate/web-treeview';
 import type { TreeViewRenderer } from '@keenmate/web-treeview';
 
 const customRenderer: TreeViewRenderer<MyData> = {
-  mount(container, engine, config) { /* engine = the internal TreeEngine */ },
-  updateConfig(config) { /* ... */ },
-  destroy() { /* ... */ },
+  mount(container, engine, config) { /* subscribe: engine.on('state-change', paint); paint(engine.getSnapshot()) */ },
+  updateConfig(config) { /* changed RendererConfig keys */ },
+  destroy() { /* unsubscribe, remove DOM */ },
 };
 
-const tree = new WebTreeView(element, options, customRenderer);
+const tree = new TreeViewEngine(container, options, customRenderer);
 
-// Or swap at runtime:
+// Or swap at runtime (tree state is kept):
 tree.setRenderer(customRenderer);
 ```
 
-See `examples-custom-layout.html` for a complete custom renderer pattern.
+What the engine does, what a renderer implements and a complete minimal example:
+[usage.md → Build your own UI](./usage.md#build-your-own-ui). `examples-custom-layout.html` CL06 shows the lower
+level — a whole custom UI on a bare headless `TreeEngine`.

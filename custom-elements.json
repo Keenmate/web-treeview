@@ -6602,9 +6602,9 @@
         },
         {
           "kind": "js",
-          "name": "WebTreeView",
+          "name": "TreeViewEngine",
           "declaration": {
-            "name": "WebTreeView",
+            "name": "TreeViewEngine",
             "module": "./treeview"
           }
         },
@@ -10385,7 +10385,7 @@
             {
               "name": "getTarget",
               "type": {
-                "text": "() => WebTreeView<T> | undefined"
+                "text": "() => TreeViewEngine<T> | undefined"
               }
             },
             {
@@ -10396,12 +10396,12 @@
               }
             }
           ],
-          "description": "Build the public facade over whatever `getTarget()` returns now — the element passes\nits current WebTreeView (so the facade survives rebuilds), a standalone\nWebTreeView passes itself."
+          "description": "Build the public facade over whatever `getTarget()` returns now — the element passes\nits current TreeViewEngine (so the facade survives rebuilds), a standalone\nTreeViewEngine passes itself."
         },
         {
           "kind": "class",
-          "description": "WebTreeView<T> — wraps the TreeEngine + a TreeViewRenderer. Used by\n`<web-treeview>` and standalone. It owns the PUBLIC config shape (single-ctx\ncallbacks, events with the component context) and adapts it to the engine's\ninternal callbacks — memoized per source function, so an unchanged callback keeps\nits identity across updates (the engine rebuilds the tree when one changes).",
-          "name": "WebTreeView",
+          "description": "TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeEngine + a TreeViewRenderer.\nPublic as the seam for your own UI (docs/usage.md \"Build your own UI\"): `new TreeViewEngine(container,\noptions, renderer?)` — the same options as the element (every per-element hook / setting the element\npasses through), a custom `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx\ncallbacks, events with the component context) and adapts it to the engine's\ninternal callbacks — memoized per source function, so an unchanged callback keeps\nits identity across updates (the engine rebuilds the tree when one changes).",
+          "name": "TreeViewEngine",
           "members": [
             {
               "kind": "field",
@@ -12587,9 +12587,9 @@
         },
         {
           "kind": "js",
-          "name": "WebTreeView",
+          "name": "TreeViewEngine",
           "declaration": {
-            "name": "WebTreeView",
+            "name": "TreeViewEngine",
             "module": "src/treeview.ts"
           }
         }
@@ -13606,7 +13606,7 @@
               },
               "readonly": true,
               "default": "{ onNodeClick: (d) => this.emit('node-click', d), onNodeDoubleClick: (d) => this.emit('node-double-click', d), onNodeExpand: (d) => this.emit('node-expand', d), onNodeCollapse: (d) => this.emit('node-collapse', d), onNodeCopy: (d) => this.emit('node-copy', d), onNodeCut: (d) => this.emit('node-cut', d), onNodePaste: (d) => this.emit('node-paste', d), onNodeDelete: (d) => this.emit('node-delete', d), onNodeDragStart: (d) => this.emit('node-drag-start', d), onNodeDragOver: (d) => this.emit('node-drag-over', d), onNodeDrop: (d) => this.emit('node-drop', d), onNodeDragReject: (d) => this.emit('node-drag-reject', d), onNodeDropReject: (d) => this.emit('node-drop-reject', d), onSelectionChange: (d) => this.emit('selection-change', d), onCheckedChange: (d) => this.emit('checked-change', d), onFocusChange: (d) => this.emit('focus-change', d), onExpandedChange: (d) => this.emit('expanded-change', d), onNodesReorder: (d) => this.emit('nodes-reorder', d), onTreeChange: (d) => this.emit('tree-change', d), onAction: (d) => this.emit('action', d), onRenderStart: (d) => { this.#isRendering = true; this.emit('render-start', d); }, onRenderProgress: (d) => this.emit('render-progress', d), onRenderComplete: (d) => { this.#isRendering = false; this.emit('render-complete', d); }, onContainerResize: (d) => this.emit('container-resize', d), onIndexProgress: (d) => this.emit('index-progress', d), onSearchStatusChange: (d) => this.emit('search-status-change', d), }",
-              "description": "The tree's notifications → `emit()` (which calls the twin, then dispatches). Built\nonce, so WebTreeView's memoized adapters keep their identity across updates."
+              "description": "The tree's notifications → `emit()` (which calls the twin, then dispatches). Built\nonce, so TreeViewEngine's memoized adapters keep their identity across updates."
             },
             {
               "kind": "field",
@@ -13621,7 +13621,7 @@
               "name": "#treeview",
               "privacy": "private",
               "type": {
-                "text": "WebTreeView<T> | undefined"
+                "text": "TreeViewEngine<T> | undefined"
               }
             },
             {
@@ -13904,7 +13904,7 @@
               "name": "#live",
               "privacy": "private",
               "type": {
-                "text": "WebTreeView<T> | undefined"
+                "text": "TreeViewEngine<T> | undefined"
               },
               "description": "The live tree after applying pending property writes (`flush()`), so\n`el.prop = x; el.method()` sees `x` (core rule; NOTES #13).",
               "readonly": true

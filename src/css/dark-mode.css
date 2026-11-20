@@ -50,7 +50,7 @@
    =============================================================================
    Declared last, so it wins. `<web-treeview data-theme="dark">` (the same switch
    as every Keenmate component); the .wtv__container selector serves the
-   programmatic `new WebTreeView(container, …)`, where `data-theme` goes on your
+   programmatic `new TreeViewEngine(container, …)`, where `data-theme` goes on your
    own container element.
    ============================================================================= */
 :host([data-theme="dark"]),

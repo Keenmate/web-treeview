@@ -385,9 +385,9 @@ Worth auditing the other inputs without a `default` for the same pattern.
 
 ## 15. ~~A DOM move rebuilds the tree — expansion, selection, checks, focus lost~~ — resolved
 
-**Resolved 2026-10-25 (D1: a DOM move keeps ALL state).** The `WebTreeView`
+**Resolved 2026-10-25 (D1: a DOM move keeps ALL state).** The `TreeViewEngine`
 (engine + renderer) is built once in `reinit()` and kept; `disconnect()` →
-`WebTreeView.deactivate()` stops only live resources — renderer: environment /
+`TreeViewEngine.deactivate()` stops only live resources — renderer: environment /
 size observers, the document `dragend` listener, context-menu autoUpdate +
 keydown, shown tooltips; engine: open context menu (its document / window
 dismiss listeners), an in-flight touch drag, the cross-tree clipboard registry
@@ -403,7 +403,7 @@ document/window listeners after N moves" (+ released while detached) and
 Original report:
 
 **Where:** `src/web-component.ts` `disconnect()` (~404-407) destroys the
-`WebTreeView` (engine + renderer); `connect()` (~399-401) builds a fresh one
+`TreeViewEngine` (engine + renderer); `connect()` (~399-401) builds a fresh one
 from config. Core's lifecycle is build-once + activate/deactivate: a move is
 `disconnect()` → `connect()` and should re-activate without a rebuild.
 
@@ -417,7 +417,7 @@ decided "a DOM move keeps state" for dropzone / editor / daterangepicker; the
 WP-TV row asks the same of the treeview (re-parent keeps expansion /
 selection / listeners). **Confirm with the user** that D1 applies here too.
 
-**Suggested fix:** keep the `WebTreeView` across disconnect; in
+**Suggested fix:** keep the `TreeViewEngine` across disconnect; in
 `disconnect()` only stop live resources (environment observers, tooltips'
 autoUpdate, document-level listeners, context menu), restart them in
 `connect()`; destroy on `reinit()` only.

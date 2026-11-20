@@ -63,11 +63,11 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
 
 /**
  * Build the public facade over whatever `getTarget()` returns now — the element passes
- * its current {@link WebTreeView} (so the facade survives rebuilds), a standalone
- * WebTreeView passes itself.
+ * its current {@link TreeViewEngine} (so the facade survives rebuilds), a standalone
+ * TreeViewEngine passes itself.
  */
 export function createTreeViewController<T>(
-  getTarget: () => WebTreeView<T> | undefined,
+  getTarget: () => TreeViewEngine<T> | undefined,
   /** State reads while there is no tree yet (the element knows `isRendering` during the first build). */
   fallback: Partial<Record<string, () => unknown>> = {},
 ): TreeViewController<T> {
@@ -92,13 +92,15 @@ function internalGate(result: BeforeCallbackResult): unknown {
 }
 
 /**
- * WebTreeView<T> — wraps the TreeEngine + a TreeViewRenderer. Used by
- * `<web-treeview>` and standalone. It owns the PUBLIC config shape (single-ctx
+ * TreeViewEngine<T> — the class behind `<web-treeview>`: wraps the TreeEngine + a TreeViewRenderer.
+ * Public as the seam for your own UI (docs/usage.md "Build your own UI"): `new TreeViewEngine(container,
+ * options, renderer?)` — the same options as the element (every per-element hook / setting the element
+ * passes through), a custom `TreeViewRenderer` draws. It owns the PUBLIC config shape (single-ctx
  * callbacks, events with the component context) and adapts it to the engine's
  * internal callbacks — memoized per source function, so an unchanged callback keeps
  * its identity across updates (the engine rebuilds the tree when one changes).
  */
-export class WebTreeView<T = any> {
+export class TreeViewEngine<T = any> {
   private engine: TreeEngine<T>;
   private renderer: TreeViewRenderer<T>;
   private element: HTMLElement;
@@ -128,7 +130,7 @@ export class WebTreeView<T = any> {
     this.options = { ...options };
     this.labels = createLabels(this.hostElement(), DEFAULT_LABELS as TreeViewLabels, () => this.options.labels, {
       tag: 'web-treeview',
-      // This tree's own translateCallback (the element's input, or a plain WebTreeView option) → the page-wide one.
+      // This tree's own translateCallback (the element's input, or a plain TreeViewEngine option) → the page-wide one.
       getTranslateCallback: () => this.options.translateCallback ?? undefined,
     });
 

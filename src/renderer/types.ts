@@ -77,7 +77,7 @@ export interface RendererConfig<T> {
    *  drag), and make it focusable + focus-on-hover so a Ctrl/Cmd+V pastes into it. */
   isEmptyDropPlaceholderShown?: boolean | null;
   /** Draws the loader into the overlay while isLoading is true; returns its remove().
-   *  WebTreeView binds it to core `renderLoader` (instance hook → page hook → default). */
+   *  TreeViewEngine binds it to core `renderLoader` (instance hook → page hook → default). */
   renderLoadingCallback?: ((container: HTMLElement, label: string) => () => void) | null;
   /** Rendered above the tree body. */
   renderHeaderCallback?: () => SlotResult;
@@ -88,7 +88,7 @@ export interface RendererConfig<T> {
   /** Per-item context menu renderer. Receives item, node, and container for custom item content. */
   renderContextMenuItemCallback?: (item: TreeMenuItem<T>, node: LTreeNode<T>, container: HTMLElement) => void;
 
-  // ── Interaction model (supplied by WebTreeView) ───────────────────────
+  // ── Interaction model (supplied by TreeViewEngine) ───────────────────────
   /** The context menu's surface ctx for `node` (NodeRef + controller / element). */
   contextMenuContext?: (node: LTreeNode<T>) => TreeMenuContext<T>;
   /** Built-in state of an item (text / shortcut / disabled / danger of `copy`, `paste`, …). */

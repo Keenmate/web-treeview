@@ -304,7 +304,7 @@ export interface TreeViewScrollOptions {
   shouldRevealContainer: boolean;
 }
 
-/** Engine ctx of `beforeScrollCallback` (WebTreeView adds `controller` / `element`). */
+/** Engine ctx of `beforeScrollCallback` (TreeViewEngine adds `controller` / `element`). */
 export interface BeforeScrollContext<T> {
   node: LTreeNode<T>;
   path: string;
@@ -542,7 +542,7 @@ export interface TreeEngineConfig<T> {
   onNodeDoubleClick?: (ctx: NodeEventContext<T>) => void;
   /** Gate before a node expands (UI toggle, keyboard, expandNodes — not expandAll / seeding).
    *  `false` keeps it collapsed; a Promise defers the expand (the node shows a loading
-   *  state meanwhile; resolving `false` cancels). The public hook is adapted by WebTreeView. */
+   *  state meanwhile; resolving `false` cancels). The public hook is adapted by TreeViewEngine. */
   beforeExpandCallback?: (ctx: NodeEventContext<T>) => unknown;
   /** Fires after a node actually expanded (not for expandAll / seeding). */
   onNodeExpand?: (ctx: NodeEventContext<T>) => void;
@@ -602,7 +602,7 @@ export interface TreeEngineConfig<T> {
   /** Runs before every self-initiated scroll (keyboard, scrollToPath, paste reveal): `false` skips
    *  it, a partial replaces the defaults (the adapted public beforeScrollCallback). */
   beforeScrollCallback?: (ctx: BeforeScrollContext<T>) => false | Partial<TreeViewScrollOptions> | void;
-  /** The context-menu entries for `node` (the public getContextMenuItemsCallback, adapted by WebTreeView). */
+  /** The context-menu entries for `node` (the public getContextMenuItemsCallback, adapted by TreeViewEngine). */
   contextMenuCallback?: (node: LTreeNode<T>) => TreeMenuEntry<T>[];
 
   // Tells the controller whether a context menu renderer exists

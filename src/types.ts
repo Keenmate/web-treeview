@@ -600,7 +600,7 @@ export interface TreeViewConfig<T = any> {
    *  element's custom CSS into it. Standalone: plain core `createLayer()` on the container's host. */
   openLayer?: TreeLayerOpener | null;
 
-  // Context (passed by <web-treeview>; a standalone WebTreeView defaults them)
+  // Context (passed by <web-treeview>; a standalone TreeViewEngine defaults them)
   /** The host element — `element` on every ctx / event detail. */
   hostElement?: HTMLElement;
   /** The public facade — `controller` on every ctx / event detail. */

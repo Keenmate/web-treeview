@@ -1,0 +1,43 @@
+import { test, expect } from './fixtures';
+
+/**
+ * The public engine seam (docs/usage.md "Build your own UI"): `TreeViewEngine` without the element,
+ * drawn by a custom `TreeViewRenderer`. User input goes back through engine calls, so the `on*` options
+ * fire; the engine's own `translateCallback` beats the page-wide one.
+ *
+ * Fixture: test/engine-custom-renderer.html — #list
+ *   1 Documents ── 1.1 Projects
+ *   2 Photos
+ */
+
+const PAGE = '/test/engine-custom-renderer.html';
+
+test.beforeEach(async ({ page }) => {
+  await page.goto(PAGE);
+  await page.waitForFunction(() => (window as any).fixtureReady === true);
+});
+
+test('the custom renderer paints the visible rows; a click expands through the engine and fires onNodeExpand', async ({ page }) => {
+  const rows = page.locator('#list [role="treeitem"]');
+  await expect(rows).toHaveText(['Documents', 'Photos']);
+  await rows.first().click();
+  await expect(rows).toHaveText(['Documents', 'Projects', 'Photos']);
+  await expect(rows.first()).toHaveAttribute('aria-expanded', 'true');
+  expect(await page.evaluate(() => (window as any).expanded)).toEqual(['1']);
+});
+
+test('engine methods drive the custom renderer (the same API as el.controller)', async ({ page }) => {
+  await page.evaluate(() => (window as any).engine.expandAll());
+  await expect(page.locator('#list [role="treeitem"]')).toHaveText(['Documents', 'Projects', 'Photos']);
+  expect(await page.evaluate(() => (window as any).engine.getPublicController().expandedPaths)).toContain('1');
+});
+
+test("the engine's own translateCallback beats the page-wide one; labels beat both", async ({ page }) => {
+  const list = page.locator('#list');
+  await expect(list).toHaveAttribute('aria-label', 'own');
+  await page.evaluate(() => (window as any).engine.update({ translateCallback: null }));
+  await page.evaluate(() => (window as any).engine.refreshLabels());
+  await expect(list).toHaveAttribute('aria-label', 'page');
+  await page.evaluate(() => (window as any).engine.update({ labels: { 'ariaLabels.tree': 'mine' } }));
+  await expect(list).toHaveAttribute('aria-label', 'mine');
+});

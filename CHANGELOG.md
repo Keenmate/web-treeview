@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — the public engine is `TreeViewEngine` (2026-11-20)
+- BREAKING: `WebTreeView` (the class behind `<web-treeview>`, exported for building your own UI) is renamed
+  `TreeViewEngine` — no alias: `import { TreeViewEngine } from '@keenmate/web-treeview'`;
+  `new TreeViewEngine(container, options, renderer?)` (same arguments, same methods). The UMD bundle's global
+  namespace (`window.WebTreeView`) is unchanged — the class is `WebTreeView.TreeViewEngine` there.
+- Docs: a "Build your own UI" section in `docs/usage.md` — what the engine does, what a `TreeViewRenderer`
+  implements, a minimal custom renderer. The engine takes every per-element hook / setting the element has
+  (`labels`, `translateCallback`, `renderIconCallback`, `renderLoadingCallback`, `menuPresentation`, …); new e2e
+  `engine-custom-renderer.spec.ts` (engine + custom renderer, no element; own `translateCallback` beats the page-wide one).
+
 ### Added — instance `translateCallback` (2026-11-20)
 - `translateCallback` (property, core `/locale` `TranslateCallback`): this tree's own translation hook, asked for every
   label key the instance `labels` did not set, BEFORE the page-wide `window.components.locale.translateCallback`
   (`null` / `undefined` = not mine → the page-wide hook → the page dictionary → English). One tree needs no
-  `window.components` setup; assigning it re-renders the texts live (tree state kept). Also a plain `WebTreeView` option.
+  `window.components` setup; assigning it re-renders the texts live (tree state kept). Also a plain `TreeViewEngine` option.
 
 ### Added — node icons through core `renderIcon` (2026-11-20)
 - Node icons are drawn by core `renderIcon` (SPEC §12.33) into the `.wtv__node-icon` wrapper — the same rule as every

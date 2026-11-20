@@ -30,22 +30,10 @@ npm install @keenmate/web-treeview
 </script>
 ```
 
-### Programmatic (ES module)
+### Programmatic (no custom element)
 
-```typescript
-import '@keenmate/web-treeview';
-import { WebTreeView } from '@keenmate/web-treeview';
-
-const container = document.getElementById('tree-container')!;
-const tree = new WebTreeView(container, {
-  data: myData,
-  idMember: 'id',
-  pathMember: 'path',
-  displayValueMember: 'name',
-  expandLevel: 2,
-  onNodeClick: ({ node }) => console.log('Clicked:', node),
-});
-```
+The element is the API for almost every app. To draw your OWN UI on the tree's logic, use
+`TreeViewEngine` — see [Build your own UI](#build-your-own-ui).
 
 ### Custom member names
 
@@ -718,11 +706,108 @@ tree.beforeExpandCallback = async ({ node, controller }) => {
 tree.addEventListener('node-expand', (e) => console.log('expanded', e.detail.path));
 ```
 
+## Build your own UI
+
+`TreeViewEngine` is the class behind `<web-treeview>`, exported as a seam for a UI the element doesn't draw — a
+framework-native tree (Svelte / React / Vue), a canvas, a file browser. It runs WITHOUT the custom element:
+
+```ts
+new TreeViewEngine(container, options, renderer?)
+```
+
+- `container` — the element the renderer draws into (and the `element` on every ctx / event detail, unless you
+  pass `hostElement`).
+- `options` — the same `TreeViewConfig` the element reads (`nodes`, the `*Member`s, behaviour flags, every
+  `*Callback`, the `on*` event twins, `labels`, `translateCallback`, `renderIconCallback`, `renderLoadingCallback`,
+  `menuPresentation` / `menuSide`, …) — no attributes, no `customStyles` (style your own container), and no events
+  on a host: the `on*` options are the events.
+- `renderer` — a `TreeViewRenderer`; omitted = the built-in `DomRenderer` (the element's own UI in your container).
+
+**What the engine does:** owns the data (`LTree`: paths, members, sorting, branch ops), expand / select / check /
+focus state, search + filtering, keyboard navigation, clipboard and drag-drop logic, before-hooks and events, the
+context-menu model (`getContextMenuItemsCallback` → core `/actions`), screen-reader announcements and the UI strings
+(core `/locale`: own `labels` → own `translateCallback` → page-wide `translateCallback` → page dictionary → English).
+Its methods are the element's controller methods (`expandNodes`, `selectNode`, `filterNodes`, `addBranch`, …);
+`getPublicController()` returns the same frozen `controller` facade the element exposes as `el.controller`.
+`update(partial)` applies changed options; `setRenderer(r)` swaps the renderer at runtime keeping all state;
+`deactivate()` / `activate()` pause / resume live resources; `destroy()` tears it down.
+
+**What a renderer implements** (`TreeViewRenderer<T>`):
+
+| Member | When | Does |
+|---|---|---|
+| `mount(container, engine, config)` | once (and on `setRenderer`) | builds the DOM, subscribes to `engine.on('state-change', snapshot => …)`, paints `engine.getSnapshot()` |
+| `updateConfig(partial)` | an option changed | applies the changed `RendererConfig` keys (`labels`, `isDisabled`, render callbacks, …) |
+| `destroy()` | teardown | unsubscribes, removes its DOM |
+| `deactivate?()` / `activate?()` | host detached / re-attached | stop / restart LIVE resources only (document listeners, observers) |
+
+`engine` is the internal state engine (`TreeEngine`): the snapshot's `flatNodesToRender` is the visible rows in
+order (each an `LTreeNode`: `path`, `level`, `data`, `hasChildren`, `isExpanded`, `isSelected`, `isChecked`, …);
+user input goes back as engine calls (`toggleNodeExpanded(path)`, `selectNode(path)`, `focusNode(path)`,
+`handleKeydown(event)`, …) so the hooks, events and announcements fire exactly as in the element. `config` carries the
+resolved UI strings (`config.labels.text(key)`), the node-icon drawer (`config.renderNodeIcon(value, node, ctx)` —
+core `renderIcon` with your `renderIconCallback`) and the loader drawer (`config.renderLoadingCallback` — core
+`renderLoader` with your hook).
+
+Minimal example — an indented list, click toggles:
+
+```ts
+import '@keenmate/web-treeview';                     // the CSS + the element (unused here)
+import { TreeViewEngine } from '@keenmate/web-treeview';
+import type { TreeViewRenderer, TreeEngine, TreeEngineSnapshot, RendererConfig } from '@keenmate/web-treeview';
+
+class ListRenderer<T> implements TreeViewRenderer<T> {
+  private container!: HTMLElement;
+  private off?: () => void;
+
+  mount(container: HTMLElement, engine: TreeEngine<T>, config: RendererConfig<T>): void {
+    this.container = container;
+    container.setAttribute('role', 'tree');
+    container.setAttribute('aria-label', config.labels?.text('ariaLabels.tree') ?? 'Tree');
+    const paint = (snapshot: TreeEngineSnapshot<T>) => {
+      container.replaceChildren(...snapshot.flatNodesToRender.map((node) => {
+        const row = document.createElement('div');
+        row.setAttribute('role', 'treeitem');
+        if (node.hasChildren) row.setAttribute('aria-expanded', String(node.isExpanded));
+        row.style.paddingInlineStart = `${((node.level ?? 1) - 1) * 16}px`;
+        row.textContent = engine.tree.getNodeDisplayValue(node);
+        row.addEventListener('click', () => engine.toggleNodeExpanded(node.path));
+        return row;
+      }));
+    };
+    this.off = engine.on('state-change', paint);
+    paint(engine.getSnapshot());
+  }
+
+  updateConfig(): void {}
+
+  destroy(): void {
+    this.off?.();
+    this.container.replaceChildren();
+  }
+}
+
+const tree = new TreeViewEngine(document.getElementById('tree')!, {
+  displayValueMember: 'displayValue',               // no element defaults here: name your members
+  nodes: [
+    { id: 1, path: '1',   displayValue: 'Documents' },
+    { id: 2, path: '1.1', displayValue: 'Projects' },
+  ],
+  onNodeExpand: ({ node }) => console.log('expanded', node.path),
+  translateCallback: ({ key }) => myI18n(key),       // this tree's own; beats the page-wide one
+}, new ListRenderer());
+
+tree.expandAll();
+```
+
+`examples-custom-layout.html` CL06 goes one level lower: a whole iOS-style file browser on a bare `TreeEngine` (no
+`TreeViewEngine`, no renderer seam).
+
 ## Architecture
 
 ```
 WebTreeViewElement (custom element, BlissElement)
-  └── WebTreeView (facade; adapts one-ctx callbacks, builds el.controller)
+  └── TreeViewEngine (public engine; adapts one-ctx callbacks, builds el.controller)
         ├── TreeEngine (internal: state, logic, DnD)
         │     └── LTree (path-based tree engine)
         └── TreeViewRenderer (pluggable rendering)

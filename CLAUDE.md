@@ -104,7 +104,7 @@ make publish-dry     # Dry-run publish
 src/
 ├── index.ts              # Entry point, global API, exports
 ├── web-component.ts      # WebTreeViewElement (extends BlissElement; INPUTS / EVENTS tables)
-├── treeview.ts           # WebTreeView facade (engine + renderer; one-ctx callback adapters, el.controller, context-menu actions)
+├── treeview.ts           # TreeViewEngine facade (engine + renderer; one-ctx callback adapters, el.controller, context-menu actions)
 ├── interaction.ts        # Public interaction types: TreeViewController facade, ctx types, TreeMenuItem, event details
 ├── types.ts              # All TypeScript interfaces
 ├── clipboard.ts          # Module-level clipboard singleton (cross-tree copy/cut/paste)
@@ -134,7 +134,7 @@ src/
 
 ### Three-Layer Architecture
 1. **`WebTreeViewElement<T>`** (`web-component.ts`) — Custom element wrapper. Extends core `BlissElement`, uses Shadow DOM, proxies attributes/properties to the facade, dispatches `CustomEvent`s via `emit()` (each with an `on*` twin). `el.controller` is the public `TreeViewController` facade.
-2. **`WebTreeView<T>`** (`treeview.ts`) — Facade wrapping TreeEngine + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Can be used standalone without the web component (`getEngine()` exposes the engine).
+2. **`TreeViewEngine<T>`** (`treeview.ts`) — Facade wrapping TreeEngine + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Can be used standalone without the web component (`getEngine()` exposes the engine).
 3. **`TreeEngine<T>`** (`controller/tree-engine.ts`, internal) — All state & logic: multi-select, clipboard, navigation, drag-and-drop, context menu, progressive rendering. Uses `LTree` for tree data.
 4. **`DomRenderer<T>`** (`renderer/dom-renderer.ts`) — Default renderer with flat DOM, event delegation, keyed reconciliation, keyboard handling.
 
@@ -204,14 +204,14 @@ Names follow `@keenmate/base-css-variables` 2.0 (rc06 rename, no aliases): **foc
 
 ## Per-node icons (every node)
 
-`iconMember` / `getIconCallback({ node })` resolve a per-node icon VALUE; core `renderIcon(value, { prefix: 'wtv', host, renderIconCallback, context: { node, …renderState, controller } })` (SPEC §12.33, built in `WebTreeView.nodeIconHtml`, handed to the renderer as `RendererConfig.renderNodeIcon`) draws it INTO a dedicated `<span class="wtv__node-icon">` wrapper on EVERY node with a value (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot (so branches get icons and the toggle keeps its chevron). Order: markup → built-in name (masked `.km-icon`, `ICON_CSS` adopted into the tree's root) → the instance `renderIconCallback(name, ctx)` → page-wide `window.components.renderIconCallback` → icon-font `<i class="wtv__icon {value}">` → text. No value → no wrapper unless `shouldAlignNodeIcons`. COLOR via `iconColorMember` / `getIconColorCallback({ node })` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); the renderer writes the wrapper's `innerHTML` only when the markup changed; a changed `renderIconCallback` (RendererConfig, compared only) triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `getCustomStylesCallback`.
+`iconMember` / `getIconCallback({ node })` resolve a per-node icon VALUE; core `renderIcon(value, { prefix: 'wtv', host, renderIconCallback, context: { node, …renderState, controller } })` (SPEC §12.33, built in `TreeViewEngine.nodeIconHtml`, handed to the renderer as `RendererConfig.renderNodeIcon`) draws it INTO a dedicated `<span class="wtv__node-icon">` wrapper on EVERY node with a value (branch + leaf) between the toggle/checkbox and the label — NOT folded into the leaf toggle slot (so branches get icons and the toggle keeps its chevron). Order: markup → built-in name (masked `.km-icon`, `ICON_CSS` adopted into the tree's root) → the instance `renderIconCallback(name, ctx)` → page-wide `window.components.renderIconCallback` → icon-font `<i class="wtv__icon {value}">` → text. No value → no wrapper unless `shouldAlignNodeIcons`. COLOR via `iconColorMember` / `getIconColorCallback({ node })` (inline) or `--wtv-node-icon-color` (default currentColor). `shouldAlignNodeIcons` reserves the column (`--wtv-node-icon-width`). Renderer: `_applyNodeIcon(row, node)` (called from `_createNodeElement` + `_updateNodeElement`); the renderer writes the wrapper's `innerHTML` only when the markup changed; a changed `renderIconCallback` (RendererConfig, compared only) triggers `_fullRender`. Parity with svelte-treeview's `iconMember`/`getIconCallback`/`iconColorMember`/`getIconColorCallback` + `icon` snippet. e2e `test/node-icons.html` + `e2e/node-icons.spec.ts`. NOTE: FontAwesome classes resolve inside the shadow root only if FA's CSS is injected via `getCustomStylesCallback`.
 
 ## v2 naming rules (2026-10-27 unification — CHANGELOG [Unreleased])
 
 BlissFramework `naming-conventions.md` D-NC-13..27 apply; the svelte-treeview mirror is tracked in
 `C:/Git/KM/_agent-progress/treeview-naming-pass.md`. In short:
 - Core lifecycle: `defer` / `release()` / `ready` event + `ready` attr + `:state(ready)` (the FOUC
-  guard keys off `[ready]`); `destroy()` → `destroyCallback()` destroys the WebTreeView.
+  guard keys off `[ready]`); `destroy()` → `destroyCallback()` destroys the TreeViewEngine.
 - State is a property (element read/assign, controller read-only): `expandedPaths`,
   `selectedPaths`, `checkedPaths`, `focusedNode` — no `get*()` / `set*()` twins.
 - Verbs: `check*` / `uncheck*` symmetric (`uncheckNodes`, `uncheckAll`); *remove* =
@@ -221,7 +221,7 @@ BlissFramework `naming-conventions.md` D-NC-13..27 apply; the svelte-treeview mi
   family; `selectionMode: 'multiple'`; search text = `searchTerm` / `term`.
 - Events: `<state>-change` for sets (`selection-change`, `checked-change`, `expanded-change`,
   `focus-change`), `node-<verb>` for acts. ctx nouns: `nodes` (never `items`), no bare `index`.
-- UI strings: `labels` (`src/labels.ts` = keys + English) resolved by core `/locale` `createLabels` in `WebTreeView` (`this.labels.text(key)`; the renderer gets the same object as `RendererConfig.labels`). Page-wide change → `localeChanged()` → `refreshLabels()`.
+- UI strings: `labels` (`src/labels.ts` = keys + English) resolved by core `/locale` `createLabels` in `TreeViewEngine` (`this.labels.text(key)`; the renderer gets the same object as `RendererConfig.labels`). Page-wide change → `localeChanged()` → `refreshLabels()`.
 
 ## Comparison with sibling package `@keenmate/svelte-treeview`
 

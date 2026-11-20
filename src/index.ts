@@ -9,7 +9,7 @@ import { logging } from './logger';
 export { WebTreeViewElement };
 
 // Export the core engine wrapper
-export { WebTreeView } from './treeview';
+export { TreeViewEngine } from './treeview';
 export { DEFAULT_LABELS } from './labels';
 export type { TreeViewLabels } from './labels';
 

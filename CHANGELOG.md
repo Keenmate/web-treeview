@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Docs — localization page (2026-11-21)
+- `examples-localization.html` — the shared localization page (LO01–LO06: instance `labels`, page-wide dictionary,
+  `translateCallback`, the `messages.loading` → `ariaLabels.loading` twin, `{count}` number formatting in the search
+  announcement, `shouldEscapeLabels` — n/a, every tree label is text).
+
 ### Changed — the headless state is `TreeViewState` (2026-11-21)
 - BREAKING: `TreeEngine` (the headless tree state every renderer mounts on) is renamed `TreeViewState` and is
   public; its types follow — no aliases:

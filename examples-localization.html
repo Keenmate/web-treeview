@@ -1,0 +1,289 @@
+<meta name="kmwc:title" content="Localization">
+<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader twins, <code>locale</code> number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has.">
+
+<link rel="stylesheet" href="examples-local.css">
+
+<div class="note">
+    Every UI string goes through core <code>/locale</code>. Keys are flat <code>&lt;elementType&gt;.&lt;name&gt;</code>
+    (<code>messages.noData</code>, <code>labels.dropBefore</code>, <code>ariaLabels.tree</code>, <code>menuItems.copy</code>, …) — the
+    full list is the <code>labels</code> property in <code>docs/usage.md</code>. Per key: the instance <code>labels</code> (short or full
+    <code>web-treeview.</code> key) → the element's own <code>translateCallback</code> → the page-wide <code>translateCallback</code>
+    → the page dictionary <code>window.components.locale.labels</code> → the built-in English. The page-wide toggles (LO02, LO03,
+    LO05) are <strong>page-wide</strong>: they change every tree on this page, on purpose. A shorter page-wide demo with the
+    context menu and the drop pads is <a href="examples-basic.html">examples-basic.html</a> BU08.
+</div>
+
+<!-- ============================================================= -->
+<!-- LO01 · Instance labels                                        -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO01 · Instance <code>labels</code></h2>
+    <p>
+        Override texts on ONE element with the <code>labels</code> property (or a JSON <code>labels</code> attribute). A short key
+        (<code>labels.noDisplayValue</code> — the text of a node without a name, the first row here) and a full key
+        (<code>web-treeview.ariaLabels.tree</code> — the accessible name of the tree body) both work; every key you leave out stays
+        English. The neighbour tree is untouched.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo01-labels" checked> instance <code>labels</code> on the first tree</label>
+    </div>
+    <div class="grid grid-2">
+        <div class="tree-container tree-container-sm"><web-treeview id="lo01" class="lo-tree" expand-level="1"></web-treeview></div>
+        <div class="tree-container tree-container-sm"><web-treeview id="lo01-plain" class="lo-tree" expand-level="1"></web-treeview></div>
+    </div>
+    <div class="output"><div class="output-label">rendered strings</div><pre id="lo01-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>el.labels = {
+  'labels.noDisplayValue': '(bez názvu)',            // short key
+  'web-treeview.ariaLabels.tree': 'Soubory',         // full key
+};
+// or declaratively
+&lt;web-treeview labels='{"labels.noDisplayValue": "(bez názvu)"}'&gt;&lt;/web-treeview&gt;</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO02 · Page-wide dictionary                                    -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO02 · Page-wide dictionary</h2>
+    <p>
+        One flat dictionary on <code>window.components.locale.labels</code> — the app's translation JSON as loaded, full keys
+        <code>'web-treeview.&lt;elementType&gt;.&lt;name&gt;'</code>, other components' keys side by side — translates every tree on
+        the page at once. Assigning <code>window.components.locale</code> re-renders the live trees (expansion and selection kept).
+        Left: an empty tree (<code>messages.noData</code>); right: a search that matched nothing (<code>messages.noResults</code>).
+        Right-click a node in LO01 for the translated menu items (<code>menuItems.*</code>). Keys an instance set itself (LO01) still win.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo02-dict"> page dictionary (Czech)</label>
+    </div>
+    <div class="grid grid-2">
+        <div class="tree-container tree-container-sm"><web-treeview id="lo02a"></web-treeview></div>
+        <div class="tree-container tree-container-sm"><web-treeview id="lo02b" class="lo-tree" search-term="zzz" use-internal-search-index="true"></web-treeview></div>
+    </div>
+    <div class="output"><div class="output-label">rendered strings</div><pre id="lo02-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>// e.g. const labels = await (await fetch('/i18n/cs.json')).json();
+window.components.locale = {
+  labels: {
+    'web-treeview.messages.noData': 'Žádná data',
+    'web-treeview.messages.noResults': 'Nic nenalezeno',
+    'web-treeview.ariaLabels.tree': 'Strom',
+    'web-treeview.menuItems.copy': 'Kopírovat', 'web-treeview.menuItems.cut': 'Vyjmout',
+    'web-treeview.menuItems.paste': 'Vložit', 'web-treeview.menuItems.delete': 'Smazat',
+    'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
+    'web-multiselect.messages.noResults': 'Nic nenalezeno',   // other components share the same JSON
+  },
+};</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO03 · translateCallback                                       -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO03 · <code>translateCallback</code></h2>
+    <p>
+        An app with its own i18n (i18next, FormatJS, …) answers keys through a callback instead of a dictionary. It gets
+        <code>{ component, key, template, params, locale }</code> — <code>key</code> is the full
+        <code>web-treeview.&lt;elementType&gt;.&lt;name&gt;</code> — and returns the text, or <code>null</code> = not mine. The element's
+        own <code>translateCallback</code> is asked first (German, only <code>messages.noData</code> here); its <code>null</code> passes
+        the key on to the page-wide one (a small Slovak i18next-like lookup). A key the instance <code>labels</code> set (the second
+        tree's <code>messages.noData</code>) is never sent to any callback.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo03-page"> page-wide <code>translateCallback</code> (Slovak)</label>
+        <label><input type="checkbox" id="lo03-own"> first tree's own <code>translateCallback</code> (German)</label>
+    </div>
+    <div class="grid grid-2">
+        <div class="tree-container tree-container-sm"><web-treeview id="lo03a"></web-treeview></div>
+        <div class="tree-container tree-container-sm"><web-treeview id="lo03b" labels='{"messages.noData": "Instance wins"}'></web-treeview></div>
+    </div>
+    <div class="output"><div class="output-label">rendered strings</div><pre id="lo03-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>// an i18next-like lookup: a dictionary + t(key, params)
+const sk = { 'web-treeview.messages.noData': 'Žiadne údaje', 'web-treeview.ariaLabels.tree': 'Strom' };
+const t = (key, params) =&gt; sk[key]?.replace(/\{\{(\w+)\}\}/g, (_, p) =&gt; params?.[p] ?? '');
+const exists = (key) =&gt; key in sk;
+
+// page-wide — every component on the page
+window.components.locale = { translateCallback: ({ key, params }) =&gt; (exists(key) ? t(key, params) : null) };
+
+// one element — asked BEFORE the page-wide callback; null = not mine
+el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ? 'Keine Daten' : null);</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO04 · Screen-reader name / tooltip follow                     -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO04 · Screen-reader name / tooltip follow</h2>
+    <p>
+        An <code>ariaLabels.x</code> / <code>tooltips.x</code> nobody set takes the first customized key of the same
+        <code>&lt;name&gt;</code>, so translating one string of a pair translates its twin. The tree's pair is <code>loading</code>:
+        translate only the visible <code>messages.loading</code> (the loading row of a lazy context submenu) and the accessible
+        name of the <code>loading</code> overlay, <code>ariaLabels.loading</code> — which nobody set — follows. The tree below is
+        <code>loading</code>; the box reads the overlay's <code>aria-label</code> from the shadow root. (The tree has no
+        <code>tooltips.*</code> keys.)
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo04-caption"> translate <code>messages.loading</code> only</label>
+    </div>
+    <div class="tree-container tree-container-sm"><web-treeview id="lo04" class="lo-tree" expand-level="1" loading></web-treeview></div>
+    <div class="output"><div class="output-label">accessible name of the loading overlay</div><pre id="lo04-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>el.labels = { 'messages.loading': 'Načítání…' };
+// → the isLoading overlay's aria-label is "Načítání…" too (ariaLabels.loading was never set)
+// an explicitly set ariaLabels.loading always wins over the twin</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO05 · locale + formatting                                     -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO05 · <code>locale</code> + formatting</h2>
+    <p>
+        Numbers in labels (<code>{count}</code> in the search announcement <code>ariaLabels.searchResults</code>, "{count} results")
+        are formatted for the page language: <code>window.components.locale.locale</code> → the browser. The tree has no
+        <code>locale</code> input of its own and formats no dates — this number is its only locale-specific output. The tree below
+        has 1,234 nodes; <em>Search</em> filters them all and the screen-reader announcement (core <code>announce()</code>, the
+        page's live region) is shown in the box.
+    </p>
+    <div class="controls"><strong class="muted">page locale</strong>
+        <label><input type="radio" name="lo05-locale" value="" checked> unset (browser)</label>
+        <label><input type="radio" name="lo05-locale" value="de-DE"> de-DE</label>
+        <label><input type="radio" name="lo05-locale" value="cs-CZ"> cs-CZ</label>
+        <label><input type="radio" name="lo05-locale" value="en-IN"> en-IN</label>
+        <button type="button" id="lo05-search" class="btn-outline">Search <code>Item</code></button>
+    </div>
+    <div class="tree-container tree-container-sm"><web-treeview id="lo05" use-internal-search-index="true" search-result-limit="5000"></web-treeview></div>
+    <div class="output"><div class="output-label">last screen-reader announcement</div><pre id="lo05-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
+el.searchTerm = 'Item';   // announces "1.234 results"</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO06 · shouldEscapeLabels                                      -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO06 · <code>shouldEscapeLabels</code></h2>
+    <p>
+        Does not apply: every tree label is plain text (written as <code>textContent</code> or an attribute), so a
+        <code>&lt;b&gt;</code> in a label always shows as characters and <code>window.components.security.shouldEscapeLabels</code>
+        has nothing to escape.
+    </p>
+</div>
+
+<script type="module">
+    const $ = (id) => document.getElementById(id);
+    const FILES = [
+        { id: 1, path: '1', name: 'src' },
+        { id: 2, path: '1.1', name: 'components' },
+        { id: 3, path: '1.2', name: 'pages' },
+        { id: 4, path: '2', name: 'public' },
+        { id: 5, path: '3', name: 'package.json' },
+        { id: 6, path: '4' },   // no name → labels.noDisplayValue
+    ];
+    const BIG = Array.from({ length: 1234 }, (_, i) => ({ id: i + 1, path: String(i + 1), name: `Item ${i + 1}` }));
+
+    // ── Page-wide state: window.components.locale is ONE object (assigning replaces it), so every
+    //    page-wide toggle (LO02 dictionary, LO03 callback, LO05 locale) composes it from here.
+    const page = { labels: null, translateCallback: null, locale: '' };
+    const applyPage = () => {
+        const next = {};
+        if (page.labels) next.labels = page.labels;
+        if (page.translateCallback) next.translateCallback = page.translateCallback;
+        if (page.locale) next.locale = page.locale;
+        window.components.locale = next;
+        refreshAll();
+    };
+    window.addEventListener('pagehide', () => { window.components.locale = null; });
+
+    // ── Readouts: what the shadow root actually renders.
+    const sr = (id) => $(id).shadowRoot;
+    const nodeLabels = (id) => [...(sr(id)?.querySelectorAll('.wtv__node-label') ?? [])].map((l) => l.textContent.trim()).join(' | ') || '(none)';
+    const treeName = (id) => sr(id)?.querySelector('[role="tree"]')?.getAttribute('aria-label') ?? '(none)';
+    const empty = (id) => sr(id)?.querySelector('.wtv__empty-state')?.textContent.trim() || '(none)';
+    const loaderName = (id) => sr(id)?.querySelector('.wtv__loading-overlay')?.getAttribute('aria-label') ?? '(none)';
+    const announcement = () => document.querySelector('[data-km-announcer="polite"]')?.textContent || '(nothing announced yet)';
+    const settle = async () => {
+        await Promise.all([...document.querySelectorAll('web-treeview')].map((el) => el.whenSettled?.()));
+        await new Promise((r) => requestAnimationFrame(() => r()));
+    };
+    const write = (id, lines) => { $(id).textContent = lines.join('\n'); };
+
+    async function refreshAll() {
+        await settle();
+        write('lo01-out', [
+            `#lo01        aria-label: ${treeName('lo01')}   nodes: ${nodeLabels('lo01')}`,
+            `#lo01-plain  aria-label: ${treeName('lo01-plain')}   nodes: ${nodeLabels('lo01-plain')}`,
+        ]);
+        write('lo02-out', [
+            `#lo02a  empty: ${empty('lo02a')}   aria-label: ${treeName('lo02a')}`,
+            `#lo02b  empty: ${empty('lo02b')}`,
+        ]);
+        write('lo03-out', [
+            `#lo03a  empty: ${empty('lo03a')}   aria-label: ${treeName('lo03a')}`,
+            `#lo03b  empty: ${empty('lo03b')}   aria-label: ${treeName('lo03b')}`,
+        ]);
+        write('lo04-out', [`aria-label: ${loaderName('lo04')}`]);
+        write('lo05-out', [`announced: ${announcement()}`]);
+    }
+
+    customElements.whenDefined('web-treeview').then(() => {
+        // ── Data.
+        for (const el of document.querySelectorAll('web-treeview')) {
+            el.idMember = 'id';
+            el.pathMember = 'path';
+            el.displayValueMember = 'name';
+            el.searchValueMember = 'name';
+        }
+        for (const el of document.querySelectorAll('web-treeview.lo-tree')) {
+            el.nodes = FILES;
+            el.getContextMenuItemsCallback = () => ['copy', 'cut', 'paste', 'delete', 'expand-all', 'collapse-all'];
+        }
+        $('lo05').nodes = BIG;
+
+        // ── LO01 · instance labels.
+        const LO01_LABELS = { 'labels.noDisplayValue': '(bez názvu)', 'web-treeview.ariaLabels.tree': 'Soubory' };
+        const lo01 = () => { $('lo01').labels = $('lo01-labels').checked ? LO01_LABELS : undefined; refreshAll(); };
+        $('lo01-labels').addEventListener('change', lo01);
+        lo01();
+
+        // ── LO02 · page dictionary.
+        const CS = {
+            'web-treeview.messages.noData': 'Žádná data',
+            'web-treeview.messages.noResults': 'Nic nenalezeno',
+            'web-treeview.ariaLabels.tree': 'Strom',
+            'web-treeview.menuItems.copy': 'Kopírovat', 'web-treeview.menuItems.cut': 'Vyjmout',
+            'web-treeview.menuItems.paste': 'Vložit', 'web-treeview.menuItems.delete': 'Smazat',
+            'web-treeview.menuItems.expandAll': 'Rozbalit vše', 'web-treeview.menuItems.collapseAll': 'Sbalit vše',
+            'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
+            'web-multiselect.messages.noResults': 'Nic nenalezeno',
+        };
+        $('lo02-dict').addEventListener('change', (e) => { page.labels = e.target.checked ? CS : null; applyPage(); });
+
+        // ── LO03 · translateCallback.
+        const sk = { 'web-treeview.messages.noData': 'Žiadne údaje', 'web-treeview.ariaLabels.tree': 'Strom' };
+        const t = (key, params) => sk[key].replace(/\{\{(\w+)\}\}/g, (_, p) => String(params?.[p] ?? ''));
+        const pageTranslate = ({ key, params }) => (key in sk ? t(key, params) : null);
+        const ownTranslate = ({ key }) => (key === 'web-treeview.messages.noData' ? 'Keine Daten' : null);
+        $('lo03-page').addEventListener('change', (e) => { page.translateCallback = e.target.checked ? pageTranslate : null; applyPage(); });
+        $('lo03-own').addEventListener('change', (e) => { $('lo03a').translateCallback = e.target.checked ? ownTranslate : undefined; refreshAll(); });
+
+        // ── LO04 · twin follow.
+        $('lo04-caption').addEventListener('change', (e) => {
+            $('lo04').labels = e.target.checked ? { 'messages.loading': 'Načítání…' } : undefined;
+            refreshAll();
+        });
+
+        // ── LO05 · page locale + the {count} search announcement.
+        const search = async () => {
+            const tree = $('lo05');
+            tree.searchTerm = null;
+            await tree.whenSettled();
+            tree.searchTerm = 'Item';
+        };
+        $('lo05').addEventListener('search-status-change', () => setTimeout(refreshAll, 150));
+        $('lo05-search').addEventListener('click', search);
+        for (const radio of document.querySelectorAll('input[name="lo05-locale"]')) {
+            radio.addEventListener('change', (e) => { page.locale = e.target.value; applyPage(); search(); });
+        }
+
+        refreshAll();
+    });
+</script>

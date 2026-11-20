@@ -207,7 +207,7 @@ npm run package      # Build + npm pack
 npm run test:e2e     # Playwright e2e (Chromium)
 ```
 
-Live HTML demos sit at the repo root, one page per topic (start from `index.html`): `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html`. `npm run build:examples` builds the static site into `dist-examples/`; the page chrome comes from [@keenmate/web-components-devkit](https://github.com/keenmate/web-components).
+Live HTML demos sit at the repo root, one page per topic (start from `index.html`): `examples-basic.html`, `examples-data.html`, `examples-search.html`, `examples-interaction.html`, `examples-drag-drop.html`, `examples-icons.html`, `examples-tooltips.html`, `examples-context-menu.html`, `examples-custom-layout.html`, `examples-tree-editor.html`, `examples-responsive.html`, `examples-localization.html`, `examples-theming.html`, `examples-performance.html`, `examples-logging.html`. `npm run build:examples` builds the static site into `dist-examples/`; the page chrome comes from [@keenmate/web-components-devkit](https://github.com/keenmate/web-components).
 
 ## About
 

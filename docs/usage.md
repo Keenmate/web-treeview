@@ -761,7 +761,7 @@ Its methods are the element's controller methods (`expandNodes`, `selectNode`, `
 | `destroy()` | teardown | unsubscribes, removes its DOM |
 | `deactivate?()` / `activate?()` | host detached / re-attached | stop / restart LIVE resources only (document listeners, observers) |
 
-`state` is the tree's `TreeViewState` (level 2 below): the snapshot's `flatNodesToRender` is the visible rows in
+`state` is the tree's `TreeViewState` (level 2 below; `engine.getState()` returns the same object): the snapshot's `flatNodesToRender` is the visible rows in
 order (each an `LTreeNode`: `path`, `level`, `data`, `hasChildren`, `isExpanded`, `isSelected`, `isChecked`, …);
 user input goes back as state calls (`toggleNodeExpanded(path)`, `selectNode(path)`, `focusNode(path)`,
 `handleKeydown(event)`, …) so the hooks, events and announcements fire exactly as in the element. `config` carries the

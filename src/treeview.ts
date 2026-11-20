@@ -543,7 +543,7 @@ export class TreeViewEngine<T = any> {
   }
 
   /** The tree's `TreeViewState` (the headless state the renderer mounts on) — for renderer authors / advanced use. */
-  getEngine(): TreeViewState<T> {
+  getState(): TreeViewState<T> {
     return this.engine;
   }
 

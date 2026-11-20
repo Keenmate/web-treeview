@@ -77,7 +77,7 @@ function toggleClasses(el: HTMLElement, classes: string, force: boolean): void {
 
 export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private container: HTMLElement | null = null;
-  private controller: TreeViewState<T> | null = null;
+  private state: TreeViewState<T> | null = null;
   private config: RendererConfig<T> = {};
 
   // DOM elements
@@ -91,7 +91,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _isMenuOpeningFromKeyboard = false;
   private loadingEl: HTMLElement | null = null;
   /** The engine's loggers (the element's instance loggers when hosted). */
-  private get log(): TreeLoggers { return this.controller?.log ?? defaultTreeLoggers; }
+  private get log(): TreeLoggers { return this.state?.log ?? defaultTreeLoggers; }
 
   // Virtual scroll DOM elements
   private vsSpacerEl: HTMLElement | null = null;
@@ -160,7 +160,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   mount(container: HTMLElement, state: TreeViewState<T>, config: RendererConfig<T>): void {
     this.container = container;
-    this.controller = state;
+    this.state = state;
     this.config = config;
 
     // Build skeleton
@@ -308,7 +308,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** The built-in `.wtv__node-label` (kept, its text patched, when it already is the content). */
   private _renderDefaultLabel(content: HTMLElement, node: LTreeNode<T>): void {
-    const text = this.controller?.tree?.getNodeDisplayValue(node) || String(node.id);
+    const text = this.state?.tree?.getNodeDisplayValue(node) || String(node.id);
     const first = content.firstChild;
     const isOwn = first instanceof HTMLElement && first.classList.contains('wtv__node-label') &&
       Array.from(content.childNodes).every((n, i) => i === 0 || (n instanceof HTMLElement && n.classList.contains('wtv__node-info')));
@@ -334,12 +334,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
       const zone = this._renderTarget?.querySelector('.wtv__empty-zone');
-      if (zone && this.controller) {
+      if (zone && this.state) {
         zone.remove();
-        this._fullRender(this.controller.getSnapshot());
+        this._fullRender(this.state.getSnapshot());
       }
     }
-    if ('openLayer' in config && this.controller) this.controller.layerOpener = config.openLayer ?? null;
+    if ('openLayer' in config && this.state) this.state.layerOpener = config.openLayer ?? null;
     if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
     if ('isReadonly' in config) this.container?.classList.toggle('wtv__container--readonly', !!config.isReadonly);
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
@@ -353,8 +353,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const isNodeCbChanged = 'renderNodeCallback' in config && config.renderNodeCallback !== prevNodeCb;
     if (isNodeCbChanged) this._nodeRenderGen++;
     const isIconCbChanged = 'renderIconCallback' in config && config.renderIconCallback !== prevIconCb;
-    if ((isNodeCbChanged || config.renderNodeCallback || isIconCbChanged) && this.controller) {
-      this._fullRender(this.controller.getSnapshot());
+    if ((isNodeCbChanged || config.renderNodeCallback || isIconCbChanged) && this.state) {
+      this._fullRender(this.state.getSnapshot());
     }
   }
 
@@ -394,7 +394,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
     this._isDisabled = false;
     this.container = null;
-    this.controller = null;
+    this.state = null;
     this.lastSnapshot = null;
     this._isActive = false;
   }
@@ -434,7 +434,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const dc = classifyDevice(getEnvironment());
     if (dc !== this._deviceClass) {
       this._deviceClass = dc;
-      if (this.controller) this._fullRender(this.controller.getSnapshot());
+      if (this.state) this._fullRender(this.state.getSnapshot());
     }
     this._startObservers();
   }
@@ -448,12 +448,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const dc = classifyDevice(env);
       if (dc !== this._deviceClass) {
         this._deviceClass = dc;
-        if (this.controller) this._fullRender(this.controller.getSnapshot());
+        if (this.state) this._fullRender(this.state.getSnapshot());
       }
     });
     this._stopSizeObserve = observeElementSize(this.container, (size) => {
       this._containerBox = size;
-      if (this.vsSpacerEl && this.bodyEl) this.controller?.setVirtualViewportHeight(this.bodyEl.clientHeight);
+      if (this.vsSpacerEl && this.bodyEl) this.state?.setVirtualViewportHeight(this.bodyEl.clientHeight);
       this.config.onContainerResize?.({ width: size.width, height: size.height }, this._deviceClass);
     });
   }
@@ -579,7 +579,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.container?.classList.toggle('wtv__container--disabled', isDisabled);
     if (isDisabled) {
       this._closeMenu();
-      if (this.controller?.isContextMenuVisible) this.controller.closeContextMenu();
+      if (this.state?.isContextMenuVisible) this.state.closeContextMenu();
       this._closeReveal();
       for (const h of this.tooltips.values()) h.hide();
     }
@@ -611,7 +611,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onBodyClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
-    if (!this.controller) return;
+    if (!this.state) return;
     // Disabled: no interaction — also cancels a native checkbox toggle.
     if (this._isDisabled) {
       event.preventDefault();
@@ -635,23 +635,23 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (checkbox) {
       event.stopPropagation();
       // Any non-plain click in between breaks a double-click (NOTES #25).
-      this.controller.resetDoubleClick();
+      this.state.resetDoubleClick();
       const nodeEl = checkbox.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
           // .wtv__checkbox is the styled native <input> itself. We deliberately DON'T
           // preventDefault: on a reused input the browser's canceled-activation steps
           // fire LATE (after microtasks) and would restore .checked to its pre-click
           // value, clobbering our write. Letting the native toggle stand means no
-          // cancellation + no restore. The controller still owns state — onCheckboxToggle
+          // cancellation + no restore. The state still owns it — onCheckboxToggle
           // re-syncs the box via its synchronous refresh, and the microtask below
           // re-asserts the authoritative value so a VETOING beforeCheckboxToggleCallback
           // (which refreshes nothing) still snaps the native toggle back.
-          this.controller.nodeCallbacks.onCheckboxToggle(node, { skipFocus: false });
+          this.state.nodeCallbacks.onCheckboxToggle(node, { skipFocus: false });
           queueMicrotask(() => {
-            const fresh = this.controller?.getNodeByPath(path);
+            const fresh = this.state?.getNodeByPath(path);
             if (fresh) {
               this._syncCheckboxState(
                 checkbox,
@@ -668,16 +668,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Toggle icon click
     const toggleIcon = target.closest('.wtv__toggle-icon') as HTMLElement;
     if (toggleIcon) {
-      this.controller.resetDoubleClick();
+      this.state.resetDoubleClick();
       const nodeEl = toggleIcon.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
           // toggleNodeExpanded honors shouldExpandAsAccordion and the
           // isCollapsible gate. Programmatic expandNodes / collapseNodes
           // callers still bypass the accordion.
-          this.controller.toggleNodeExpanded(path);
+          this.state.toggleNodeExpanded(path);
           return;
         }
       }
@@ -688,18 +688,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const nodeEl = (contentEl || target).closest('.wtv__node') as HTMLElement;
     const path = nodeEl?.getAttribute('data-tree-path');
     if (path) {
-      const node = this.controller.getNodeByPath(path);
+      const node = this.state.getNodeByPath(path);
       if (node) {
         const behavior = this.lastNodeConfig?.clickBehavior ?? 'expand-and-focus';
         const isPlainClick = !modifiers.ctrl && !modifiers.shift;
 
         // Manual double-click detection (the native dblclick is unreliable under
         // the flat diff reconciler — the first click bumps _rev and patches the
-        // row). On a detected double the controller fires onNodeDoubleClick (and,
+        // row). On a detected double the state fires onNodeDoubleClick (and,
         // in select mode, toggles expand/collapse); we consume the 2nd click so
         // the gesture reads as a single open, not a re-toggle.
-        if (!isPlainClick) this.controller.resetDoubleClick(); // NOTES #25
-        else if (this.controller.detectDoubleClick(node)) {
+        if (!isPlainClick) this.state.resetDoubleClick(); // NOTES #25
+        else if (this.state.detectDoubleClick(node)) {
           return;
         }
 
@@ -707,45 +707,45 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         // checkboxes shown toggles the checkbox instead of running the
         // normal click/select flow. Expand-on-click still fires.
         if (
-          this.controller.shouldClickToggleCheckbox &&
+          this.state.shouldClickToggleCheckbox &&
           !this._isReadonly &&
           this.lastNodeConfig?.isCheckboxesShown &&
           node.isSelectable &&
           isPlainClick
         ) {
-          this.controller.nodeCallbacks.onCheckboxToggle(node, { skipFocus: true });
+          this.state.nodeCallbacks.onCheckboxToggle(node, { skipFocus: true });
           if (behavior !== 'select' && node.hasChildren) {
-            this.controller.toggleNodeExpanded(path);
+            this.state.toggleNodeExpanded(path);
           }
           return;
         }
 
         if (behavior === 'expand-and-focus' && isPlainClick && node.hasChildren) {
           // Select + expand/collapse
-          this.controller.toggleNodeExpanded(path);
-          this.controller.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.toggleNodeExpanded(path);
+          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
         } else if (behavior === 'expand' && isPlainClick && node.hasChildren) {
           // Expand/collapse only, no selection
-          this.controller.toggleNodeExpanded(path);
+          this.state.toggleNodeExpanded(path);
         } else if (behavior === 'select' || !isPlainClick) {
           // Select only (ctrl/shift always selects regardless of behavior)
-          this.controller.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
         } else {
           // expand-and-focus on leaf, or expand on leaf — just select
-          this.controller.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
         }
       }
     }
   };
 
   private _onBodyKeydown = (event: KeyboardEvent) => {
-    if (!this.controller || this._isDisabled) return;
+    if (!this.state || this._isDisabled) return;
     const shift = event.shiftKey;
 
     // Consumer onTreeKeydown (can suppress everything) THEN the built-in
     // Ctrl/Cmd+C/X/V + Delete + Esc-cancel-cut shortcuts. When this consumes the
     // event, stop — the tree's own navigation below is skipped.
-    if (this.controller.handleKeydown(event)) {
+    if (this.state.handleKeydown(event)) {
       event.preventDefault();
       return;
     }
@@ -765,7 +765,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Ctrl/Cmd+A selects every node.
     if (matchesShortcut(event, 'Ctrl+A') || matchesShortcut(event, 'Meta+A')) {
       event.preventDefault();
-      this.controller.selectAll();
+      this.state.selectAll();
       return;
     }
 
@@ -773,13 +773,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       // Shift variants extend the selected range (a no-op in single selection mode).
       case 'ArrowDown':
         event.preventDefault();
-        if (shift) this.controller.navSelectNext();
-        else this.controller.navNextSibling();
+        if (shift) this.state.navSelectNext();
+        else this.state.navNextSibling();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        if (shift) this.controller.navSelectPrev();
-        else this.controller.navPrevSibling();
+        if (shift) this.state.navSelectPrev();
+        else this.state.navPrevSibling();
         break;
       // ArrowRight / ArrowLeft = forward (into / expand) / back (out / collapse) along the
       // reading direction: swapped in a right-to-left tree (WAI-ARIA tree RTL rule). Read live
@@ -788,78 +788,78 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       case 'ArrowLeft': {
         event.preventDefault();
         const isForward = (event.key === 'ArrowRight') !== isRtl(this.bodyEl ?? this.container);
-        if (isForward) this.controller.navInto();
-        else this.controller.navOut();
+        if (isForward) this.state.navInto();
+        else this.state.navOut();
         break;
       }
       case 'Backspace':
         event.preventDefault();
-        this.controller.navBackOut();
+        this.state.navBackOut();
         break;
       case 'Enter':
         // WAI-ARIA tree: Enter = the node's default action (expand / collapse).
         event.preventDefault();
-        this.controller.navToggle();
+        this.state.navToggle();
         break;
       case ' ': {
         // WAI-ARIA tree: Space toggles selection — the focused node's checkbox when
         // checkboxes are shown; otherwise the focused node in the selection
         // (multiple mode) / selects it (single mode).
         event.preventDefault();
-        const focused = this.controller.focusedNode;
+        const focused = this.state.focusedNode;
         if (!focused || !focused.isSelectable) break;
-        if (this.controller.isCheckboxesShown) {
-          if (!this._isReadonly) this.controller.nodeCallbacks.onCheckboxToggle(focused);
-        } else if (this.controller.selectionMode === 'multiple') {
-          this.controller.toggleFocusedSelect();
+        if (this.state.isCheckboxesShown) {
+          if (!this._isReadonly) this.state.nodeCallbacks.onCheckboxToggle(focused);
+        } else if (this.state.selectionMode === 'multiple') {
+          this.state.toggleFocusedSelect();
         } else {
-          this.controller.selectNode(focused.path);
+          this.state.selectNode(focused.path);
         }
         break;
       }
       case 'Home':
         event.preventDefault();
-        if (shift) this.controller.navSelectFirst();
-        else this.controller.navFirst();
+        if (shift) this.state.navSelectFirst();
+        else this.state.navFirst();
         break;
       case 'End':
         event.preventDefault();
-        if (shift) this.controller.navSelectLast();
-        else this.controller.navLast();
+        if (shift) this.state.navSelectLast();
+        else this.state.navLast();
         break;
       case 'PageDown':
         event.preventDefault();
-        if (shift) this.controller.navSelectPageDown();
-        else this.controller.navPageDown();
+        if (shift) this.state.navSelectPageDown();
+        else this.state.navPageDown();
         break;
       case 'PageUp':
         event.preventDefault();
-        if (shift) this.controller.navSelectPageUp();
-        else this.controller.navPageUp();
+        if (shift) this.state.navSelectPageUp();
+        else this.state.navPageUp();
         break;
       case 'Escape':
         // handleKeydown already consumed Escape when a cut was pending
         // (cancel-cut). Reaching here means no pending cut, so clear the
         // selected set. Checkboxes are deliberate state and stay put.
-        if (this.controller.getSelectedPaths().size > 0) {
-          this.controller.clearSelection();
+        if (this.state.getSelectedPaths().size > 0) {
+          this.state.clearSelection();
         }
         break;
     }
   };
 
   private _onBodyContextMenu = (event: MouseEvent) => {
-    if (!this.controller || this._isDisabled) return;
+    if (!this.state || this._isDisabled) return;
     const target = event.target as HTMLElement;
     const contentEl = target.closest('.wtv__node-content') as HTMLElement;
     const nodeEl = (contentEl || target).closest('.wtv__node') as HTMLElement;
     const path = nodeEl?.getAttribute('data-tree-path');
     if (path) {
-      const node = this.controller.getNodeByPath(path);
+      const node = this.state.getNodeByPath(path);
       if (node) {
-        this.controller.nodeCallbacks.onNodeRightClicked(node, event);
+        this.state.nodeCallbacks.onNodeRightClicked(node, event);
       }
-    } else if (this.controller.isContextMenuVisible) {
+    } else if (this.state.isContextMenuVisible) {
       // The browser's keyboard-initiated `contextmenu` (Shift+F10 / ContextMenu key)
       // targets the focused body — ours is already open, don't show the native one too.
       event.preventDefault();
@@ -867,7 +867,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyDragStart = (event: DragEvent) => {
-    if (!this.controller) return;
+    if (!this.state) return;
     if (this._isDisabled || this._isReadonly) {
       event.preventDefault();
       return;
@@ -876,16 +876,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const nodeEl = target.closest('.wtv__node') as HTMLElement;
     const path = nodeEl?.getAttribute('data-tree-path');
     if (path) {
-      const node = this.controller.getNodeByPath(path);
+      const node = this.state.getNodeByPath(path);
       if (node) {
-        this.controller.startDrag(node, event);
+        this.state.startDrag(node, event);
       }
     }
   };
 
   private _onBodyDragOver = (event: DragEvent) => {
     // Disabled / read-only: not a drop target (no preventDefault → the browser refuses the drop).
-    if (!this.controller || this._isDisabled || this._isReadonly) return;
+    if (!this.state || this._isDisabled || this._isReadonly) return;
     const target = event.target as HTMLElement;
     // Log only on first dragover or target change to reduce noise
     const targetDesc = target.tagName + '.' + target.className;
@@ -917,21 +917,21 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
-          this.controller.dragOver(node, event, contentEl);
+          this.state.dragOver(node, event, contentEl);
         }
       }
     } else {
       // Off any row: no longer over a refusing node (NOTES #22).
-      this.controller.clearRefusedDropHover();
+      this.state.clearRefusedDropHover();
     }
 
     // Empty tree or active drop placeholder dragover
     const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
     if (emptyOrPlaceholder) {
       this.log.DRAG.debug('dragover on the empty state / placeholder', emptyOrPlaceholder.className);
-      this.controller.handleEmptyTreeDragOver(event);
+      this.state.handleEmptyTreeDragOver(event);
     } else {
       const bodyHit = target.closest('.wtv__tree');
       if (bodyHit && !contentEl && !zoneEl) {
@@ -941,7 +941,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   };
 
   private _onBodyDragLeave = (event: DragEvent) => {
-    if (!this.controller) return;
+    if (!this.state) return;
     this._lastDragOverTarget = '';
     const related = event.relatedTarget as HTMLElement;
     const target = event.target as HTMLElement;
@@ -956,9 +956,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
-          this.controller.dragLeave(node, event);
+          this.state.dragLeave(node, event);
         }
       }
     }
@@ -967,16 +967,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // leaving the zone downwards stayed "inside" and the zone stuck engaged.
     const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
     if (emptyOrPlaceholder) {
-      this.controller.handleEmptyTreeDragLeave(event, emptyOrPlaceholder);
+      this.state.handleEmptyTreeDragLeave(event, emptyOrPlaceholder);
     }
   };
 
   private _onBodyDrop = (event: DragEvent) => {
-    if (!this.controller || this._isDisabled || this._isReadonly) return;
+    if (!this.state || this._isDisabled || this._isReadonly) return;
     // When the tree drop zone is on, the container also listens for `drop`. bodyEl
     // fully owns in-body drops (node / zone / empty, plus forwarding rejects to the
     // zone), so stop the event here to keep the container handler from double-placing.
-    if (this.controller.isTreeDropZoneEnabled) event.stopPropagation();
+    if (this.state.isTreeDropZoneEnabled) event.stopPropagation();
     const target = event.target as HTMLElement;
 
     // Check for drop zone (the pads live in their own layer, listened to like the body)
@@ -986,9 +986,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const path = zonesContainer?.getAttribute('data-tree-path');
       const position = zoneEl.getAttribute('data-drop-position') as DropPosition;
       if (path && position) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
-          this.controller.dropAt(node, position, event);
+          this.state.dropAt(node, position, event);
           return;
         }
       }
@@ -997,7 +997,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Check for empty tree drop (matches both .wtv__empty-state and active .wtv__empty-zone)
     const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
     if (emptyOrPlaceholder) {
-      this.controller.handleEmptyTreeDrop(event);
+      this.state.handleEmptyTreeDrop(event);
       return;
     }
 
@@ -1007,9 +1007,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
       const path = nodeEl?.getAttribute('data-tree-path');
       if (path) {
-        const node = this.controller.getNodeByPath(path);
+        const node = this.state.getNodeByPath(path);
         if (node) {
-          this.controller.drop(node, event);
+          this.state.drop(node, event);
         }
       }
     }
@@ -1023,11 +1023,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       target: target.tagName + '.' + target.className,
       related: related ? related.tagName + '.' + related.className : null
     });
-    this.controller?.handleTreeDragEnter(event);
+    this.state?.handleTreeDragEnter(event);
   };
 
   private _onBodyDragEnd = (event: DragEvent) => {
-    this.controller?._onNodeDragEnd(event);
+    this.state?._onNodeDragEnd(event);
   };
 
   /** Catches dragend from OTHER trees (cross-tree) and Esc cancellations.
@@ -1035,8 +1035,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    *  different shadow root the event never reaches our bodyEl. */
   private _onDocumentDragEnd = (event: DragEvent) => {
     // Cross-tree: the drag was last over one of OUR refusing rows → announce it (NOTES #22).
-    this.controller?.announceRefusedDrop();
-    this.controller?.cancelDrag();
+    this.state?.announceRefusedDrop();
+    this.state?.cancelDrag();
   };
 
   /**
@@ -1053,32 +1053,32 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _attachTouchDrag(): void {
     if (!this.bodyEl || this._touchDrag) return;
     this._touchDrag = createPointerDrag(this.bodyEl, {
-      longPressMs: () => this.controller?.touchDragDelay ?? 300,
+      longPressMs: () => this.state?.touchDragDelay ?? 300,
       threshold: 10, // a finger moving > 10px before the long press = a scroll
-      autoScroll: { isEnabled: () => !this.controller?.isTouchDragDenied },
+      autoScroll: { isEnabled: () => !this.state?.isTouchDragDenied },
       getSource: (target, event) => {
         // The touch gesture only starts a touch drag — off while disabled / read-only.
-        if (event.pointerType !== 'touch' || !this.controller || this._isDisabled || this._isReadonly) return null;
+        if (event.pointerType !== 'touch' || !this.state || this._isDisabled || this._isReadonly) return null;
         const row = target.closest('.wtv__node') as HTMLElement | null;
         const path = row?.getAttribute('data-tree-path');
-        return path && this.controller.getNodeByPath(path) ? row : null;
+        return path && this.state.getNodeByPath(path) ? row : null;
       },
       onStart: ({ source, x, y }) => {
-        const node = this.controller?.getNodeByPath(source.getAttribute('data-tree-path') ?? '');
+        const node = this.state?.getNodeByPath(source.getAttribute('data-tree-path') ?? '');
         if (!node) return false;
-        this.controller!.touchDragStart(node, x, y);
+        this.state!.touchDragStart(node, x, y);
       },
-      onMove: ({ target, x, y }) => this.controller?.touchDragMove(target, x, y),
-      onDrop: ({ target, event }) => this.controller?.touchDragDrop(target, event as PointerEvent),
-      onCancel: () => this.controller?.touchDragCancel(),
+      onMove: ({ target, x, y }) => this.state?.touchDragMove(target, x, y),
+      onDrop: ({ target, event }) => this.state?.touchDragDrop(target, event as PointerEvent),
+      onCancel: () => this.state?.touchDragCancel(),
     });
   }
 
   // Tree-level drop zone (isTreeDropZoneEnabled): container-level fallback so a
   // drop anywhere over the tree is accepted even when every node rejects it. The
-  // controller handlers no-op unless the flag is on, so these can attach always.
-  private _onContainerDragOver = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.controller?.handleTreeZoneDragOver(event); };
-  private _onContainerDrop = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.controller?.handleTreeZoneDrop(event); };
+  // state handlers no-op unless the flag is on, so these can attach always.
+  private _onContainerDragOver = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.state?.handleTreeZoneDragOver(event); };
+  private _onContainerDrop = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.state?.handleTreeZoneDrop(event); };
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
 
@@ -1089,15 +1089,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /**
    * Fast synchronous virtual scroll update.
-   * Bypasses the controller's queueMicrotask + state-change event pipeline.
+   * Bypasses the state's queueMicrotask + state-change event pipeline.
    * Computes the visible window, updates DOM positioning, and reconciles
    * only the node list — skips drag/drop/context-menu updates.
    */
   private _performScrollUpdate(): void {
-    if (!this.bodyEl || !this.controller || !this.vsSpacerEl || !this.vsContentEl || !this.lastSnapshot) return;
+    if (!this.bodyEl || !this.state || !this.vsSpacerEl || !this.vsContentEl || !this.lastSnapshot) return;
 
     const scrollTop = this.bodyEl.scrollTop;
-    const ctrl = this.controller;
+    const ctrl = this.state;
     const rowHeight = ctrl.resolvedRowHeight;
     const allNodes = ctrl.allVisibleFlatNodes;
 
@@ -1128,7 +1128,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.lastSnapshot.virtualOffsetY = offsetY;
     this._reconcileNodes(this.lastSnapshot);
 
-    // Sync controller state silently (so next getSnapshot() has correct scrollTop)
+    // Sync the state silently (so next getSnapshot() has correct scrollTop)
     ctrl.syncVirtualScrollTop(scrollTop);
   }
 
@@ -1152,7 +1152,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // the document-level dragend listener is a LIVE resource, attached in mount() /
     // activate() and removed in deactivate() / destroy().
     // Tree-level drop zone: fallback dragover/drop on the whole container (gated
-    // inside the controller handlers by isTreeDropZoneEnabled).
+    // inside the state handlers by isTreeDropZoneEnabled).
     if (this.container) {
       this.container.addEventListener('dragover', this._onContainerDragOver);
       this.container.addEventListener('drop', this._onContainerDrop);
@@ -1245,7 +1245,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.bodyEl.style.height = snapshot.virtualScrollContainerHeight;
     }
     // The window maths needs pixels; the height is any CSS length (`30rem`, `50vh`).
-    this.controller?.setVirtualViewportHeight(this.bodyEl.clientHeight);
+    this.state?.setVirtualViewportHeight(this.bodyEl.clientHeight);
 
     // Update spacer height (creates the correct scrollbar size)
     this.vsSpacerEl.style.height = `${snapshot.virtualTotalHeight}px`;
@@ -1255,7 +1255,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   private _autoMeasureRowHeight(): void {
-    if (!this.controller || this._vsMeasured) return;
+    if (!this.state || this._vsMeasured) return;
 
     const renderTarget = this.vsContentEl ?? this.bodyEl;
     if (!renderTarget) return;
@@ -1265,7 +1265,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const height = firstNode.getBoundingClientRect().height;
       if (height > 0) {
         this._vsMeasured = true;
-        this.controller.setMeasuredRowHeight(height);
+        this.state.setMeasuredRowHeight(height);
       }
     }
   }
@@ -1273,7 +1273,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   // ── State change handler ────────────────────────────────────────────
 
   private _onStateChange(snapshot: TreeViewStateSnapshot<T>): void {
-    if (!this.bodyEl || !this.controller) return;
+    if (!this.bodyEl || !this.state) return;
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
     // (filter, expand, collapse, data load), so the next scroll must not early-exit
@@ -1325,7 +1325,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // container while a drag hovers it (isDropPlaceholderActive is set by the
     // container-level tree-zone dragover handler).
     if (this.container) {
-      const zoneActive = !!this.controller?.isTreeDropZoneEnabled && snapshot.isDropPlaceholderActive;
+      const zoneActive = !!this.state?.isTreeDropZoneEnabled && snapshot.isDropPlaceholderActive;
       this.container.classList.toggle('wtv__tree-drop-zone--active', zoneActive);
     }
 
@@ -1336,8 +1336,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.log.RENDER.debug('config-change → full render, focusedNodeClass =', JSON.stringify(nodeConfig.focusedNodeClass));
     this.lastNodeConfig = nodeConfig;
     // Re-render toggle icons if icon classes changed
-    if (this.controller) {
-      this._fullRender(this.controller.getSnapshot());
+    if (this.state) {
+      this._fullRender(this.state.getSnapshot());
     }
   }
 
@@ -1350,7 +1350,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _reconcileNodes(snapshot: TreeViewStateSnapshot<T>): void {
     const target = this._renderTarget;
-    if (!target || !this.controller) return;
+    if (!target || !this.state) return;
 
     const nodes = snapshot.flatNodesToRender;
     const newKeys = new Set<string>();
@@ -1368,7 +1368,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const emptyZone = target.querySelector('.wtv__empty-zone');
     if (emptyZone) emptyZone.remove();
 
-    if (this.bodyEl) setAttr(this.bodyEl, 'aria-multiselectable', this.controller.selectionMode === 'multiple' ? 'true' : null);
+    if (this.bodyEl) setAttr(this.bodyEl, 'aria-multiselectable', this.state.selectionMode === 'multiple' ? 'true' : null);
     const positions = this._ariaPositionMap();
 
     // Build/update nodes
@@ -1480,7 +1480,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    *  window): siblings are the visible children of the same parent (search-filter aware).
    *  Rebuilt only when the tree's cached visible list changes. */
   private _ariaPositionMap(): Map<string, [number, number]> {
-    const all = this.controller?.tree?.visibleFlatNodes ?? [];
+    const all = this.state?.tree?.visibleFlatNodes ?? [];
     if (this._ariaPositions && this._ariaPositionsOf === all) return this._ariaPositions;
     const counts = new Map<string, number>();
     const map = new Map<string, [number, number]>();
@@ -1617,7 +1617,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** Row-level loading state while an async beforeExpandCallback is pending: `aria-busy` +
    *  `data-loading` on the row (the toggle shows the spinner, see _applyToggleClasses). */
   private _applyExpandPending(el: HTMLElement, node: LTreeNode<T>): void {
-    if (this.controller?.isExpandPending(node.path)) {
+    if (this.state?.isExpandPending(node.path)) {
       el.setAttribute('aria-busy', 'true');
       el.setAttribute('data-loading', '');
     } else {
@@ -1640,7 +1640,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       toggle.classList.add('wtv__clickable');
       // Async beforeExpandCallback in flight (lazy load): spinner in place of the glyph.
-      if (this.controller?.isExpandPending(node.path)) toggle.classList.add('wtv__toggle-icon--loading');
+      if (this.state?.isExpandPending(node.path)) toggle.classList.add('wtv__toggle-icon--loading');
     } else {
       // Leaf node: just the leaf spacer/marker. The per-node icon is NO LONGER folded
       // into the toggle slot — it renders as a dedicated .wtv__node-icon element on every
@@ -1662,8 +1662,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    */
   private _applyNodeIcon(row: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
     const cfg = this.lastNodeConfig;
-    const hasSupport = !!this.controller?.hasIconSupport;
-    const value = hasSupport ? this.controller!.getNodeIcon(node) : null;
+    const hasSupport = !!this.state?.hasIconSupport;
+    const value = hasSupport ? this.state!.getNodeIcon(node) : null;
     const html = value ? (this.config.renderNodeIcon?.(value, node, ctx) ?? '') : '';
     const align = !!cfg?.shouldAlignNodeIcons;
     const shouldShow = !!html || (align && hasSupport);
@@ -1686,7 +1686,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       iconEl.innerHTML = html;
       this._iconHtml.set(iconEl, html);
     }
-    const color = this.controller?.getNodeIconColor ? this.controller.getNodeIconColor(node) : null;
+    const color = this.state?.getNodeIconColor ? this.state.getNodeIconColor(node) : null;
     if (color) iconEl.style.color = color;
     else iconEl.style.removeProperty('color');
   }
@@ -1699,7 +1699,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * / --base-icon-indeterminate. Indeterminate is a MODIFIER CLASS + aria-checked="mixed"
    * (NOT the native .indeterminate DOM property) so it survives the diff reconciler +
    * virtual-scroll recycling. The delegated click handler preventDefaults so only the
-   * controller toggles the state.
+   * state toggles it.
    */
   private _buildCheckbox(checked: boolean, indeterminate: boolean): HTMLInputElement {
     const input = document.createElement('input');
@@ -1754,7 +1754,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Row id from the PATH (unique per tree), never node.id (a pasted copy keeps its
     // source id) — aria-activedescendant and any id lookup must hit exactly one row.
-    if (this.controller) el.id = rowDomId(this.controller.treeId, node.path);
+    if (this.state) el.id = rowDomId(this.state.treeId, node.path);
 
     // Flat mode indent
     if (snapshot.isFlatRenderingEnabled) {
@@ -1793,7 +1793,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // matches svelte-treeview (draggable on .stv__node-content). The delegated
     // dragstart/touch handlers still resolve the row via closest('.wtv__node'),
     // so the grab handle is the content pill (excludes the indent gutter/toggle).
-    if (this.controller?.dragDropMode !== 'none' && this.controller?.getNodeIsDraggable(node)) {
+    if (this.state?.dragDropMode !== 'none' && this.state?.getNodeIsDraggable(node)) {
       content.setAttribute('draggable', 'true');
       content.classList.add('wtv__node-content--draggable');
     }
@@ -1803,7 +1803,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Selected / focus state — applied to the row content so the styling
     // affects only the visible row, not the children indentation area below.
-    // Selected is read from the controller-owned set (snapshot), NOT node.isSelected:
+    // Selected is read from the state-owned set (snapshot), NOT node.isSelected:
     // the set survives a data rebuild, so the selection isn't lost when a config change
     // re-inserts the data (web-grid-style state-off-nodes).
     if (snapshot.selectedPaths.has(node.path)) {
@@ -2051,7 +2051,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Update draggable — on the content pill (matches _createNodeElement)
     if (content) {
-      if (this.controller?.dragDropMode !== 'none' && this.controller?.getNodeIsDraggable(node)) {
+      if (this.state?.dragDropMode !== 'none' && this.state?.getNodeIsDraggable(node)) {
         content.setAttribute('draggable', 'true');
         content.classList.add('wtv__node-content--draggable');
       } else {
@@ -2130,7 +2130,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   }
 
   private _updateDropZones(snapshot: TreeViewStateSnapshot<T>): void {
-    if (!this.bodyEl || !this.controller || !this.container) return;
+    if (!this.bodyEl || !this.state || !this.container) return;
 
     const shouldShow =
       this.lastNodeConfig?.dropZoneMode === 'floating' &&
@@ -2156,13 +2156,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     );
     if (!hoveredEl) return;
 
-    const node = this.controller.getNodeByPath(snapshot.hoveredNodeForDropPath!);
+    const node = this.state.getNodeByPath(snapshot.hoveredNodeForDropPath!);
     if (!node) return;
 
     const row = hoveredEl.querySelector('.wtv__node-row') as HTMLElement;
     if (!row) return;
 
-    const allowedPositions = this.controller.getNodeAllowedDropPositions(node);
+    const allowedPositions = this.state.getNodeAllowedDropPositions(node);
     const layout = this.lastNodeConfig?.dropZoneLayout || 'around';
     const start = this.lastNodeConfig?.dropZoneStart ?? 33;
     const maxWidth = this.lastNodeConfig?.dropZoneMaxWidth ?? '120px';
@@ -2202,7 +2202,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * (node, point) and reports its own close back to the engine.
    */
   private _updateContextMenu(snapshot: TreeViewStateSnapshot<T>): void {
-    if (!this.controller || !this.container) return;
+    if (!this.state || !this.container) return;
     const node = snapshot.contextMenuNode;
     if (!snapshot.isContextMenuVisible || !node || !this._isActive) {
       this._closeMenu();
@@ -2217,16 +2217,16 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const config = this.config;
     // One surface ctx per open: every item callback, onClick and submenu share it.
     const ctx = config.contextMenuContext?.(node)
-      ?? (this.controller.nodeRef(node) as unknown as TreeMenuContext<T>);
+      ?? (this.state.nodeRef(node) as unknown as TreeMenuContext<T>);
     const renderMenu = config.renderContextMenuCallback;
-    const items = renderMenu ? [] : this.controller.contextMenuCallbackCb?.(node) ?? [];
+    const items = renderMenu ? [] : this.state.contextMenuCallbackCb?.(node) ?? [];
     const menu = openMenu(items, ctx, {
       at: { x: snapshot.contextMenuX + snapshot.contextMenuXOffset, y: snapshot.contextMenuY + snapshot.contextMenuYOffset },
       host: this.container,
       shouldFocusFirst: isFromKeyboard,
       returnFocusTo: this.bodyEl,
       // The node's text names the menu: the phone sheet's header and the menu's aria-label.
-      title: this.controller.tree?.getNodeDisplayValue(node) || String(node.id),
+      title: this.state.tree?.getNodeDisplayValue(node) || String(node.id),
       // Floating / sheet / drawer + drawer side: core `menu-presentation` / `menu-side` (effective config).
       ...config.menuPresentationOptions?.(),
       // The tree's own strings: a lazy submenu's loading row, the sheet header's back / close buttons.
@@ -2240,7 +2240,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         ? (item, el) => config.renderContextMenuItemCallback!(item as TreeMenuItem<T>, node, el)
         : undefined,
       renderMenuCallback: renderMenu
-        ? (el) => renderMenu(node, () => this.controller?.closeContextMenu(), el)
+        ? (el) => renderMenu(node, () => this.state?.closeContextMenu(), el)
         : undefined,
       runAction: (item, { triggerElement, sourceEvent }) =>
         config.activateContextMenuItem?.(item as TreeMenuItem<T>, ctx, triggerElement, sourceEvent),
@@ -2248,12 +2248,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (this._menu !== menu) return; // replaced by a newer open
         this._menu = null;
         this._menuKey = null;
-        if (this.controller?.isContextMenuVisible) this.controller.closeContextMenu();
+        if (this.state?.isContextMenuVisible) this.state.closeContextMenu();
       },
     });
     if (!menu.isOpen) {
       // Nothing visible to show — keep the engine in sync.
-      this.controller.closeContextMenu();
+      this.state.closeContextMenu();
       return;
     }
     this._menu = menu;
@@ -2273,7 +2273,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * row, with the first item focused. Returns `false` when there is no menu to open.
    */
   private _openContextMenuFromKeyboard(): boolean {
-    const ctrl = this.controller;
+    const ctrl = this.state;
     if (!ctrl || !this.bodyEl) return false;
     if (!ctrl.hasContextMenuRenderer && !ctrl.contextMenuCallbackCb) return false;
     const node = ctrl.focusedNode;

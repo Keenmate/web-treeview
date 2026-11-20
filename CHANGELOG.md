@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
   Before: `new TreeEngine({ data, idMember: 'id', pathMember: 'path' })` — after:
   `new TreeViewState({ data })`. The source file moved `src/controller/tree-engine.ts` →
-  `src/controller/tree-view-state.ts`. `TreeViewEngine.getEngine()` keeps its name and returns the `TreeViewState`.
+  `src/controller/tree-view-state.ts`.
+- BREAKING: `TreeViewEngine.getEngine()` → `getState()` (it returns the `TreeViewState`; no alias).
 - `TreeViewState` gets the element's defaults (rulebook C-CA-37, one source: `ENGINE_DEFAULTS` from the input
   table, the same helper `TreeViewEngine` uses) for every config key it shares with the element: a bare
   `new TreeViewState({ data })` reads `id` / `path` / `displayValue` (before: no `idMember` / `pathMember` was a

@@ -11375,13 +11375,13 @@
             },
             {
               "kind": "method",
-              "name": "getEngine",
+              "name": "getState",
               "return": {
                 "type": {
                   "text": "TreeViewState<T>"
                 }
               },
-              "description": "The internal engine — for renderer authors / advanced use; not part of the public API."
+              "description": "The tree's `TreeViewState` (the headless state the renderer mounts on) — for renderer authors / advanced use."
             },
             {
               "kind": "field",

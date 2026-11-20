@@ -134,7 +134,7 @@ src/
 
 ### Three-Layer Architecture
 1. **`WebTreeViewElement<T>`** (`web-component.ts`) — Custom element wrapper. Extends core `BlissElement`, uses Shadow DOM, proxies attributes/properties to the facade, dispatches `CustomEvent`s via `emit()` (each with an `on*` twin). `el.controller` is the public `TreeViewController` facade.
-2. **`TreeViewEngine<T>`** (`treeview.ts`) — Facade wrapping TreeViewState + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Public: `new TreeViewEngine(container, options, renderer?)` for a custom renderer, same defaults as the element (`ENGINE_DEFAULTS`); `getEngine()` returns its `TreeViewState`.
+2. **`TreeViewEngine<T>`** (`treeview.ts`) — Facade wrapping TreeViewState + TreeViewRenderer; adapts the public one-ctx callbacks to the engine's internal signatures (memoized). Public: `new TreeViewEngine(container, options, renderer?)` for a custom renderer, same defaults as the element (`ENGINE_DEFAULTS`); `getState()` returns its `TreeViewState`.
 3. **`TreeViewState<T>`** (`controller/tree-view-state.ts`, public, headless; was `TreeEngine`) — All state & logic: multi-select, clipboard, navigation, drag-and-drop, context menu, progressive rendering. Uses `LTree` for tree data.
 4. **`DomRenderer<T>`** (`renderer/dom-renderer.ts`) — Default renderer with flat DOM, event delegation, keyed reconciliation, keyboard handling.
 

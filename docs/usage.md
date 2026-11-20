@@ -107,7 +107,7 @@ All attributes use kebab-case. Equivalent camelCase property setters exist on th
 | `search-value-member` | `string` | — | Property name for search text (defaults to display value) |
 | `order-member` | `string` | — | Property name for sibling order (ascending; ties by display value) |
 | `allowed-drop-positions-member` | `string` | — | Property name for per-node allowed drop positions array |
-| `icon-member` | `string` | — | Property name for per-node icon CSS class(es) |
+| `icon-member` | `string` | — | Property name for the per-node icon value (see [Node icons](#node-icons)) |
 
 ### Behavior
 
@@ -259,6 +259,32 @@ coalesced update runs, the assigned value). Removing the attribute (or assigning
 build empties the set. For a silent replace use `clearSelection(undefined, { isSilent: true })` +
 `selectNodes(paths, { isSilent: true })` (and `uncheckAll` / `checkNodes` likewise).
 
+### Node icons
+
+A node's icon VALUE comes from `iconMember` / `getIconCallback({ node })` and is drawn by core
+`renderIcon` into the node's `<span class="wtv__node-icon">` wrapper (between the toggle / checkbox and
+the label; colour via `iconColorMember` / `getIconColorCallback` / `--wtv-node-icon-color`). First match wins:
+
+1. starts with `<` (an `<svg>`, an `<img>`) → markup, as is (escape your data in it);
+2. a built-in name (`check`, `close`, `user`, `settings`, `delete`, … — the `--base-icon-*` glyphs) → a masked
+   `<span class="km-icon wtv__icon wtv__icon--<name>">` in `currentColor`; reserved, no hook sees it;
+3. this tree's `renderIconCallback(name, ctx)` (`ctx.node` + the render state + `controller` / `element`);
+4. the page-wide `window.components.renderIconCallback(name, ctx)` (every Keenmate component);
+5. a class list (`fa-solid fa-folder`, `bi-gear`) → icon font `<i class="wtv__icon fa-solid fa-folder" aria-hidden="true">`;
+6. anything else (an emoji) → text.
+
+A hook answers a string (`''` = no icon) or `null` / `undefined` = not mine (the next rule decides).
+No value → no wrapper, unless `shouldAlignNodeIcons` reserves the column.
+
+```js
+tree.iconMember = 'icon';                       // data: { icon: 'lucide-folder' } / { icon: 'fa-solid fa-user' }
+tree.renderIconCallback = (name) => name.startsWith('lucide-') ? lucideSvg(name.slice(7)) : null;
+tree.getIconCallback = ({ node }) => node.data.svg; // per-node markup: return it as the value
+```
+
+An icon font (FontAwesome, …) must reach the shadow root — inject its CSS through `customStyles` /
+`window.components['web-treeview'].customStyles`.
+
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
 
 | Property | Returns | Description |
@@ -272,7 +298,7 @@ build empties the set. For a silent replace use `clearSelection(undefined, { isS
 | `getIsDropAllowedCallback` | `boolean` | Dynamic drop-allowed check |
 | `getIsCollapsibleCallback` | `boolean` | Dynamic collapsible check |
 | `getAllowedDropPositionsCallback` | `DropPosition[] \| null` | Dynamic per-position constraint |
-| `getIconCallback` | `string \| null` | Per-node icon value (overrides `iconMember`) — a class list or an emoji / symbol |
+| `getIconCallback` | `string \| null` | Per-node icon value (overrides `iconMember`) — markup, a built-in name, a name for `renderIconCallback`, a class list or an emoji (see [Node icons](#node-icons)) |
 | `getIconColorCallback` | `string \| null` | Per-node icon color (overrides `iconColorMember`) |
 | `getNodeClassCallback` | `string \| null` | Extra class(es) on the row (`.wtv__node`) |
 | `getNodeContentClassCallback` | `string \| null` | Extra class(es) on `.wtv__node-content` |
@@ -288,7 +314,7 @@ build empties the set. For a silent replace use `clearSelection(undefined, { isS
 | Property | Signature | Description |
 |----------|-----------|-------------|
 | `renderNodeCallback` | `({ node, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }) => string \| Node \| null \| undefined \| false` | The row's content: string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden. Re-run only when the node's version or render state changes |
-| `renderIconCallback` | `({ node, value, iconElement, …renderState }) => void` | Custom per-node icon (SVG / unicode / markup) into `iconElement` |
+| `renderIconCallback` | `(name, { node, …renderState, controller, element, component, prefix }) => string \| null \| undefined` | This tree's icon hook: maps an icon NAME to markup; `null` / `undefined` = not mine (the page-wide hook decides), `''` = no icon. See [Node icons](#node-icons) |
 | `renderEmptyStateCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | "No items to display" (`null` = the built-in `messages.noData` / `messages.noResults` label, `false` = hidden) |
 | `renderEmptyZoneCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Drop zone in an empty tree (`null` = the built-in box, `false` = hidden) |
 | `renderLoadingCallback` | `({ component, context, containerElement, element, label }) => void \| (() => void)` | The `isLoading` overlay (core `LoaderRenderContext`, `context: 'overlay'`); may return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; neither → the default `.wtv__loader` |

@@ -185,12 +185,13 @@ export interface SortContext<T = any> extends TreeViewContext<T> {
 /** ctx of `renderNodeCallback`: the node and its render state (the callback RETURNS the content). */
 export interface NodeRenderCallbackContext<T = any> extends NodeContext<T>, NodeRenderContext {}
 
-/** ctx of `renderIconCallback`. */
+/** ctx of `renderIconCallback(name, ctx)` — core's icon-hook context (`component`, `element`, `prefix`)
+ *  plus the node, its render state and `controller`. */
 export interface IconRenderContext<T = any> extends NodeContext<T>, NodeRenderContext {
-  /** The resolved icon value (iconMember / getIconCallback), or null. */
-  value: string | null;
-  /** The `.wtv__node-icon` element to populate. */
-  iconElement: HTMLElement;
+  /** `'web-treeview'`. */
+  component: string;
+  /** `'wtv'` — the icon-font `<i>` gets `wtv__icon`. */
+  prefix: string;
 }
 
 /** ctx of the region render callbacks (empty state, empty drop zone, header, footer) — they RETURN the content. */

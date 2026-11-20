@@ -43,12 +43,8 @@ import { openTreeLayer } from './layers';
 import { rowDomId } from '../helpers/string-helpers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
 
-/** An icon value that reads as CSS classes (`fa-solid fa-user`) goes on the element's class;
- *  anything else (emoji, symbol, text) is rendered as the element's text. */
 /** The drop pad a position shows (`labels.dropBefore` / `labels.dropAfter` / `labels.dropChild` keys). */
 const DROP_PAD_LABEL = { before: 'labels.dropBefore', after: 'labels.dropAfter', child: 'labels.dropChild' } as const satisfies Record<DropPosition, keyof TreeViewLabels>;
-
-const ICON_CLASS_LIST = /^\s*-?[A-Za-z_][\w-]*(\s+-?[A-Za-z_][\w-]*)*\s*$/;
 
 /** Add space-separated class string to an element (classList.add doesn't support spaces) */
 function addClasses(el: HTMLElement, classes: string): void {
@@ -332,6 +328,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   updateConfig(config: Partial<RendererConfig<T>>): void {
     const prevNodeCb = this.config.renderNodeCallback;
+    const prevIconCb = this.config.renderIconCallback;
     Object.assign(this.config, config);
     if ('labels' in config) this._refreshLabels();
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
@@ -355,7 +352,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // brings the built-in label back).
     const isNodeCbChanged = 'renderNodeCallback' in config && config.renderNodeCallback !== prevNodeCb;
     if (isNodeCbChanged) this._nodeRenderGen++;
-    if ((isNodeCbChanged || config.renderNodeCallback || config.renderIconCallback) && this.controller) {
+    const isIconCbChanged = 'renderIconCallback' in config && config.renderIconCallback !== prevIconCb;
+    if ((isNodeCbChanged || config.renderNodeCallback || isIconCbChanged) && this.controller) {
       this._fullRender(this.controller.getSnapshot());
     }
   }
@@ -1645,54 +1643,44 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
+  /** The markup last written into each `.wtv__node-icon` wrapper. */
+  private _iconHtml = new WeakMap<HTMLElement, string>();
+
   /**
-   * Create / refresh / remove the dedicated per-node icon element (.wtv__node-icon) in a
-   * row, for EVERY node. VALUE from iconMember/iconCallback; default render is a class on an
-   * <i> (`<i class="wtv__node-icon {value}">`, FontAwesome-friendly), overridable via
-   * renderIconCallback (which populates a <span>). COLOR from iconColorMember/iconColorCallback.
-   * Reserves the column via shouldAlignNodeIcons. Sits between the toggle/checkbox and content.
+   * Create / refresh / remove the dedicated per-node icon wrapper (`<span class="wtv__node-icon">`)
+   * in a row, for EVERY node with an icon value. VALUE from iconMember / iconCallback; the markup
+   * inside is core `renderIcon` (via `renderNodeIcon`: markup → built-in name → renderIconCallback →
+   * page-wide hook → icon-font `<i class="wtv__icon …">` → text). COLOR from iconColorMember /
+   * iconColorCallback on the wrapper. No icon → no wrapper, unless shouldAlignNodeIcons reserves
+   * the column. Sits between the toggle/checkbox and content.
    */
   private _applyNodeIcon(row: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
     const cfg = this.lastNodeConfig;
-    const useCallback = !!this.config.renderIconCallback;
-    const value = this.controller?.hasIconSupport ? this.controller.getNodeIcon(node) : null;
-    const color = this.controller?.getNodeIconColor ? this.controller.getNodeIconColor(node) : null;
+    const hasSupport = !!this.controller?.hasIconSupport;
+    const value = hasSupport ? this.controller!.getNodeIcon(node) : null;
+    const html = value ? (this.config.renderNodeIcon?.(value, node, ctx) ?? '') : '';
     const align = !!cfg?.shouldAlignNodeIcons;
-    const hasSupport = !!(this.controller?.hasIconSupport || useCallback);
-    const shouldShow = useCallback || !!value || (align && hasSupport);
+    const shouldShow = !!html || (align && hasSupport);
 
     let iconEl = row.querySelector(':scope > .wtv__node-icon') as HTMLElement | null;
     if (!shouldShow) {
       iconEl?.remove();
       return;
     }
-
-    // <span> for the callback path (consumer populates), <i> for the default class path.
-    const wantTag = useCallback ? 'SPAN' : 'I';
-    if (iconEl && iconEl.tagName !== wantTag) {
-      iconEl.remove();
-      iconEl = null;
-    }
     if (!iconEl) {
-      iconEl = document.createElement(useCallback ? 'span' : 'i');
+      iconEl = document.createElement('span');
       const content = row.querySelector(':scope > .wtv__node-content');
       row.insertBefore(iconEl, content);
     }
 
-    // Full className reset each time removes stale value classes (diff reconciler reuses rows).
-    const base = 'wtv__node-icon' + (align ? ' wtv__node-icon--aligned' : '');
-    if (useCallback) {
-      iconEl.className = base;
-      iconEl.innerHTML = '';
-      this.config.renderIconCallback!(node, value, iconEl, ctx);
-    } else if (value && !ICON_CLASS_LIST.test(value)) {
-      // Not a class list (emoji / symbol / text) — render the value itself.
-      iconEl.className = base;
-      iconEl.textContent = value;
-    } else {
-      iconEl.className = base + (value ? ' ' + value : '');
-      iconEl.textContent = '';
+    const className = 'wtv__node-icon' + (align ? ' wtv__node-icon--aligned' : '');
+    if (iconEl.className !== className) iconEl.className = className;
+    // Touch the DOM only on a change (the diff reconciler calls this on every pass).
+    if (this._iconHtml.get(iconEl) !== html) {
+      iconEl.innerHTML = html;
+      this._iconHtml.set(iconEl, html);
     }
+    const color = this.controller?.getNodeIconColor ? this.controller.getNodeIconColor(node) : null;
     if (color) iconEl.style.color = color;
     else iconEl.style.removeProperty('color');
   }

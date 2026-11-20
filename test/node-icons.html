@@ -14,20 +14,28 @@
     <main>
         <h1>per-node icons</h1>
         <p>Targeted by <code>e2e/node-icons.spec.ts</code>. Icons render on EVERY node
-           (branch + leaf) as a dedicated <code>.wtv__node-icon</code> element.</p>
+           (branch + leaf) inside a dedicated <code>.wtv__node-icon</code> wrapper (core <code>renderIcon</code>).</p>
 
-        <h2>default (class on &lt;i&gt; + icon-color-member)</h2>
+        <h2>default (icon-font classes → &lt;i class="wtv__icon …"&gt; + icon-color-member)</h2>
         <div class="tree"><web-treeview id="default" expand-level="3" icon-member="icon" icon-color-member="color" align-node-icons></web-treeview></div>
 
         <h2>getIconCallback returning emoji (text, not a class)</h2>
         <div class="tree"><web-treeview id="emoji" expand-level="3"></web-treeview></div>
 
-        <h2>renderIconCallback (inline SVG / custom)</h2>
-        <div class="tree"><web-treeview id="custom" expand-level="3" icon-member="icon"></web-treeview></div>
+        <h2>renderIconCallback (element hook) + the page-wide hook</h2>
+        <div class="tree"><web-treeview id="custom" expand-level="3" icon-member="icon" align-node-icons="false"></web-treeview></div>
     </main>
 
     <script type="module">
-        import '/src/index.ts';
+        // The page-wide hook, set before core loads (core adopts a plain property assigned earlier).
+        window.__seen = { element: [], page: [] };
+        window.components = window.components || {};
+        window.components.renderIconCallback = (name) => {
+            window.__seen.page.push(name);
+            return name === 'both' || name === 'page-only' ? '<b data-hook="page">P</b>' : null;
+        };
+
+        import('/src/index.ts');
 
         const data = [
             { id: 1, path: '1', name: 'Region', icon: 'fa-sitemap', color: '#7c3aed' },
@@ -35,21 +43,32 @@
             { id: 3, path: '1.1.1', name: 'Employee', icon: 'fa-user' },
             { id: 4, path: '1.2', name: 'Branch', icon: 'fa-building' }
         ];
+        const hooked = [
+            { id: 1, path: '1', name: 'Both hooks', icon: 'both' },
+            { id: 2, path: '1.1', name: 'Page hook only', icon: 'page-only' },
+            { id: 3, path: '1.1.1', name: 'Built-in', icon: 'check' },
+            { id: 4, path: '1.2', name: 'Nobody', icon: 'fa-solid fa-building' },
+            { id: 5, path: '1.3', name: 'Markup', icon: '<svg data-testid="raw-svg" width="8" height="8"></svg>' },
+            { id: 6, path: '1.4', name: 'No icon', icon: '' }
+        ];
 
         customElements.whenDefined('web-treeview').then(() => {
             const d = document.getElementById('default');
             const c = document.getElementById('custom');
             const e = document.getElementById('emoji');
-            const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data };
-            Object.assign(d, common);
+            const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
+            Object.assign(d, common, { nodes: data });
             Object.assign(e, common, {
+                nodes: data,
                 getIconCallback: ({ node }) => (node.path === '1.2' ? 'fa-building' : node.path === '1' ? '🗂️' : '👤')
             });
             Object.assign(c, common, {
-                renderIconCallback: ({ value, iconElement: iconEl }) => {
-                    iconEl.setAttribute('data-testid', 'custom-icon');
-                    iconEl.setAttribute('data-value', value ?? '');
-                    iconEl.textContent = '★';
+                nodes: hooked,
+                renderIconCallback: (name, ctx) => {
+                    window.__seen.element.push(name);
+                    return name === 'both'
+                        ? `<b data-hook="element" data-path="${ctx.node.path}" data-component="${ctx.component}" data-prefix="${ctx.prefix}" data-has-controller="${!!ctx.controller}" data-level="${ctx.level}">E</b>`
+                        : null;
                 }
             });
         });

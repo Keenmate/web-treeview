@@ -58,10 +58,12 @@ export interface RendererConfig<T> {
    *  (string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden).
    *  Receives the node and the NodeRenderContext (device + container + live node state). */
   renderNodeCallback?: (node: LTreeNode<T>, ctx: NodeRenderContext) => SlotResult;
-  /** Custom per-node icon renderer. Receives the node, the resolved icon VALUE
-   *  (from iconMember/iconCallback), the `.wtv__node-icon` element to populate, and the
-   *  NodeRenderContext. Wins over the default `<i class="wtv__node-icon {value}">`. */
-  renderIconCallback?: (node: LTreeNode<T>, value: string | null, iconEl: HTMLElement, ctx: NodeRenderContext) => void;
+  /** The node icon's markup for a resolved icon VALUE (iconMember / iconCallback) — core `renderIcon`
+   *  (markup → built-in name → the instance `renderIconCallback` → the page-wide one → icon-font
+   *  `<i class="wtv__icon …">` → text), drawn INTO the `.wtv__node-icon` wrapper. `''` = no icon. */
+  renderNodeIcon?: (value: string, node: LTreeNode<T>, ctx: NodeRenderContext) => string;
+  /** The instance icon hook — only compared here: a changed one re-paints the icons. */
+  renderIconCallback?: unknown;
   /** Informational display when the tree has no data (e.g. "No items to display"). The result is read by
    *  core `renderSlot` (string = HTML, Node = mounted, `null` / `undefined` = the built-in text, `false` = hidden). */
   renderEmptyStateCallback?: () => SlotResult;

@@ -13,8 +13,8 @@
 <body>
     <main>
         <h1>render context</h1>
-        <p>Targeted by <code>e2e/render-context.spec.ts</code>. renderIconCallback stamps the
-           NodeRenderContext fields onto the <code>.wtv__node-icon</code> element's attributes.</p>
+        <p>Targeted by <code>e2e/render-context.spec.ts</code>. renderIconCallback returns markup stamped
+           with the NodeRenderContext fields (inside the <code>.wtv__node-icon</code> wrapper).</p>
         <div class="tree"><web-treeview id="tree" expand-level="3" icon-member="icon" selection-mode="multiple" show-checkboxes></web-treeview></div>
     </main>
 
@@ -28,19 +28,10 @@
         customElements.whenDefined('web-treeview').then(() => {
             Object.assign(document.getElementById('tree'), {
                 idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data,
-                renderIconCallback: (ctx) => {
-                    const iconEl = ctx.iconElement;
-                    iconEl.setAttribute('data-testid', 'ctx');
-                    iconEl.setAttribute('data-device', ctx.deviceClass);
-                    iconEl.setAttribute('data-level', String(ctx.level));
-                    iconEl.setAttribute('data-haschildren', String(ctx.hasChildren));
-                    iconEl.setAttribute('data-expanded', String(ctx.isExpanded));
-                    iconEl.setAttribute('data-checked', String(ctx.isChecked));
-                    iconEl.setAttribute('data-selected', String(ctx.isSelected));
-                    iconEl.setAttribute('data-focused', String(ctx.isFocused));
-                    iconEl.setAttribute('data-cw', String(ctx.container.width));
-                    iconEl.textContent = '•';
-                }
+                renderIconCallback: (name, ctx) => `<span data-testid="ctx" data-device="${ctx.deviceClass}"`
+                    + ` data-level="${ctx.level}" data-haschildren="${ctx.hasChildren}" data-expanded="${ctx.isExpanded}"`
+                    + ` data-checked="${ctx.isChecked}" data-selected="${ctx.isSelected}" data-focused="${ctx.isFocused}"`
+                    + ` data-cw="${ctx.container.width}">•</span>`
             });
         });
     </script>

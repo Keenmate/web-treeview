@@ -401,7 +401,7 @@ tree.nodes = someRows;    // populated → the tree</code></pre>
     <thead><tr><th>Callback</th><th>Signature</th><th>Renders</th></tr></thead>
     <tbody>
         <tr><td><code>renderNodeCallback</code></td><td><code>({ node, isExpanded, level, &hellip; }) =&gt; string | Node | null | undefined | false</code></td><td>a node row's content (<code>null</code> = the built-in label, <code>false</code> = hidden)</td></tr>
-        <tr><td><code>renderIconCallback</code></td><td><code>({ node, value, iconElement, &hellip; }) =&gt; void</code></td><td>the per-node icon (SVG/unicode/markup)</td></tr>
+        <tr><td><code>renderIconCallback</code></td><td><code>(name, { node, &hellip; }) =&gt; string | null</code></td><td>maps an icon name to markup (<code>null</code> = not mine)</td></tr>
         <tr><td><code>renderHeaderCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>chrome above the tree</td></tr>
         <tr><td><code>renderFooterCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>chrome below the tree</td></tr>
         <tr><td><code>renderEmptyStateCallback</code></td><td><code>(ctx) =&gt; string | Node | null | undefined | false</code></td><td>the no-data state (<code>null</code> = the built-in text)</td></tr>

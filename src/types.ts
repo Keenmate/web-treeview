@@ -303,20 +303,21 @@ export interface TreeViewConfig<T = any> {
    *  full label). */
   nodeTitleOverflow?: NodeTitleOverflow | null;
 
-  // Per-node icons — rendered as a dedicated .wtv__node-icon element on EVERY node
-  // (branch + leaf). VALUE from iconMember/getIconCallback (default <i class={value}>,
-  // FontAwesome-friendly); override the render with renderIconCallback. COLOR from
-  // iconColorMember/getIconColorCallback. shouldAlignNodeIcons reserves the icon column.
+  // Per-node icons — drawn INTO a dedicated .wtv__node-icon wrapper on EVERY node with an icon
+  // value (branch + leaf). VALUE from iconMember/getIconCallback, rendered by core renderIcon:
+  // markup → built-in name → renderIconCallback → page-wide hook → icon-font <i class="wtv__icon …">
+  // → text. COLOR from iconColorMember/getIconColorCallback. shouldAlignNodeIcons reserves the column.
   iconMember?: string | null;
   getIconCallback?: (ctx: NodeContext<T>) => string | null;
   /** Per-node icon COLOR from a data key (applied to the icon element). */
   iconColorMember?: string | null;
   /** Per-node icon COLOR from a callback (overrides iconColorMember). */
   getIconColorCallback?: (ctx: NodeContext<T>) => string | null;
-  /** Custom per-node icon renderer: populate `ctx.iconElement` (inline SVG, unicode, custom
-   *  markup) from `ctx.node` / `ctx.value` (the resolved icon value) / the render state
-   *  (device + container + live node state). Wins over the default class-based `<i>`. */
-  renderIconCallback?: (ctx: IconRenderContext<T>) => void;
+  /** This tree's icon hook (core shape, SPEC §12.33): maps an icon NAME (the node's iconMember /
+   *  getIconCallback value) to markup. Asked after markup and the built-in names, before the page-wide
+   *  `window.components.renderIconCallback`; `null` / `undefined` = not mine (the next rule decides),
+   *  `''` = no icon. `ctx.node` + the render state (device, container, isExpanded, …). */
+  renderIconCallback?: ((name: string, ctx: IconRenderContext<T>) => string | null | undefined) | null;
   shouldAlignNodeIcons?: boolean | null;
 
   // Data-driven per-row class hooks

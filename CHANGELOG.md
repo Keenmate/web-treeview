@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — node icons through core `renderIcon` (2026-11-20)
+- Node icons are drawn by core `renderIcon` (SPEC §12.33) into the `.wtv__node-icon` wrapper — the same rule as every
+  Keenmate component: markup (`<svg …>`) as is → a built-in name (`check`, `user`, `settings`, … — the
+  `--base-icon-*` glyphs, masked, never sent to a hook) → this tree's `renderIconCallback(name, ctx)` → the page-wide
+  `window.components.renderIconCallback(name, ctx)` → a class list as an icon-font `<i class="wtv__icon …"
+  aria-hidden="true">` → text. A hook answers markup (`''` = no icon) or `null` / `undefined` = not mine.
+- `renderIconCallback` (instance) is asked before the page-wide hook, so one tree needs no `window.components`
+  setup. `ctx` = `{ node, …render state (deviceClass, container, isExpanded, …), controller, element, component,
+  prefix }`. Replacing / removing it re-paints the icons.
+
+### Changed — node icons (2026-11-20)
+- BREAKING: `renderIconCallback` takes the core shape `(name, ctx) => markup | null` instead of
+  `(ctx) => void` filling `ctx.iconElement`. It is asked only for a node WITH an icon value (`iconMember` /
+  `getIconCallback`) that is not markup or a built-in name; `ctx.value` / `ctx.iconElement` are gone (the value is
+  the first argument). Per-node markup that used to be computed in the old callback now comes from
+  `getIconCallback` returning markup:
+  ```js
+  // before
+  tree.renderIconCallback = ({ node, iconElement }) => { iconElement.innerHTML = node.hasChildren ? FOLDER_SVG : FILE_SVG; };
+  // after — per-node markup from the value …
+  tree.getIconCallback = ({ node }) => (node.hasChildren ? FOLDER_SVG : FILE_SVG);
+  // … or your own icon names mapped by the hook (null = not mine → the page-wide hook / icon font)
+  tree.iconMember = 'icon'; // data: { icon: 'lucide-folder' }
+  tree.renderIconCallback = (name) => (name.startsWith('lucide-') ? lucideSvg(name.slice(7)) : null);
+  ```
+- BREAKING: the icon element is always a `<span class="wtv__node-icon">` WRAPPER; the icon is inside it. A class
+  list no longer goes on the wrapper (`<i class="wtv__node-icon fa-solid fa-user">`) but on an inner
+  `<i class="wtv__icon fa-solid fa-user">` — CSS / tests that matched `.wtv__node-icon.fa-*` match
+  `.wtv__node-icon .fa-*` now. Wrapper colour / `--wtv-node-icon-*` / `--aligned` are unchanged.
+- BREAKING (core icon order): a one-word value that is a built-in name (`user`, `check`, `close`, `settings`,
+  `delete`, …) renders core's masked glyph, not an icon-font class; any other one-word value (`gear`) is still a
+  class (`<i class="wtv__icon gear">`). Name another set's icon differently (`'fa-solid fa-user'`, `'lucide-user'`).
+- A node with no icon value has no wrapper (unless `shouldAlignNodeIcons` reserves the column) — a
+  `renderIconCallback` alone no longer creates one on every node.
+
 ### Changed — label keys are flat `<elementType>.<name>` (2026-11-19)
 - BREAKING: every `labels` key is renamed to the core `/locale` shape (rulebook D-NC-24): `messages.*`, `labels.*`,
   `ariaLabels.*`, `menuItems.*`. English defaults are unchanged. The `loading` string fed both the visible loading

@@ -41,7 +41,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | `nodes` reassign re-renders, keeps collapsed state even when nothing was open (NOTES #17) | ✓ | `data-members.spec.ts` | `data-members.html` |
 | Leaf ↔ folder toggle reconciliation | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | Per-row class hooks (`getNodeClassCallback` / `getNodeContentClassCallback`) | ✓ | `feature-port.spec.ts` | `feature-port.html` |
-| Per-node icons (`icon-member`, `icon-color-member`, emoji, `renderIconCallback`) | ✓ | `node-icons.spec.ts` | `node-icons.html` |
+| Per-node icons (`icon-member`, `icon-color-member`, emoji, core `renderIcon` order: element `renderIconCallback` > page hook, `null` falls through, built-ins never hooked, icon-font `<i class="wtv__icon …">`) | ✓ | `node-icons.spec.ts` | `node-icons.html` |
 | `icon-set` (chevron/triangle/plus-minus/arrow, custom classes) | ✓ | `icon-set.spec.ts` | `icon-set.html` |
 | Render ctx (device, container, node state) | ✓ | `render-context.spec.ts` | `render-context.html` |
 | Empty-state / header / footer callbacks, empty drop zone | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |

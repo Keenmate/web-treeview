@@ -27,7 +27,7 @@
     The tree renders inline and never pops out, but every render callback's single <code>ctx</code>
     carries the <code>NodeRenderContext</code> fields &mdash; a live signal of the
     tree's own container box and the current device. Branch on it inside
-    <code>renderNodeCallback({ node, container, deviceClass })</code> / <code>renderIconCallback({ node, value, iconElement, container, deviceClass })</code>
+    <code>renderNodeCallback({ node, container, deviceClass })</code> / <code>renderIconCallback(name, { node, container, deviceClass })</code>
     to adapt each row to the available space. The engine wires one shared
     <code>ResizeObserver</code> + device matcher from
     <code>@keenmate/web-components-core/environment</code> so you don't have to.
@@ -200,9 +200,9 @@ tree.renderNodeCallback = ({ node }) =&gt; {
   hasChildren:   boolean;
 }
 
-// Both callbacks receive it on their one ctx (plus node, or node / value / iconElement):
+// Both callbacks receive it on their one ctx (plus node; the icon hook also gets the icon name first):
 tree.renderNodeCallback = ({ node, deviceClass, container }) =&gt; { /* … return the content */ };
-tree.renderIconCallback = ({ node, value, iconElement, deviceClass, container }) =&gt; { /* … */ };</code></pre></div>
+tree.renderIconCallback = (name, { node, deviceClass, container }) =&gt; { /* … return markup, or null = not mine */ };</code></pre></div>
 
 <table class="reference-table">
     <thead>

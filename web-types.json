@@ -93,7 +93,7 @@
             },
             {
               "name": "icon-member",
-              "description": "Property name that holds a per-node icon value (rendered on every node as <i class=\"wtv__node-icon {value}\">).",
+              "description": "Property name that holds a per-node icon value — markup, a built-in name, a name for `renderIconCallback`, or icon-font classes (`<i class=\"wtv__icon {value}\">`).",
               "value": { "type": "string | null" }
             },
             {
@@ -868,7 +868,7 @@
               },
               {
                 "name": "iconMember",
-                "description": "Property name that holds a per-node icon value (rendered on every node as <i class=\"wtv__node-icon {value}\">).",
+                "description": "Property name that holds a per-node icon value — markup, a built-in name, a name for `renderIconCallback`, or icon-font classes (`<i class=\"wtv__icon {value}\">`).",
                 "type": "string | null"
               },
               {
@@ -1348,8 +1348,8 @@
               },
               {
                 "name": "renderIconCallback",
-                "description": "Custom per-node icon render (SVG / unicode / markup) into `ctx.iconElement`. Wins over the default class-based <i>.",
-                "type": "(ctx: IconRenderContext) => void"
+                "description": "This tree's icon hook: maps a node's icon name (iconMember / getIconCallback) to markup. Asked after markup and the built-in names, before the page-wide `window.components.renderIconCallback`; `null` = not mine (the next rule decides), `''` = no icon. `ctx.node` + the render state.",
+                "type": "(name: string, ctx: IconRenderContext) => string | null | undefined"
               },
               {
                 "name": "renderEmptyStateCallback",

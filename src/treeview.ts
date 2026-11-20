@@ -25,7 +25,7 @@ import type {
   ContextMenuItemRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
-import { announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
+import { adoptStyles, ICON_CSS, renderIcon, type RenderIconCallback, announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
 import { resolveMenuEntries, runAction, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { menuPresentationOptions } from '@keenmate/web-components-core/menu';
 
@@ -214,6 +214,28 @@ export class WebTreeView<T = any> {
   private hostElement(): HTMLElement {
     return this.options.hostElement ?? this.element;
   }
+
+  /** The root the ICON_CSS (`.km-icon`, the built-in masked glyphs) was adopted into. */
+  private iconCssRoot: Node | null = null;
+
+  /**
+   * A node icon's markup — core `renderIcon` (SPEC §12.33): markup → built-in name → the instance
+   * `renderIconCallback(name, ctx)` → the page-wide `window.components.renderIconCallback` → icon-font
+   * `<i class="wtv__icon …">` → escaped text. `ctx` carries `node` + the render state + `controller`.
+   */
+  private nodeIconHtml = (value: string, node: LTreeNode<T>, rc: NodeRenderContext): string => {
+    const root = this.element.getRootNode();
+    if (root !== this.iconCssRoot && (root instanceof Document || root instanceof ShadowRoot)) {
+      adoptStyles(root, ICON_CSS);
+      this.iconCssRoot = root;
+    }
+    return renderIcon(value, {
+      prefix: 'wtv',
+      host: this.hostElement(),
+      renderIconCallback: (this.options.renderIconCallback ?? null) as unknown as RenderIconCallback | null,
+      context: { ...rc, node, controller: this.getPublicController() },
+    });
+  };
 
   /** Attach `controller` + `element` (non-enumerable) to `fields`. Every ctx / detail goes through here. */
   ctx<F extends object>(fields: F): F & TreeViewContext<T> {
@@ -1005,9 +1027,8 @@ export class WebTreeView<T = any> {
     const cfg: RendererConfig<T> = {
       renderNodeCallback: this.wrap(o.renderNodeCallback, 'renderNode', (f) =>
         (node: LTreeNode<T>, rc: NodeRenderContext) => f(this.ctx({ ...rc, node }))),
-      renderIconCallback: this.wrap(o.renderIconCallback, 'renderIcon', (f) =>
-        (node: LTreeNode<T>, value: string | null, iconElement: HTMLElement, rc: NodeRenderContext) =>
-          f(this.ctx({ ...rc, node, value, iconElement }))),
+      renderIconCallback: o.renderIconCallback,
+      renderNodeIcon: this.nodeIconHtml,
       renderEmptyStateCallback: region(o.renderEmptyStateCallback),
       labels: this.labels,
       renderEmptyZoneCallback: region(o.renderEmptyZoneCallback),

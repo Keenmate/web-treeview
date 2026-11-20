@@ -226,7 +226,7 @@ tree.getIconCallback = ({ node }) => {
 };
 ```
 
-`getIconCallback` takes priority over `iconMember`. Both return a CSS class list (or an emoji / symbol, rendered as text) for the node's `.wtv__node-icon`. Return `null` for no icon. Per-node color: `iconColorMember` / `getIconColorCallback({ node })`; full custom markup: `renderIconCallback({ node, value, iconElement })`.
+`getIconCallback` takes priority over `iconMember`. The value goes through core `renderIcon` into the node's `.wtv__node-icon`: markup (`<svg …>`) as is, a built-in name (`check`, `user`, …) as a masked glyph, a name your `renderIconCallback(name, ctx)` (or the page-wide `window.components.renderIconCallback`) maps to markup, a class list as an icon-font `<i class="wtv__icon …">`, anything else as text. Return `null` for no icon. Per-node color: `iconColorMember` / `getIconColorCallback({ node })`.
 
 ## Render callbacks
 
@@ -248,7 +248,7 @@ tree.renderLoadingCallback = ({ containerElement }) => {
 };
 ```
 
-`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`) and is re-run only when the node's version or that state changes (a focused input inside survives repaints). Other returning slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`. Fill hooks (`renderLoadingCallback`, `renderIconCallback`) keep filling the element they're given; plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
+`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`) and is re-run only when the node's version or that state changes (a focused input inside survives repaints). Other returning slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`. The fill hook `renderLoadingCallback` keeps filling the element it's given (`renderIconCallback(name, ctx)` RETURNS markup); plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
 
 ## Context menu
 

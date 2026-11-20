@@ -232,10 +232,11 @@
   transform: rotate(calc(var(--wtv-icon-rotate-expanded, 90deg) * var(--wtv-dir-sign, 1)));
 }
 
-/* Dedicated per-node icon element (iconMember / iconCallback / renderIconCallback),
-   rendered on EVERY node between the toggle/checkbox and the label. Default render is
-   <i class="wtv__node-icon {value}"> (FontAwesome-friendly); color follows
-   --wtv-node-icon-color (default currentColor) or a per-node iconColor. */
+/* Dedicated per-node icon wrapper (<span class="wtv__node-icon">, iconMember / iconCallback),
+   rendered between the toggle/checkbox and the label. Its content is core renderIcon: markup,
+   a built-in masked .km-icon, the renderIconCallback markup, or an icon-font
+   <i class="wtv__icon fa-solid fa-folder">; color follows --wtv-node-icon-color (default
+   currentColor) or a per-node iconColor. */
 .wtv__node .wtv__node-icon {
   display: inline-flex;
   align-items: center;
@@ -245,6 +246,14 @@
   margin-inline-end: var(--wtv-node-icon-margin-right, var(--wtv-spacing-sm));
   color: var(--wtv-node-icon-color, currentColor);
   line-height: 1;
+}
+
+/* The icon inside the wrapper (core renderIcon's <prefix>__icon): sits like the masked span,
+   size / line-height from the wrapper (an icon font's own size classes still win). */
+.wtv__icon {
+  flex: none;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 /* Reserve a fixed column so labels align even on rows with no icon (shouldAlignNodeIcons). */

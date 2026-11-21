@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   config type keeps its name `TreeViewConfig`.
 - `<web-treeview>` is unchanged (its `update()` is core's protected hook; it now calls `setOptions()`).
 
+### Docs — example-page snippets marked as reference snippets (2026-11-21)
+- The code blocks on the basic, context-menu, custom-layout, data, icons, localization, responsive and search pages
+  are simplified excerpts of the page scripts (toggle-driven demos), so they carry `data-kmwc-snippet` (devkit:
+  a reference snippet on purpose). Clears doctor's `[pages]` hand-copied-snippet warnings.
+
 ### Fixed — `TreeViewMethods` type lists only real methods (2026-11-21)
 - The exported `TreeViewMethods` type still listed `update(props)`, which the element no longer has (batch writes are
   core's `el.setAttributes(props)`). Type only — no runtime change.

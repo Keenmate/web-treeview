@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — `custom-elements.json` carries only the public API (2026-11-21)
+- A `publicApiPlugin()` pass in `custom-elements-manifest.config.mjs` drops private / protected / `#…` / `_…`
+  members (core hooks, `static inputs` / `events`, drag internals) and modules / declarations `src/index.ts`
+  doesn't re-export (`src/inputs.ts`, helpers, `Indexer`, stray function-local declarations): 19 099 → 12 046 lines,
+  the element's attributes / events / CSS properties unchanged.
+
 ### Changed — BREAKING: `TreeViewEngine` takes settings one way (2026-11-21)
 - `TreeViewEngine.update(partial)` → `setOptions(partial)` (rulebook C-CA-39, the same shape as every Keenmate
   engine: `new TreeViewEngine(container, options)` → `setOptions(partial)` → `getOptions()`). Same behaviour —

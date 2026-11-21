@@ -735,7 +735,7 @@ new TreeViewEngine(container, options, renderer?)
 
 - `container` — the element the renderer draws into (and the `element` on every ctx / event detail, unless you
   pass `hostElement`).
-- `options` — the same `TreeViewConfig` the element reads (`nodes`, the `*Member`s, behaviour flags, every
+- `options` — a `TreeViewEngineOptions` (the `TreeViewConfig` keys the element reads, every one optional: `nodes`, the `*Member`s, behaviour flags, every
   `*Callback`, the `on*` event twins, `labels`, `translateCallback`, `locale`, `renderIconCallback`, `renderLoadingCallback`,
   `menuPresentation` / `menuSide`, …) — no attributes, no `customStyles` (style your own container), and no events
   on a host: the `on*` options are the events.
@@ -754,7 +754,7 @@ Its methods are the element's controller methods (`expandNodes`, `selectNode`, `
 `getPublicController()` returns the same frozen `controller` facade the element exposes as `el.controller`.
 Settings go one way (as on every Keenmate engine): `new TreeViewEngine(container, options)` → `setOptions(partial)`
 (merges into the current options, re-renders only what changed; `undefined` = back to the default) → `getOptions()`
-(the merged options, a frozen copy); `setRenderer(r)` swaps the renderer at runtime keeping all state;
+(the merged options, a frozen copy) — all three typed `TreeViewEngineOptions<T>`; `setRenderer(r)` swaps the renderer at runtime keeping all state;
 `deactivate()` / `activate()` pause / resume live resources; `destroy()` tears it down.
 
 **What a renderer implements** (`TreeViewRenderer<T>`):

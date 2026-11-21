@@ -611,6 +611,13 @@ export interface TreeViewConfig<T = any> {
   controller?: TreeViewController<T>;
 }
 
+/**
+ * The settings of a standalone {@link TreeViewEngine} (rulebook C-CA-39): `new TreeViewEngine(container, options)`,
+ * `setOptions(partial)`, `getOptions()`. The {@link TreeViewConfig} keys, every one optional — a key left out gets
+ * `<web-treeview>`'s default (one source: the input table).
+ */
+export type TreeViewEngineOptions<T = any> = Partial<TreeViewConfig<T>>;
+
 // ── Methods ────────────────────────────────────────────────────────────
 
 export interface TreeViewMethods<T = any> {

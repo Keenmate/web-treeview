@@ -11,7 +11,7 @@ import type { IndexProgress, SearchStatus } from './ltree/types';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
-import type { TreeViewConfig, ScrollToPathOptions } from './types';
+import type { TreeViewEngineOptions, ScrollToPathOptions } from './types';
 import type {
   TreeViewController,
   TreeViewContext,
@@ -107,7 +107,7 @@ export class TreeViewEngine<T = any> {
   private renderer: TreeViewRenderer<T>;
   private element: HTMLElement;
   /** The public config as last assigned (events, before-hooks, element/controller). */
-  private options: Partial<TreeViewConfig<T>>;
+  private options: TreeViewEngineOptions<T>;
   private ownController: TreeViewController<T> | null = null;
   private wrapCache = new WeakMap<object, Map<string, unknown>>();
   private nodeCtxProto: object | null = null;
@@ -122,7 +122,7 @@ export class TreeViewEngine<T = any> {
 
   constructor(
     element: HTMLElement,
-    options: Partial<TreeViewConfig<T>> = {},
+    options: TreeViewEngineOptions<T> = {},
     renderer?: TreeViewRenderer<T>,
     /** Loggers for the engine / LTree / renderer — the element passes its instance
      *  loggers so lines read `[TREEVIEW:CAT] #id …`. */
@@ -409,7 +409,7 @@ export class TreeViewEngine<T = any> {
    * takes settings after construction). An option set to `undefined` goes back to its default (as `el.x = undefined`
    * does on the element). `<web-treeview>` calls it from its `update()` hook.
    */
-  setOptions(props: Partial<TreeViewConfig<T>>): void {
+  setOptions(props: Partial<TreeViewEngineOptions<T>>): void {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
     props = withEngineDefaults(props, true);
     Object.assign(this.options, props);
@@ -432,7 +432,7 @@ export class TreeViewEngine<T = any> {
 
   /** The merged options (constructor options + every `setOptions()` since, missing keys = the element's defaults) —
    *  a frozen copy: change them through `setOptions(partial)`. */
-  getOptions(): Readonly<Partial<TreeViewConfig<T>>> {
+  getOptions(): Readonly<TreeViewEngineOptions<T>> {
     return Object.freeze({ ...this.options });
   }
 
@@ -876,7 +876,7 @@ export class TreeViewEngine<T = any> {
 
   // ── Config adapters (public single-ctx shape → engine internals) ────
 
-  private mapToEngineConfig(options: Partial<TreeViewConfig<T>>): TreeViewStateConfig<T> {
+  private mapToEngineConfig(options: TreeViewEngineOptions<T>): TreeViewStateConfig<T> {
     const o = options;
     return {
       idMember: o.idMember || 'id',
@@ -1047,7 +1047,7 @@ export class TreeViewEngine<T = any> {
     } as unknown as TreeViewStateConfig<T>;
   }
 
-  private mapToRendererConfig(options: Partial<TreeViewConfig<T>>): RendererConfig<T> {
+  private mapToRendererConfig(options: TreeViewEngineOptions<T>): RendererConfig<T> {
     const o = options;
     const region = (src: ((ctx: any) => SlotResult) | null | undefined) =>
       this.wrap(src, 'region', (f) => () => f(this.ctx({})));

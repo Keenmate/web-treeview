@@ -95,6 +95,7 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 export type {
   TreeNode,
   TreeViewConfig,
+  TreeViewEngineOptions,
   TreeViewResponsiveMap,
   TreeViewElementConfig,
   TreeViewResponsiveCallback,

@@ -4000,6 +4000,14 @@
         },
         {
           "kind": "js",
+          "name": "TreeViewEngineOptions",
+          "declaration": {
+            "name": "TreeViewEngineOptions",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
           "name": "TreeViewResponsiveMap",
           "declaration": {
             "name": "TreeViewResponsiveMap",
@@ -4562,14 +4570,6 @@
           "name": "setCategoryLevel",
           "declaration": {
             "name": "setCategoryLevel",
-            "module": "src/logger.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "default",
-          "declaration": {
-            "name": "initLogger",
             "module": "src/logger.ts"
           }
         }
@@ -5145,7 +5145,7 @@
                 {
                   "name": "props",
                   "type": {
-                    "text": "Partial<TreeViewConfig<T>>"
+                    "text": "Partial<TreeViewEngineOptions<T>>"
                   }
                 }
               ],
@@ -5156,7 +5156,7 @@
               "name": "getOptions",
               "return": {
                 "type": {
-                  "text": "Readonly<Partial<TreeViewConfig<T>>>"
+                  "text": "Readonly<TreeViewEngineOptions<T>>"
                 }
               },
               "description": "The merged options (constructor options + every `setOptions()` since, missing keys = the element's defaults) —\na frozen copy: change them through `setOptions(partial)`."
@@ -6752,6 +6752,14 @@
       "path": "src/types.ts",
       "declarations": [],
       "exports": [
+        {
+          "kind": "js",
+          "name": "TreeNode",
+          "declaration": {
+            "name": "LTreeNode",
+            "module": "./ltree/ltree-node"
+          }
+        },
         {
           "kind": "js",
           "name": "InsertArrayResult",

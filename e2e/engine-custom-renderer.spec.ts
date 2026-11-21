@@ -37,10 +37,10 @@ test('engine methods drive the custom renderer (the same API as el.controller)',
 test("the engine's own translateCallback beats the page-wide one; labels beat both", async ({ page }) => {
   const list = page.locator('#list');
   await expect(list).toHaveAttribute('aria-label', 'own');
-  await page.evaluate(() => (window as any).engine.update({ translateCallback: null }));
+  await page.evaluate(() => (window as any).engine.setOptions({ translateCallback: null }));
   await page.evaluate(() => (window as any).engine.refreshLabels());
   await expect(list).toHaveAttribute('aria-label', 'page');
-  await page.evaluate(() => (window as any).engine.update({ labels: { 'ariaLabels.tree': 'mine' } }));
+  await page.evaluate(() => (window as any).engine.setOptions({ labels: { 'ariaLabels.tree': 'mine' } }));
   await expect(list).toHaveAttribute('aria-label', 'mine');
 });
 

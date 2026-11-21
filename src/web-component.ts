@@ -14,10 +14,10 @@
  * facade and the event bridges. Custom CSS goes through core's `createCustomStyles()`.
  *
  * Reactivity model: the tree (`TreeViewEngine` → engine + renderer) applies every
- * config change in place via `update()`; it is built once (first connect) and
+ * config change in place via `setOptions()`; it is built once (first connect) and
  * kept across a DOM move — disconnect()/connect() only deactivate/activate its
  * live resources, so all runtime state survives (D1). Every input is `on:'update'`:
- * `update()` sends the full config, and TreeViewEngine memoizes its callback
+ * `update()` sends the full config to `setOptions()`, and TreeViewEngine memoizes its callback
  * adapters, so re-sending an unchanged callback costs nothing.
  */
 import type { TreeLoggers } from './logger';
@@ -260,7 +260,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial || 'isReadonly' in partial) this.#syncPageDrag();
     if (!this.#treeview) return;
     const keys = Object.keys(partial);
-    if (!(keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key)))) this.#treeview.update(this.#assembleConfig());
+    if (!(keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key)))) this.#treeview.setOptions(this.#assembleConfig());
     for (const key of STATE_KEYS) {
       if (key in partial) this.#treeview[key] = partial[key] === UNSET_PATHS ? [] : (partial[key] as string[]);
     }

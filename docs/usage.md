@@ -742,7 +742,7 @@ new TreeViewEngine(container, options, renderer?)
   Every option you leave out (or set to `undefined`) has the element's default — `idMember` `'id'`, `pathMember`
   `'path'`, `displayValueMember` `'displayValue'`, `clickBehavior` `'expand-and-focus'`, `locale` `null` (= the
   page-wide `window.components.locale.locale` → the browser), … (one source: the element's input table), so an engine
-  given only `nodes` behaves like a bare `<web-treeview>`. `update({ locale: 'de' })` re-formats the `{count}` numbers
+  given only `nodes` behaves like a bare `<web-treeview>`. `setOptions({ locale: 'de' })` re-formats the `{count}` numbers
   and re-applies the texts, as on the element. (`TreeViewState` formats no numbers or strings — no `locale` there.)
 - `renderer` — a `TreeViewRenderer`; omitted = the built-in `DomRenderer` (the element's own UI in your container).
 
@@ -752,7 +752,9 @@ context-menu model (`getContextMenuItemsCallback` → core `/actions`), screen-r
 (core `/locale`: own `labels` → own `translateCallback` → page-wide `translateCallback` → page dictionary → English).
 Its methods are the element's controller methods (`expandNodes`, `selectNode`, `filterNodes`, `addBranch`, …);
 `getPublicController()` returns the same frozen `controller` facade the element exposes as `el.controller`.
-`update(partial)` applies changed options; `setRenderer(r)` swaps the renderer at runtime keeping all state;
+Settings go one way (as on every Keenmate engine): `new TreeViewEngine(container, options)` → `setOptions(partial)`
+(merges into the current options, re-renders only what changed; `undefined` = back to the default) → `getOptions()`
+(the merged options, a frozen copy); `setRenderer(r)` swaps the renderer at runtime keeping all state;
 `deactivate()` / `activate()` pause / resume live resources; `destroy()` tears it down.
 
 **What a renderer implements** (`TreeViewRenderer<T>`):

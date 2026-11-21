@@ -67,7 +67,7 @@ test('locale="de" formats {count}; unset follows window.components.locale.locale
   await expect(region(page)).toHaveText('1,234 results');
 });
 
-test('a TreeViewEngine without the element: the locale option (default null = page locale), update({ locale })', async ({ page }) => {
+test('a TreeViewEngine without the element: the locale option (default null = page locale), setOptions({ locale })', async ({ page }) => {
   const defaults = await page.evaluate(async () => {
     const { TreeViewEngine } = await import('/src/index.ts' as string);
     const box = document.createElement('div');
@@ -85,17 +85,17 @@ test('a TreeViewEngine without the element: the locale option (default null = pa
 
   const search = () => page.evaluate(() => {
     const engine = (window as any).bigEngine;
-    engine.update({ searchTerm: null });
-    engine.update({ searchTerm: 'Item' });
+    engine.setOptions({ searchTerm: null });
+    engine.setOptions({ searchTerm: 'Item' });
   });
 
   await search();
   await expect(region(page)).toHaveText('1.234 results'); // unset → the page locale
 
-  await page.evaluate(() => (window as any).bigEngine.update({ locale: 'en-US' }));
+  await page.evaluate(() => (window as any).bigEngine.setOptions({ locale: 'en-US' }));
   await search();
   await expect(region(page)).toHaveText('1,234 results'); // the engine's own locale wins
   // A partial update keeps the tree (it maps the merged options, not just the partial).
-  await page.evaluate(() => (window as any).bigEngine.update({ searchTerm: null }));
+  await page.evaluate(() => (window as any).bigEngine.setOptions({ searchTerm: null }));
   await expect(page.locator('#big-engine .wtv__node-label').first()).toHaveText('Item 1');
 });

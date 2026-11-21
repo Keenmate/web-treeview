@@ -404,7 +404,12 @@ export class TreeViewEngine<T = any> {
 
   // ── Public API (proxy to engine) ────────────────────────────────────
 
-  update(props: Partial<TreeViewConfig<T>>): void {
+  /**
+   * Merge `props` into the current options and re-render only what changed (rulebook C-CA-39: the one way an engine
+   * takes settings after construction). An option set to `undefined` goes back to its default (as `el.x = undefined`
+   * does on the element). `<web-treeview>` calls it from its `update()` hook.
+   */
+  setOptions(props: Partial<TreeViewConfig<T>>): void {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
     props = withEngineDefaults(props, true);
     Object.assign(this.options, props);
@@ -423,6 +428,12 @@ export class TreeViewEngine<T = any> {
     if (Object.keys(rendererConfig).length > 0) {
       this.renderer.updateConfig(rendererConfig);
     }
+  }
+
+  /** The merged options (constructor options + every `setOptions()` since, missing keys = the element's defaults) —
+   *  a frozen copy: change them through `setOptions(partial)`. */
+  getOptions(): Readonly<Partial<TreeViewConfig<T>>> {
+    return Object.freeze({ ...this.options });
   }
 
   /**
@@ -663,7 +674,7 @@ export class TreeViewEngine<T = any> {
   }
 
   set nodes(nodes: T[]) {
-    this.update({ nodes });
+    this.setOptions({ nodes });
   }
 
   getNodeByPath(path: string): LTreeNode<T> | null {

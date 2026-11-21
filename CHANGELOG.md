@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Docs — tooltip sizing demo (2026-11-21)
+
+- `examples-tooltips.html` (tooltip sizing section): a `0` (or less) in the width / min-width / max-width fields counts as empty, like svelte-treeview's TT03. It used to set `--wtv-tooltip-width: 0px`, and a fixed width plus a `--wtv-tooltip-min-width` pins the box at the min-width, so the tooltip looked like the min-width didn't let it grow. The library was right: `--wtv-tooltip-width` must stay `auto` for the box to grow between min and max. The page remembers its control values, so a stray `0` used to stick.
+
 ### Internal — `custom-elements.json` carries only the public API (2026-11-21)
 - A `publicApiPlugin()` pass in `custom-elements-manifest.config.mjs` drops private / protected / `#…` / `_…`
   members (core hooks, `static inputs` / `events`, drag internals) and modules / declarations `src/index.ts`

@@ -264,7 +264,9 @@ web-treeview { --wtv-tooltip-min-width: 24rem; }</code></pre></div>
     const tree4 = document.getElementById('tree4');
     const bindWidth = (inputId, cssVar, emptyValue) => {
         document.getElementById(inputId).addEventListener('input', (e) => {
-            const v = e.target.value;
+            // 0 (or less) counts as empty: a fixed `width: 0px` + a min-width would pin the
+            // box at the min-width, never growing.
+            const v = Number(e.target.value) > 0 ? e.target.value : '';
             if (v === '' && emptyValue == null) tree4.style.removeProperty(cssVar);
             else tree4.style.setProperty(cssVar, v === '' ? emptyValue : `${v}px`);
         });

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — icons repaint when the page-wide icon hook changes (2026-11-22)
+- Assigning `window.components.renderIconCallback` after the tree rendered repaints the node icons in place (core
+  `iconsChanged()`, rulebook C-CA-40) — expansion, selection, checks, focus and scroll are kept.
+- `TreeViewEngine.refreshIcons()`: re-sends `renderNodeIcon` to the renderer (`updateConfig`); the built-in renderer
+  redraws the icons in place, a custom `TreeViewRenderer` repaints its icons there. `<web-treeview>` calls it from
+  `iconsChanged()`; a standalone engine calls it itself.
+
 ### Docs — tooltip sizing demo (2026-11-21)
 
 - `examples-tooltips.html` (tooltip sizing section): a `0` (or less) in the width / min-width / max-width fields counts as empty, like svelte-treeview's TT03. It used to set `--wtv-tooltip-width: 0px`, and a fixed width plus a `--wtv-tooltip-min-width` pins the box at the min-width, so the tooltip looked like the min-width didn't let it grow. The library was right: `--wtv-tooltip-width` must stay `auto` for the box to grow between min and max. The page remembers its control values, so a stray `0` used to stick.

@@ -446,6 +446,15 @@ export class TreeViewEngine<T = any> {
     this.renderer.updateConfig({ labels: this.labels });
   }
 
+  /**
+   * Repaint every node icon (the page-wide `window.components.renderIconCallback` changed —
+   * `<web-treeview>` calls it from core `iconsChanged()`). Re-sends `renderNodeIcon` to the renderer
+   * (`updateConfig`); the built-in renderer redraws the icons in place, all tree state kept.
+   */
+  refreshIcons(): void {
+    this.renderer.updateConfig({ renderNodeIcon: this.nodeIconHtml });
+  }
+
   expandNodes(paths: string | string[], options?: ExpandOptions): void {
     this.engine.expandNodes(paths, options);
   }

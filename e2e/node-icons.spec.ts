@@ -100,3 +100,34 @@ test.describe('renderIconCallback (element) + window.components.renderIconCallba
 		await expect(iconAt(page, 'custom', '1').locator('b')).toHaveAttribute('data-hook', 'page');
 	});
 });
+
+test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)', () => {
+	test.afterEach(async ({ page }) => {
+		await page.evaluate(() => { (window as any).components.renderIconCallback = null; });
+	});
+
+	test('repaints the icons in place — rows, selection, expansion and focus kept', async ({ page }) => {
+		const tree = page.locator('#default');
+		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
+		await expect(iconAt(page, 'default', '1.1.1').locator('i')).toHaveClass('wtv__icon fa-user');
+		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await leaf.evaluate((el) => { (window as any).__row = el; });
+
+		await page.evaluate(() => {
+			(window as any).components.renderIconCallback = (name: string) => (name === 'fa-user' ? '<b data-test-icon>x</b>' : null);
+		});
+		await expect(iconAt(page, 'default', '1.1.1').locator('b[data-test-icon]')).toHaveText('x');
+		// The other icons: the new hook answers null → still icon-font.
+		await expect(iconAt(page, 'default', '1').locator('i')).toHaveClass('wtv__icon fa-sitemap');
+		// State kept: same row element (no rebuild), selection + expansion intact, focus still inside the tree.
+		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
+		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
+
+		// Removing the page hook brings the icon-font back.
+		await page.evaluate(() => { (window as any).components.renderIconCallback = null; });
+		await expect(iconAt(page, 'default', '1.1.1').locator('i')).toHaveClass('wtv__icon fa-user');
+	});
+});

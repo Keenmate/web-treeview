@@ -44,6 +44,15 @@ test("the engine's own translateCallback beats the page-wide one; labels beat bo
   await expect(list).toHaveAttribute('aria-label', 'mine');
 });
 
+test('refreshIcons() (the page-wide icon hook changed) re-sends renderNodeIcon through the renderer updateConfig', async ({ page }) => {
+  const keys = await page.evaluate(() => {
+    (window as any).configKeys = [];
+    (window as any).engine.refreshIcons();
+    return (window as any).configKeys;
+  });
+  expect(keys).toEqual(['renderNodeIcon']);
+});
+
 test("an engine given only nodes renders like the element (the element's defaults: display value shown)", async ({ page }) => {
   const bare = page.locator('#bare .wtv__node-label');
   const element = page.locator('#element .wtv__node-label');

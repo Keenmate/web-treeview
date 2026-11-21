@@ -274,6 +274,17 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (content) content.textContent = this._label('messages.dropHere');
   }
 
+  /** Re-resolve every rendered row's `.wtv__node-icon` (only the changed markup is written). */
+  private _refreshIcons(): void {
+    const snapshot = this.lastSnapshot;
+    if (!snapshot) return;
+    for (const [, el] of this.nodeElements) {
+      const node = this.nodeOfElement.get(el);
+      const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
+      if (node && row) this._applyNodeIcon(row, node, this._buildRenderContext(node, snapshot));
+    }
+  }
+
   /** A header / footer region: its callback's result through core `renderSlot` (no built-in content). */
   private _renderRegion(el: HTMLElement | null, cb: (() => SlotResult) | undefined): void {
     if (el) renderSlot(el, cb ?? null);
@@ -331,6 +342,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const prevIconCb = this.config.renderIconCallback;
     Object.assign(this.config, config);
     if ('labels' in config) this._refreshLabels();
+    // Re-sent `renderNodeIcon` = the icons' sources changed (the page-wide icon hook): repaint the
+    // icons in place — rows, focus, scroll and every other state stay untouched.
+    if ('renderNodeIcon' in config) this._refreshIcons();
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
       const zone = this._renderTarget?.querySelector('.wtv__empty-zone');

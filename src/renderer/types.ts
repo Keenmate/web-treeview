@@ -60,7 +60,9 @@ export interface RendererConfig<T> {
   renderNodeCallback?: (node: LTreeNode<T>, ctx: NodeRenderContext) => SlotResult;
   /** The node icon's markup for a resolved icon VALUE (iconMember / iconCallback) — core `renderIcon`
    *  (markup → built-in name → the instance `renderIconCallback` → the page-wide one → icon-font
-   *  `<i class="wtv__icon …">` → text), drawn INTO the `.wtv__node-icon` wrapper. `''` = no icon. */
+   *  `<i class="wtv__icon …">` → text), drawn INTO the `.wtv__node-icon` wrapper. `''` = no icon.
+   *  Re-sent through `updateConfig({ renderNodeIcon })` (same function) when the page-wide
+   *  `window.components.renderIconCallback` changed — a renderer repaints its icons then. */
   renderNodeIcon?: (value: string, node: LTreeNode<T>, ctx: NodeRenderContext) => string;
   /** The instance icon hook — only compared here: a changed one re-paints the icons. */
   renderIconCallback?: unknown;

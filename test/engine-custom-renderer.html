@@ -51,6 +51,7 @@
                 this.container.setAttribute('aria-label', this.config.labels?.text('ariaLabels.tree') ?? 'Tree');
             }
             updateConfig(partial) {
+                (window.configKeys ??= []).push(...Object.keys(partial));
                 Object.assign(this.config, partial);
                 if ('labels' in partial) this.applyLabels();
             }

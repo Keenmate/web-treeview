@@ -294,6 +294,12 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     this.#treeview?.refreshLabels();
   }
 
+  /** The page-wide `window.components.renderIconCallback` changed (core SPEC §12.33): repaint the
+   *  node icons in place — expansion, selection, checks, focus and scroll kept. */
+  protected override iconsChanged(): void {
+    this.#treeview?.refreshIcons();
+  }
+
   /** The effective disabled state flipped on the built tree (core SPEC §6.4): apply it in place. */
   protected override disabledChanged(isDisabled: boolean): void {
     this.#treeview?.setDisabled(isDisabled);

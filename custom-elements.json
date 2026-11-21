@@ -5184,6 +5184,16 @@
             },
             {
               "kind": "method",
+              "name": "refreshIcons",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Repaint every node icon (the page-wide `window.components.renderIconCallback` changed —\n`<web-treeview>` calls it from core `iconsChanged()`). Re-sends `renderNodeIcon` to the renderer\n(`updateConfig`); the built-in renderer redraws the icons in place, all tree state kept."
+            },
+            {
+              "kind": "method",
               "name": "expandNodes",
               "return": {
                 "type": {

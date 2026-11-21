@@ -138,10 +138,11 @@ el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ?
     <h2>LO05 · <code>locale</code> + formatting</h2>
     <p>
         Numbers in labels (<code>{count}</code> in the search announcement <code>ariaLabels.searchResults</code>, "{count} results")
-        are formatted for the page language: <code>window.components.locale.locale</code> → the browser. The tree has no
-        <code>locale</code> input of its own and formats no dates — this number is its only locale-specific output. The tree below
-        has 1,234 nodes; <em>Search</em> filters them all and the screen-reader announcement (core <code>announce()</code>, the
-        page's live region) is shown in the box.
+        are formatted (core <code>formatNumber</code>) for the tree's <code>locale</code> input → the page language
+        <code>window.components.locale.locale</code> → the browser. The tree formats no dates — this number is its only
+        locale-specific output. The tree below has 1,234 nodes; <em>Search</em> filters them all and the screen-reader announcement
+        (core <code>announce()</code>, the page's live region) is shown in the box. Set the element's <code>locale</code> and it
+        wins over the page locale; unset it and the page locale applies again.
     </p>
     <div class="controls"><strong class="muted">page locale</strong>
         <label><input type="radio" name="lo05-locale" value="" checked> unset (browser)</label>
@@ -150,10 +151,18 @@ el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ?
         <label><input type="radio" name="lo05-locale" value="en-IN"> en-IN</label>
         <button type="button" id="lo05-search" class="btn-outline">Search <code>Item</code></button>
     </div>
+    <div class="controls"><strong class="muted">element <code>locale</code></strong>
+        <label><input type="radio" name="lo05-el-locale" value="" checked> unset (page locale)</label>
+        <label><input type="radio" name="lo05-el-locale" value="de"> locale="de"</label>
+        <label><input type="radio" name="lo05-el-locale" value="cs"> locale="cs"</label>
+    </div>
     <div class="tree-container tree-container-sm"><web-treeview id="lo05" use-internal-search-index="true" search-result-limit="5000"></web-treeview></div>
     <div class="output"><div class="output-label">last screen-reader announcement</div><pre id="lo05-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
-el.searchTerm = 'Item';   // announces "1.234 results"</code></pre></div>
+el.searchTerm = 'Item';   // announces "1.234 results"
+
+// the element's own locale wins over the page one (removeAttribute / null = the page locale again)
+el.setAttribute('locale', 'cs');   // announces "1 234 results"</code></pre></div>
 </div>
 
 <!-- ============================================================= -->
@@ -271,7 +280,7 @@ el.searchTerm = 'Item';   // announces "1.234 results"</code></pre></div>
             refreshAll();
         });
 
-        // ── LO05 · page locale + the {count} search announcement.
+        // ── LO05 · element locale → page locale + the {count} search announcement.
         const search = async () => {
             const tree = $('lo05');
             tree.searchTerm = null;
@@ -282,6 +291,13 @@ el.searchTerm = 'Item';   // announces "1.234 results"</code></pre></div>
         $('lo05-search').addEventListener('click', search);
         for (const radio of document.querySelectorAll('input[name="lo05-locale"]')) {
             radio.addEventListener('change', (e) => { page.locale = e.target.value; applyPage(); search(); });
+        }
+        for (const radio of document.querySelectorAll('input[name="lo05-el-locale"]')) {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value) $('lo05').setAttribute('locale', e.target.value);
+                else $('lo05').removeAttribute('locale');
+                search();
+            });
         }
 
         refreshAll();

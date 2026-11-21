@@ -352,6 +352,9 @@ window.components.locale = {
 tree.translateCallback = ({ key, params }) => (i18next.exists(key) ? i18next.t(key, params) : null);
 ```
 
+Numbers in labels (`{count}` in "{count} results") follow the tree's `locale` input → `window.components.locale.locale` →
+the browser: `<web-treeview locale="de">` announces "1.234 results". Localization page LO05.
+
 ## Rendering modes
 
 | Mode | Config | DOM Nodes | Best For |

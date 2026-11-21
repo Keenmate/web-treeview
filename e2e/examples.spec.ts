@@ -49,6 +49,11 @@ test.describe('Localization page (examples-localization.html)', () => {
     await expect(out('lo05-out')).toHaveText('announced: 1.234 results');
     await page.locator('input[name="lo05-locale"][value="en-IN"]').check();
     await expect(out('lo05-out')).toHaveText('announced: 1,234 results');
+    // … the element's own `locale` beats the page one; unset = the page locale again.
+    await page.locator('input[name="lo05-el-locale"][value="de"]').check();
+    await expect(out('lo05-out')).toHaveText('announced: 1.234 results');
+    await page.locator('input[name="lo05-el-locale"][value=""]').check();
+    await expect(out('lo05-out')).toHaveText('announced: 1,234 results');
 
     expect(consoleErrors).toEqual([]);
   });

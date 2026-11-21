@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — `locale` input (2026-11-21)
+- `locale` input (attribute + property, rulebook C-CA-38): BCP-47 locale for the numbers in labels — `{count}` in
+  the `ariaLabels.searchResults` / `ariaLabels.dropItems` announcements, through core `formatNumber` — and the
+  `locale` a `translateCallback` receives. Unset (default, or `auto`) = the page-wide `window.components.locale.locale`
+  → the browser language. A change re-applies the texts live. Also a `TreeViewEngine` option with the same default
+  (one source: the input table) — `update({ locale })` re-formats. The tree formats nothing else. Localization page LO05.
+
+### Fixed — `TreeViewEngine.update(partial)` (2026-11-21)
+- A partial `update({ … })` on a standalone `TreeViewEngine` no longer wipes the tree: the options were mapped from the
+  partial alone, so absent keys went in as `data: []` / `idMember: 'id'` / `pathMember: 'path'`. It now maps the
+  merged options (the element always sent its full config, so `<web-treeview>` was not affected).
+
 ### Docs — localization page (2026-11-21)
 - `examples-localization.html` — the shared localization page (LO01–LO06: instance `labels`, page-wide dictionary,
   `translateCallback`, the `messages.loading` → `ariaLabels.loading` twin, `{count}` number formatting in the search

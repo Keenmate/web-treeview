@@ -395,6 +395,11 @@
           "values": [{ "name": "Partial<TreeViewLabels>" }]
         },
         {
+          "name": "locale",
+          "description": "BCP-47 locale for the numbers in labels (`{count}` in the `ariaLabels.searchResults` / `ariaLabels.dropItems` announcements) and the `locale` a `translateCallback` receives, or unset (the page-wide `window.components.locale`, else the browser language; `auto` = unset). The tree formats nothing else. UI strings are `labels`.",
+          "values": []
+        },
+        {
           "name": "show-empty-drop-placeholder",
           "description": "Show a drop placeholder when the tree is empty.",
           "values": []

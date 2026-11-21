@@ -135,6 +135,9 @@ export class TreeViewEngine<T = any> {
       tag: 'web-treeview',
       // This tree's own translateCallback (the element's input, or a plain TreeViewEngine option) → the page-wide one.
       getTranslateCallback: () => this.options.translateCallback ?? undefined,
+      // The `locale` option (the element's `locale` input; default `null` = page-wide → browser): `{count}` numbers
+      // through core formatNumber + translateCallback's ctx.locale.
+      getLocale: () => this.options.locale ?? null,
     });
 
     this.engine = new TreeViewState<T>({ ...this.mapToEngineConfig(this.options), log });
@@ -405,7 +408,9 @@ export class TreeViewEngine<T = any> {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
     props = withEngineDefaults(props, true);
     Object.assign(this.options, props);
-    const engineConfig = this.mapToEngineConfig(props);
+    // Map the MERGED options, not the partial: the mapping fills absent keys (`data: nodes || []`, `idMember || 'id'`),
+    // so a partial `update({ locale })` on a standalone engine would wipe the tree. The element sends its full config anyway.
+    const engineConfig = this.mapToEngineConfig(this.options);
     // If context menu callbacks changed, update the engine's awareness
     if ('renderContextMenuCallback' in props || 'getContextMenuItemsCallback' in props) {
       engineConfig.hasContextMenuRenderer = !!(

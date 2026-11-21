@@ -12,10 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `examples-tooltips.html` (tooltip sizing section): a `0` (or less) in the width / min-width / max-width fields counts as empty, like svelte-treeview's TT03. It used to set `--wtv-tooltip-width: 0px`, and a fixed width plus a `--wtv-tooltip-min-width` pins the box at the min-width, so the tooltip looked like the min-width didn't let it grow. The library was right: `--wtv-tooltip-width` must stay `auto` for the box to grow between min and max. The page remembers its control values, so a stray `0` used to stick.
 
 ### Internal — `custom-elements.json` carries only the public API (2026-11-21)
-- A `publicApiPlugin()` pass in `custom-elements-manifest.config.mjs` drops private / protected / `#…` / `_…`
-  members (core hooks, `static inputs` / `events`, drag internals) and modules / declarations `src/index.ts`
-  doesn't re-export (`src/inputs.ts`, helpers, `Indexer`, stray function-local declarations): 19 099 → 12 046 lines,
-  the element's attributes / events / CSS properties unchanged.
+- Core's `blissAnalyzerConfig` (requires `@keenmate/web-components-core` ^1.0.0-rc25) keeps the manifest to the
+  public API: it drops private / protected / `#…` / `_…` members (core hooks, `static inputs` / `events`, drag
+  internals) and modules / declarations `src/index.ts` doesn't re-export (`src/inputs.ts`, helpers, `Indexer`, stray
+  function-local declarations): 19 099 → 12 046 lines, the element's attributes / events / CSS properties unchanged.
+  `custom-elements-manifest.config.mjs` has no local plugin for it.
 
 ### Changed — BREAKING: `TreeViewEngine` takes settings one way (2026-11-21)
 - `TreeViewEngine.update(partial)` → `setOptions(partial)` (rulebook C-CA-39, the same shape as every Keenmate
@@ -23,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   merges into the current options, `undefined` = back to the default. No alias.
 - New `getOptions()`: the merged options (constructor + every `setOptions()`, missing keys = the element's
   defaults), a frozen copy.
+- A partial `setOptions({ … })` keeps the tree: it maps the merged options. (The old `update(partial)` mapped the
+  partial alone, so absent keys went in as `data: []` / `idMember: 'id'` / `pathMember: 'path'` and a standalone
+  engine lost its tree; the element always sent its full config, so `<web-treeview>` was not affected.)
+- BREAKING: the engine's settings type is `TreeViewEngineOptions<T>` (rulebook C-CA-39) — the constructor's
+  `options`, `setOptions(partial: Partial<TreeViewEngineOptions<T>>)` and `getOptions(): Readonly<TreeViewEngineOptions<T>>`
+  (was `Partial<TreeViewConfig<T>>`). It is the `TreeViewConfig` keys, every one optional — no alias. The element's
+  config type keeps its name `TreeViewConfig`.
 - `<web-treeview>` is unchanged (its `update()` is core's protected hook; it now calls `setOptions()`).
 
 ### Added — `locale` input (2026-11-21)
@@ -31,11 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `locale` a `translateCallback` receives. Unset (default, or `auto`) = the page-wide `window.components.locale.locale`
   → the browser language. A change re-applies the texts live. Also a `TreeViewEngine` option with the same default
   (one source: the input table) — `setOptions({ locale })` re-formats. The tree formats nothing else. Localization page LO05.
-
-### Fixed — `TreeViewEngine.update(partial)` (2026-11-21)
-- A partial `update({ … })` on a standalone `TreeViewEngine` no longer wipes the tree: the options were mapped from the
-  partial alone, so absent keys went in as `data: []` / `idMember: 'id'` / `pathMember: 'path'`. It now maps the
-  merged options (the element always sent its full config, so `<web-treeview>` was not affected).
 
 ### Docs — localization page (2026-11-21)
 - `examples-localization.html` — the shared localization page (LO01–LO06: instance `labels`, page-wide dictionary,
@@ -67,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed — `TreeViewEngine` has the element's defaults (2026-11-20)
 - A standalone `TreeViewEngine` now fills every option it isn't given (or given as `undefined`, also in
-  `update()`) with `<web-treeview>`'s default — one source: the input table moved to `src/inputs.ts`, and the
+  `setOptions()`) with `<web-treeview>`'s default — one source: the input table moved to `src/inputs.ts`, and the
   engine reads `ENGINE_DEFAULTS` derived from it the same way the element seeds its config (rulebook C-CA-37).
   Before, a default that lived only in the element's input table was missing: an engine without
   `displayValueMember` rendered every row as "[N/A]". The element behaves exactly as before. The "Build your own

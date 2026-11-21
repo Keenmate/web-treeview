@@ -759,9 +759,7 @@
 .wtv__tooltip {
   position: fixed;
   z-index: var(--wtv-tooltip-z-index, 10000);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--wtv-transition-normal) var(--wtv-ease-standard), visibility var(--wtv-transition-normal) var(--wtv-ease-standard);
+  /* Fade in / out: core TOOLTIP_CSS (km-tooltip--hiding, --base-duration-fast). */
 
   /* Hardcoded fallbacks (second arg) keep the tooltip legible even if it ever mounts
      outside the shadow container where the --wtv-tooltip-* vars don't resolve. */
@@ -781,11 +779,6 @@
   white-space: pre-wrap;
   box-shadow: var(--wtv-tooltip-box-shadow, 0 2px 8px rgba(0, 0, 0, 0.15));
   pointer-events: none; /* never intercept the pointer */
-}
-
-.wtv__tooltip--visible {
-  opacity: 1;
-  visibility: visible;
 }
 
 /* ==============================================================================

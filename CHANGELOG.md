@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — node tooltips fade through core (2026-11-22)
+- `.wtv__tooltip` drops its own opacity / visibility fade: core `createTooltip` fades it in AND out (`km-tooltip--hiding`,
+  `--base-duration-fast`, follows `motion`) and sets `data-placement` (the resolved side) on it. `.wtv__tooltip--visible`
+  is still the shown-state class (no rule of its own).
+
 ### Added — icons repaint when the page-wide icon hook changes (2026-11-22)
 - Assigning `window.components.renderIconCallback` after the tree rendered repaints the node icons in place (core
   `iconsChanged()`, rulebook C-CA-40) — expansion, selection, checks, focus and scroll are kept.

@@ -77,7 +77,7 @@ export type {
   RangeSelectionMode,
   SelectMode,
   TreeMutationOptions,
-  TreeViewStateConfig,
+  TreeViewStateOptions,
   TreeViewStateSnapshot,
   TreeViewStateEvents,
   // ctx-object context types (rc07 parity with svelte-treeview)

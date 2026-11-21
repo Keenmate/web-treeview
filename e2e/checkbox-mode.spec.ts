@@ -47,7 +47,7 @@ test.describe('Checkbox mode switch', () => {
     await expect.poll(() => isIndeterminate(checkboxInput(page, '1'))).toBe(true);
     await expect(checkboxInput(page, '1')).not.toBeChecked();
 
-    // Switch to independent mode (via the attribute → updateProps path).
+    // Switch to independent mode (via the attribute → setOptions path).
     await page.getByTestId('mode-independent').click();
     await expect(page.getByTestId('mode')).toHaveText('independent');
 

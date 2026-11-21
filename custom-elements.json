@@ -3029,15 +3029,26 @@
             },
             {
               "kind": "method",
-              "name": "updateProps",
+              "name": "getOptions",
+              "return": {
+                "type": {
+                  "text": "Readonly<TreeViewStateOptions<T>>"
+                }
+              },
+              "description": "The merged options: the constructor's (missing keys = the element's defaults) + every `setOptions()` since.\nThe live object — read it, change it only through `setOptions(partial)`. State changed by the user or by a\nmethod (expand, select, search typed in …) is read from the state itself, not from here."
+            },
+            {
+              "kind": "method",
+              "name": "setOptions",
               "parameters": [
                 {
                   "name": "updates",
                   "type": {
-                    "text": "Partial<TreeViewStateConfig<T>>"
+                    "text": "Partial<TreeViewStateOptions<T>>"
                   }
                 }
-              ]
+              ],
+              "description": "Merge `updates` into the current options and apply only what changed (rulebook C-CA-39: the one way the\nstate takes settings after construction). A key that is absent or `undefined` is left unchanged; `null`\nclears a nullable option. `TreeViewEngine.setOptions()` calls it with its full mapped options."
             },
             {
               "kind": "method",
@@ -3552,9 +3563,9 @@
         },
         {
           "kind": "js",
-          "name": "TreeViewStateConfig",
+          "name": "TreeViewStateOptions",
           "declaration": {
-            "name": "TreeViewStateConfig",
+            "name": "TreeViewStateOptions",
             "module": "./controller/types"
           }
         },

@@ -64,3 +64,17 @@ test("a headless TreeViewState given only data has the element's defaults (id / 
   });
   expect(rows).toEqual([['1', 'Documents'], ['1.1', 'Projects'], ['2', 'Photos']]);
 });
+
+test('a headless TreeViewState takes settings one way: setOptions(partial) merges, getOptions() reads (C-CA-39)', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const state = (window as any).bareState;
+    const before = { idMember: state.getOptions().idMember, selectionMode: state.getOptions().selectionMode };
+    state.setOptions({ selectionMode: 'multiple' });
+    state.setOptions({ isCheckboxesShown: true, selectionMode: undefined });   // undefined = unchanged
+    const after = state.getOptions();
+    return { before, selectionMode: after.selectionMode, isCheckboxesShown: after.isCheckboxesShown,
+      idMember: after.idMember, hasData: Array.isArray(after.data), hasUpdateProps: 'updateProps' in state };
+  });
+  expect(result).toEqual({ before: { idMember: 'id', selectionMode: 'single' }, selectionMode: 'multiple',
+    isCheckboxesShown: true, idMember: 'id', hasData: true, hasUpdateProps: false });
+});

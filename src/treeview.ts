@@ -2,7 +2,7 @@ import { createLabels, type Labels } from '@keenmate/web-components-core/locale'
 import { DEFAULT_LABELS, type TreeViewLabels } from './labels';
 import { TreeViewState } from './controller/tree-view-state';
 import type { TreeLoggers } from './logger';
-import type { TreeViewStateConfig, NodeRef, NodeDropContext, NodeRenderContext, NodeTransformContext } from './controller/types';
+import type { TreeViewStateOptions, NodeRef, NodeDropContext, NodeRenderContext, NodeTransformContext } from './controller/types';
 import type { TreeViewRenderer, RendererConfig, ContainerSize } from './renderer/types';
 import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
@@ -423,7 +423,7 @@ export class TreeViewEngine<T = any> {
         this.engine.contextMenuCallbackCb
       );
     }
-    this.engine.updateProps(engineConfig);
+    this.engine.setOptions(engineConfig);
     const rendererConfig = this.mapToRendererConfig(props);
     if (Object.keys(rendererConfig).length > 0) {
       this.renderer.updateConfig(rendererConfig);
@@ -442,7 +442,7 @@ export class TreeViewEngine<T = any> {
    * selection, checks, focus and scroll are kept.
    */
   refreshLabels(): void {
-    this.engine.updateProps({ displayValueFallback: this.labels.text('labels.noDisplayValue') });
+    this.engine.setOptions({ displayValueFallback: this.labels.text('labels.noDisplayValue') });
     this.renderer.updateConfig({ labels: this.labels });
   }
 
@@ -876,7 +876,7 @@ export class TreeViewEngine<T = any> {
 
   // ── Config adapters (public single-ctx shape → engine internals) ────
 
-  private mapToEngineConfig(options: TreeViewEngineOptions<T>): TreeViewStateConfig<T> {
+  private mapToEngineConfig(options: TreeViewEngineOptions<T>): TreeViewStateOptions<T> {
     const o = options;
     return {
       idMember: o.idMember || 'id',
@@ -1044,7 +1044,7 @@ export class TreeViewEngine<T = any> {
           internalGate(runBeforeCallbackSync(f, this.ctx({ node, isChecked, affectedPaths }), 'beforeCheckboxToggleCallback'))),
       onCheckedChange: this.event(o.onCheckedChange),
       onSelectionChange: this.event(o.onSelectionChange),
-    } as unknown as TreeViewStateConfig<T>;
+    } as unknown as TreeViewStateOptions<T>;
   }
 
   private mapToRendererConfig(options: TreeViewEngineOptions<T>): RendererConfig<T> {

@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   config type keeps its name `TreeViewConfig`.
 - `<web-treeview>` is unchanged (its `update()` is core's protected hook; it now calls `setOptions()`).
 
+### Changed — BREAKING: the headless `TreeViewState` takes settings one way (2026-11-21)
+- BREAKING (rulebook C-CA-39, like the engines): `TreeViewState.updateProps(partial)` → `setOptions(partial)`; new
+  `getOptions(): Readonly<TreeViewStateOptions<T>>` (the merged options: the constructor's, missing keys = the
+  element's defaults, + every `setOptions()` since — the live object, read-only). The settings type
+  `TreeViewStateConfig` → `TreeViewStateOptions` (constructor, `setOptions`, `getOptions`). No aliases.
+  `TreeViewStateSnapshot` / `TreeViewStateEvents` keep their names. `TreeViewEngine` / the element are unchanged.
+
 ### Added — `locale` input (2026-11-21)
 - `locale` input (attribute + property, rulebook C-CA-38): BCP-47 locale for the numbers in labels — `{count}` in
   the `ariaLabels.searchResults` / `ariaLabels.dropItems` announcements, through core `formatNumber` — and the

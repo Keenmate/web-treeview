@@ -80,7 +80,7 @@
             tree.nodes = data;
 
             // Runtime mode switch via the attribute (the real web-component path →
-            // controller.updateProps → _reconcileVisualStatesForMode).
+            // state.setOptions → _reconcileVisualStatesForMode).
             document.querySelector('[data-testid="mode-cascade"]').onclick = () => {
                 tree.setAttribute('checkbox-mode', 'cascade');
                 setText('mode', 'cascade');

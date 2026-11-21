@@ -247,7 +247,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * the public batch write is core's `el.setAttributes(props)`).
    *
    * Sends the FULL assembled engine config on every call. This matters:
-   * `controller.updateProps` is a merge, and several derived behaviors (e.g.
+   * `TreeViewState.setOptions` is a merge, and several derived behaviors (e.g.
    * `expandLevel` auto-expansion when `data` arrives) only fire when the relevant
    * keys are present together. A changed-keys-only partial would drop them.
    * `this.config` already holds every value in `partial`. A batch of element-only keys

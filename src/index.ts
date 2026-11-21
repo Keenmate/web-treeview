@@ -30,7 +30,7 @@ export type {
   ClickBehavior,
   SelectionModifiers,
   RangeSelectionMode,
-  TreeViewStateConfig,
+  TreeViewStateOptions,
   TreeViewStateSnapshot,
   TreeViewStateEvents,
   // engine-side shapes the public ctx / detail types build on

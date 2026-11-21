@@ -831,12 +831,15 @@ search + filtering, keyboard shortcuts (`handleKeydown(event)`), clipboard and d
 `state-change` snapshot (coalesced) whenever something visible changed; you draw from it and call its methods.
 
 What you take over from `TreeViewEngine`: rendering, input wiring, UI strings (`labels`), icons, context menus,
-the loader, screen-reader announcements, and the callback shape — `TreeViewStateConfig` takes `data` (not
+the loader, screen-reader announcements, and the callback shape — `TreeViewStateOptions` takes `data` (not
 `nodes`) and the state's own callback shapes (`onSelectionChange({ paths, nodes })`, `onNodeClick({ path, node,
 parent, siblings })`, a few positional ones like `beforeCheckboxToggleCallback(node, isChecked, affectedPaths)`) —
 no `controller` / `element` on the ctx, no `before*` result normalisation, no DOM events. Options you leave out get the
 element's defaults where the key is shared (`idMember` `'id'`, `pathMember` `'path'`, `displayValueMember`
 `'displayValue'`, `clickBehavior`, `selectionMode`, … — same source as `TreeViewEngine`).
+Settings go the same way as on the engine: `new TreeViewState(options)` → `setOptions(partial)` (merges; a key left
+out or `undefined` is unchanged, `null` clears) → `getOptions()` (the merged options) — all three typed
+`TreeViewStateOptions<T>`.
 
 ```ts
 import '@keenmate/web-treeview';                     // the CSS + the element (unused here)
@@ -865,7 +868,7 @@ state.on('state-change', (snapshot) => {
   }));
 });
 
-// later: state.updateProps({ searchTerm: 'proj' }); … state.destroy();
+// later: state.setOptions({ searchTerm: 'proj' }); state.getOptions().searchTerm; … state.destroy();
 ```
 
 `examples-custom-layout.html` CL06 is the full-size version: a whole iOS-style file browser (navigation, search,

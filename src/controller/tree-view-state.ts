@@ -51,7 +51,7 @@ import type {
   SelectionModifiers,
   SelectMode,
   TreeMutationOptions,
-  TreeViewStateConfig,
+  TreeViewStateOptions,
   TreeViewStateSnapshot,
   TreeViewStateEvents,
   NodeRef,
@@ -185,9 +185,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // reused by the renderer, so the class added to the live element survives re-renders.
   private _closingHandles = new Map<string, { handle: AnimateOutHandle; apply: () => void; targets: string[] }>();
   private _bodyClass: string | null | undefined = undefined;
+  /** The merged options (`getOptions()`): constructor options + every `setOptions()` partial. */
+  private _options!: TreeViewStateOptions<T>;
   // Current expand-to-level. Tracked on the controller because the LTree bakes
   // its expand level into a closure at construction — the only way to change it
-  // is to recreate the tree, so updateProps must know the previous value to
+  // is to recreate the tree, so setOptions must know the previous value to
   // detect a real change (buildConfig resends the attribute on every update).
   private _expandLevel: number | null | undefined = undefined;
 
@@ -239,47 +241,47 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // _checkedPaths). Only applies when checkboxMode === 'cascade'. rc14.
   private _cascadeCheckPolicy: import('./types').CascadeCheckPolicy = 'rolled-up';
   private _shouldClickToggleCheckbox: boolean = false;
-  private beforeCheckboxToggleCb: TreeViewStateConfig<T>['beforeCheckboxToggleCallback'];
+  private beforeCheckboxToggleCb: TreeViewStateOptions<T>['beforeCheckboxToggleCallback'];
 
   // Clipboard (cut paths for dimming)
   private _cutPaths: Set<string> = new Set();
 
   // Events / callbacks (ctx-object signatures — rc07 parity)
-  private checkedChangeCb: TreeViewStateConfig<T>['onCheckedChange'];
-  private selectionChangeCb: TreeViewStateConfig<T>['onSelectionChange'];
-  private nodeClickedCb: TreeViewStateConfig<T>['onNodeClick'];
-  private onNodeDoubleClickCb: TreeViewStateConfig<T>['onNodeDoubleClick'];
-  private beforeExpandCb: TreeViewStateConfig<T>['beforeExpandCallback'];
-  private nodeExpandCb: TreeViewStateConfig<T>['onNodeExpand'];
-  private nodeCollapseCb: TreeViewStateConfig<T>['onNodeCollapse'];
+  private checkedChangeCb: TreeViewStateOptions<T>['onCheckedChange'];
+  private selectionChangeCb: TreeViewStateOptions<T>['onSelectionChange'];
+  private nodeClickedCb: TreeViewStateOptions<T>['onNodeClick'];
+  private onNodeDoubleClickCb: TreeViewStateOptions<T>['onNodeDoubleClick'];
+  private beforeExpandCb: TreeViewStateOptions<T>['beforeExpandCallback'];
+  private nodeExpandCb: TreeViewStateOptions<T>['onNodeExpand'];
+  private nodeCollapseCb: TreeViewStateOptions<T>['onNodeCollapse'];
   /** Paths whose async beforeExpandCallback is in flight (loading state; repeat toggles ignored). */
   private _expandPending = new Set<string>();
-  private beforeCopyCb: TreeViewStateConfig<T>['beforeCopyCallback'];
-  private beforeCutCb: TreeViewStateConfig<T>['beforeCutCallback'];
-  private beforePasteCb: TreeViewStateConfig<T>['beforePasteCallback'];
-  private beforeDeleteCb: TreeViewStateConfig<T>['beforeDeleteCallback'];
-  private onCopyCb: TreeViewStateConfig<T>['onCopy'];
-  private onCutCb: TreeViewStateConfig<T>['onCut'];
-  private onPasteCb: TreeViewStateConfig<T>['onPaste'];
-  private onDeleteCb: TreeViewStateConfig<T>['onDelete'];
-  private outputTransformCb: TreeViewStateConfig<T>['nodeOutputTransformationCallback'];
-  private inputTransformCb: TreeViewStateConfig<T>['nodeInputTransformationCallback'];
+  private beforeCopyCb: TreeViewStateOptions<T>['beforeCopyCallback'];
+  private beforeCutCb: TreeViewStateOptions<T>['beforeCutCallback'];
+  private beforePasteCb: TreeViewStateOptions<T>['beforePasteCallback'];
+  private beforeDeleteCb: TreeViewStateOptions<T>['beforeDeleteCallback'];
+  private onCopyCb: TreeViewStateOptions<T>['onCopy'];
+  private onCutCb: TreeViewStateOptions<T>['onCut'];
+  private onPasteCb: TreeViewStateOptions<T>['onPaste'];
+  private onDeleteCb: TreeViewStateOptions<T>['onDelete'];
+  private outputTransformCb: TreeViewStateOptions<T>['nodeOutputTransformationCallback'];
+  private inputTransformCb: TreeViewStateOptions<T>['nodeInputTransformationCallback'];
   // Manual double-click detection — the flat diff reconciler patches a row's
   // attributes on the first click (focus/selection bumps _rev), which makes the
   // browser's native dblclick unreliable. Tracks the last plain UI click.
   private _lastClickPath: string | null = null;
   private _lastClickTime: number = 0;
-  private nodeDragStartCb: TreeViewStateConfig<T>['onNodeDragStart'];
-  private nodeDragOverCb: TreeViewStateConfig<T>['onNodeDragOver'];
-  private beforeDropCallbackCb: TreeViewStateConfig<T>['beforeDropCallback'];
-  private beforeDragStartCb: TreeViewStateConfig<T>['beforeDragStartCallback'];
-  private nodeDropCb: TreeViewStateConfig<T>['onNodeDrop'];
-  private nodeDragDeniedCb: TreeViewStateConfig<T>['onNodeDragDenied'];
-  private nodeDropDeniedCb: TreeViewStateConfig<T>['onNodeDropDenied'];
-  private onTreeKeydownCb: TreeViewStateConfig<T>['onTreeKeydown'];
-  private beforeScrollCb: TreeViewStateConfig<T>['beforeScrollCallback'];
+  private nodeDragStartCb: TreeViewStateOptions<T>['onNodeDragStart'];
+  private nodeDragOverCb: TreeViewStateOptions<T>['onNodeDragOver'];
+  private beforeDropCallbackCb: TreeViewStateOptions<T>['beforeDropCallback'];
+  private beforeDragStartCb: TreeViewStateOptions<T>['beforeDragStartCallback'];
+  private nodeDropCb: TreeViewStateOptions<T>['onNodeDrop'];
+  private nodeDragDeniedCb: TreeViewStateOptions<T>['onNodeDragDenied'];
+  private nodeDropDeniedCb: TreeViewStateOptions<T>['onNodeDropDenied'];
+  private onTreeKeydownCb: TreeViewStateOptions<T>['onTreeKeydown'];
+  private beforeScrollCb: TreeViewStateOptions<T>['beforeScrollCallback'];
   /** @internal Used by renderers to check if a callback is available */
-  contextMenuCallbackCb: TreeViewStateConfig<T>['contextMenuCallback'];
+  contextMenuCallbackCb: TreeViewStateOptions<T>['contextMenuCallback'];
   private renderStartCb: (() => void) | undefined;
   private renderProgressCb: ((stats: RenderStats) => void) | undefined;
   private renderCompleteCb: ((stats: RenderStats) => void) | undefined;
@@ -604,7 +606,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   get searchStatus(): SearchStatus | null { return this._searchStatus; }
 
   /** Push the search settings + progress/status hooks onto the current ltree (it is
-   *  recreated by updateProps, so this runs after every createLTree too). */
+   *  recreated by setOptions, so this runs after every createLTree too). */
   private _wireTreeSearch(): void {
     const tree = this.tree;
     if (!tree) return;
@@ -933,12 +935,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── Constructor ─────────────────────────────────────────────────────
 
-  constructor(props: TreeViewStateConfig<T>) {
+  constructor(props: TreeViewStateOptions<T>) {
     super();
     // C-CA-37: every option left out (or `undefined`) gets <web-treeview>'s default — one source, the
     // element's input table (`ENGINE_DEFAULTS`), for the keys this config shares with the element. A bare
     // `new TreeViewState({ data })` reads `id` / `path` / `displayValue` like the element does.
-    props = withEngineDefaults(props) as TreeViewStateConfig<T> & Required<Pick<TreeViewStateConfig<T>, 'idMember' | 'pathMember'>>;
+    props = withEngineDefaults(props) as TreeViewStateOptions<T> & Required<Pick<TreeViewStateOptions<T>, 'idMember' | 'pathMember'>>;
+    this._options = { ...props };
 
     // Assign prop values (with defaults)
     this._treeId = props.treeId || this.generateTreeId();
@@ -4276,11 +4279,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return true;
   }
 
-  // ── updateProps (batch property updates) ────────────────────────────
+  // ── setOptions / getOptions (rulebook C-CA-39) ──────────────────────
 
   /** Apply `shouldUseInternalSearchIndex` (null → default true) / `initializeIndexCallback`
    *  (null clears; undefined = unchanged). True when either changed — the LTree is rebuilt. */
-  private _applyIndexProps(updates: Partial<TreeViewStateConfig<T>>): boolean {
+  private _applyIndexProps(updates: Partial<TreeViewStateOptions<T>>): boolean {
     let isChanged = false;
     if (updates.shouldUseInternalSearchIndex !== undefined) {
       const next = updates.shouldUseInternalSearchIndex ?? true;
@@ -4293,10 +4296,25 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return isChanged;
   }
 
-  updateProps(updates: Partial<TreeViewStateConfig<T>>) {
+  /** The merged options: the constructor's (missing keys = the element's defaults) + every `setOptions()` since.
+   *  The live object — read it, change it only through `setOptions(partial)`. State changed by the user or by a
+   *  method (expand, select, search typed in …) is read from the state itself, not from here. */
+  getOptions(): Readonly<TreeViewStateOptions<T>> {
+    return this._options;
+  }
+
+  /**
+   * Merge `updates` into the current options and apply only what changed (rulebook C-CA-39: the one way the
+   * state takes settings after construction). A key that is absent or `undefined` is left unchanged; `null`
+   * clears a nullable option. `TreeViewEngine.setOptions()` calls it with its full mapped options.
+   */
+  setOptions(updates: Partial<TreeViewStateOptions<T>>) {
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) (this._options as unknown as Record<string, unknown>)[key] = value;
+    }
     {
       const has = (k: string) => k in updates;
-      this.log.INIT.debug('updateProps: node classes',
+      this.log.INIT.debug('setOptions: node classes',
         'focusedNodeClass:', has('focusedNodeClass') ? JSON.stringify((updates as any).focusedNodeClass) : '(absent)',
         '| selectedNodeClass:', has('selectedNodeClass') ? JSON.stringify((updates as any).selectedNodeClass) : '(absent)',
         '| checkedNodeClass:', has('checkedNodeClass') ? JSON.stringify((updates as any).checkedNodeClass) : '(absent)');

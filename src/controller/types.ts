@@ -396,7 +396,7 @@ export interface BeforePasteContext<T> {
 
 // ─── Controller props ─────────────────────────────────────────────────────
 
-export interface TreeViewStateConfig<T> {
+export interface TreeViewStateOptions<T> {
   /** Loggers to log through (the element's instance loggers); defaults to the TREEVIEW category loggers. */
   log?: import('../logger').TreeLoggers;
   // MAPPINGS — a key left out gets <web-treeview>'s default (`id`, `path`, `displayValue`, …; C-CA-37).

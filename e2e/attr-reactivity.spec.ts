@@ -132,11 +132,12 @@ test('core hooks stay protected in the published manifest (C-CA-14: the public b
   const element = manifest.modules
     .flatMap((m: { declarations?: { name: string; members?: { name: string; privacy?: string }[] }[] }) => m.declarations ?? [])
     .find((d: { name: string }) => d.name === 'WebTreeViewElement');
-  const privacy = (name: string) => element.members.find((m: { name: string }) => m.name === name)?.privacy ?? 'public';
-  expect(['update', 'reinit', 'connect', 'disconnect', 'destroyCallback', 'createController'].map((n) => [n, privacy(n)]))
-    .toEqual([['update', 'protected'], ['reinit', 'protected'], ['connect', 'protected'], ['disconnect', 'protected'],
-      ['destroyCallback', 'protected'], ['createController', 'protected']]);
-  expect(privacy('setAttributes')).toBe('public');
+  // The manifest keeps only the public API (core blissAnalyzerConfig publicApiPlugin): protected hooks are absent.
+  const member = (name: string) => element.members.find((m: { name: string }) => m.name === name);
+  expect(['update', 'reinit', 'connect', 'disconnect', 'destroyCallback', 'createController']
+    .filter((n) => member(n) && member(n).privacy !== 'protected')).toEqual([]);
+  expect(member('setAttributes')?.privacy ?? 'public').toBe('public');
+  expect(member('setAttributes')).toBeDefined();
 });
 
 test.describe('enum inputs', () => {

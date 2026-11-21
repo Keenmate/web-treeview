@@ -644,7 +644,6 @@ export interface TreeViewMethods<T = any> {
   searchNodes(term: string | null, searchOptions?: SearchOptions): LTreeNode<T>[];
   scrollToPath(path: string, options?: ScrollToPathOptions): Promise<boolean>;
   closeContextMenu(): void;
-  update(props: Partial<TreeViewConfig<T>>): void;
   getTree(): import('./ltree/types').Ltree<T>;
   refreshNode(path: string): void;
   refreshSiblings(parentPath: string): void;

@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   config type keeps its name `TreeViewConfig`.
 - `<web-treeview>` is unchanged (its `update()` is core's protected hook; it now calls `setOptions()`).
 
+### Fixed — `TreeViewMethods` type lists only real methods (2026-11-21)
+- The exported `TreeViewMethods` type still listed `update(props)`, which the element no longer has (batch writes are
+  core's `el.setAttributes(props)`). Type only — no runtime change.
+
 ### Changed — BREAKING: the headless `TreeViewState` takes settings one way (2026-11-21)
 - BREAKING (rulebook C-CA-39, like the engines): `TreeViewState.updateProps(partial)` → `setOptions(partial)`; new
   `getOptions(): Readonly<TreeViewStateOptions<T>>` (the merged options: the constructor's, missing keys = the

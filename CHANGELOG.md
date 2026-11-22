@@ -258,8 +258,8 @@ tests in `e2e/regressions.spec.ts` (fixture `test/regressions.html`) and `e2e/dr
 - **B1** The Delete command reported the wrong paths to `node-delete` when a removal in the middle failed
   (`targets.slice(0, removed)`); it now reports the paths actually removed.
 - **B3** Keyboard Enter / Space (`navToggle`) re-implemented the toggle — ignored accordion mode and
-  `getNodeIsCollapsible`; it now calls `toggleNodeExpanded`. Backspace (`navBackOut`) no longer collapses a
-  non-collapsible parent.
+  `getIsCollapsibleCallback` / `isCollapsibleMember`; it now calls `toggleNodeExpanded`. Backspace (`navBackOut`)
+  no longer collapses a non-collapsible parent.
 - **B7** A curated `beforeDragStartCallback` manifest (holes) was lost whenever a `beforeDropCallback` was set: the
   drop paths reset the drag state right after calling `_handleDrop`, so after its `await` the override was `null`
   and whole subtrees moved. The override is now read before the await.
@@ -440,6 +440,54 @@ tests in `e2e/regressions.spec.ts` (fixture `test/regressions.html`) and `e2e/dr
 
 ### Documentation — example pages on devkit rc14 (2026-11-13)
 - Devkit `^1.0.0-rc14`: API tables stack into cards on a phone, hand-written code blocks are highlighted (`data-language`) with a Copy button. Reference fixed: DS07 listed a `data` property (it is `nodes`); the built-in menu actions lacked `expand-subtree` … `sort-all`; `renderContextMenuCallback`'s ctx lacked `entries`; SF04 typed `node` as `TreeNode`; SF03 said the search index must be enabled (on by default) and gained `searchTerm`, `indexerTimeout`, `initializeIndexCallback`, the experimental filter-scope inputs and the `index-progress` / `search-status-change` events; CM03 gained the offsets and `menu-presentation` / `menu-side`. The manifest lists `--base-overlay-bg` / `--base-touch-target-min` (read by core's menu sheet).
+
+### Added — search result limit + search status events (2026-11-13)
+- `search-result-limit` (config key `searchResultLimit`, integer ≥ 1, default `1000`): the most matches a search /
+  filter returns. `searchNodes(term, { limit })` overrides it per call.
+- `index-progress` event (`{ processed, total, isComplete }`, twin `onIndexProgress`): fired per idle batch while
+  the search index fills, and once more with `isComplete: true` — search / filter results are partial until then.
+- `search-status-change` event (`{ searchTerm, matchCount, isLimited, limit, isIndexing }`, twin
+  `onSearchStatusChange`): fired whenever a filter is applied or cleared, including the automatic re-filter when
+  indexing completes. `isLimited` = more nodes matched than `limit` (the index is asked for `limit + 1` hits, so
+  "exactly N" and "N+, cut off" differ).
+- Types `IndexProgress`, `SearchStatus`, `IndexProgressEventDetail`, `SearchStatusEventDetail`.
+- e2e `search-status.spec.ts` (fixture `test/search-status.html`).
+
+### Changed — search returns up to 1000 matches; `indexer-batch-size` defaults to 1000 (2026-11-13)
+- **Behaviour change:** a search / filter now returns up to `search-result-limit` (default `1000`) matches. rc06
+  used FlexSearch's own silent limit of **100** — a large tree can now show more matches than before. Set
+  `search-result-limit="100"` to keep the old cap.
+- **Default change:** `indexer-batch-size` defaults to `1000` (was `25`). Each idle slot is now also time-boxed
+  (≤ 16 ms, ≤ 8 ms when the slot is forced on a busy page), so the time budget — not the batch size — keeps the UI
+  smooth; the old cap of 25 only wasted idle time on big trees.
+
+### Added — EXPERIMENTAL filter scope (2026-11-13)
+- `filter-scope` (config key `filterScope`, type `FilterScope`): which descendants of a filter match stay visible
+  (ancestors always do) — `matches` (default, rc06 behaviour), `descendants` (the whole subtree), `tree-depth`
+  (the whole subtree for a match at level ≥ max tree depth − x), `subtree-height` (the whole subtree if it is ≤ x
+  levels deep), `levels-below` (x levels under each match).
+- `filter-descendant-depth` (config key `filterDescendantDepth`, integer ≥ 0, default `1`): the x above.
+- `expand-filter-descendants` (config key `shouldExpandFilterDescendants`, default `true`): off = the descendants
+  a scope adds start collapsed (matches + ancestors stay expanded), which keeps a top-level match on a big tree
+  cheap.
+- Experimental: names and behaviour may change. e2e `filter-scope.spec.ts` (fixture `test/filter-scope.html`).
+
+### Changed — cascade checkboxes while a filter is active act on the visible matches (2026-11-13)
+- **Behaviour change** (`checkbox-mode="cascade"`, filter active): a click on a parent's box checks / unchecks only
+  its VISIBLE descendants — all visible descendants checked → uncheck them, otherwise check them. Each touched
+  branch is then re-derived from its real children, so a branch with hidden unchecked children shows `[-]` and is
+  not in `checkedPaths`.
+- Checked state lives on the real nodes: a parent's box reflects all its children, hidden ones included, and checks
+  made while filtered survive clearing the filter.
+- `checkAll()` while filtered checks the visible nodes and keeps the hidden checks (it no longer replaces the whole
+  checked set). Programmatic `checkNode(s)` / `uncheckNode(s)` and assigning `checkedPaths` stay whole-subtree
+  regardless of the filter.
+- e2e `checkbox-mode.spec.ts`. Same rules as svelte-treeview.
+
+### Changed — the context menu is a bottom sheet on a phone (2026-11-13)
+- **Behaviour change:** `menu-presentation` defaults to `auto` — on a phone the context menu opens as a bottom
+  sheet (rc06 always showed the floating menu). Set `menu-presentation="floating"` to keep the floating menu
+  everywhere. See the Added entry below.
 
 ### Added — context menu presentation: `menu-presentation` / `menu-side` (2026-11-13)
 - Core `/menu` host inputs (`menuPresentationInputs()`, core rc24): `menu-presentation` (`auto` / `floating` /

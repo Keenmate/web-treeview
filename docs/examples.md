@@ -248,7 +248,7 @@ tree.renderLoadingCallback = ({ containerElement }) => {
 };
 ```
 
-`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`) and is re-run only when the node's version or that state changes (a focused input inside survives repaints). Other returning slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`. The fill hook `renderLoadingCallback` keeps filling the element it's given (`renderIconCallback(name, ctx)` RETURNS markup); plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
+`renderNodeCallback` also receives the render state (`deviceClass`, `container`, `isExpanded`, `isChecked`, `isSelected`, `isFocused`, `level`, `hasChildren`) plus `labels` (`ctx.labels.text(key)`), `isReadonly` and `isDisabled`, and is re-run only when something it receives changes (a focused input inside survives other repaints; a `labels` / readonly / disabled change re-runs the rendered rows in place). Other returning slots: `renderHeaderCallback`, `renderFooterCallback`, `renderEmptyZoneCallback`. The fill hook `renderLoadingCallback` keeps filling the element it's given (`renderIconCallback(name, ctx)` RETURNS markup); plus `renderContextMenuCallback({ node, …, containerElement })` and `renderContextMenuItemCallback({ node, …, menuItem, buttonElement })`.
 
 ## Context menu
 

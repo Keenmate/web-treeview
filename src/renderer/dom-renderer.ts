@@ -279,18 +279,20 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * row's `.wtv__node-icon` (only the changed markup is written) and re-run `renderNodeCallback` in place — its
    * memo is invalidated (`_nodeRenderGen`), since a custom node may draw icons through core `renderIcon`.
    * Same rows → expansion, selection, checks, focus and scroll are kept; off-screen rows render fresh later.
+   * `isIconsChanged: false` = only the custom node renders (a render-ctx value changed — `renderContextVersion`).
    */
-  private _refreshIcons(): void {
+  private _refreshIcons(isIconsChanged = true): void {
     const snapshot = this.lastSnapshot;
     if (!snapshot) return;
     const hasNodeCb = !!this.config.renderNodeCallback;
+    if (!hasNodeCb && !isIconsChanged) return;
     if (hasNodeCb) this._nodeRenderGen++;
     for (const [, el] of this.nodeElements) {
       const node = this.nodeOfElement.get(el);
       const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
       if (!node || !row) continue;
       const ctx = this._buildRenderContext(node, snapshot);
-      this._applyNodeIcon(row, node, ctx);
+      if (isIconsChanged) this._applyNodeIcon(row, node, ctx);
       const content = hasNodeCb ? row.querySelector(':scope > .wtv__node-content') as HTMLElement | null : null;
       if (content) this._renderNodeContent(content, node, ctx);
     }
@@ -299,6 +301,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   /** A header / footer region: its callback's result through core `renderSlot` (no built-in content). */
   private _renderRegion(el: HTMLElement | null, cb: (() => SlotResult) | undefined): void {
     if (el) renderSlot(el, cb ?? null);
+  }
+
+  /** The empty drop zone's content: `renderEmptyZoneCallback`'s result through core `renderSlot`; the built-in box by default. */
+  private _fillEmptyZone(zone: HTMLElement): void {
+    this._emptyZoneCb = this.config.renderEmptyZoneCallback;
+    renderSlot(zone, this.config.renderEmptyZoneCallback ?? null, {
+      renderDefault: (c) => {
+        const content = document.createElement('div');
+        content.className = 'wtv__empty-zone-content';
+        content.textContent = this._label('messages.dropHere');
+        c.replaceChildren(content);
+      },
+    });
   }
 
   /** The empty state: `renderEmptyStateCallback`'s result through core `renderSlot`; the built-in text by default. */
@@ -353,7 +368,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const prevIconCb = this.config.renderIconCallback;
     const prevHeaderCb = this.config.renderHeaderCallback;
     const prevFooterCb = this.config.renderFooterCallback;
+    const prevCtxVersion = this.config.renderContextVersion;
     Object.assign(this.config, config);
+    // A value the render callbacks RECEIVE changed (labels, isReadonly, isDisabled — TreeViewEngine bumps the
+    // version): re-run them in place, same elements. Anything else they don't receive never re-runs them.
+    const isCtxChanged = 'renderContextVersion' in config && config.renderContextVersion !== prevCtxVersion;
     if ('labels' in config) this._refreshLabels();
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
@@ -362,6 +381,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         zone.remove();
         this._fullRender(this.state.getSnapshot());
       }
+    } else if (isCtxChanged && this.config.renderEmptyZoneCallback) {
+      const zone = this._renderTarget?.querySelector<HTMLElement>('.wtv__empty-zone');
+      if (zone) this._fillEmptyZone(zone);
+    }
+    if (isCtxChanged && !('labels' in config) && this.config.renderEmptyStateCallback) {
+      // (a `labels` pass re-renders the empty state already — `_refreshLabels`)
+      const emptyState = this._renderTarget?.querySelector<HTMLElement>('.wtv__empty-state');
+      if (emptyState) this._renderEmptyState(emptyState);
     }
     if ('openLayer' in config && this.state) this.state.layerOpener = config.openLayer ?? null;
     if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
@@ -372,10 +399,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // `<web-treeview>` re-sends its full config on every batch (callbacks keep their identity — TreeViewEngine
     // memoizes the adapters), so the regions and rows are redrawn only on an ACTUAL callback change: an unrelated
     // input change keeps the row elements, focus and every transient row / region state.
-    if ('renderHeaderCallback' in config && config.renderHeaderCallback !== prevHeaderCb) {
+    if (isCtxChanged || ('renderHeaderCallback' in config && config.renderHeaderCallback !== prevHeaderCb)) {
       this._renderRegion(this.headerEl, this.config.renderHeaderCallback);
     }
-    if ('renderFooterCallback' in config && config.renderFooterCallback !== prevFooterCb) {
+    if (isCtxChanged || ('renderFooterCallback' in config && config.renderFooterCallback !== prevFooterCb)) {
       this._renderRegion(this.footerEl, this.config.renderFooterCallback);
     }
     // Re-render nodes if renderNodeCallback changed (so a callback assigned after the initial data
@@ -389,8 +416,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       ('renderIconCallback' in config && config.renderIconCallback !== prevIconCb);
     if (isNodeCbChanged && this.state) {
       this._fullRender(this.state.getSnapshot());
-    } else if (isIconsChanged) {
-      this._refreshIcons();
+    } else if (isIconsChanged || isCtxChanged) {
+      // In place: icons (when they changed) + the custom node renders — same rows, focus / scroll / state kept.
+      this._refreshIcons(isIconsChanged);
     }
   }
 
@@ -1594,15 +1622,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
         zone = document.createElement('div');
         zone.className = 'wtv__empty-zone';
-        this._emptyZoneCb = this.config.renderEmptyZoneCallback;
-        renderSlot(zone, this.config.renderEmptyZoneCallback ?? null, {
-          renderDefault: (c) => {
-            const content = document.createElement('div');
-            content.className = 'wtv__empty-zone-content';
-            content.textContent = this._label('messages.dropHere');
-            c.replaceChildren(content);
-          },
-        });
+        this._fillEmptyZone(zone);
         // Make the zone focus the tree body on hover/pointerdown so a Ctrl/Cmd+V
         // (routed through the body keydown listener) pastes into the empty tree.
         if (this.config.isEmptyDropPlaceholderShown) {

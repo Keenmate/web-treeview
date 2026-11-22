@@ -9,6 +9,8 @@
  */
 import type { ComponentContext, DeviceClass } from '@keenmate/web-components-core';
 import type { MenuItem, MenuEntry, ActionEventDetail, ResolvedMenuEntry } from '@keenmate/web-components-core/actions';
+import type { LabelsView } from '@keenmate/web-components-core/locale';
+import type { TreeViewLabels } from './labels';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { FilterScope, IndexProgress, SearchStatus } from './ltree/types';
 import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
@@ -182,8 +184,10 @@ export interface SortContext<T = any> extends TreeViewContext<T> {
   nodes: LTreeNode<T>[];
 }
 
-/** ctx of `renderNodeCallback`: the node and its render state (the callback RETURNS the content). */
-export interface NodeRenderCallbackContext<T = any> extends NodeContext<T>, NodeRenderContext {}
+/** ctx of `renderNodeCallback`: the node, its render state and the tree-wide render values of
+ *  {@link ContainerRenderContext} (`labels`, `isReadonly`, `isDisabled`) — the callback RETURNS the content and is
+ *  re-run (in place, same row element) when any of them changes. */
+export interface NodeRenderCallbackContext<T = any> extends NodeContext<T>, NodeRenderContext, ContainerRenderContext<T> {}
 
 /** ctx of `renderIconCallback(name, ctx)` — core's icon-hook context (`component`, `element`, `prefix`)
  *  plus the node, its render state and `controller`. */
@@ -194,8 +198,20 @@ export interface IconRenderContext<T = any> extends NodeContext<T>, NodeRenderCo
   prefix: string;
 }
 
-/** ctx of the region render callbacks (empty state, empty drop zone, header, footer) — they RETURN the content. */
-export interface ContainerRenderContext<T = any> extends TreeViewContext<T> {}
+/**
+ * ctx of the region render callbacks (empty state, empty drop zone, header, footer) — they RETURN the content.
+ * A change of any value here (`labels` / `locale` / `translateCallback`, the page-wide locale, `isReadonly`, the
+ * effective disabled state) re-runs the rendered callbacks in place; a change of anything else does not.
+ */
+export interface ContainerRenderContext<T = any> extends TreeViewContext<T> {
+  /** The tree's UI strings (core `createLabelsView`): `ctx.labels.text(key, params)` / `ctx.labels.html(key, params)` —
+   *  instance `labels` → own / page-wide `translateCallback` → page-wide labels → English, `{count}` locale-formatted. */
+  labels: LabelsView<TreeViewLabels>;
+  /** Read-only (`isReadonly`): the user can't change the data. */
+  isReadonly: boolean;
+  /** The effective disabled state (`isDisabled`, or a disabled `<fieldset>`). */
+  isDisabled: boolean;
+}
 
 /**
  * The surface ctx of the context menu: the node it opened on, with its live parent and

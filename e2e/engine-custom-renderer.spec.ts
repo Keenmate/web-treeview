@@ -82,9 +82,13 @@ test('setOptions(partial) hands the renderer only the keys it carries', async ({
   const keys = await page.evaluate(() => {
     (window as any).configKeys = [];
     (window as any).engine.setOptions({ isReadonly: true });
-    return (window as any).configKeys;
+    const first = (window as any).configKeys;
+    (window as any).configKeys = [];
+    (window as any).engine.setOptions({ isReadonly: true });   // unchanged value
+    return [first, (window as any).configKeys];
   });
-  expect(keys).toEqual(['isReadonly']);
+  // isReadonly is on the render ctx: a CHANGED value also bumps renderContextVersion (re-run the render callbacks).
+  expect(keys).toEqual([['isReadonly', 'renderContextVersion'], ['isReadonly']]);
 });
 
 test("a headless TreeViewState given only data has the element's defaults (id / path / displayValue)", async ({ page }) => {

@@ -65,6 +65,11 @@ export interface RendererConfig<T> {
    *  (the page-wide `window.components.renderIconCallback`, or the instance `renderIconCallback` replaced) —
    *  a renderer repaints its icons (and any custom node render that draws icons) then. */
   renderNodeIcon?: (value: string, node: LTreeNode<T>, ctx: NodeRenderContext) => string;
+  /** Bumped (TreeViewEngine) when a value the render callbacks' ctx carries changed — `labels` (incl. `locale`,
+   *  `translateCallback`, the page-wide locale), `isReadonly`, the effective disabled state. A renderer re-runs
+   *  the rendered `renderNodeCallback` rows and the header / footer / empty-state / empty-zone callbacks IN PLACE
+   *  (same elements) on a new value; an unchanged one means nothing they receive changed. */
+  renderContextVersion?: number;
   /** The instance icon hook — only compared here: a changed one re-paints the icons in place. */
   renderIconCallback?: unknown;
   /** Informational display when the tree has no data (e.g. "No items to display"). The result is read by

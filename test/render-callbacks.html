@@ -23,6 +23,7 @@
     <section><web-treeview id="results" expand-level="2"></web-treeview></section>
     <section><web-treeview id="empty-null"></web-treeview></section>
     <section><web-treeview id="empty-false"></web-treeview></section>
+    <section><web-treeview id="ctx" expand-level="2"></web-treeview></section>
 
     <script type="module">
         import '/src/index.ts';
@@ -79,6 +80,22 @@
         });
         setupTree($('empty-null'), [], { renderEmptyStateCallback: () => null });
         setupTree($('empty-false'), [], { renderEmptyStateCallback: () => false });
+        // Render callbacks whose output depends on values their ctx carries (labels, isReadonly, isDisabled).
+        window.ctxCalls = { node: 0, header: 0, footer: 0 };
+        setupTree($('ctx'), data, {
+            renderNodeCallback: ({ node, labels, isReadonly, isDisabled }) => {
+                window.ctxCalls.node++;
+                return `<span class="ctx-out">${node.path}|${labels.text('menuItems.copy')}|${isReadonly ? 'ro' : 'rw'}|${isDisabled ? 'off' : 'on'}</span>`;
+            },
+            renderHeaderCallback: ({ labels, isReadonly }) => {
+                window.ctxCalls.header++;
+                return `<h4 class="ctx-header">${labels.text('menuItems.copy')}|${isReadonly ? 'ro' : 'rw'}</h4>`;
+            },
+            renderFooterCallback: ({ isDisabled }) => {
+                window.ctxCalls.footer++;
+                return `<small class="ctx-footer">${isDisabled ? 'off' : 'on'}</small>`;
+            }
+        });
     </script>
 </body>
 </html>

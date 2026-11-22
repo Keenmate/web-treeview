@@ -305,12 +305,12 @@ place — `renderNodeCallback` re-runs on the rendered rows too, so icons a cust
 
 | Property | Signature | Description |
 |----------|-----------|-------------|
-| `renderNodeCallback` | `({ node, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren }) => string \| Node \| null \| undefined \| false` | The row's content: string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden. Re-run only when the node's version or render state changes |
+| `renderNodeCallback` | `({ node, deviceClass, container, isExpanded, isChecked, isSelected, isFocused, level, hasChildren, labels, isReadonly, isDisabled }) => string \| Node \| null \| undefined \| false` | The row's content: string = HTML, Node = mounted, `null` / `undefined` = the built-in label, `false` = hidden. Re-run only when something it receives changes: the node's version or render state (that row), or `labels` / `isReadonly` / `isDisabled` (every rendered row, in place — same row elements) |
 | `renderIconCallback` | `(name, { node, …renderState, controller, element, component, prefix }) => string \| null \| undefined` | This tree's icon hook: maps an icon NAME to markup; `null` / `undefined` = not mine (the page-wide hook decides), `''` = no icon. See [Node icons](#node-icons) |
 | `renderEmptyStateCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | "No items to display" (`null` = the built-in `messages.noData` / `messages.noResults` label, `false` = hidden) |
 | `renderEmptyZoneCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Drop zone in an empty tree (`null` = the built-in box, `false` = hidden) |
 | `renderLoadingCallback` | `({ component, context, containerElement, element, label }) => void \| (() => void)` | The `isLoading` overlay (core `LoaderRenderContext`, `context: 'overlay'`); may return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; neither → the default `.wtv__loader` |
-| `renderHeaderCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Tree header (`null` = empty, `false` = hidden) |
+| `renderHeaderCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Tree header (`null` = empty, `false` = hidden). The region callbacks' `ctx` (`ContainerRenderContext`) carries `labels` (`ctx.labels.text(key, params)` / `.html(…)`), `isReadonly`, `isDisabled`; a change of one of them re-runs them in place |
 | `renderFooterCallback` | `(ctx) => string \| Node \| null \| undefined \| false` | Tree footer (`null` = empty, `false` = hidden) |
 | `renderContextMenuCallback` | `({ node, path, parent, siblings, containerElement, entries, controller }) => void` | Take over the whole context menu (see [Custom menu renderer](#custom-menu-renderer)); close via `controller.closeContextMenu()` |
 | `renderContextMenuItemCallback` | `({ node, path, parent, siblings, menuItem, buttonElement }) => void` | Fill one menu item (`buttonElement` is the item `<div role="menuitem">`); leave it empty for the default |
@@ -774,7 +774,7 @@ user input goes back as state calls (`toggleNodeExpanded(path)`, `selectNode(pat
 `handleKeydown(event)`, …) so the hooks, events and announcements fire exactly as in the element. `config` carries the
 resolved UI strings (`config.labels.text(key)`), the node-icon drawer (`config.renderNodeIcon(value, node, ctx)` —
 core `renderIcon` with your `renderIconCallback`; when the page-wide `window.components.renderIconCallback` changes,
-call `engine.refreshIcons()` — it re-sends `renderNodeIcon` through `updateConfig` (as does replacing `renderIconCallback`), so repaint your icons there) and the loader drawer (`config.renderLoadingCallback` — core
+call `engine.refreshIcons()` — it re-sends `renderNodeIcon` through `updateConfig` (as does replacing `renderIconCallback`), so repaint your icons there), `config.renderContextVersion` (bumped when `labels` / `locale` / `translateCallback` / the page-wide locale / `isReadonly` / the effective disabled state changed — re-run your render callbacks in `updateConfig` then) and the loader drawer (`config.renderLoadingCallback` — core
 `renderLoader` with your hook).
 
 Minimal example — an indented list, click toggles:

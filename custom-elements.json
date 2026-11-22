@@ -9749,7 +9749,7 @@
               "type": {
                 "text": "(ctx: NodeRenderCallbackContext) => string | Node | null | undefined | false"
               },
-              "description": "Custom content of a node row (render state on the ctx). Returns string (HTML) / Node (mounted) / `null` | `undefined` (the built-in label) / `false` (hidden). Re-run only when the node or its render state changes."
+              "description": "Custom content of a node row (render state + `labels` / `isReadonly` / `isDisabled` on the ctx). Returns string (HTML) / Node (mounted) / `null` | `undefined` (the built-in label) / `false` (hidden). Re-run only when something on its ctx changes (the node, its render state, `labels`, `isReadonly`, `isDisabled`) — in place, same row element."
             },
             {
               "kind": "field",

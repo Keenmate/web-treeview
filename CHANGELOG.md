@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Added — render callbacks get `labels` / `isReadonly` / `isDisabled` and re-run when they change (2026-11-22)
+- The ctx of `renderNodeCallback` and of the region callbacks (`renderHeaderCallback`, `renderFooterCallback`,
+  `renderEmptyStateCallback`, `renderEmptyZoneCallback` — `ContainerRenderContext`) carries `labels` (core
+  `createLabelsView`: `ctx.labels.text(key, params)` / `ctx.labels.html(key, params)`, the whole chain incl. both
+  `translateCallback`s), `isReadonly` and `isDisabled` (the effective state, incl. a disabled `<fieldset>`).
+- Rule: a render callback re-runs when something IT RECEIVES changes. A change of `labels`, `locale`,
+  `translateCallback`, the page-wide `window.components.locale`, `isReadonly` or the effective disabled state re-runs
+  the rendered `renderNodeCallback` rows and the region callbacks IN PLACE — same row / region elements; expansion,
+  selection, checks and scroll kept (off-screen rows render fresh later). Any other input change re-runs none of them
+  (602d239). A callback that returns a NEW element on each run (e.g. a fresh `<input>`) gets it replaced by such a
+  re-run, so focus inside it moves; an unrelated input change keeps it focused.
+- `RendererConfig.renderContextVersion` (custom `TreeViewRenderer`s): bumped by `TreeViewEngine` when one of those
+  values changed — re-run the render callbacks then; unchanged = nothing they receive changed.
+
 ### Fixed — engine setOptions(partial) keeps the renderer settings it doesn't name (2026-11-22)
 - A standalone `TreeViewEngine.setOptions(partial)` (e.g. `{ isReadonly: true }`) reset every renderer setting the
   partial didn't carry — `renderNodeCallback`, the header / footer / empty regions, the context menu renderers — to

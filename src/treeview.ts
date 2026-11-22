@@ -1,4 +1,4 @@
-import { createLabels, type Labels } from '@keenmate/web-components-core/locale';
+import { createLabels, createLabelsView, type Labels, type LabelsView } from '@keenmate/web-components-core/locale';
 import { DEFAULT_LABELS, type TreeViewLabels } from './labels';
 import { TreeViewState } from './controller/tree-view-state';
 import type { TreeLoggers } from './logger';
@@ -23,6 +23,7 @@ import type {
   NodeTransformCallback,
   ContextMenuRenderContext,
   ContextMenuItemRenderContext,
+  ContainerRenderContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
 import { adoptStyles, ICON_CSS, renderIcon, type RenderIconCallback, announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
@@ -119,6 +120,10 @@ export class TreeViewEngine<T = any> {
   /** The UI strings (core `/locale`, D-NC-24): instance `labels` → own `translateCallback` → page-wide
    *  `translateCallback` → `window.components.locale.labels['web-treeview.<key>']` → English. Read live on every call. */
   private labels!: Labels<TreeViewLabels>;
+  /** What a render ctx exposes as `ctx.labels` (core `createLabelsView` — the whole chain, read live). */
+  private labelsView?: LabelsView<TreeViewLabels>;
+  /** Bumped when a value the render callbacks' ctx carries changed (RendererConfig.renderContextVersion). */
+  private renderContextVersion = 0;
 
   constructor(
     element: HTMLElement,
@@ -252,6 +257,21 @@ export class TreeViewEngine<T = any> {
   /** Attach `controller` + `element` (non-enumerable) to `fields`. Every ctx / detail goes through here. */
   ctx<F extends object>(fields: F): F & TreeViewContext<T> {
     return withComponentContext(fields, this.getPublicController(), this.hostElement()) as F & TreeViewContext<T>;
+  }
+
+  /** The tree-wide values every render ctx carries (ContainerRenderContext) — read live at each render. */
+  private renderCtx<F extends object>(fields: F): F & ContainerRenderContext<T> {
+    return this.ctx(Object.assign(fields, {
+      labels: (this.labelsView ??= createLabelsView(this.labels)),
+      isReadonly: this.isReadonly(),
+      isDisabled: !!this.options.isDisabled,
+    }));
+  }
+
+  /** The render ctx's tree-wide values as a comparable tuple (labels object, locale, translate hook, flags). */
+  private renderCtxInputs(): unknown[] {
+    const o = this.options;
+    return [o.labels, o.locale, o.translateCallback, !!o.isReadonly, !!o.isDisabled];
   }
 
   /** Cheap `{ node }` ctx for the hot per-node callbacks: a shared prototype carries controller / element. */
@@ -413,6 +433,7 @@ export class TreeViewEngine<T = any> {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
     props = withEngineDefaults(props, true);
     const prevIconCb = this.options.renderIconCallback;
+    const prevRenderCtx = this.renderCtxInputs();
     Object.assign(this.options, props);
     // Map the MERGED options, not the partial: the mapping fills absent keys (`data: nodes || []`, `idMember || 'id'`),
     // so a partial `update({ locale })` on a standalone engine would wipe the tree. The element sends its full config anyway.
@@ -438,6 +459,12 @@ export class TreeViewEngine<T = any> {
     // `renderNodeIcon` is the same function every time; re-sending it means "the icon sources changed"
     // (RendererConfig.renderNodeIcon) — only when this tree's own `renderIconCallback` was replaced.
     if (!('renderIconCallback' in props) || props.renderIconCallback === prevIconCb) delete rendererConfig.renderNodeIcon;
+    // A value the render ctx carries changed (labels / locale / translateCallback / isReadonly / isDisabled): the
+    // renderer re-runs the rendered render callbacks in place. `<web-treeview>` re-sends its full config on every
+    // batch, so this compares values — an unrelated input change re-runs nothing.
+    if (this.renderCtxInputs().some((v, i) => v !== prevRenderCtx[i])) {
+      rendererConfig.renderContextVersion = ++this.renderContextVersion;
+    }
     if (Object.keys(rendererConfig).length > 0) {
       this.renderer.updateConfig(rendererConfig);
     }
@@ -456,7 +483,8 @@ export class TreeViewEngine<T = any> {
    */
   refreshLabels(): void {
     this.engine.setOptions({ displayValueFallback: this.labels.text('labels.noDisplayValue') });
-    this.renderer.updateConfig({ labels: this.labels });
+    // The render ctx's `labels` read through the page-wide locale too: re-run the render callbacks in place.
+    this.renderer.updateConfig({ labels: this.labels, renderContextVersion: ++this.renderContextVersion });
   }
 
   /**
@@ -875,8 +903,10 @@ export class TreeViewEngine<T = any> {
   /** The effective disabled state (the element merges its `isDisabled` input with a disabled
    *  `<fieldset>`): no user interaction, out of the tab order. Programmatic calls still work. */
   setDisabled(isDisabled: boolean): void {
+    const isChanged = !!this.options.isDisabled !== isDisabled;
     this.options.isDisabled = isDisabled;
-    this.renderer.updateConfig({ isDisabled });
+    // `ctx.isDisabled` of the render callbacks: re-run them in place on a flip.
+    this.renderer.updateConfig(isChanged ? { isDisabled, renderContextVersion: ++this.renderContextVersion } : { isDisabled });
   }
 
   /** `highlight-on-page-drag` armed state — an armed empty tree shows its drop zone. */
@@ -1073,12 +1103,13 @@ export class TreeViewEngine<T = any> {
   private mapToRendererConfig(options: TreeViewEngineOptions<T>): RendererConfig<T> {
     const o = options;
     const region = (src: ((ctx: any) => SlotResult) | null | undefined) =>
-      this.wrap(src, 'region', (f) => () => f(this.ctx({})));
+      this.wrap(src, 'region', (f) => () => f(this.renderCtx({})));
     const cfg: RendererConfig<T> = {
       renderNodeCallback: this.wrap(o.renderNodeCallback, 'renderNode', (f) =>
-        (node: LTreeNode<T>, rc: NodeRenderContext) => f(this.ctx({ ...rc, node }))),
+        (node: LTreeNode<T>, rc: NodeRenderContext) => f(this.renderCtx({ ...rc, node }))),
       renderIconCallback: o.renderIconCallback,
       renderNodeIcon: this.nodeIconHtml,
+      renderContextVersion: this.renderContextVersion,
       renderEmptyStateCallback: region(o.renderEmptyStateCallback),
       labels: this.labels,
       renderEmptyZoneCallback: region(o.renderEmptyZoneCallback),

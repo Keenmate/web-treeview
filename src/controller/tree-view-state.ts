@@ -361,35 +361,30 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _draggedPaths: string[] = [];
   private _isDragInProgress: boolean = false;
   private _hoveredNodeForDrop: LTreeNode<any> | null = null;
-  /** The refusing row (isDropAllowed:false) the desktop drag is over — its dragover was
-   *  NOT accepted (🚫 cursor), so no `drop` fires there; `dragend` announces the reject
-   *  (NOTES #22). Cleared when the drag moves to anything else or a drop happens. */
-  private _refusedDropNode: LTreeNode<any> | null = null;
   private _activeDropPosition: DropPosition | null = null;
   private _currentDropOperation: DropOperation = 'move';
-  // Snapshot of `selectedPaths` taken in the dragstart rAF before the
-  // OS-convention sync replaces it with the dragged node. Restored on
-  // Esc-cancel so the user isn't left with the dragged node "stuck" selected.
+  // Snapshot of `selectedPaths` taken at drag start before the OS-convention sync
+  // replaces it with the dragged node. Restored when the drag is cancelled or lands
+  // nowhere, so the user isn't left with the dragged node "stuck" selected.
   private _preDragSelectionSnapshot: Set<string> | null = null;
   // Authoritative dragged-set manifest from beforeDragStartCallback (rc13). Null =
   // no override (use the selected set). Consulted by _draggedRefs + the multi-drag
   // move/copy. Cleared on drag end. A curated override may omit descendants (holes).
   private _dragSetOverride: string[] | null = null;
 
-  // Touch drag
-  // Touch drag: the gesture (long press, scroll lock, hit test, auto-scroll, Escape) is core
-  // createPointerDrag, wired by the renderer; the engine keeps the tree side of it.
-  private touchDragState: {
+  // Pointer drag (mouse / pen / touch): the gesture (threshold / long press, scroll lock, hit
+  // test, auto-scroll, Escape) is core createPointerDrag, wired by the renderer; the engine
+  // keeps the tree side of it (see "Pointer drag" below).
+  private _pointerDragState: {
     node: LTreeNode<any> | null;
     isDragging: boolean;
     /** A long-press landed on a NON-draggable node: we show the held 🚫 badge
      *  instead of starting a drag (core still holds the gesture, so the page stays put). */
     isDenied: boolean;
-    /** The touch drag ghost's core layer (placed at the finger). */
+    /** The drag ghost's core layer (placed at the pointer). */
     ghostLayer: Layer | null;
-    currentDropTarget: LTreeNode<any> | null;
   } = {
-    node: null, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
+    node: null, isDragging: false, isDenied: false, ghostLayer: null
   };
 
   // Blocked-action ("can't move this") feedback (svelte-treeview rc14). The held
@@ -1137,11 +1132,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this.nodeCallbacks = {
       onNodeClicked: this._nodeClickedCallback.bind(this),
       onNodeRightClicked: this._onNodeRightClicked.bind(this),
-      onNodeDragStart: this._onNodeDragStartInternal.bind(this),
-      onNodeDragOver: this._onNodeDragOverInternal.bind(this),
-      onNodeDragLeave: this._onNodeDragLeaveInternal.bind(this),
-      onNodeDrop: this._onNodeDropInternal.bind(this),
-      onZoneDrop: this._onZoneDrop.bind(this),
       onCheckboxToggle: this._onCheckboxToggle.bind(this)
     };
 
@@ -2487,46 +2477,45 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return this._checkedPaths.has(path);
   }
 
-  /** Apply a checked/unchecked state to the given paths, expanding to
-   *  descendants in cascade mode and recomputing ancestor visual states.
-   *  Returns whether the checked set actually changed. Does not notify. */
-  private _applyCheckboxState(paths: string[], checked: boolean): boolean {
-    let affected = paths;
-    if (this._checkboxMode === 'cascade') {
-      const expanded = new Set(paths);
-      for (const path of paths) {
-        const n = this._realNode(path);
-        if (n) for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
-      }
-      affected = [...expanded];
-    }
-    const newPaths = new Set(this._checkedPaths);
-    let changed = false;
-    for (const path of affected) {
+  /** checkNode(s) / uncheckNode(s) / an assigned checkedPaths: `paths` plus (cascade
+   *  mode) their whole real subtrees, through _setChecked. */
+  private _setCheckedWithCascade(paths: string[], isChecked: boolean): boolean {
+    const affected = this._checkboxMode === 'cascade' ? this._withCascadeDescendants(paths) : paths;
+    return this._setChecked(affected, isChecked);
+  }
+
+  /**
+   * THE writer of a check / uncheck (checkbox click, checkNode(s), uncheckNode(s), an
+   * assigned checkedPaths): sets isChecked on the REAL nodes of `paths` (the caller has
+   * already added the cascade descendants), re-derives the cascade states, assigns the
+   * canonical set ONCE and mirrors onto the filtered copies. Returns whether the canonical
+   * set changed. No event, no refresh. (svelte-treeview parity)
+   */
+  private _setChecked(paths: string[], isChecked: boolean, isAffectedSynced = false): boolean {
+    const prev = this._checkedPaths;
+    const next = new Set(prev);
+    for (const path of paths) {
       const n = this._realNode(path);
       if (!n) continue;
-      if (checked) {
-        if (!newPaths.has(path)) { newPaths.add(path); changed = true; }
-        n.isChecked = true;
-      } else {
-        if (newPaths.has(path)) { newPaths.delete(path); changed = true; }
-        n.isChecked = false;
-      }
+      if (isChecked) next.add(path);
+      else next.delete(path);
+      n.isChecked = isChecked;
       n._rev++;
     }
-    this._checkedPaths = newPaths;
     if (this._checkboxMode === 'cascade') {
-      this._rederiveVisualStates(affected);
-      for (const rp of paths) this._updateAncestorVisualStates(rp);
+      this._reconcileCascadeStates(paths, next, isAffectedSynced);
     } else {
-      for (const path of affected) {
+      for (const path of paths) {
         const n = this._realNode(path);
         if (n) n.visualState = n.isChecked ? VisualState.checked : VisualState.unchecked;
       }
     }
+    const isChanged = next.size !== prev.size || [...next].some((p) => !prev.has(p));
+    this._checkedPaths = next;
     this._syncFilteredCheckState();
-    return changed;
+    return isChanged;
   }
+
 
   /**
    * Reset checkbox state on the whole REAL tree: `isChecked` AND visualState. Walking only
@@ -2551,7 +2540,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** Check a single node (cascades to descendants in cascade mode).
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNode(path: string, options?: TreeMutationOptions): void {
-    const changed = this._applyCheckboxState([path], true);
+    const changed = this._setCheckedWithCascade([path], true);
     if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2561,7 +2550,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Use setCheckedPaths() to replace the whole set instead.
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
-    const changed = this._applyCheckboxState(paths, true);
+    const changed = this._setCheckedWithCascade(paths, true);
     if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2573,7 +2562,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
-    this._applyCheckboxState(paths, true);
+    this._setCheckedWithCascade(paths, true);
     if (!options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2608,7 +2597,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** Uncheck a single node (cascades to descendants in cascade mode).
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   uncheckNode(path: string, options?: TreeMutationOptions): void {
-    const changed = this._applyCheckboxState([path], false);
+    const changed = this._setCheckedWithCascade([path], false);
     if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2618,7 +2607,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  to skip `checkedChangeCallback`. */
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
     if (!paths || paths.length === 0) return;
-    const changed = this._applyCheckboxState(paths, false);
+    const changed = this._setCheckedWithCascade(paths, false);
     if (changed && !options?.isSilent) this._emitCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
@@ -2698,74 +2687,24 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       : [node.path];
 
     if (this._checkboxMode === 'cascade') {
-      const expanded = new Set(affectedPaths);
-      for (const path of affectedPaths) {
-        if (isFilteredCascade) {
-          for (const dp of visibleDescendants(path)) expanded.add(dp);
-          continue;
-        }
-        const n = this._realNode(path);
-        if (n) {
-          for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
-        }
-      }
-      affectedPaths = [...expanded];
+      affectedPaths = this._withCascadeDescendants(affectedPaths, isFilteredCascade);
     }
 
     // Interceptor: false → cancel, string[] → override affected paths.
     if (this.beforeCheckboxToggleCb) {
-      const result = this.beforeCheckboxToggleCb(node, newChecked, affectedPaths);
+      const result = this.beforeCheckboxToggleCb({ node, isChecked: newChecked, affectedPaths });
       if (result === false) return;
       if (Array.isArray(result)) affectedPaths = result;
     }
 
-    const newPaths = new Set(this._checkedPaths);
-    for (const path of affectedPaths) {
-      const n = this._realNode(path);
-      if (!n) continue;
-      if (newChecked) {
-        newPaths.add(path);
-        n.isChecked = true;
-      } else {
-        newPaths.delete(path);
-        n.isChecked = false;
-      }
-      n._rev++;
-    }
-    this._checkedPaths = newPaths;
+    // A filtered click checked only the visible part of each branch it touched, so those
+    // branches may still have hidden unchecked children — re-derive their isChecked from
+    // the REAL children too, so a partial branch lands at [-] and never sits in the
+    // canonical checked set.
+    this._setChecked(affectedPaths, newChecked, isFilteredCascade);
 
     if (!options?.skipFocus) this._focusedNode = node;
 
-    // Update visual states (cascade only — independent mode never auto-checks
-    // a parent based on descendants).
-    if (this._checkboxMode === 'cascade') {
-      // A filtered click checked only the visible part of each branch it touched, so
-      // those branches may still have hidden unchecked children. Re-derive every
-      // touched branch from its REAL children, deepest first, so a partial branch
-      // lands at [-] and never sits in the canonical checked set.
-      if (isFilteredCascade) {
-        const branches = affectedPaths
-          .map((p) => this._realNode(p))
-          .filter((n): n is LTreeNode<T> => !!n && n.children.length > 0)
-          .sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
-        const canonical = new Set(this._checkedPaths);
-        for (const bn of branches) {
-          const vs = this._computeVisualState(bn);
-          const shouldBeChecked = vs === VisualState.checked;
-          bn.visualState = vs;
-          bn.isChecked = shouldBeChecked;
-          if (shouldBeChecked) canonical.add(bn.path);
-          else canonical.delete(bn.path);
-          bn._rev++;
-        }
-        this._checkedPaths = canonical;
-      }
-      this._rederiveVisualStates(affectedPaths);
-      const rootPaths = isMultiSelected ? [...this._selectedPaths] : [node.path];
-      for (const rp of rootPaths) this._updateAncestorVisualStates(rp);
-    }
-
-    this._syncFilteredCheckState();
     // A checkbox toggle is not a node click — `checked-change` reports it.
     this._emitCheckedChange();
     this.tree.refresh();
@@ -2868,47 +2807,56 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return result;
   }
 
-  /**
-   * Re-derive visualState for every node a cascade check / uncheck touched, deepest first.
-   * Not just the clicked node: a branch BELOW it that was [-] (root → region → country,
-   * one country checked, then the root) gets all its children checked by the cascade and
-   * must flip to checked too — it used to keep its stale [-].
-   */
-  private _rederiveVisualStates(paths: Iterable<string>): void {
-    const nodes: LTreeNode<T>[] = [];
-    for (const p of paths) {
-      const n = this._realNode(p);
-      if (n) nodes.push(n);
+  /** `paths` plus every descendant (the cascade set of a check / uncheck). `isVisibleOnly`
+   *  (a cascade click while filtered) takes the descendants of the filtered COPY — the
+   *  visible matches — instead of the whole real subtree. */
+  private _withCascadeDescendants(paths: string[], isVisibleOnly = false): string[] {
+    const expanded = new Set(paths);
+    for (const path of paths) {
+      const n = isVisibleOnly ? (this.tree?.getNodeByPath(path) ?? null) : this._realNode(path);
+      if (n) for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
     }
-    nodes.sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
-    for (const n of nodes) {
-      const vs = this._computeVisualState(n);
-      if (n.visualState !== vs) { n.visualState = vs; n._rev++; }
-    }
+    return [...expanded];
   }
 
-  /** Walk up from a node and set visualState on each ancestor based on its
-   *  descendant checked state. Syncs `isChecked` on the ancestors (all
-   *  descendants checked → ancestor checked). */
-  private _updateAncestorVisualStates(startPath: string): void {
-    const newPaths = new Set(this._checkedPaths);
-    let path: string | null | undefined = this._realNode(startPath)?.parentPath;
-    while (path) {
-      const ancestor = this._realNode(path);
-      if (!ancestor) break;
-      const vs = this._computeVisualState(ancestor);
-
-      const shouldBeChecked = vs === VisualState.checked;
-      if (ancestor.isChecked !== shouldBeChecked) {
-        ancestor.isChecked = shouldBeChecked;
-        if (shouldBeChecked) newPaths.add(path);
-        else newPaths.delete(path);
+  /**
+   * Re-derive visualState for every node a cascade check / uncheck touched AND all their
+   * ancestors, deepest first, writing membership changes into `checked`.
+   * - The touched nodes themselves: not just the clicked one — a branch BELOW it that was
+   *   [-] (root → region → country, one country checked, then the root) gets all its
+   *   children checked by the cascade and must flip to checked too.
+   * - Ancestors of EVERY touched path, not just of the clicked node: a
+   *   beforeCheckboxToggleCallback may add paths elsewhere in the tree, whose parents
+   *   must follow too. Each ancestor also syncs isChecked (all children checked → checked).
+   * `isAffectedSynced` also syncs isChecked on the touched branches (a filtered click).
+   */
+  private _reconcileCascadeStates(paths: string[], checked: Set<string>, isAffectedSynced: boolean): void {
+    const affected = new Set(paths);
+    const nodes = new Map<string, LTreeNode<T>>();
+    for (const path of affected) {
+      let n = this._realNode(path);
+      // A collected node's ancestors are collected already — stop climbing there.
+      while (n && !nodes.has(n.path)) {
+        nodes.set(n.path, n);
+        n = n.parentPath ? this._realNode(n.parentPath) : null;
       }
-      if (ancestor.visualState !== vs) ancestor.visualState = vs;
-      ancestor._rev++;
-      path = ancestor.parentPath;
     }
-    this._checkedPaths = newPaths;
+    const ordered = [...nodes.values()].sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
+    for (const n of ordered) {
+      const vs = this._computeVisualState(n);
+      let isTouched = n.visualState !== vs;
+      n.visualState = vs;
+      if (isAffectedSynced || !affected.has(n.path)) {
+        const shouldBeChecked = vs === VisualState.checked;
+        if (n.isChecked !== shouldBeChecked) {
+          n.isChecked = shouldBeChecked;
+          isTouched = true;
+        }
+        if (shouldBeChecked) checked.add(n.path);
+        else checked.delete(n.path);
+      }
+      if (isTouched) n._rev++;
+    }
   }
 
   /** Compute the visualState (checked / unchecked / indeterminate) for a
@@ -3890,189 +3838,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── Public Drag-and-Drop API ────────────────────────────────────────
 
-  /** Call from ondragstart. Sets up dataTransfer, stores drag state, fires callback. */
-  startDrag(node: LTreeNode<T>, event: DragEvent): void {
-    this.log.DRAG.debug('startDrag', { path: node.path, isDraggable: this.getNodeIsDraggable(node), dragDropMode: this._dragDropMode, hasDataTransfer: !!event.dataTransfer });
-    if (this._dragDropMode === 'none' || !this.getNodeIsDraggable(node) || !event.dataTransfer) return;
-    event.dataTransfer.effectAllowed = this._isCopyAllowed ? 'copyMove' : 'move';
-    event.dataTransfer.setData('application/svelte-treeview', JSON.stringify(node));
-    const displayValue = this.tree.getNodeDisplayValue(node);
-    if (displayValue) event.dataTransfer.setData('text/plain', displayValue);
-    this._onNodeDragStartInternal(node, event);
-  }
-
-  /** Call from ondragover. Calculates drop position, updates hover state. */
-  dragOver(node: LTreeNode<T>, event: DragEvent, element?: HTMLElement): void {
-    if (!event.dataTransfer?.types.includes('application/svelte-treeview')) return;
-
-    let effectiveDraggedNode = this._draggedNode;
-    let isCrossTreeDrag = false;
-    if (!effectiveDraggedNode) {
-      isCrossTreeDrag = true;
-      try {
-        const data = event.dataTransfer.getData('application/svelte-treeview');
-        if (data) effectiveDraggedNode = JSON.parse(data);
-      } catch { /* getData might fail during dragover */ }
-      this._isDragInProgress = true;
-    }
-
-    const dropAllowed = isCrossTreeDrag
-      ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
-      : this.isDropAllowedByMode(effectiveDraggedNode?.treeId);
-
-    if (!dropAllowed) {
-      this._hoveredNodeForDrop = null;
-      return;
-    }
-
-    // Per-node opt-out gate. Mirrors the touch path so isDropAllowed:false
-    // rejects drops on desktop too (svelte-treeview parity); no hover / indicators.
-    // With a tree drop zone the dragover is ACCEPTED so the browser fires `drop` on
-    // the row, which routes it to the zone. Without one it is REFUSED
-    // (dropEffect 'none' → 🚫 cursor, no `drop` event) and `dragend` announces the
-    // reject (node-drop-reject + 🚫 flash) on the last refusing row (NOTES #22).
-    if (!node.isDropAllowed) {
-      const hadHover = this._hoveredNodeForDrop !== null || this._activeDropPosition !== null;
-      this._hoveredNodeForDrop = null;
-      this._activeDropPosition = null;
-      if (this._shouldEnableTreeDropZone) {
-        this._refusedDropNode = null;
-        event.preventDefault();
-      } else {
-        this._refusedDropNode = node;
-        if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
-      }
-      if (hadHover) this._scheduleNotify();
-      return;
-    }
-    this._refusedDropNode = null;
-
-    const isValidDrop = effectiveDraggedNode
-      ? isCrossTreeDrag || effectiveDraggedNode.path !== node.path
-      : this._isDragInProgress;
-
-    if (!isValidDrop) return;
-
-    event.preventDefault();
-    this._hoveredNodeForDrop = node;
-    this._currentDropOperation = (this._isCopyAllowed && event.ctrlKey) ? 'copy' : 'move';
-
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = this._currentDropOperation;
-    }
-
-    if (element) {
-      const positions = this.getNodeAllowedDropPositions(node);
-      this._activeDropPosition = this.calculateDropPositionFromEvent(event, element, positions);
-    } else {
-      const el = (event.currentTarget || event.target) as Element;
-      if (el) {
-        this._activeDropPosition = this.calculateDropPosition(event, el);
-      }
-    }
-
-    this.nodeDragOverCb?.({ ...this.nodeRef(node), event, dragged: this._draggedRefs(this._draggedNode) });
-    this._scheduleNotify();
-  }
-
-  /** Call from ondragleave. Clears hover state when cursor leaves element bounds. */
-  dragLeave(_node: LTreeNode<T>, event: DragEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    if (!target) return;
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX;
-    const y = event.clientY;
-
-    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
-      this._hoveredNodeForDrop = null;
-      this._activeDropPosition = null;
-      this._refusedDropNode = null;
-      this._scheduleNotify();
-    }
-  }
-
-  /** The desktop drag moved off any row (empty body area, a zone, the empty state):
-   *  it is no longer over a refusing node (NOTES #22). Called by the renderer. */
-  clearRefusedDropHover(): void {
-    this._refusedDropNode = null;
-  }
-
-  /**
-   * A desktop drag ended (`dragend`). When it was last over a refusing row and no
-   * drop happened (a successful drop resets the drag state first), announce the
-   * reject there: node-drop-reject + the 🚫 flash (NOTES #22). Called by the
-   * renderer (source tree: its own `dragend`; another tree: the document one).
-   */
-  announceRefusedDrop(): void {
-    const node = this._refusedDropNode;
-    this._refusedDropNode = null;
-    if (!node || this._shouldEnableTreeDropZone) return;
-    this._indicateDropDenied(node);
-  }
-
-  /** Call from ondrop. Uses calculated position or defaults to 'child'. */
-  drop(node: LTreeNode<T>, event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = (this._isCopyAllowed && event.ctrlKey) ? 'copy' : 'move';
-    }
-
-    let isCrossTreeDrag = false;
-    if (!this._draggedNode) {
-      const data = event.dataTransfer?.getData('application/svelte-treeview');
-      if (data) {
-        this._draggedNode = JSON.parse(data);
-        isCrossTreeDrag = this._draggedNode?.treeId !== this._treeId;
-      }
-    }
-
-    let drop: Promise<boolean> = Promise.resolve(false);
-    if (this._draggedNode) {
-      const dropAllowed = isCrossTreeDrag
-        ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
-        : this.isDropAllowedByMode(this._draggedNode.treeId);
-
-      // Per-node opt-out gate (svelte-treeview parity): isDropAllowed:false
-      // rejects the drop even when the mode allows it — routed to the tree drop
-      // zone when that is on, else announced (node-drop-reject + 🚫), like the
-      // touch / zone paths (NOTES #22).
-      if (dropAllowed && !node.isDropAllowed) {
-        if (this._shouldEnableTreeDropZone) return this.handleTreeZoneDrop(event);
-        this._indicateDropDenied(node);
-      } else if (dropAllowed && (isCrossTreeDrag || this._draggedNode.path !== node.path)) {
-        const position = this._activeDropPosition || 'child';
-        drop = this._handleDrop(node, this._draggedNode, position, event);
-      }
-    }
-
-    // Vetoed / denied / failed / onto itself → the grab's selection change is undone.
-    this._settlePreDragSelection(drop);
-    this._resetDragState();
-  }
-
-  /** Drop with explicit position (for custom drop zones). */
-  dropAt(node: LTreeNode<T>, position: DropPosition, event: DragEvent | PointerEvent): void {
-    if (event instanceof DragEvent) {
-      event.preventDefault();
-      if (!this._draggedNode) {
-        const data = event.dataTransfer?.getData('application/svelte-treeview');
-        if (data) this._draggedNode = JSON.parse(data);
-      }
-    }
-
-    if (this._draggedNode) {
-      this._handleDrop(node, this._draggedNode, position, event);
-    }
-
-    this._resetDragState();
-  }
-
   /** Cancel current drag and reset all state. */
   cancelDrag(): void {
     this.log.DRAG.debug('Drag cancelled via public API');
-    this._resetDragState();
+    this.pointerDragCancel();
   }
 
   /** Get allowed drop positions for a node */
@@ -4092,7 +3861,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   /** Calculate drop position from cursor location within an element */
   calculateDropPositionFromEvent(
-    event: DragEvent | MouseEvent,
+    event: MouseEvent,
     element: HTMLElement,
     allowedPositions?: DropPosition[] | null
   ): DropPosition {
@@ -4737,7 +4506,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    */
   deactivate(): void {
     if (this._contextMenuVisible) this.closeContextMenu();
-    if (typeof document !== 'undefined' && this.touchDragState.node) this.touchDragCancel();
+    if (typeof document !== 'undefined' && this._pointerDragState.node) this.pointerDragCancel();
     unregisterClipboardTree(this._treeId, this);
   }
 
@@ -5164,107 +4933,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return true;
   }
 
-  private calculateDropPosition(
-    event: DragEvent | MouseEvent,
-    element: Element
-  ): DropPosition {
-    const rect = element.getBoundingClientRect();
-    const y = event.clientY - rect.top;
-    const height = rect.height;
-    if (y < height * 0.25) return 'before';
-    if (y > height * 0.75) return 'after';
-    return 'child';
-  }
-
-  private _onNodeDragStartInternal(node: LTreeNode<T>, event: DragEvent) {
-    this.log.DRAG.debug(`Drag started: ${node.path}`, {
-      ctrlKey: event.ctrlKey,
-      isCopyAllowed: this._isCopyAllowed,
-      treeId: this._treeId
-    });
-    this._draggedNode = node;
-    this._isDragInProgress = true;
-
-    // Set-level PRE-drag interceptor (rc13): build the tree's default dragged set,
-    // hand the consumer the COMPLETE flattened set, and let them REPLACE it (prune
-    // and/or force-add), cancel the drag, or leave it. Runs BEFORE the cross-tree
-    // publish + onNodeDragStart so both see the final set.
-    this._dragSetOverride = null;
-    let draggedRefs = this._draggedRefs(node);
-    if (this.beforeDragStartCb) {
-      const decision = this.beforeDragStartCb({
-        lead: this.nodeRef(node),
-        dragged: this._completeDraggedRefs(draggedRefs),
-        event
-      });
-      if (decision === false) {
-        event.preventDefault();
-        this._draggedNode = null;
-        this._isDragInProgress = false;
-        this._dragSetOverride = null;
-        this.log.DRAG.debug('[before-drag-start] drag cancelled by callback', { path: node.path });
-        return;
-      }
-      if (Array.isArray(decision)) {
-        this._dragSetOverride = this._normalizeDragManifest(decision, node.path);
-        draggedRefs = this._draggedRefs(node); // republish through the override
-      }
-    }
-
-    // Publish the top-level dragged paths (→ ctx.dragged cross-tree) PLUS the
-    // PLACEMENT manifest a cross-tree auto-copy feeds to duplicateNodes: a curated
-    // override keeps its holes; a plain drag is completed so whole subtrees copy.
-    const placementManifest =
-      this._dragSetOverride ?? this._completeManifest(draggedRefs.map((r) => r.path));
-    // Dim every traveling node (roots + descendants, minus any leave-behind holes), not just
-    // the roots — otherwise a dragged folder's children wouldn't dim.
-    this._draggedPaths = placementManifest;
-    setDragSet(this._treeId, draggedRefs.map((r) => r.path), placementManifest);
-    // ALSO stash it in the dataTransfer: the module-level dragSet is cleared on the
-    // source's dragend, which can fire BEFORE the target's drop under synthetic DnD.
-    if (event.dataTransfer) {
-      try {
-        event.dataTransfer.setData(
-          'application/svelte-treeview-manifest',
-          JSON.stringify({ sourceTreeId: this._treeId, manifest: placementManifest })
-        );
-      } catch { /* setData can throw outside a dragstart — dragSet still covers it */ }
-    }
-    this.nodeDragStartCb?.({ ...this.nodeRef(node), event, dragged: draggedRefs });
-
-    // OS-convention selection sync: grabbing a node that isn't part of the
-    // current selected set replaces the selection with just that node.
-    // Mirrors Windows Explorer / macOS Finder — without it the prior
-    // selection stays visible while the drag silently carries only the
-    // grabbed node, making it impossible to tell what's actually moving.
-    // Skipped when the node is already in the set (multi-drag) or when
-    // the node is unselectable.
-    // Deferred to rAF rather than running synchronously: a sync mutation
-    // of the source row before the browser commits the drag image causes
-    // the renderer's keyed update to drop the dragged element and the
-    // drag silently aborts. rAF runs after the drag is committed.
-    if (node.isSelectable && !this._selectedPaths.has(node.path)) {
-      requestAnimationFrame(() => {
-        // Esc-cancel can fire dragend before this rAF runs.
-        if (!this._isDragInProgress) return;
-        // Snapshot the prior selection so _onNodeDragEnd can restore it if
-        // the drag is Esc-cancelled. Without this, the user is left with
-        // the dragged node selected even though they cancelled the operation.
-        this._preDragSelectionSnapshot = new Set(this._selectedPaths);
-        this._selection.set([node.path], { isSilent: true });
-        this._selection.setAnchor(node.path);
-        this._syncSelection();
-        this._focusedNode = node;
-        this._emitSelectionChange();
-        this._mirrorSelectedToChecked();
-        this.tree.refresh();
-        this._scheduleNotify();
-      });
-    }
-
-    this._scheduleNotify();
-  }
-
   /** Pick out the "top-level selected" subset of `selectedPaths`:
    *  every path whose nearest selected ancestor is NOT in the set.
    *  Descendants whose ancestor is also selected are absorbed — they
@@ -5305,26 +4973,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /**
-   * End of a native (HTML5) drag. `drop` = the pending `_handleDrop` when this runs from a
-   * drop handler: a drop onto a valid node reports dropEffect 'move' even when
-   * beforeDropCallback then vetoes it, so the restore waits for the drop's result.
-   */
-  _onNodeDragEnd = (event: DragEvent, drop?: Promise<boolean>) => {
-    this.announceRefusedDrop();
-    const dropEffect = event.dataTransfer?.dropEffect;
-    this.log.DRAG.debug('Drag ended', {
-      dropEffect,
-      operation: this._currentDropOperation
-    });
-    // Esc-cancel / drop-on-invalid-target / vetoed or failed drop: restore the pre-drag
-    // selection so the dragged node doesn't end up "stuck" selected. Mirrors svelte-treeview.
-    if (dropEffect === 'none') this._settlePreDragSelection(Promise.resolve(false));
-    else if (drop) this._settlePreDragSelection(drop);
-    this._preDragSelectionSnapshot = null;
-    this._resetDragState();
-  };
-
-  /**
    * Hand the pre-drag selection snapshot to a drop's outcome: restored when the drop didn't
    * land (vetoed / denied / failed). Takes the snapshot, so the later `dragend` (whose
    * dropEffect is 'move' for any drop the tree accepted at the DOM level) can't drop it.
@@ -5356,7 +5004,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._draggedPaths = [];
     this._hoveredNodeForDrop = null;
     this._activeDropPosition = null;
-    this._refusedDropNode = null;
     this._isDropPlaceholderActive = false;
     this._currentDropOperation = 'move';
     this._dragSetOverride = null;
@@ -5368,13 +5015,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     dropNode: LTreeNode<T> | null,
     draggedNodeRef: LTreeNode<T>,
     position: DropPosition,
-    event: DragEvent | PointerEvent
+    event: PointerEvent
   ): Promise<boolean> {
     let operation: DropOperation = 'move';
-    const isDragEvent = event instanceof DragEvent;
-    const ctrlKey = isDragEvent ? event.ctrlKey : false;
-
-    if (this._isCopyAllowed && isDragEvent && ctrlKey) {
+    if (this._isCopyAllowed && event?.ctrlKey) {
       operation = 'copy';
     }
 
@@ -5499,21 +5143,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       // Cross-tree AUTO-copy: reach the SOURCE tree via the registry, read its
       // published PLACEMENT manifest (curated override keeps holes; a plain drag was
       // completed to whole subtrees) and duplicate it into THIS tree. The source
-      // stays put — a copy re-homes nothing. Prefer the dataTransfer payload (it
-      // survives the source's early dragend), fall back to the module-level dragSet.
+      // stays put — a copy re-homes nothing. The module-level dragSet (the drag is
+      // still live: the source keeps it until this drop settles), else the lead path.
       let sourceTreeId = draggedNodeRef.treeId ?? '';
       let manifest: string[] | null = null;
-      if (event instanceof DragEvent) {
-        const raw = event.dataTransfer?.getData('application/svelte-treeview-manifest');
-        if (raw) {
-          try {
-            const m = JSON.parse(raw) as { sourceTreeId?: string; manifest?: string[] };
-            if (m.sourceTreeId) sourceTreeId = m.sourceTreeId;
-            if (m.manifest) manifest = m.manifest;
-          } catch { /* malformed payload — fall through to the dragSet */ }
-        }
-      }
-      if (!manifest) {
+      {
         const drag = getDragSet();
         if (drag) { sourceTreeId = drag.sourceTreeId; manifest = drag.manifest; }
       }
@@ -5552,7 +5186,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     dropped: LTreeNode<T>[] | null,
     position: DropPosition,
     operation: DropOperation,
-    event: DragEvent | PointerEvent
+    event: PointerEvent
   ): void {
     this.nodeDropCb?.({
       source: this.nodeRef(draggedNodeRef),
@@ -5565,258 +5199,296 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
   }
 
-  private _onNodeDragOverInternal(node: LTreeNode<T>, event: DragEvent) {
-    let effectiveDraggedNode = this._draggedNode;
-    let isCrossTreeDrag = false;
-    if (
-      !effectiveDraggedNode &&
-      event.dataTransfer?.types.includes('application/svelte-treeview')
-    ) {
-      isCrossTreeDrag = true;
-      try {
-        const data = event.dataTransfer.getData('application/svelte-treeview');
-        if (data) effectiveDraggedNode = JSON.parse(data);
-      } catch { /* getData might fail during dragover */ }
-      this._isDragInProgress = true;
-    }
+  // ── Pointer drag (core createPointerDrag, wired by the renderer) ─────
+  // ONE drag for mouse, pen and touch (svelte-treeview parity). The gesture — the 5px threshold /
+  // the touch long press, the scroll lock, the hit test through shadow roots, auto-scroll, Escape,
+  // the swallowed trailing click — is core createPointerDrag in the renderer; the state keeps the
+  // tree side: the dragged set, the hover / drop-position visuals in whichever tree the pointer is
+  // over (another tree is found through the tree registry by its container's data-tree-id) and the
+  // drop itself. There is no HTML5 drag session and no dataTransfer.
 
-    const dropAllowed = isCrossTreeDrag
-      ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
-      : this.isDropAllowedByMode(effectiveDraggedNode?.treeId);
+  /** The tree whose hover visuals the drag last lit (another tree on a cross-tree drag). */
+  private _hoverState: TreeViewState<any> | null = null;
+  /** The live operation: Ctrl held (and isCopyAllowed) = copy. Kept across auto-scroll frames,
+   *  which have no pointer event. */
+  private _pointerOperation: DropOperation = 'move';
+  /** The last pointer event of the drag — an auto-scroll frame has none of its own. */
+  private _lastPointerEvent: PointerEvent | null = null;
 
-    if (!dropAllowed) {
-      this._hoveredNodeForDrop = null;
-      return;
-    }
-
-    // Per-node opt-out gate. Mirrors the touch path so isDropAllowed:false
-    // rejects drops on desktop too (svelte-treeview parity).
-    if (!node.isDropAllowed) {
-      this._hoveredNodeForDrop = null;
-      return;
-    }
-
-    const isValidDrop = effectiveDraggedNode
-      ? isCrossTreeDrag || effectiveDraggedNode.path !== node.path
-      : this._isDragInProgress;
-
-    if (isValidDrop) {
-      event.preventDefault();
-      this._hoveredNodeForDrop = node;
-      const nodeElement = (event.target as Element).closest('.wtv__node-content');
-      if (nodeElement) {
-        this._activeDropPosition = this.calculateDropPosition(event, nodeElement);
-      }
-      this._currentDropOperation = this._isCopyAllowed && event.ctrlKey ? 'copy' : 'move';
-      this.nodeDragOverCb?.({ ...this.nodeRef(node), event, dragged: this._draggedRefs(effectiveDraggedNode) });
-
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = this._currentDropOperation;
-      }
-      this._scheduleNotify();
-    }
-  }
-
-  private _onNodeDragLeaveInternal(_node: LTreeNode<T>, _event: DragEvent) {
-    // Don't clear hoveredNodeForDrop — let dragover on other nodes handle it
-  }
-
-  private _onNodeDropInternal(node: LTreeNode<T>, event: DragEvent) {
-    event.preventDefault();
-
-    let isCrossTreeDrag = false;
-    if (!this._draggedNode) {
-      const data = event.dataTransfer?.getData('application/svelte-treeview');
-      if (data) {
-        this._draggedNode = JSON.parse(data);
-        isCrossTreeDrag = this._draggedNode?.treeId !== this._treeId;
-      }
-    }
-
-    const dropAllowed = isCrossTreeDrag
-      ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
-      : this.isDropAllowedByMode(this._draggedNode?.treeId);
-
-    if (!dropAllowed) {
-      this._onNodeDragEnd(event);
-      return;
-    }
-
-    // Per-node opt-out gate. The Node component calls event.preventDefault()
-    // before forwarding, so the drop event fires regardless of the dragover
-    // gate — it must be re-checked here (svelte-treeview parity).
-    if (!node.isDropAllowed) {
-      // A tree drop zone catches the forwarded reject and routes it (target=null);
-      // otherwise this is a genuine "can't drop here" → flash + onNodeDropDenied.
-      if (this._shouldEnableTreeDropZone) return this.handleTreeZoneDrop(event);
-      this._indicateDropDenied(node);
-      this._onNodeDragEnd(event);
-      return;
-    }
-
-    let drop: Promise<boolean> | undefined;
-    if (this._draggedNode && (isCrossTreeDrag || this._draggedNode !== node)) {
-      const position = this._activeDropPosition || 'child';
-      drop = this._handleDrop(node, this._draggedNode, position, event);
-    }
-
-    this._onNodeDragEnd(event, drop);
-  }
-
-  private _onZoneDrop(node: LTreeNode<T>, position: DropPosition, event: DragEvent) {
-    event.preventDefault();
-
-    let isCrossTreeDrag = false;
-    if (!this._draggedNode) {
-      const data = event.dataTransfer?.getData('application/svelte-treeview');
-      if (data) {
-        this._draggedNode = JSON.parse(data);
-        isCrossTreeDrag = this._draggedNode?.treeId !== this._treeId;
-      }
-    }
-
-    if (!this._draggedNode) {
-      this._onNodeDragEnd(event);
-      return;
-    }
-
-    const dropAllowed = isCrossTreeDrag
-      ? this._dragDropMode === 'both' || this._dragDropMode === 'cross'
-      : this.isDropAllowedByMode(this._draggedNode?.treeId);
-
-    if (!dropAllowed) {
-      this._onNodeDragEnd(event);
-      return;
-    }
-
-    // Per-node opt-out gate (glow/zone equivalent of the _onNodeDrop gate).
-    if (!node.isDropAllowed) {
-      if (this._shouldEnableTreeDropZone) return this.handleTreeZoneDrop(event);
-      this._indicateDropDenied(node);
-      this._onNodeDragEnd(event);
-      return;
-    }
-
-    let drop: Promise<boolean> | undefined;
-    if (isCrossTreeDrag || this._draggedNode !== node) {
-      drop = this._handleDrop(node, this._draggedNode, position, event);
-    }
-
-    this._onNodeDragEnd(event, drop);
-  }
-
-  // ── Tree-level drop zone (isTreeDropZoneEnabled) ─────────────────────
-  // The whole populated tree becomes ONE drop target: a drop anywhere lands with
-  // dropNode = null (route via beforeDropCallback's DropGroup[] return), regardless
-  // of per-node isDropAllowed. Wired on the always-present container (only when the
-  // flag is on). dragover here preventDefaults so a drop is accepted even when every
-  // node rejects it. A drop ON a node is stopPropagation()'d, so a node's reject
-  // path forwards straight to handleTreeZoneDrop; drops on empty area hit it directly.
-
-  handleTreeZoneDragOver = (event: DragEvent) => {
-    if (!this._shouldEnableTreeDropZone || this._dragDropMode === 'none') return;
-    const isTreeDrag = event.dataTransfer?.types.includes('application/svelte-treeview');
-    if (isTreeDrag || this._draggedNode) {
-      event.preventDefault();
-      this._isDropPlaceholderActive = true;
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = this._isCopyAllowed && event.ctrlKey ? 'copy' : 'move';
-      }
-    }
-  };
-
-  handleTreeZoneDrop = (event: DragEvent) => {
-    if (!this._shouldEnableTreeDropZone) return;
-    event.preventDefault();
-    this._isDropPlaceholderActive = false;
-    if (this._dragDropMode === 'none') return;
-
-    // Same-tree: the live draggedNode. Cross-tree: rehydrate from the dataTransfer.
-    let dragged = this._draggedNode;
-    if (!dragged) {
-      const data = event.dataTransfer?.getData('application/svelte-treeview');
-      if (data) {
-        try { dragged = JSON.parse(data); } catch { /* malformed payload */ }
-      }
-    }
-    const drop = dragged ? this._handleDrop(null, dragged, 'child', event) : undefined;
-    this._onNodeDragEnd(event, drop);
-  };
-
-  // ── Touch drag (core createPointerDrag, wired by the renderer) ──────
-  // Mouse / pen stay on HTML5 drag-and-drop (cross-tree dataTransfer); the renderer's
-  // createPointerDrag answers only `pointerType === 'touch'` and calls these four.
-
-  /** The long press elapsed on `node`. A NON-draggable node plays the "can't move this"
-   *  reaction instead (held 🚫 badge + double-buzz) until the finger lifts. */
-  touchDragStart(node: LTreeNode<T>, x: number, y: number): void {
-    this.touchDragState = { node, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null };
-    // (svelte-treeview rc14) a deliberate long-press on a locked node explains itself.
+  /** A press became a drag on `node` (viewport `x` / `y`; `event` = the press). A NON-draggable node
+   *  (a touch long press — the renderer starts no mouse drag on one) only plays the "can't move this"
+   *  reaction until release. `false` = refused (beforeDragStartCallback). */
+  pointerDragStart(node: LTreeNode<T>, x: number, y: number, event: PointerEvent): boolean {
+    this._pointerDragState = { node, isDragging: false, isDenied: false, ghostLayer: null };
     if (!this.getNodeIsDraggable(node)) {
-      this.touchDragState.isDenied = true;
+      this._pointerDragState.isDenied = true;
       this._indicateDragDenied(node);
-      return;
+      return true;
     }
-    this.touchDragState.isDragging = true;
+    this.log.DRAG.debug(`Drag started: ${node.path}`, { pointerType: event.pointerType, treeId: this._treeId });
     this._draggedNode = node;
-    // Complete manifest so a touch-dragged folder dims its whole subtree, matching desktop.
-    this._draggedPaths = this._completeManifest([node.path]);
     this._isDragInProgress = true;
-    this.log.DRAG.debug(`Touch drag started: ${node.path}`);
-    this.createGhostElement(node, x, y);
-    // Haptic feedback on a real drag start (a treeview extra; core has none).
-    try { navigator.vibrate?.(50); } catch { /* blocked by browser policy */ }
-    this._scheduleNotify();
-  }
 
-  /** A held touch drag the tree refuses (a locked node showing the 🚫 badge) — the renderer
-   *  turns core's auto-scroll off for it. */
-  get isTouchDragDenied(): boolean { return this.touchDragState.isDenied; }
-
-  /** The finger moved (or the list auto-scrolled under it); `target` = the deepest element under it. */
-  touchDragMove(target: Element | null, x: number, y: number): void {
-    if (!this.touchDragState.isDragging) return; // a denied hold: nothing moves
-    this._placeGhost(x, y);
-    this.updateDropTarget(target);
-  }
-
-  /** The finger lifted over `target`. */
-  touchDragDrop(target: Element | null, event: PointerEvent): void {
-    if (this.touchDragState.isDragging && this._draggedNode) {
-      const dropNode = this.findNodeFromElement(target);
-      const emptyTarget = target?.closest('.wtv__empty-state, .wtv__empty-zone');
-      if (emptyTarget && !dropNode) {
-        this.log.DRAG.debug(`Touch drag ended: ${this._draggedNode.path} -> empty tree`);
-        this._handleDrop(null, this._draggedNode, 'child', event);
-      } else if (dropNode && dropNode !== this._draggedNode && dropNode.isDropAllowed) {
-        this.log.DRAG.debug(`Touch drag ended: ${this._draggedNode.path} -> ${dropNode.path}`);
-        this._handleDrop(dropNode, this._draggedNode, 'child', event);
-      } else if (dropNode && dropNode !== this._draggedNode && !this._shouldEnableTreeDropZone) {
-        // Target refused the drop (isDropAllowed false / getIsDropAllowedCallback):
-        // flash the 🚫 on it + fire onNodeDropDenied. Skipped when a tree drop zone
-        // would catch the forwarded drop instead. (svelte-treeview rc14)
-        this.log.DRAG.debug(`Touch drop denied: ${this._draggedNode.path} -> ${dropNode.path}`);
-        this._indicateDropDenied(dropNode);
-      } else {
-        this.log.DRAG.debug(`Touch drag cancelled: ${this._draggedNode.path}`);
+    // Set-level PRE-drag interceptor (rc13): hand the consumer the COMPLETE flattened set and let
+    // them REPLACE it (prune and/or force-add), cancel the drag, or leave it. Runs BEFORE the
+    // cross-tree publish + onNodeDragStart so both see the final set.
+    this._dragSetOverride = null;
+    let draggedRefs = this._draggedRefs(node);
+    if (this.beforeDragStartCb) {
+      const decision = this.beforeDragStartCb({
+        lead: this.nodeRef(node),
+        dragged: this._completeDraggedRefs(draggedRefs),
+        event
+      });
+      if (decision === false) {
+        this.log.DRAG.debug('[before-drag-start] drag cancelled by callback', { path: node.path });
+        this._endPointerDrag();
+        return false;
+      }
+      if (Array.isArray(decision)) {
+        this._dragSetOverride = this._normalizeDragManifest(decision, node.path);
+        draggedRefs = this._draggedRefs(node); // republish through the override
       }
     }
-    this.touchDragCancel();
+
+    // Publish the top-level dragged paths (→ ctx.dragged cross-tree) PLUS the PLACEMENT manifest a
+    // cross-tree auto-copy feeds to duplicateNodes: a curated override keeps its holes; a plain drag
+    // is completed so whole subtrees copy. Every TRAVELING node dims, not just the roots.
+    const placementManifest =
+      this._dragSetOverride ?? this._completeManifest(draggedRefs.map((r) => r.path));
+    this._draggedPaths = placementManifest;
+    setDragSet(this._treeId, draggedRefs.map((r) => r.path), placementManifest);
+    this._pointerDragState.isDragging = true;
+    this._pointerOperation = this._isCopyAllowed && event.ctrlKey ? 'copy' : 'move';
+    this.createGhostElement(node, x, y);
+    this.nodeDragStartCb?.({ ...this.nodeRef(node), event, dragged: draggedRefs });
+
+    // OS-convention selection sync: grabbing a node outside the selected set replaces the selection
+    // with just it (Windows Explorer / macOS Finder). Synchronous — there is no browser drag image
+    // to lose (the HTML5 path had to defer it to a rAF). Restored when the drag lands nowhere.
+    if (node.isSelectable && !this._selectedPaths.has(node.path)) {
+      this._preDragSelectionSnapshot = new Set(this._selectedPaths);
+      this._selection.set([node.path], { isSilent: true });
+      this._selection.setAnchor(node.path);
+      this._syncSelection();
+      this._focusedNode = node;
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
+      this.tree.refresh();
+    }
+
+    // Haptic feedback on a real touch drag start (a treeview extra; core has none).
+    if (event.pointerType === 'touch') {
+      try { navigator.vibrate?.(50); } catch { /* blocked by browser policy */ }
+    }
+    this._scheduleNotify();
+    return true;
   }
 
-  /** Escape / pointercancel / detach / a drop that ended: tear the touch drag down. Idempotent. */
-  touchDragCancel(): void {
+  /** A held drag the tree refuses (a locked node showing the 🚫 badge) — the renderer turns core's
+   *  auto-scroll off for it. */
+  get isPointerDragDenied(): boolean { return this._pointerDragState.isDenied; }
+
+  /** The pointer moved (or the list auto-scrolled under it). `target` = the deepest element under it;
+   *  `event` is null for an auto-scroll frame. */
+  pointerDragMove(target: Element | null, x: number, y: number, event: PointerEvent | null): void {
+    if (!this._pointerDragState.isDragging || !this._draggedNode) return; // a denied hold: nothing moves
+    if (event) {
+      this._lastPointerEvent = event;
+      this._pointerOperation = this._isCopyAllowed && event.ctrlKey ? 'copy' : 'move';
+    }
+    this._placeGhost(x, y);
+    const hit = this._resolveDropTarget(target);
+
+    // Over a floating drop pad: the pads sit off the row (their own layer), so keep the hovered
+    // node and just take the pad's position.
+    if (hit.pad && this._hoverState?._hoveredNodeForDrop) {
+      const hover = this._hoverState;
+      if (hover._activeDropPosition !== hit.pad || hover._currentDropOperation !== this._pointerOperation) {
+        hover._activeDropPosition = hit.pad;
+        hover._currentDropOperation = this._pointerOperation;
+        hover._scheduleNotify();
+      }
+      return;
+    }
+
+    const position = this._pointerDropPosition(hit, x, y);
+    if (hit.node && position) {
+      this._setHover(hit.state, hit.node, position, false);
+      const dragEvent = event ?? this._lastPointerEvent;
+      if (dragEvent) {
+        hit.state.nodeDragOverCb?.({
+          ...hit.state.nodeRef(hit.node),
+          event: dragEvent,
+          dragged: this._draggedRefs(this._draggedNode)
+        });
+      }
+      return;
+    }
+    // An empty tree's drop zone / an active placeholder.
+    const isEmptyZone = !!hit.el?.closest('.wtv__empty-state, .wtv__empty-zone');
+    if (isEmptyZone && this._isDropAllowedFrom(hit.state)) {
+      this._setHover(hit.state, null, null, true);
+      return;
+    }
+    // Inside a tree but not over a valid target: keep that tree "in a drag" (its empty-tree
+    // placeholder / tree drop zone outline) without a hovered row.
+    if (hit.isInContainer && this._isDropAllowedFrom(hit.state)) {
+      this._setHover(hit.state, null, null, hit.state._shouldEnableTreeDropZone);
+      return;
+    }
+    this._clearHover();
+  }
+
+  /** The pointer was released over `target`. Async: the drag state lives until the drop (an async
+   *  beforeDropCallback) settles, so a cross-tree auto-copy can still read the published manifest. */
+  async pointerDragDrop(target: Element | null, x: number, y: number, event: PointerEvent): Promise<void> {
+    const dragged = this._draggedNode;
+    if (!this._pointerDragState.isDragging || !dragged) {
+      this._endPointerDrag();
+      return;
+    }
+    this._pointerOperation = this._isCopyAllowed && event.ctrlKey ? 'copy' : 'move';
     this.removeGhostElement();
-    this.clearDropTargetHighlight();
-    // Tear down any held "can't move this" badge/pulse.
+    const hit = this._resolveDropTarget(target);
+    const hover = this._hoverState;
+    let drop: Promise<boolean> | null = null;
+
+    if (hit.pad && hover?._hoveredNodeForDrop && this._isDropAllowedFrom(hover)) {
+      this.log.DRAG.debug(`Drop on a pad: ${dragged.path} -> ${hover._hoveredNodeForDrop.path} (${hit.pad})`);
+      drop = hover._handleDrop(hover._hoveredNodeForDrop, dragged, hit.pad, event);
+    } else if (hit.node && this._pointerDropPosition(hit, x, y)) {
+      const position = this._pointerDropPosition(hit, x, y)!;
+      this.log.DRAG.debug(`Drop: ${dragged.path} -> ${hit.node.path} (${position})`);
+      drop = hit.state._handleDrop(hit.node, dragged, position, event);
+    } else if (hit.state._shouldEnableTreeDropZone && hit.isInContainer && this._isDropAllowedFrom(hit.state)) {
+      // Whole-tree drop zone: any release inside the tree that isn't a valid node drop — empty
+      // area, or a node whose getIsDropAllowedCallback refused it — lands with target = null.
+      drop = hit.state._handleDrop(null, dragged, 'child', event);
+    } else if (hit.el?.closest('.wtv__empty-state, .wtv__empty-zone') && !hit.node && this._isDropAllowedFrom(hit.state)) {
+      this.log.DRAG.debug(`Drop: ${dragged.path} -> empty tree`);
+      drop = hit.state._handleDrop(null, dragged, 'child', event);
+    } else if (hit.node && hit.node !== dragged && !hit.node.isDropAllowed && this._isDropAllowedFrom(hit.state)) {
+      // The target refused the drop: flash the 🚫 on it + fire onNodeDropDenied (NOTES #22).
+      hit.state._indicateDropDenied(hit.node);
+    } else {
+      this.log.DRAG.debug(`Drag ended on no target: ${dragged.path}`);
+    }
+
+    // Vetoed / denied / failed / nowhere → the grab's selection change is undone.
+    const isDropped = drop ? await drop : false;
+    const prior = this._preDragSelectionSnapshot;
+    this._preDragSelectionSnapshot = null;
+    if (!isDropped && prior) this._restorePreDragSelection(prior);
+    this._endPointerDrag();
+  }
+
+  /** Escape / pointercancel / detach / cancelDrag(): abort. Nothing was mutated (commit on drop),
+   *  so only the grab's selection change is undone. Idempotent. */
+  pointerDragCancel(): void {
+    const prior = this._preDragSelectionSnapshot;
+    this._preDragSelectionSnapshot = null;
+    if (this._pointerDragState.isDragging && prior) this._restorePreDragSelection(prior);
+    this._endPointerDrag();
+  }
+
+  /** Tear the drag down: ghost, the held 🚫, the hover visuals (in any tree), the drag state. */
+  private _endPointerDrag(): void {
+    this.removeGhostElement();
     this._clearDragDenied();
-    this.touchDragState = {
-      node: null, isDragging: false, isDenied: false, ghostLayer: null, currentDropTarget: null
-    };
-    this._draggedNode = null;
-    this._isDragInProgress = false;
-    this._isDropPlaceholderActive = false;
-    this._scheduleNotify();
+    this._clearHover();
+    this._pointerDragState = { node: null, isDragging: false, isDenied: false, ghostLayer: null };
+    this._preDragSelectionSnapshot = null;
+    this._lastPointerEvent = null;
+    this._resetDragState();
+  }
+
+  /**
+   * Map the element under the pointer to the tree that owns it + the node it belongs to. `pad` = the
+   * floating drop pad's position when the pointer is on one; `isInContainer` = inside a tree at all.
+   */
+  private _resolveDropTarget(el: Element | null): {
+    state: TreeViewState<any>;
+    node: LTreeNode<any> | null;
+    el: Element | null;
+    pad: DropPosition | null;
+    isInContainer: boolean;
+  } {
+    if (!el) return { state: this, node: null, el: null, pad: null, isInContainer: false };
+    const padEl = el.closest('.wtv__drop-zone');
+    const padPosition = padEl?.getAttribute('data-drop-position');
+    const pad = padPosition === 'before' || padPosition === 'after' || padPosition === 'child' ? padPosition : null;
+    const container = el.closest('.wtv__container');
+    const treeId = container?.getAttribute('data-tree-id') ?? null;
+    const other = treeId && treeId !== this._treeId ? getClipboardTree(treeId) : undefined;
+    const state = (other as unknown as TreeViewState<any> | undefined) ?? this;
+    const row = container ? el.closest('.wtv__node') : null;
+    const path = row?.getAttribute('data-tree-path');
+    const node = path ? (state.tree?.getNodeByPath(path) ?? null) : null;
+    return { state, node, el, pad, isInContainer: !!container };
+  }
+
+  /** May the drag in progress (from THIS tree) drop into `target` at all — its dragDropMode,
+   *  disabled / read-only. */
+  private _isDropAllowedFrom(target: TreeViewState<any>): boolean {
+    if (target._isReadonly || target.containerElement?.classList.contains('wtv__container--disabled')) return false;
+    return target === this
+      ? this.isDropAllowedByMode(this._draggedNode?.treeId)
+      : target._dragDropMode === 'both' || target._dragDropMode === 'cross';
+  }
+
+  /** The drop position over `hit.node`, or null when it can't take this drop (refused, onto
+   *  itself, mode). From where the pointer sits on the row content, within the allowed positions. */
+  private _pointerDropPosition(
+    hit: { state: TreeViewState<any>; node: LTreeNode<any> | null; el: Element | null },
+    x: number,
+    y: number
+  ): DropPosition | null {
+    const node = hit.node;
+    if (!node || !this._draggedNode || !node.isDropAllowed || !this._isDropAllowedFrom(hit.state)) return null;
+    if (hit.state === this && node === this._draggedNode) return null;
+    const content = (hit.el?.closest('.wtv__node-content') ??
+      hit.el?.closest('.wtv__node')?.querySelector('.wtv__node-content')) as HTMLElement | null;
+    if (!content) return 'child';
+    const positions = hit.state.getNodeAllowedDropPositions(node);
+    return hit.state.calculateDropPositionFromEvent({ clientX: x, clientY: y } as MouseEvent, content, positions);
+  }
+
+  /** Light up `target`'s hover visuals (and clear the previous tree's, cross-tree). */
+  private _setHover(
+    target: TreeViewState<any>,
+    node: LTreeNode<any> | null,
+    position: DropPosition | null,
+    isPlaceholderActive: boolean
+  ): void {
+    if (this._hoverState && this._hoverState !== target) this._clearHoverOn(this._hoverState);
+    this._hoverState = target;
+    const isChanged =
+      target._hoveredNodeForDrop !== node ||
+      target._activeDropPosition !== position ||
+      target._isDropPlaceholderActive !== isPlaceholderActive ||
+      target._currentDropOperation !== this._pointerOperation ||
+      !target._isDragInProgress;
+    // A cross-tree target needs isDragInProgress on so its renderer draws the glow / pads.
+    target._isDragInProgress = true;
+    target._hoveredNodeForDrop = node;
+    target._activeDropPosition = position;
+    target._isDropPlaceholderActive = isPlaceholderActive;
+    target._currentDropOperation = this._pointerOperation;
+    if (isChanged) target._scheduleNotify();
+  }
+
+  private _clearHoverOn(target: TreeViewState<any>): void {
+    target._hoveredNodeForDrop = null;
+    target._activeDropPosition = null;
+    target._isDropPlaceholderActive = false;
+    if (target !== this) target._isDragInProgress = false;
+    target._scheduleNotify();
+  }
+
+  private _clearHover(): void {
+    if (this._hoverState) this._clearHoverOn(this._hoverState);
+    this._hoverState = null;
   }
 
   // ── Blocked-action feedback (svelte-treeview rc14) ──────────────────
@@ -5872,7 +5544,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  it auto-clears after a short beat. */
   private _indicateDropDenied(node: LTreeNode<any>) {
     this.log.DRAG.debug('[drop-denied] target refused drop', { path: node?.path });
-    this._refusedDropNode = null; // announced — a later dragend must not repeat it
 
     this.nodeDropDeniedCb?.(this.nodeRef(node));
 
@@ -5915,13 +5586,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     ghost.className = 'wtv__touch-ghost';
     ghost.textContent = this.tree.getNodeDisplayValue(node);
     layer.element.append(ghost);
-    this.touchDragState.ghostLayer = layer;
+    this._pointerDragState.ghostLayer = layer;
     this._placeGhost(x, y);
   }
 
   /** Put the ghost's (0 × 0) layer at the finger; the ghost centres itself on it. */
   private _placeGhost(x: number, y: number) {
-    this.touchDragState.ghostLayer?.place({ top: y, left: x, width: 0, height: 0 });
+    this._pointerDragState.ghostLayer?.place({ top: y, left: x, width: 0, height: 0 });
   }
 
   /** The tree's own DOM, for lookups by path: the .wtv__container (inside the
@@ -5932,145 +5603,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   private removeGhostElement() {
-    if (this.touchDragState.ghostLayer) {
-      this.touchDragState.ghostLayer.destroy();
-      this.touchDragState.ghostLayer = null;
+    if (this._pointerDragState.ghostLayer) {
+      this._pointerDragState.ghostLayer.destroy();
+      this._pointerDragState.ghostLayer = null;
     }
   }
-
-  private findNodeFromElement(element: Element | null): LTreeNode<any> | null {
-    if (!element) return null;
-    const nodeElement = element.closest('.wtv__node');
-    if (!nodeElement) return null;
-    const path = nodeElement.getAttribute('data-tree-path');
-    if (!path) return null;
-    return this.tree.getNodeByPath(path);
-  }
-
-  private updateDropTarget(element: Element | null) {
-    const newTarget = this.findNodeFromElement(element);
-
-    if (this.touchDragState.currentDropTarget && this.touchDragState.currentDropTarget !== newTarget) {
-      const prevElement = this._domScope().querySelector(
-        `[data-tree-path="${CSS.escape(this.touchDragState.currentDropTarget.path)}"] .wtv__node-content`
-      );
-      prevElement?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
-    }
-
-    const emptyTarget = element?.closest('.wtv__empty-state, .wtv__empty-zone');
-    if (emptyTarget && !newTarget) {
-      this._isDropPlaceholderActive = true;
-      this.touchDragState.currentDropTarget = null;
-      this._scheduleNotify();
-      return;
-    } else {
-      this._isDropPlaceholderActive = false;
-    }
-
-    if (newTarget && newTarget !== this._draggedNode && newTarget.isDropAllowed) {
-      const targetElement = this._domScope().querySelector(
-        `[data-tree-path="${CSS.escape(newTarget.path)}"] .wtv__node-content`
-      );
-      targetElement?.classList.add(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
-      this.touchDragState.currentDropTarget = newTarget;
-    } else {
-      this.touchDragState.currentDropTarget = null;
-    }
-  }
-
-  private clearDropTargetHighlight() {
-    if (this.touchDragState.currentDropTarget) {
-      const element = this._domScope().querySelector(
-        `[data-tree-path="${CSS.escape(this.touchDragState.currentDropTarget.path)}"] .wtv__node-content`
-      );
-      element?.classList.remove(this._dragOverNodeClass || 'wtv__node-content--dragover-highlight');
-    }
-  }
-
-  // ── Empty tree drop handlers ────────────────────────────────────────
-
-  handleEmptyTreeDragOver = (event: DragEvent) => {
-    if (!event.dataTransfer?.types.includes('application/svelte-treeview')) return;
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-    // Only notify if state actually changed
-    if (!this._isDragInProgress || !this._isDropPlaceholderActive) {
-      this.log.DRAG.debug('empty-tree dragover — activating the drop placeholder');
-      this._isDragInProgress = true;
-      this._isDropPlaceholderActive = true;
-      this._scheduleNotify();
-    }
-  };
-
-  /** `zone` = the empty-state / empty-zone element being left (default: the listener's element). */
-  handleEmptyTreeDragLeave = (event: DragEvent, zone?: HTMLElement) => {
-    const el = zone ?? (event.currentTarget as HTMLElement);
-    // Where the pointer went decides: outside the zone = left. The rect is only the fallback
-    // for engines without a dragleave relatedTarget — and it can't be trusted alone: drag
-    // events carry whole-pixel coordinates, so leaving across a fractional edge (bottom at
-    // 845.4, event at y=845) still measured "inside" and the zone stuck engaged.
-    const related = event.relatedTarget as Node | null;
-    const rect = el.getBoundingClientRect();
-    const x = event.clientX;
-    const y = event.clientY;
-    const outside = related
-      ? !el.contains(related)
-      : x <= rect.left || x >= rect.right - 1 || y <= rect.top || y >= rect.bottom - 1;
-    this.log.DRAG.debug('empty-tree dragleave', { outside, related: !!related, x, y, rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } });
-    if (outside) {
-      this._isDragInProgress = false;
-      this._isDropPlaceholderActive = false;
-      this._scheduleNotify();
-    }
-  };
-
-  handleEmptyTreeDrop = (event: DragEvent) => {
-    event.preventDefault();
-    this._isDragInProgress = false;
-    this._isDropPlaceholderActive = false;
-
-    const draggedNodeData = event.dataTransfer?.getData('application/svelte-treeview');
-    let drop: Promise<boolean> | undefined;
-    if (draggedNodeData) {
-      const droppedNode = JSON.parse(draggedNodeData);
-      drop = this._handleDrop(null, droppedNode, 'child', event);
-    }
-    this._onNodeDragEnd(event, drop);
-  };
-
-  // ── Tree-level drag handlers ────────────────────────────────────────
-
-  handleTreeDragEnter = (event: DragEvent) => {
-    this.log.DRAG.debug('tree dragenter', { nodeCount: this.flatNodesToRender.length, hasMime: event.dataTransfer?.types.includes('application/svelte-treeview') });
-    if (event.dataTransfer?.types.includes('application/svelte-treeview')) {
-      this._isDragInProgress = true;
-      // For empty trees, also activate drop placeholder immediately
-      // so renderEmpty shows the drop zone instead of recreating the empty state
-      if (this.flatNodesToRender.length === 0) {
-        this._isDropPlaceholderActive = true;
-      }
-      this._scheduleNotify();
-    }
-  };
-
-  handleTreeDragLeave = (event: DragEvent) => {
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = event.clientX;
-    const y = event.clientY;
-    const outside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-    this.log.DRAG.debug('tree dragleave', { outside, x, y, rect: { top: rect.top, bottom: rect.bottom } });
-    if (outside) {
-      if (this._draggedNode?.treeId !== this._treeId) {
-        this._isDragInProgress = false;
-        this._isDropPlaceholderActive = false;
-        this._hoveredNodeForDrop = null;
-        this._activeDropPosition = null;
-        this._scheduleNotify();
-      }
-    }
-  };
 
   // ── Helpers ──────────────────────────────────────────────────────────
 

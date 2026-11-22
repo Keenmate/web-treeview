@@ -6,8 +6,9 @@ import { test, expect, type Page, logLines } from './fixtures';
  *   tree A: 1 A-Folder ── 1.1 A-File;  2 A-Leaf
  *   tree B: 1 B-Folder ── 1.1 B-File
  *
- * Drags are synthesized (dragstart → dragover → drop → dragend) so Ctrl can
- * ride on the drop event. Every drop lands on the target's right half → "child".
+ * Drags are synthesized pointer drags (pointerdown → pointermove → pointerup, see
+ * window.synthDrag) so Ctrl can ride on the events. Every drop lands on the target's right
+ * half → "child".
  */
 
 const PAGE = '/test/drag-cross-tree.html';

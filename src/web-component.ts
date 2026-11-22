@@ -26,7 +26,6 @@ import {
   adoptStyles,
   createCustomStyles,
   type CustomStylesOptions,
-  watchPageDrag,
   applyArmedState,
   keepScrollAcrossMove,
   type CustomStylesHandle,
@@ -41,7 +40,7 @@ import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { Ltree, ExpandOptions, SortOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
-import type { PasteResult } from './clipboard';
+import { watchNodeDrag, type PasteResult } from './clipboard';
 import type {
   TreeViewController,
   TreeViewContext,
@@ -68,12 +67,6 @@ import type {
 import type { ContainerSize } from './renderer/types';
 import type { SearchOptions } from 'flexsearch';
 import styles from './css/main.css?inline';
-
-/**
- * The `dataTransfer` type every treeview node drag carries (set in the engine's
- * `dragstart`) — what the page-wide `watchPageDrag` arms on.
- */
-const NODE_DRAG_TYPE = 'application/svelte-treeview';
 
 // The input table (`INPUTS`) lives in ./inputs — the public TreeViewEngine reads its defaults too (C-CA-37).
 
@@ -308,9 +301,9 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── armed (highlight-on-page-drag) ───────────────────────────────────────
 
-  /** Unsubscribe from core's shared page-drag watcher (set while `highlight-on-page-drag` is live). */
+  /** Unsubscribe from the page-wide node-drag watcher (set while `highlight-on-page-drag` is live). */
   #unsubscribePageDrag?: () => void;
-  /** A node drag is over the page (core `watchPageDrag`, only while subscribed). */
+  /** A node drag is in progress on the page (`watchNodeDrag`, only while subscribed). */
   #isNodeDragOverPage = false;
   #isArmed = false;
 
@@ -323,19 +316,16 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /**
-   * Join / leave core's shared page-drag watcher (`watchPageDrag`) per `highlight-on-page-drag` and the
-   * connection state (one page listener set for every instance), then re-derive
-   * the armed state.
+   * Join / leave the page-wide node-drag watcher (`watchNodeDrag` — the shared drag set every
+   * tree's pointer drag publishes) per `highlight-on-page-drag` and the connection state, then
+   * re-derive the armed state.
    */
   #syncPageDrag(): void {
     const shouldTrack = this.isConnected && !!(this.config as { shouldHighlightOnPageDrag?: boolean }).shouldHighlightOnPageDrag;
     if (shouldTrack && !this.#unsubscribePageDrag) {
-      this.#unsubscribePageDrag = watchPageDrag({
-        types: [NODE_DRAG_TYPE],
-        onChange: (isActive) => {
-          this.#isNodeDragOverPage = isActive;
-          this.#syncArmed();
-        },
+      this.#unsubscribePageDrag = watchNodeDrag((isActive) => {
+        this.#isNodeDragOverPage = isActive;
+        this.#syncArmed();
       });
     } else if (!shouldTrack && this.#unsubscribePageDrag) {
       this.#unsubscribePageDrag();

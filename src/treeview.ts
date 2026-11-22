@@ -1092,8 +1092,8 @@ export class TreeViewEngine<T = any> {
       cascadeCheckPolicy: o.cascadeCheckPolicy,
       shouldClickToggleCheckbox: o.shouldClickToggleCheckbox,
       beforeCheckboxToggleCallback: this.wrap(o.beforeCheckboxToggleCallback, 'checkbox', (f) =>
-        (node: LTreeNode<T>, isChecked: boolean, affectedPaths: string[]) =>
-          internalGate(runBeforeCallbackSync(f, this.ctx({ node, isChecked, affectedPaths }), 'beforeCheckboxToggleCallback'))),
+        (ctx: { node: LTreeNode<T>; isChecked: boolean; affectedPaths: string[] }) =>
+          internalGate(runBeforeCallbackSync(f, this.ctx(ctx), 'beforeCheckboxToggleCallback'))),
       onCheckedChange: this.event(o.onCheckedChange),
       onSelectionChange: this.event(o.onSelectionChange),
     } as unknown as TreeViewStateOptions<T>;

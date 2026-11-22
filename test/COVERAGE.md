@@ -14,11 +14,9 @@ are numbered in `test/NOTES.md` (`#N`); tests pinning them are `test.fail`.
 
 Run privately: `npx playwright test -c node_modules/.pw-12520.config.mjs --workers=2`.
 
-**WebKit skips** (reason strings and `hasNoNativeDnd` in `e2e/fixtures.ts`): on **Windows** only, the native
-HTML5 drag-and-drop tests that need a drop (`drag-drop`, `drag-hooks`, `highlight-on-page-drag`, `drag-visuals`
-"drop reject (desktop, real drag)"; per test where a describe also holds a test that needs no drop: "grabbing a
-selected node preserves the selected set" and "enable-tree-drop-zone: a drop … lands on the tree" run on WebKit) —
-Playwright WebKit on Windows delivers no `drop` for a mouse-driven drag. Chromium and Firefox run them. The touch-drag
+**Drag on WebKit:** the drag is pointer events since 2026-11-22 (core `createPointerDrag`, no HTML5 drag), so the
+mouse-drag specs run on every engine — the old Windows-WebKit skip (`hasNoNativeDnd`, WebKit delivered no HTML5 `drop`
+for a mouse drag) is gone. The touch-drag
 specs (`touch-drag`, `drag-visuals` "touch: …") send real touch input through CDP `Input.dispatchTouchEvent` (the touch
 drag is core `createPointerDrag`, driven by pointer events), so they run in Chromium only.
 

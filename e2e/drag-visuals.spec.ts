@@ -1,4 +1,4 @@
-import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_NATIVE_DND, CDP_TOUCH_ONLY, touchDrag, centerOf, hasNoNativeDnd } from './fixtures';
+import { test, expect, type Page, nodeByPath, nodeContent, logLines, CDP_TOUCH_ONLY, touchDrag, centerOf } from './fixtures';
 
 /**
  * Drag visuals, reject feedback and the tree drop zone (/test/drag-visuals.html).
@@ -8,8 +8,9 @@ import { test, expect, type Page, nodeByPath, nodeContent, logLines, WEBKIT_NO_N
  *   3 Locked  (is-draggable=false)
  *   4 Delta
  *
- * Attributes are passed in the query string. HTML5 drags are synthesized step by
- * step (window.drag.start/over/drop/end) so classes can be asserted mid-drag.
+ * Attributes are passed in the query string. Pointer drags are synthesized step by
+ * step (window.drag.start / over / drop / release / end = Escape) so classes can be
+ * asserted mid-drag.
  */
 
 const PAGE = '/test/drag-visuals.html';
@@ -20,7 +21,7 @@ async function load(page: Page, query = '') {
   await expect(nodeByPath(page, '4')).toBeVisible();
 }
 
-const step = (page: Page, fn: 'start' | 'over' | 'drop' | 'end', path?: string, fx?: number) =>
+const step = (page: Page, fn: 'start' | 'over' | 'drop' | 'release' | 'end', path?: string, fx?: number) =>
   page.evaluate(([fn, path, fx]) => (window as any).drag[fn as string](path, fx), [fn, path, fx] as const);
 const content = (page: Page, path: string) => nodeContent(nodeByPath(page, path));
 
@@ -183,7 +184,6 @@ test.describe('drop reject (desktop, real drag)', () => {
   }
 
   test('dropping on a no-drop node is refused: no move, no node-drop', async ({ page, browserName }) => {
-    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await load(page);
     await realDrag(page, '4', '2');
     await page.waitForTimeout(200);
@@ -192,7 +192,6 @@ test.describe('drop reject (desktop, real drag)', () => {
   });
 
   test('… and announces it: node-drop-reject + the 🚫 flash on the target', async ({ page, browserName }) => {
-    test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND);
     await load(page);
     await realDrag(page, '4', '2');
     await expect.poll(() => logLines(page, LOG), { timeout: 2000 }).toContain('node-drop-reject:2');
@@ -207,24 +206,24 @@ test.describe('drop reject (desktop, real drag)', () => {
   });
 });
 
-test.describe('drop cursor over a refusing node (NOTES #22)', () => {
-  test('the dragover is refused: dropEffect "none" (🚫 cursor), no hover indicators', async ({ page }) => {
+test.describe('a refusing node (NOTES #22)', () => {
+  test('hovering it shows no drop indicators (and clears the previous hover)', async ({ page }) => {
     await load(page, '?drop-zone-mode=glow');
     await step(page, 'start', '4');
-    expect(await step(page, 'over', '1', 0.8)).toEqual({ accepted: true, dropEffect: 'move' });
+    expect(await step(page, 'over', '1', 0.8)).toEqual({ isHovered: true });
     await expect(content(page, '1')).toHaveClass(/wtv__node-content--glow-child/);
-    expect(await step(page, 'over', '2', 0.8)).toEqual({ accepted: false, dropEffect: 'none' });
+    expect(await step(page, 'over', '2', 0.8)).toEqual({ isHovered: false });
     await expect(content(page, '2')).not.toHaveClass(/wtv__node-content--glow-/);
     await expect(content(page, '1')).not.toHaveClass(/wtv__node-content--glow-/); // the previous hover cleared
     expect(await logLines(page, LOG)).toEqual([]); // nothing announced mid-drag
     await step(page, 'end');
   });
 
-  test('node-drop-reject + 🚫 fire from dragend on the last refusing node', async ({ page }) => {
+  test('releasing over it: node-drop-reject + 🚫, no drop', async ({ page }) => {
     await load(page);
     await step(page, 'start', '4');
     await step(page, 'over', '2');
-    await step(page, 'end');
+    await step(page, 'release');
     expect(await logLines(page, LOG)).toEqual(['node-drop-reject:2']);
     await expect(content(page, '2').locator('.wtv__drag-denied-badge')).toHaveCount(1);
   });
@@ -235,16 +234,24 @@ test.describe('drop cursor over a refusing node (NOTES #22)', () => {
     await step(page, 'over', '2');
     await step(page, 'over', '1');
     await step(page, 'drop', '1');
-    await step(page, 'end');
     await expect.poll(() => logLines(page, LOG)).toEqual(['node-drop:1.4:child:1']);
   });
 
-  test('enable-tree-drop-zone: the dragover on a refusing node is accepted (routed to the tree)', async ({ page }) => {
-    await load(page, '?enable-tree-drop-zone=true');
+  test('Escape over it: nothing announced, nothing dropped', async ({ page }) => {
+    await load(page);
     await step(page, 'start', '4');
-    expect((await step(page, 'over', '2')).accepted).toBe(true);
+    await step(page, 'over', '2');
     await step(page, 'end');
     expect(await logLines(page, LOG)).toEqual([]);
+    await expect(content(page, '2').locator('.wtv__drag-denied-badge')).toHaveCount(0);
+  });
+
+  test('enable-tree-drop-zone: releasing over it lands on the tree (target=null), no reject', async ({ page }) => {
+    await load(page, '?enable-tree-drop-zone=true');
+    await step(page, 'start', '4');
+    expect(await step(page, 'over', '2')).toEqual({ isHovered: false });
+    await step(page, 'release');
+    await expect.poll(() => logLines(page, LOG)).toEqual(['node-drop:4:child:null']);
   });
 });
 

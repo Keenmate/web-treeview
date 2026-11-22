@@ -53,11 +53,11 @@ Row ids are `{treeId}-{node path}` (characters outside `A-Z a-z 0-9 . -` written
 
 ## Drag-and-drop accessibility
 
-Native HTML5 drag-and-drop is not keyboard-accessible by default. The component does not currently ship a keyboard-driven move alternative. Consumers who need accessible reordering can wire `tree.moveNode(sourcePath, targetPath, position)` to their own keyboard shortcuts.
+Pointer drag-and-drop (mouse, pen, touch) is not keyboard-accessible. The component does not currently ship a keyboard-driven move alternative. Consumers who need accessible reordering can wire `tree.moveNode(sourcePath, targetPath, position)` to their own keyboard shortcuts.
 
 ## Touch
 
-Long-press (`touch-drag-delay`, 300 ms) initiates a drag from a touch device (core `createPointerDrag`, touch only — mouse and pen use HTML5 drag-and-drop). The touch ghost element follows the finger and uses the same `onNodeDrop` event as desktop drag-and-drop; once the drag engages the page doesn't scroll, the tree auto-scrolls near its edges, and Escape cancels. Moving > 10 px before the long-press timer fires cancels the drag (allows scrolling).
+Long-press (`touch-drag-delay`, 300 ms) initiates a drag from a touch device. Mouse, pen and touch share ONE drag (core `createPointerDrag`; mouse / pen start after a 5 px move): the same ghost, drop visuals and `onNodeDrop` event; once the drag engages the page doesn't scroll, the tree auto-scrolls near its edges, and Escape cancels. Moving > 10 px before the long-press timer fires cancels the drag (allows scrolling).
 
 ## Tested patterns
 

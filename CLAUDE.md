@@ -237,7 +237,7 @@ The two packages render the same logical tree but have different DOM strategies.
 | **Virtual scroll** | Flat mode only | Built-in (three-div spacer/translateY structure) |
 | **Label markup** | `<span class="stv__node-label">` by default — replace via `nodeTemplate` snippet | `<span class="wtv__node-label">` by default — replace via `renderNodeCallback` |
 | **Checkbox** | Single styled `<input class="stv__checkbox">` (appearance:none, ::after mask glyph, `--indeterminate` modifier class) | Single styled `<input class="wtv__checkbox">` — same canonical Keenmate contract; indeterminate via `.wtv__checkbox--indeterminate` + `aria-checked="mixed"` (survives the diff reconciler + virtual scroll), NOT the native `.indeterminate` prop |
-| **`draggable` attr** | On `.stv__node-content` (inner) | On `.wtv__node` (outer) |
+| **Drag** | Pointer events through vendored core `createPointerDrag` (`TreeController._attachPointerDrag`); custom renderers: `controller.attachPointerDrag(container)` + `[data-tree-path]` / `[data-drop-position]` | Pointer events through core `createPointerDrag` (renderer `_attachPointerDrag` → state `pointerDragStart` / `Move` / `Drop` / `Cancel`); grab = `.wtv__node-content`; cross-tree target found by `.wtv__container[data-tree-id]` + the tree registry; no `draggable` attr, no HTML5 drag |
 | **Extra dataset attrs** | `data-tree-path` only | `data-tree-path` + `data-rev` + `data-expanded` (used by the diff-based reconciler) |
 | **Update mechanism** | Svelte 5 runes + per-node `_rev` keyed `{#each}` | Imperative reconciler comparing `data-rev` / `data-expanded` and patching DOM |
 | **Highlight padding** | Symmetric (~8px both sides via `--stv-node-content-padding`) | `padding-left: 0` hardcoded → highlight hugs label |

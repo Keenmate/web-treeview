@@ -43,11 +43,6 @@ export interface TreeMutationOptions {
 export interface NodeCallbacks<T> {
   onNodeClicked: (node: LTreeNode<T>, modifiers?: SelectionModifiers) => void;
   onNodeRightClicked: (node: LTreeNode<T>, event: MouseEvent) => void;
-  onNodeDragStart: (node: LTreeNode<T>, event: DragEvent) => void;
-  onNodeDragOver: (node: LTreeNode<T>, event: DragEvent) => void;
-  onNodeDragLeave: (node: LTreeNode<T>, event: DragEvent) => void;
-  onNodeDrop: (node: LTreeNode<T>, event: DragEvent) => void;
-  onZoneDrop: (node: LTreeNode<T>, position: DropPosition, event: DragEvent) => void;
   onCheckboxToggle: (node: LTreeNode<T>, options?: { skipFocus?: boolean }) => void;
 }
 
@@ -174,13 +169,13 @@ export type NodeEventContext<T> = NodeRef<T>;
 /**
  * Context for onNodeDragStart / onNodeDragOver. A NodeRef (for dragStart the node
  * that started the drag; for dragOver the node currently hovered) plus the raw
- * DragEvent and `dragged` — the FULL top-level set in flight. A drag is
+ * PointerEvent and `dragged` — the FULL top-level set in flight. A drag is
  * single-origin at the DOM level, so the event fires once; `dragged` is the whole
  * multi-selection (or just the one node for a single drag) so a handler doesn't
  * have to read `controller.selectedPaths` itself.
  */
 export interface NodeDragContext<T> extends NodeRef<T> {
-  event: DragEvent;
+  event: PointerEvent;
   /** The full top-level set being dragged (multi-selection; a single-item array otherwise). */
   dragged: NodeRef<T>[];
 }
@@ -199,7 +194,7 @@ export interface DragStartContext<T> {
   lead: NodeRef<T>;
   /** The complete flattened set — grabbed subtree(s) + every descendant. */
   dragged: NodeRef<T>[];
-  event: DragEvent | PointerEvent;
+  event: PointerEvent;
 }
 
 /**
@@ -225,7 +220,7 @@ export interface BeforeDropContext<T> {
   dragged: NodeRef<T>[];
   position: DropPosition;
   operation: DropOperation;
-  event: DragEvent | PointerEvent;
+  event: PointerEvent;
 }
 
 /**
@@ -250,7 +245,7 @@ export interface NodeDropContext<T> {
   dropped: NodeRef<T>[] | null;
   position: DropPosition;
   operation: DropOperation;
-  event: DragEvent | PointerEvent;
+  event: PointerEvent;
 }
 
 /**
@@ -524,11 +519,14 @@ export interface TreeViewStateOptions<T> {
   /** Which paths the selection EMITS in cascade mode. Default 'rolled-up'. */
   cascadeCheckPolicy?: CascadeCheckPolicy | null | undefined;
   shouldClickToggleCheckbox?: boolean;
-  beforeCheckboxToggleCallback?: (
-    node: LTreeNode<T>,
-    checked: boolean,
-    affectedPaths: string[]
-  ) => boolean | string[] | void;
+  /** Runs before a checkbox toggle: `false` cancels, a `string[]` overrides the affected paths. */
+  beforeCheckboxToggleCallback?: (ctx: {
+    node: LTreeNode<T>;
+    /** The state the node is about to get. */
+    isChecked: boolean;
+    /** Every path the toggle will change (the cascade included). */
+    affectedPaths: string[];
+  }) => boolean | string[] | void;
   /** Fires on changes to the checkbox / data-state checked set (checkedPaths). */
   onCheckedChange?: (ctx: SelectionChangeContext<T>) => void;
   /** Fires on changes to the selected set (Ctrl/Shift+click, arrow keys). */

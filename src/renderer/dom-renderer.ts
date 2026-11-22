@@ -139,7 +139,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private tooltips = new Map<string, TooltipHandle>();
   // The node each live tooltip describes (the content is resolved from it at show time).
   private tooltipNodes = new Map<string, LTreeNode<T>>();
-  private _lastDragOverTarget: string = '';
   private _lastEmptyState: string = '';
   // Responsive env for the NodeRenderContext (@keenmate/web-components-core/environment).
   // deviceClass flips are discrete → re-render on change; container size updates silently
@@ -213,7 +212,6 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       shouldHandleKeys: false,
       shouldScroll: false,
     });
-    document.addEventListener('dragend', this._onDocumentDragEnd);
     this._isDisabled = false;
     this._applyDisabled(!!config.isDisabled);
     this.container.classList.toggle('wtv__container--readonly', !!config.isReadonly);
@@ -480,20 +478,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._closeMenu();
     this._closeReveal();
     this._closeDropPads();
-    this._touchDrag?.cancel();
+    this._pointerDrag?.cancel();
     for (const h of this.tooltips.values()) h.hide();
     this._stopEnvObserve?.();
     this._stopSizeObserve?.();
     this._stopEnvObserve = null;
     this._stopSizeObserve = null;
-    document.removeEventListener('dragend', this._onDocumentDragEnd);
   }
 
   /** The host was re-attached: restart what {@link deactivate} stopped. Idempotent. */
   activate(): void {
     if (this._isActive || !this.container) return;
     this._isActive = true;
-    document.addEventListener('dragend', this._onDocumentDragEnd);
     // The environment may have changed while detached — re-render only on a device-class flip.
     const dc = classifyDevice(getEnvironment());
     if (dc !== this._deviceClass) {
@@ -930,219 +926,57 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   };
 
-  private _onBodyDragStart = (event: DragEvent) => {
-    if (!this.state) return;
-    if (this._isDisabled || this._isReadonly) {
-      event.preventDefault();
-      return;
-    }
-    const target = event.target as HTMLElement;
-    const nodeEl = target.closest('.wtv__node') as HTMLElement;
-    const path = nodeEl?.getAttribute('data-tree-path');
-    if (path) {
-      const node = this.state.getNodeByPath(path);
-      if (node) {
-        this.state.startDrag(node, event);
-      }
-    }
-  };
-
-  private _onBodyDragOver = (event: DragEvent) => {
-    // Disabled / read-only: not a drop target (no preventDefault → the browser refuses the drop).
-    if (!this.state || this._isDisabled || this._isReadonly) return;
-    const target = event.target as HTMLElement;
-    // Log only on first dragover or target change to reduce noise
-    const targetDesc = target.tagName + '.' + target.className;
-    if (this._lastDragOverTarget !== targetDesc) {
-      this.log.DRAG.debug('body dragover', { target: targetDesc });
-      this._lastDragOverTarget = targetDesc;
-    }
-
-    // Drop zone handling — allow drop and highlight active zone
-    const zoneEl = target.closest('.wtv__drop-zone') as HTMLElement;
-    if (zoneEl) {
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-      const parent = zoneEl.parentElement as HTMLElement;
-      if (parent) {
-        // Toggle active class on hovered zone
-        for (const sibling of parent.querySelectorAll('.wtv__drop-zone')) {
-          sibling.classList.toggle('wtv__drop-zone--active', sibling === zoneEl);
-        }
-        // Refresh position for scroll tracking
-        const path = parent.getAttribute('data-tree-path');
-        if (path) this._placeDropPads(path);
-      }
-      return;
-    }
-
-    const contentEl = target.closest('.wtv__node-content') as HTMLElement;
-    if (contentEl) {
-      const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
-      const path = nodeEl?.getAttribute('data-tree-path');
-      if (path) {
-        const node = this.state.getNodeByPath(path);
-        if (node) {
-          this.state.dragOver(node, event, contentEl);
-        }
-      }
-    } else {
-      // Off any row: no longer over a refusing node (NOTES #22).
-      this.state.clearRefusedDropHover();
-    }
-
-    // Empty tree or active drop placeholder dragover
-    const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
-    if (emptyOrPlaceholder) {
-      this.log.DRAG.debug('dragover on the empty state / placeholder', emptyOrPlaceholder.className);
-      this.state.handleEmptyTreeDragOver(event);
-    } else {
-      const bodyHit = target.closest('.wtv__tree');
-      if (bodyHit && !contentEl && !zoneEl) {
-        this.log.DRAG.debug('dragover on the tree body (no node / zone / empty state)', target.tagName, target.className);
-      }
-    }
-  };
-
-  private _onBodyDragLeave = (event: DragEvent) => {
-    if (!this.state) return;
-    this._lastDragOverTarget = '';
-    const related = event.relatedTarget as HTMLElement;
-    const target = event.target as HTMLElement;
-    this.log.DRAG.debug('body dragleave', {
-      target: target.tagName + '.' + target.className,
-      related: related ? related.tagName + '.' + related.className : null
-    });
-    // Don't clear hover when cursor moves to a floating drop zone (its layer, retargeted)
-    if (related && this._dropPads && (related === this._dropPads.layer || this._dropPads.layer.contains(related))) return;
-    const contentEl = target.closest('.wtv__node-content') as HTMLElement;
-    if (contentEl) {
-      const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
-      const path = nodeEl?.getAttribute('data-tree-path');
-      if (path) {
-        const node = this.state.getNodeByPath(path);
-        if (node) {
-          this.state.dragLeave(node, event);
-        }
-      }
-    }
-
-    // Measure the zone itself (not the body the listener sits on) — the body is taller, so
-    // leaving the zone downwards stayed "inside" and the zone stuck engaged.
-    const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
-    if (emptyOrPlaceholder) {
-      this.state.handleEmptyTreeDragLeave(event, emptyOrPlaceholder);
-    }
-  };
-
-  private _onBodyDrop = (event: DragEvent) => {
-    if (!this.state || this._isDisabled || this._isReadonly) return;
-    // When the tree drop zone is on, the container also listens for `drop`. bodyEl
-    // fully owns in-body drops (node / zone / empty, plus forwarding rejects to the
-    // zone), so stop the event here to keep the container handler from double-placing.
-    if (this.state.isTreeDropZoneEnabled) event.stopPropagation();
-    const target = event.target as HTMLElement;
-
-    // Check for drop zone (the pads live in their own layer, listened to like the body)
-    const zoneEl = target.closest('.wtv__drop-zone') as HTMLElement;
-    if (zoneEl) {
-      const zonesContainer = zoneEl.closest('.wtv__drop-zones') as HTMLElement;
-      const path = zonesContainer?.getAttribute('data-tree-path');
-      const position = zoneEl.getAttribute('data-drop-position') as DropPosition;
-      if (path && position) {
-        const node = this.state.getNodeByPath(path);
-        if (node) {
-          this.state.dropAt(node, position, event);
-          return;
-        }
-      }
-    }
-
-    // Check for empty tree drop (matches both .wtv__empty-state and active .wtv__empty-zone)
-    const emptyOrPlaceholder = target.closest('.wtv__empty-state, .wtv__empty-zone') as HTMLElement;
-    if (emptyOrPlaceholder) {
-      this.state.handleEmptyTreeDrop(event);
-      return;
-    }
-
-    // Regular node drop
-    const contentEl = target.closest('.wtv__node-content') as HTMLElement;
-    if (contentEl) {
-      const nodeEl = contentEl.closest('.wtv__node') as HTMLElement;
-      const path = nodeEl?.getAttribute('data-tree-path');
-      if (path) {
-        const node = this.state.getNodeByPath(path);
-        if (node) {
-          this.state.drop(node, event);
-        }
-      }
-    }
-  };
-
-  private _onBodyDragEnter = (event: DragEvent) => {
-    if (this._isDisabled || this._isReadonly) return;
-    const target = event.target as HTMLElement;
-    const related = event.relatedTarget as HTMLElement;
-    this.log.DRAG.debug('body dragenter', {
-      target: target.tagName + '.' + target.className,
-      related: related ? related.tagName + '.' + related.className : null
-    });
-    this.state?.handleTreeDragEnter(event);
-  };
-
-  private _onBodyDragEnd = (event: DragEvent) => {
-    this.state?._onNodeDragEnd(event);
-  };
-
-  /** Catches dragend from OTHER trees (cross-tree) and Esc cancellations.
-   *  dragend fires on the source element; when that element lives in a
-   *  different shadow root the event never reaches our bodyEl. */
-  private _onDocumentDragEnd = (event: DragEvent) => {
-    // Cross-tree: the drag was last over one of OUR refusing rows → announce it (NOTES #22).
-    this.state?.announceRefusedDrop();
-    this.state?.cancelDrag();
-  };
-
   /**
-   * Touch drag through core `createPointerDrag` (SPEC §12.28): long press = `touchDragDelay`,
-   * the page doesn't scroll once it engages, auto-scroll near the body's edges, Escape /
-   * pointercancel cancel, the hit test pierces shadow roots. TOUCH ONLY — `getSource` answers
-   * `null` for mouse / pen, which stay on HTML5 drag-and-drop (it carries the cross-tree
-   * `dataTransfer`), so the two never fight. `touchDragDelay` is read on every press (core
-   * reads a function `longPressMs` per press), so a change needs no rebuild. A refused hold
-   * (a locked node, the 🚫 badge) keeps the drag but switches core's auto-scroll off.
+   * Drag and drop through core `createPointerDrag` (SPEC §12.28) — ONE drag for mouse, pen and
+   * touch (svelte-treeview parity; no HTML5 drag session). Mouse / pen: a press on a draggable
+   * node's content pill starts after 5px of movement. Touch: a long press (`touchDragDelay`) on a
+   * row; a long press on a LOCKED node plays the "can't move this" reaction (held 🚫), which keeps
+   * the gesture but switches core's auto-scroll off. Core owns the scroll lock, the hit test
+   * through shadow roots, auto-scroll, Escape / pointercancel and the swallowed trailing click;
+   * the state owns the dragged set, the hover visuals (in whichever tree is under the pointer)
+   * and the drop. `touchDragDelay` is read on every press, so a change needs no rebuild.
    */
-  private _touchDrag: PointerDrag | null = null;
+  private _pointerDrag: PointerDrag | null = null;
+  /** The press that may become a drag (core hands `onStart` no event on a touch long press). */
+  private _pressEvent: PointerEvent | null = null;
 
-  private _attachTouchDrag(): void {
-    if (!this.bodyEl || this._touchDrag) return;
-    this._touchDrag = createPointerDrag(this.bodyEl, {
+  private _attachPointerDrag(): void {
+    if (!this.bodyEl || this._pointerDrag) return;
+    this._pointerDrag = createPointerDrag(this.bodyEl, {
       longPressMs: () => this.state?.touchDragDelay ?? 300,
-      threshold: 10, // a finger moving > 10px before the long press = a scroll
-      autoScroll: { isEnabled: () => !this.state?.isTouchDragDenied },
+      // A finger moving > 10px before the long press = a scroll; a mouse / pen drags after 5px.
+      threshold: () => (this._pressEvent?.pointerType === 'touch' ? 10 : 5),
+      autoScroll: { isEnabled: () => !this.state?.isPointerDragDenied },
       getSource: (target, event) => {
-        // The touch gesture only starts a touch drag — off while disabled / read-only.
-        if (event.pointerType !== 'touch' || !this.state || this._isDisabled || this._isReadonly) return null;
+        this._pressEvent = null;
+        const state = this.state;
+        if (!state || this._isDisabled || this._isReadonly || state.dragDropMode === 'none') return null;
+        // Controls inside a row keep their own press (checkbox, toggle, info button, an input).
+        if (target.closest('input, textarea, select, button, [contenteditable="true"], .wtv__toggle')) return null;
         const row = target.closest('.wtv__node') as HTMLElement | null;
-        const path = row?.getAttribute('data-tree-path');
-        return path && this.state.getNodeByPath(path) ? row : null;
+        const node = state.getNodeByPath(row?.getAttribute('data-tree-path') ?? '');
+        if (!row || !node) return null;
+        if (event.pointerType !== 'touch') {
+          // Mouse / pen: the grab handle is the content pill of a draggable node (the indent
+          // gutter doesn't drag). A locked node simply doesn't drag — no reaction.
+          if (!target.closest('.wtv__node-content') || !state.getNodeIsDraggable(node)) return null;
+        }
+        this._pressEvent = event;
+        return row;
       },
       onStart: ({ source, x, y }) => {
         const node = this.state?.getNodeByPath(source.getAttribute('data-tree-path') ?? '');
-        if (!node) return false;
-        this.state!.touchDragStart(node, x, y);
+        if (!node || !this._pressEvent) return false;
+        return this.state!.pointerDragStart(node, x, y, this._pressEvent);
       },
-      onMove: ({ target, x, y }) => this.state?.touchDragMove(target, x, y),
-      onDrop: ({ target, event }) => this.state?.touchDragDrop(target, event as PointerEvent),
-      onCancel: () => this.state?.touchDragCancel(),
+      onMove: ({ target, x, y, event }) =>
+        this.state?.pointerDragMove(target, x, y, event instanceof PointerEvent ? event : null),
+      onDrop: ({ target, x, y, event }) => {
+        void this.state?.pointerDragDrop(target, x, y, event as PointerEvent);
+      },
+      onCancel: () => this.state?.pointerDragCancel(),
     });
   }
-
-  // Tree-level drop zone (isTreeDropZoneEnabled): container-level fallback so a
-  // drop anywhere over the tree is accepted even when every node rejects it. The
-  // state handlers no-op unless the flag is on, so these can attach always.
-  private _onContainerDragOver = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.state?.handleTreeZoneDragOver(event); };
-  private _onContainerDrop = (event: DragEvent) => { if (!this._isDisabled && !this._isReadonly) this.state?.handleTreeZoneDrop(event); };
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
 
@@ -1204,23 +1038,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.addEventListener('click', this._onBodyClick);
     this.bodyEl.addEventListener('keydown', this._onBodyKeydown);
     this.bodyEl.addEventListener('contextmenu', this._onBodyContextMenu);
-    this.bodyEl.addEventListener('dragstart', this._onBodyDragStart);
-    this.bodyEl.addEventListener('dragover', this._onBodyDragOver);
-    this.bodyEl.addEventListener('dragleave', this._onBodyDragLeave);
-    this.bodyEl.addEventListener('drop', this._onBodyDrop);
-    this.bodyEl.addEventListener('dragenter', this._onBodyDragEnter);
-    this._attachTouchDrag();
-    // dragend fires on the SOURCE element after any drag ends (drop, cancel, cross-tree)
-    this.bodyEl.addEventListener('dragend', this._onBodyDragEnd);
-    // Cross-tree / Esc: dragend from other shadow roots won't reach our bodyEl —
-    // the document-level dragend listener is a LIVE resource, attached in mount() /
-    // activate() and removed in deactivate() / destroy().
-    // Tree-level drop zone: fallback dragover/drop on the whole container (gated
-    // inside the state handlers by isTreeDropZoneEnabled).
-    if (this.container) {
-      this.container.addEventListener('dragover', this._onContainerDragOver);
-      this.container.addEventListener('drop', this._onContainerDrop);
-    }
+    this._attachPointerDrag();
   }
 
   private _detachBodyListeners() {
@@ -1228,20 +1046,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.bodyEl.removeEventListener('click', this._onBodyClick);
     this.bodyEl.removeEventListener('keydown', this._onBodyKeydown);
     this.bodyEl.removeEventListener('contextmenu', this._onBodyContextMenu);
-    this.bodyEl.removeEventListener('dragstart', this._onBodyDragStart);
-    this.bodyEl.removeEventListener('dragover', this._onBodyDragOver);
-    this.bodyEl.removeEventListener('dragleave', this._onBodyDragLeave);
-    this.bodyEl.removeEventListener('drop', this._onBodyDrop);
-    this.bodyEl.removeEventListener('dragenter', this._onBodyDragEnter);
-    this._touchDrag?.destroy();
-    this._touchDrag = null;
-    this.bodyEl.removeEventListener('dragend', this._onBodyDragEnd);
+    this._pointerDrag?.destroy();
+    this._pointerDrag = null;
     this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
-    document.removeEventListener('dragend', this._onDocumentDragEnd);
-    if (this.container) {
-      this.container.removeEventListener('dragover', this._onContainerDragOver);
-      this.container.removeEventListener('drop', this._onContainerDrop);
-    }
   }
 
   // ── Virtual scroll structure ───────────────────────────────────────
@@ -1338,6 +1145,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _onStateChange(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.bodyEl || !this.state) return;
+
+    // A drag from another tree finds this one under the pointer by the container's tree id
+    // (state._resolveDropTarget → the tree registry).
+    if (this.container && this.container.getAttribute('data-tree-id') !== this.state.treeId) {
+      this.container.setAttribute('data-tree-id', this.state.treeId);
+    }
 
     // Invalidate scroll fast-path cache — the underlying data may have changed
     // (filter, expand, collapse, data load), so the next scroll must not early-exit
@@ -1840,13 +1653,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     const content = document.createElement('div');
     content.className = 'wtv__node-content';
 
-    // Draggable + cut live on the CONTENT (the pill), not the outer .wtv__node.
-    // Keeps every wtv__node-content--* class on the element it's named for and
-    // matches svelte-treeview (draggable on .stv__node-content). The delegated
-    // dragstart/touch handlers still resolve the row via closest('.wtv__node'),
-    // so the grab handle is the content pill (excludes the indent gutter/toggle).
+    // Draggable + cut live on the CONTENT (the pill), not the outer .wtv__node — every
+    // wtv__node-content--* class sits on the element it's named for. The pointer drag's grab
+    // handle is the content pill too (excludes the indent gutter / toggle); see _attachPointerDrag.
     if (this.state?.dragDropMode !== 'none' && this.state?.getNodeIsDraggable(node)) {
-      content.setAttribute('draggable', 'true');
       content.classList.add('wtv__node-content--draggable');
     }
     if (snapshot.cutPaths.has(node.path)) {
@@ -2103,13 +1913,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Update draggable — on the content pill (matches _createNodeElement)
     if (content) {
-      if (this.state?.dragDropMode !== 'none' && this.state?.getNodeIsDraggable(node)) {
-        content.setAttribute('draggable', 'true');
-        content.classList.add('wtv__node-content--draggable');
-      } else {
-        content.removeAttribute('draggable');
-        content.classList.remove('wtv__node-content--draggable');
-      }
+      content.classList.toggle(
+        'wtv__node-content--draggable',
+        this.state?.dragDropMode !== 'none' && !!this.state?.getNodeIsDraggable(node)
+      );
     }
 
     // Re-apply data-driven nodeClass / nodeContentClass (removes stale classes)
@@ -2139,6 +1946,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       content.classList.remove('wtv__node-content--dragged');
       if (this.lastNodeConfig?.draggedNodeClass) content.classList.remove(this.lastNodeConfig.draggedNodeClass);
       content.classList.remove('wtv__node-content--glow-before', 'wtv__node-content--glow-after', 'wtv__node-content--glow-child', 'wtv__node-content--drop-copy');
+      const dragOverClass = this.lastNodeConfig?.dragOverNodeClass;
+      if (dragOverClass) {
+        content.classList.toggle(dragOverClass, snapshot.isDragInProgress && path === snapshot.hoveredNodeForDropPath);
+      }
 
       // Dragged node style (custom class wins over the built-in modifier). Applied to
       // EVERY top-level path in the drag, so a multi-drag dims the whole set, not just the lead.
@@ -2168,14 +1979,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   private _closeDropPads(): void {
     if (!this._dropPads) return;
-    const el = this._dropPads.element;
-    el.removeEventListener('dragover', this._onBodyDragOver);
-    el.removeEventListener('drop', this._onBodyDrop);
     this._dropPads.destroy();
     this._dropPads = null;
   }
 
-  /** Lay the pads' layer over the row of `path` (viewport coordinates, re-read on every pad dragover). */
+  /** Lay the pads' layer over the row of `path` (viewport coordinates, re-read on every drag move). */
   private _placeDropPads(path: string): void {
     const row = this.nodeElements.get(this._findKeyByPath(path))?.querySelector('.wtv__node-row') as HTMLElement | null;
     if (row && this._dropPads) this._dropPads.place(row.getBoundingClientRect());
@@ -2195,6 +2003,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // If zones already exist for the same hovered path, just update position — don't recreate
     if (shouldShow && this._dropPads && existingPath === snapshot.hoveredNodeForDropPath) {
       this._placeDropPads(existingPath);
+      this._markActiveDropPad(snapshot.activeDropPosition);
       return;
     }
 
@@ -2239,11 +2048,19 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       zones.appendChild(zone);
     }
 
-    // The pads aren't in the body any more — they take the body's dragover / drop handlers themselves.
-    zones.addEventListener('dragover', this._onBodyDragOver);
-    zones.addEventListener('drop', this._onBodyDrop);
+    // The pads are hit-tested by the pointer drag (state.pointerDragMove / pointerDragDrop read
+    // .wtv__drop-zone + data-drop-position under the pointer) — no listeners of their own.
     this._dropPads = pads;
     pads.place(row.getBoundingClientRect());
+    this._markActiveDropPad(snapshot.activeDropPosition);
+  }
+
+  /** Highlight the pad the drop would land on (the one under the pointer, or the position the
+   *  pointer picks on the row itself). */
+  private _markActiveDropPad(position: DropPosition | null): void {
+    for (const pad of this._dropPads?.element.querySelectorAll('.wtv__drop-zone') ?? []) {
+      pad.classList.toggle('wtv__drop-zone--active', pad.getAttribute('data-drop-position') === position);
+    }
   }
 
   // ── Context menu (core /menu) ───────────────────────────────────────

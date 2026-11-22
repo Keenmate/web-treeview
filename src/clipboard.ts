@@ -100,16 +100,38 @@ export function getClipboardTree(id: string): ClipboardSourceTree | undefined {
 // ─── Cross-tree drag set ──────────────────────────────────────────────────
 // The top-level dragged paths, published by the SOURCE tree on drag start so a
 // CROSS-TREE drop/dragover can expose the full multi-drag set via ctx.dragged.
-// The target controller only receives ONE reconstituted node (from dataTransfer)
+// The target controller only sees the lead dragged node
 // and can't see the source's selected set, so it reads the set from here. Same-
 // tree drops don't need this — they compute the set from their own live selection.
 // `paths` = the top-level dragged set (for ctx.dragged). `manifest` = the COMPLETE
 // placement set (every descendant, or a curated beforeDragStart override with
 // holes) used by a cross-tree AUTO-copy. (svelte-treeview rc13)
 let _dragSet: { sourceTreeId: string; paths: string[]; manifest: string[] } | null = null;
+// Page-wide "a node drag is in progress" (highlight-on-page-drag): the pointer drag has no HTML5
+// drag events for core watchPageDrag to see, so the drag set itself is the signal.
+const _dragSetListeners = new Set<(isActive: boolean) => void>();
+
+function notifyDragSet(isActive: boolean): void {
+  for (const listener of _dragSetListeners) {
+    try {
+      listener(isActive);
+    } catch {
+      // one listener's failure must not stop the others
+    }
+  }
+}
+
+/** Listen for node drags starting (`true`) / ending (`false`) anywhere on the page, in any tree.
+ *  Returns the unsubscribe. */
+export function watchNodeDrag(listener: (isActive: boolean) => void): () => void {
+  _dragSetListeners.add(listener);
+  return () => _dragSetListeners.delete(listener);
+}
 
 export function setDragSet(sourceTreeId: string, paths: string[], manifest: string[] = paths): void {
+  const wasActive = _dragSet !== null;
   _dragSet = { sourceTreeId, paths, manifest };
+  if (!wasActive) notifyDragSet(true);
 }
 
 export function getDragSet(): { sourceTreeId: string; paths: string[]; manifest: string[] } | null {
@@ -117,7 +139,9 @@ export function getDragSet(): { sourceTreeId: string; paths: string[]; manifest:
 }
 
 export function clearDragSet(): void {
+  if (_dragSet === null) return;
   _dragSet = null;
+  notifyDragSet(false);
 }
 
 /**

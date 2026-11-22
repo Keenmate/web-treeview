@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — drag and drop is ONE pointer drag for mouse, pen and touch (2026-11-22)
+- Mouse and pen drags were native HTML5 drag-and-drop; only touch ran on core `createPointerDrag` (since
+  2026-11-18). Now every pointer type does: a mouse / pen press on a draggable row's content starts after a 5px
+  move, touch after the long press (`touch-drag-delay`). The renderer wires core `createPointerDrag` once
+  (`_attachPointerDrag`); the state's `pointerDragStart` / `pointerDragMove` / `pointerDragDrop` /
+  `pointerDragCancel` own the tree side — `beforeDragStartCallback`, the multi-drag set and its manifest,
+  `node-drag-start` / `node-drag-over`, the glow / floating-pad visuals, Ctrl copy, the tree drop zone, the
+  empty-tree zone, `node-drop-reject`, the selection sync and its restore on Escape / a drop that lands nowhere.
+  Same model as svelte-treeview.
+- Cross-tree drops no longer travel in a `dataTransfer`: the pointer's target tree is found by its container's
+  new `data-tree-id` through the tree registry, and the dragged set + placement manifest through the shared drag
+  set (kept until the drop settles, so an async `beforeDropCallback` can't lose it).
+- Touch gains everything the touch path lacked: before / after / child positions (it always dropped as child),
+  the glow / floating pads, multi-drag, `beforeDragStartCallback`, `node-drag-start` / `node-drag-over`, Ctrl
+  copy and cross-tree. The touch-only `wtv__node-content--dragover-highlight` default is gone (touch shows the
+  glow like a mouse); a set `drag-over-node-class` is applied to the hovered row for every pointer type.
+- `highlight-on-page-drag` arms from the shared drag set (a node drag in any tree on the page) instead of core
+  `watchPageDrag`, which only sees HTML5 drags.
+- Removed with the HTML5 path: the state's `startDrag` / `dragOver` / `dragLeave` / `drop` / `dropAt` /
+  `clearRefusedDropHover` / `announceRefusedDrop` / `handleTreeZoneDragOver` / `handleTreeZoneDrop` /
+  `handleEmptyTreeDrag*` / `handleTreeDragEnter` / `_onNodeDragEnd` and the `touchDrag*` methods (renamed
+  `pointerDrag*`, `isTouchDragDenied` → `isPointerDragDenied`); `NodeCallbacks` loses its five drag members; the
+  `draggable` attribute on rows; the document `dragend` listener. The drag contexts' `event` is a `PointerEvent`
+  (was `DragEvent`). `cancelDrag()` stays.
+- Tests: the synthesized drags in `test/drag-visuals.html` / `test/drag-cross-tree.html` dispatch pointer
+  events; `drag-esc-cancel` is a real mouse drag + Escape; the Windows-WebKit "no HTML5 drop" skips are gone —
+  the drag specs run on Chromium, Firefox and WebKit.
+
+### Fixed — checkbox cascade follows paths `beforeCheckboxToggleCallback` adds (2026-11-22)
+- A path the callback ADDS to a toggle now re-derives its own parents too (they kept their old checked / [-]
+  state — only the clicked node's ancestors were walked). A check / uncheck also assigns the canonical checked
+  set once instead of once per ancestor walk. The click and `checkNode(s)` / `uncheckNode(s)` share one
+  cascade core (`_setChecked`). Same fix in svelte-treeview 5.0.0-rc18.
+
+### Changed — `TreeViewState`'s `beforeCheckboxToggleCallback` takes a context object (2026-11-22)
+- The headless state's option was the last positional callback: `(node, isChecked, affectedPaths)` →
+  `({ node, isChecked, affectedPaths })`, the shape the element and `TreeViewEngine` already passed. No alias.
+
 ### Removed — `isFlatRenderingEnabled` / `enable-flat-rendering` (2026-11-22)
 - Flat rows are the only rendering mode, so the input had nothing to switch: `false` only dropped the row
   indent and the progressive batching. Rows are always indented by `flat-indent-size`; batching is

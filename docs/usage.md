@@ -835,7 +835,7 @@ search + filtering, keyboard shortcuts (`handleKeydown(event)`), clipboard and d
 What you take over from `TreeViewEngine`: rendering, input wiring, UI strings (`labels`), icons, context menus,
 the loader, screen-reader announcements, and the callback shape — `TreeViewStateOptions` takes `data` (not
 `nodes`) and the state's own callback shapes (`onSelectionChange({ paths, nodes })`, `onNodeClick({ path, node,
-parent, siblings })`, a few positional ones like `beforeCheckboxToggleCallback(node, isChecked, affectedPaths)`) —
+parent, siblings })`, `beforeCheckboxToggleCallback({ node, isChecked, affectedPaths })`) —
 no `controller` / `element` on the ctx, no `before*` result normalisation, no DOM events. Options you leave out get the
 element's defaults where the key is shared (`idMember` `'id'`, `pathMember` `'path'`, `displayValueMember`
 `'displayValue'`, `clickBehavior`, `selectionMode`, … — same source as `TreeViewEngine`).

@@ -69,23 +69,32 @@
          * dragstart on the source row → dragenter/dragover/drop on the target row's
          * right part ("child") → dragend on the source.
          */
+        // A synthesized pointer drag (core createPointerDrag): press the source row, move past the
+        // threshold, move onto the target's right half (→ "child") and release — Ctrl rides on the
+        // pointer events. The hit test is elementFromPoint, so the target tree is found by position.
         window.synthDrag = async (fromId, fromPath, toId, toPath, { ctrl = false } = {}) => {
             const row = (id, p) => window.trees[id].shadowRoot
                 .querySelector(`.wtv__node[data-tree-path="${p}"] > .wtv__node-row .wtv__node-content`);
             const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
-            const dt = new DataTransfer();
-            row(fromId, fromPath).dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true }));
+            const fire = (type, el, x, y) => el.dispatchEvent(new PointerEvent(type, {
+                bubbles: true, cancelable: true, composed: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+                button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y, ctrlKey: ctrl,
+            }));
+            const src = row(fromId, fromPath);
+            const s = src.getBoundingClientRect();
+            const sx = s.left + s.width / 2;
+            const sy = s.top + s.height / 2;
+            fire('pointerdown', src, sx, sy);
+            fire('pointermove', src, sx + 8, sy + 8);
             await frame();
             const target = row(toId, toPath);
             const r = target.getBoundingClientRect();
-            const at = { clientX: r.left + r.width * 0.8, clientY: r.top + r.height / 2, ctrlKey: ctrl };
-            for (const type of ['dragenter', 'dragover', 'dragover']) {
-                target.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at }));
-            }
-            target.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at }));
+            const x = r.left + r.width * 0.8;
+            const y = r.top + r.height / 2;
+            fire('pointermove', target, x, y);
             await frame();
-            const src = row(fromId, fromPath);
-            src?.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true, composed: true }));
+            fire('pointerup', target, x, y);
+            await frame();
             await frame();
         };
     </script>

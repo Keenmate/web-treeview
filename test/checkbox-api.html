@@ -10,7 +10,7 @@
     </style>
 </head>
 <body>
-    <!-- ?mode=cascade|independent  ?policy=rolled-up|leaves|all  ?before=veto|override -->
+    <!-- ?mode=cascade|independent  ?policy=rolled-up|leaves|all  ?before=veto|override|add -->
     <web-treeview id="tree" expand-level="3" show-checkboxes="true" is-selectable-member="selectable"></web-treeview>
     <pre data-testid="cb-log"></pre>
 
@@ -48,6 +48,8 @@
                 logTo('cb-log', `before:${node.path}:${isChecked}:${fmtPaths(affectedPaths)}`);
                 if (before === 'veto') return false;
                 if (before === 'override') return ['2.2'];
+                // add: every toggle also checks all of B (B1 + B2) — B's own box must follow
+                if (before === 'add') return [...affectedPaths, '2.1', '2.2'];
             };
         }
         setupTree(tree, data, extra);

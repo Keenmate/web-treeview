@@ -52,7 +52,7 @@ test('touch drag: styled ghost in a core layer, highlight and drop on the target
     { type: 'touchMove', ...to, waitMs: 30 },
   ]);
   await expect(host.locator('.wtv__node[data-tree-path="2"] .wtv__node-content').first())
-    .toHaveClass(/wtv__node-content--dragover-highlight/);
+    .toHaveClass(/wtv__node-content--glow-/);
 
   await touchDrag(page, [{ type: 'touchEnd' }]);
   await expect(page.getByTestId('single-drop-count')).toHaveText('1');
@@ -84,10 +84,10 @@ test('Escape cancels a touch drag: ghost and highlight gone, no drop', async ({ 
   await touchDrag(page, [{ type: 'touchStart', ...from }]);
   await expect(page.locator('.km-layer .wtv__touch-ghost')).toHaveCount(1);
   await touchDrag(page, [{ type: 'touchMove', x: from.x, y: from.y + 15, waitMs: 30 }, { type: 'touchMove', ...to, waitMs: 30 }]);
-  await expect(pill(page, '2')).toHaveClass(/wtv__node-content--dragover-highlight/);
+  await expect(pill(page, '2')).toHaveClass(/wtv__node-content--glow-/);
   await page.keyboard.press('Escape');
   await expect(page.locator('.wtv__touch-ghost')).toHaveCount(0);
-  await expect(pill(page, '2')).not.toHaveClass(/wtv__node-content--dragover-highlight/);
+  await expect(pill(page, '2')).not.toHaveClass(/wtv__node-content--glow-/);
   await touchDrag(page, [{ type: 'touchEnd' }]);
   await expect(page.getByTestId('single-drop-count')).toHaveText('0');
 });

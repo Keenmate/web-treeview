@@ -47,41 +47,45 @@
             logTo('dv-log', `node-drop:${e.detail.source?.path}:${e.detail.position}:${e.detail.target?.path ?? 'null'}`));
         window.tree = tree;
 
-        // ── Step-wise synthesized HTML5 drag (so a spec can assert mid-drag) ──
+        // ── Step-wise synthesized pointer drag (so a spec can assert mid-drag) ──
+        // The tree drags through core createPointerDrag: pointerdown on the row, then window-level
+        // pointermove / pointerup at real coordinates (the hit test is elementFromPoint).
         const row = (p) => tree.shadowRoot.querySelector(`.wtv__node[data-tree-path="${p}"] > .wtv__node-row .wtv__node-content`);
         const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
-        let dt = null;
-        let src = null;
+        let last = { x: 0, y: 0 };
         const at = (el, fx) => {
             const r = el.getBoundingClientRect();
-            return { clientX: r.left + r.width * fx, clientY: r.top + r.height / 2 };
+            return { x: r.left + r.width * fx, y: r.top + r.height / 2 };
+        };
+        const fire = (type, el, { x, y }) => {
+            last = { x, y };
+            el.dispatchEvent(new PointerEvent(type, {
+                bubbles: true, cancelable: true, composed: true, pointerId: 1, pointerType: 'mouse',
+                isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
+            }));
         };
         window.drag = {
+            // Press the row and move past the 5px threshold: the drag starts.
             async start(p) {
-                dt = new DataTransfer();
-                // A constructed DataTransfer ignores dropEffect writes — record them instead.
-                let effect = 'none';
-                Object.defineProperty(dt, 'dropEffect', { get: () => effect, set: (v) => { effect = v; }, configurable: true });
-                src = p;
-                row(p).dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true }));
+                const el = row(p);
+                const pt = at(el, 0.5);
+                fire('pointerdown', el, pt);
+                fire('pointermove', el, { x: pt.x + 8, y: pt.y + 8 });
                 await frame();
             },
-            // Returns how the last dragover was answered: accepted (preventDefault) + dropEffect.
+            // Move over a row; returns whether it took the hover (a glow modifier on it).
             async over(p, fx = 0.8) {
                 const el = row(p);
-                let last = null;
-                for (const type of ['dragenter', 'dragover', 'dragover']) {
-                    dt.dropEffect = 'move'; // what a browser would offer before the listeners run
-                    const ev = new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) });
-                    el.dispatchEvent(ev);
-                    if (type === 'dragover') last = { accepted: ev.defaultPrevented, dropEffect: dt.dropEffect };
-                }
+                fire('pointermove', el, at(el, fx));
                 await frame();
-                return last;
+                await frame();
+                return { isHovered: [...row(p).classList].some((c) => c.startsWith('wtv__node-content--glow-')) };
             },
             async drop(p, fx = 0.8) {
                 const el = row(p);
-                el.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, fx) }));
+                const pt = at(el, fx);
+                fire('pointermove', el, pt);
+                fire('pointerup', el, pt);
                 await frame();
             },
             // The floating drop pads live in a core layer (body > .km-layer, its own shadow root).
@@ -94,13 +98,22 @@
             },
             async dropOnPad(pos) {
                 const el = this.pad(pos);
-                for (const type of ['dragenter', 'dragover', 'drop']) {
-                    el.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true, composed: true, ...at(el, 0.5) }));
-                }
+                const pt = at(el, 0.5);
+                fire('pointermove', el, pt);
+                await frame();
+                fire('pointerup', el, pt);
                 await frame();
             },
+            // Let go where the pointer is (a drop there, or a reject on a refusing row).
+            async release() {
+                fire('pointerup', document.body, last);
+                await frame();
+                await frame();
+            },
+            // Escape: cancel the drag (no drop), then lift the button.
             async end() {
-                row(src)?.dispatchEvent(new DragEvent('dragend', { dataTransfer: dt, bubbles: true, composed: true }));
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+                fire('pointerup', document.body, last);
                 await frame();
             }
         };

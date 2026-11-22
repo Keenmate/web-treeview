@@ -159,6 +159,16 @@ test.describe('beforeCheckboxToggleCallback', () => {
     await expect(box(page, '2.2')).toBeChecked();
     await expect(box(page, '1.1')).not.toBeChecked();
   });
+
+  test('paths the callback ADDS re-derive their own parents too', async ({ page }) => {
+    // Toggling A1 also checks B1 + B2 → B is fully checked; A is [-]. B used to stay
+    // unchecked: only the clicked node's ancestors were re-derived.
+    await load(page, '?before=add');
+    await box(page, '1.1').click();
+    await expect(box(page, '2')).toBeChecked();
+    await expect(box(page, '1')).toHaveClass(/wtv__checkbox--indeterminate/);
+    await expect.poll(() => lastChecked(page)).toBe('checked-change:1.1,2');
+  });
 });
 
 test.describe('cascade over three levels (?deep=1)', () => {

@@ -160,9 +160,9 @@ test('no duplicated listeners after N moves; detached = document listeners relea
   await setUpState(page);
   const listeners = () => page.evaluate(() => (window as any).__globalListeners());
   const baseline = await listeners();
-  expect(baseline['doc:dragend']).toBeGreaterThanOrEqual(1);
 
-  // Detached: the tree's document-level dragend listener is released.
+  // Detached: nothing the tree put on document / window outlives it (the pointer drag only
+  // listens on window WHILE a drag runs — there is no standing dragend listener any more).
   const detached = await page.evaluate(() => {
     const t = (window as any).tree;
     const parent = t.parentElement;
@@ -171,7 +171,7 @@ test('no duplicated listeners after N moves; detached = document listeners relea
     parent.appendChild(t);
     return snap;
   });
-  expect(detached['doc:dragend'] ?? 0).toBe(baseline['doc:dragend'] - 1);
+  for (const [key, count] of Object.entries(detached)) expect(count, key).toBeLessThanOrEqual(baseline[key] ?? 0);
 
   for (let i = 0; i < 6; i++) {
     await page.evaluate((slot) => (window as any).moveTo(slot), i % 2 ? 'slot-a' : 'slot-b');

@@ -33,21 +33,29 @@ const setProp = (page: Page, key: string, value: unknown) =>
 const shadowFocus = (page: Page) =>
   page.evaluate(() => ((window as any).tree.shadowRoot.activeElement as HTMLElement | null)?.className ?? '');
 
-/** Synthetic drag events on a node row: was `dragstart` cancelled / `dragover` accepted? */
-const dragProbe = (page: Page, path: string) =>
-  page.evaluate((p) => {
+/** A synthesized pointer drag of `path` onto `to` (the tree drags through core createPointerDrag). */
+const pointerDrag = (page: Page, path: string, to: string) =>
+  page.evaluate(async ([p, t]) => {
     const tree = (window as any).tree as HTMLElement;
-    const el = tree.shadowRoot!.querySelector(`.wtv__node[data-tree-path="${p}"] .wtv__node-content`)!;
-    const fire = (type: string) => {
-      const e = new DragEvent(type, { bubbles: true, cancelable: true, composed: true, dataTransfer: new DataTransfer() });
-      el.dispatchEvent(e);
-      return e.defaultPrevented;
-    };
-    const isDragStartPrevented = fire('dragstart');
-    fire('dragend');
-    const isDragOverAccepted = fire('dragover');
-    return { isDragStartPrevented, isDragOverAccepted };
-  }, path);
+    const pill = (x: string) => tree.shadowRoot!.querySelector(`.wtv__node[data-tree-path="${x}"] .wtv__node-content`)!;
+    const fire = (type: string, el: Element, x: number, y: number) =>
+      el.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, composed: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+        button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
+      }));
+    const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+    const a = pill(p).getBoundingClientRect();
+    const b = pill(t).getBoundingClientRect();
+    fire('pointerdown', pill(p), a.left + a.width / 2, a.top + a.height / 2);
+    fire('pointermove', pill(p), a.left + a.width / 2 + 8, a.top + a.height / 2 + 8);
+    await frame();
+    fire('pointermove', pill(t), b.left + b.width * 0.8, b.top + b.height / 2);
+    await frame();
+    fire('pointerup', pill(t), b.left + b.width * 0.8, b.top + b.height / 2);
+    await frame();
+    await frame();
+    return { isGhostShown: !!document.querySelector('.km-layer')?.shadowRoot?.querySelector('.wtv__touch-ghost') };
+  }, [path, to] as const);
 
 /** Synthetic keydown on the tree body (reaches the listener even when the body can't take focus). */
 const keyOnBody = (page: Page, key: string, init: KeyboardEventInit = {}) =>
@@ -112,8 +120,9 @@ test.describe('disabled', () => {
 
   test('no drag out and no drop in', async ({ page }) => {
     await load(page, 'disabled');
-    expect(await dragProbe(page, '1.1')).toEqual({ isDragStartPrevented: true, isDragOverAccepted: false });
-    expect((await lines(page)).filter((l) => l.startsWith('node-drag-start'))).toEqual([]);
+    await pointerDrag(page, '1.1', '3');
+    expect((await lines(page)).filter((l) => l.startsWith('node-drag-start') || l.startsWith('node-drop'))).toEqual([]);
+    await expect(nodeByPath(page, '1.1')).toBeVisible();
   });
 
   test('disabling closes an open context menu; the tree is dimmed', async ({ page }) => {
@@ -141,14 +150,12 @@ test.describe('disabled', () => {
     await page.getByTestId('before').focus();
     await page.keyboard.press('Tab');
     expect(await shadowFocus(page)).toContain('wtv__tree');
-    expect(dragProbeOk(await dragProbe(page, '1.2'))).toBe(true);
+    await pointerDrag(page, '1.2', '3');
+    expect((await lines(page)).some((l) => l.startsWith('node-drag-start'))).toBe(true);
     const opacity = await page.locator('web-treeview .wtv__container').evaluate((el) => Number(getComputedStyle(el).opacity));
     expect(opacity).toBe(1);
   });
 });
-
-/** An enabled, writable tree starts a drag (not cancelled). */
-const dragProbeOk = (r: { isDragStartPrevented: boolean }) => !r.isDragStartPrevented;
 
 test.describe('readonly', () => {
   test('the attribute reflects both ways; not dimmed, still focusable', async ({ page }) => {
@@ -176,8 +183,9 @@ test.describe('readonly', () => {
 
   test('no drag out and no drop in', async ({ page }) => {
     await load(page, 'readonly');
-    expect(await dragProbe(page, '1.1')).toEqual({ isDragStartPrevented: true, isDragOverAccepted: false });
-    expect((await lines(page)).filter((l) => l.startsWith('node-drag-start'))).toEqual([]);
+    await pointerDrag(page, '1.1', '3');
+    expect((await lines(page)).filter((l) => l.startsWith('node-drag-start') || l.startsWith('node-drop'))).toEqual([]);
+    await expect(nodeByPath(page, '1.1')).toBeVisible();
   });
 
   test('Delete / Ctrl+X / Ctrl+V change nothing; Ctrl+C still copies', async ({ page }) => {
@@ -228,6 +236,7 @@ test.describe('readonly', () => {
     await setProp(page, 'isReadonly', false);
     await box(page, '1.1').click();
     await expect(box(page, '1.1')).toBeChecked();
-    expect(dragProbeOk(await dragProbe(page, '1.2'))).toBe(true);
+    await pointerDrag(page, '1.2', '3');
+    expect((await lines(page)).some((l) => l.startsWith('node-drag-start'))).toBe(true);
   });
 });

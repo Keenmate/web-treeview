@@ -414,7 +414,7 @@
               "type": {
                 "text": "NodeCallbacks<T>"
               },
-              "default": "{ onNodeClicked: this._nodeClickedCallback.bind(this), onNodeRightClicked: this._onNodeRightClicked.bind(this), onNodeDragStart: this._onNodeDragStartInternal.bind(this), onNodeDragOver: this._onNodeDragOverInternal.bind(this), onNodeDragLeave: this._onNodeDragLeaveInternal.bind(this), onNodeDrop: this._onNodeDropInternal.bind(this), onZoneDrop: this._onZoneDrop.bind(this), onCheckboxToggle: this._onCheckboxToggle.bind(this) }"
+              "default": "{ onNodeClicked: this._nodeClickedCallback.bind(this), onNodeRightClicked: this._onNodeRightClicked.bind(this), onCheckboxToggle: this._onCheckboxToggle.bind(this) }"
             },
             {
               "kind": "field",
@@ -2752,159 +2752,6 @@
             },
             {
               "kind": "method",
-              "name": "startDrag",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "DragEvent"
-                  }
-                }
-              ],
-              "description": "Call from ondragstart. Sets up dataTransfer, stores drag state, fires callback."
-            },
-            {
-              "kind": "method",
-              "name": "dragOver",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "DragEvent"
-                  }
-                },
-                {
-                  "name": "element",
-                  "optional": true,
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ],
-              "description": "Call from ondragover. Calculates drop position, updates hover state."
-            },
-            {
-              "kind": "method",
-              "name": "dragLeave",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "_node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "DragEvent"
-                  }
-                }
-              ],
-              "description": "Call from ondragleave. Clears hover state when cursor leaves element bounds."
-            },
-            {
-              "kind": "method",
-              "name": "clearRefusedDropHover",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "The desktop drag moved off any row (empty body area, a zone, the empty state):\nit is no longer over a refusing node (NOTES #22). Called by the renderer."
-            },
-            {
-              "kind": "method",
-              "name": "announceRefusedDrop",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "A desktop drag ended (`dragend`). When it was last over a refusing row and no\ndrop happened (a successful drop resets the drag state first), announce the\nreject there: node-drop-reject + the 🚫 flash (NOTES #22). Called by the\nrenderer (source tree: its own `dragend`; another tree: the document one)."
-            },
-            {
-              "kind": "method",
-              "name": "drop",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "DragEvent"
-                  }
-                }
-              ],
-              "description": "Call from ondrop. Uses calculated position or defaults to 'child'."
-            },
-            {
-              "kind": "method",
-              "name": "dropAt",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "node",
-                  "type": {
-                    "text": "LTreeNode<T>"
-                  }
-                },
-                {
-                  "name": "position",
-                  "type": {
-                    "text": "DropPosition"
-                  }
-                },
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "DragEvent | PointerEvent"
-                  }
-                }
-              ],
-              "description": "Drop with explicit position (for custom drop zones)."
-            },
-            {
-              "kind": "method",
               "name": "cancelDrag",
               "return": {
                 "type": {
@@ -2979,7 +2826,7 @@
                 {
                   "name": "event",
                   "type": {
-                    "text": "DragEvent | MouseEvent"
+                    "text": "MouseEvent"
                   }
                 },
                 {
@@ -3123,19 +2970,11 @@
               ]
             },
             {
-              "kind": "field",
-              "name": "handleTreeZoneDragOver"
-            },
-            {
-              "kind": "field",
-              "name": "handleTreeZoneDrop"
-            },
-            {
               "kind": "method",
-              "name": "touchDragStart",
+              "name": "pointerDragStart",
               "return": {
                 "type": {
-                  "text": "void"
+                  "text": "boolean"
                 }
               },
               "parameters": [
@@ -3156,22 +2995,28 @@
                   "type": {
                     "text": "number"
                   }
+                },
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
                 }
               ],
-              "description": "The long press elapsed on `node`. A NON-draggable node plays the \"can't move this\"\nreaction instead (held 🚫 badge + double-buzz) until the finger lifts."
+              "description": "A press became a drag on `node` (viewport `x` / `y`; `event` = the press). A NON-draggable node\n(a touch long press — the renderer starts no mouse drag on one) only plays the \"can't move this\"\nreaction until release. `false` = refused (beforeDragStartCallback)."
             },
             {
               "kind": "field",
-              "name": "isTouchDragDenied",
+              "name": "isPointerDragDenied",
               "type": {
                 "text": "boolean"
               },
-              "description": "A held touch drag the tree refuses (a locked node showing the 🚫 badge) — the renderer\nturns core's auto-scroll off for it.",
+              "description": "A held drag the tree refuses (a locked node showing the 🚫 badge) — the renderer turns core's\nauto-scroll off for it.",
               "readonly": true
             },
             {
               "kind": "method",
-              "name": "touchDragMove",
+              "name": "pointerDragMove",
               "return": {
                 "type": {
                   "text": "void"
@@ -3195,16 +3040,22 @@
                   "type": {
                     "text": "number"
                   }
+                },
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent | null"
+                  }
                 }
               ],
-              "description": "The finger moved (or the list auto-scrolled under it); `target` = the deepest element under it."
+              "description": "The pointer moved (or the list auto-scrolled under it). `target` = the deepest element under it;\n`event` is null for an auto-scroll frame."
             },
             {
               "kind": "method",
-              "name": "touchDragDrop",
+              "name": "pointerDragDrop",
               "return": {
                 "type": {
-                  "text": "void"
+                  "text": "Promise<void>"
                 }
               },
               "parameters": [
@@ -3215,44 +3066,35 @@
                   }
                 },
                 {
+                  "name": "x",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "y",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
                   "name": "event",
                   "type": {
                     "text": "PointerEvent"
                   }
                 }
               ],
-              "description": "The finger lifted over `target`."
+              "description": "The pointer was released over `target`. Async: the drag state lives until the drop (an async\nbeforeDropCallback) settles, so a cross-tree auto-copy can still read the published manifest."
             },
             {
               "kind": "method",
-              "name": "touchDragCancel",
+              "name": "pointerDragCancel",
               "return": {
                 "type": {
                   "text": "void"
                 }
               },
-              "description": "Escape / pointercancel / detach / a drop that ended: tear the touch drag down. Idempotent."
-            },
-            {
-              "kind": "field",
-              "name": "handleEmptyTreeDragOver"
-            },
-            {
-              "kind": "field",
-              "name": "handleEmptyTreeDragLeave",
-              "description": "`zone` = the empty-state / empty-zone element being left (default: the listener's element)."
-            },
-            {
-              "kind": "field",
-              "name": "handleEmptyTreeDrop"
-            },
-            {
-              "kind": "field",
-              "name": "handleTreeDragEnter"
-            },
-            {
-              "kind": "field",
-              "name": "handleTreeDragLeave"
+              "description": "Escape / pointercancel / detach / cancelDrag(): abort. Nothing was mutated (commit on drop),\nso only the grab's selection change is undone. Idempotent."
             },
             {
               "kind": "field",

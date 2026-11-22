@@ -56,16 +56,10 @@ export { expect };
 export * from './helpers';
 
 /**
- * Engine gaps in the test harness (not in the tree). Native HTML5 drag-and-drop: Playwright WebKit
- * on Windows delivers no `drop` for a mouse-driven drag; not confirmed on Linux / macOS WebKit, so
- * those still run it. Skip a describe with `test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND)`, one
- * test with `test.skip(hasNoNativeDnd({ browserName }), WEBKIT_NO_NATIVE_DND)` in its body. Touch drags:
- * real touch input through CDP (`touchDrag`), so those run in Chromium only — `browserName !== 'chromium'`.
+ * Engine gaps in the test harness (not in the tree). Touch drags: real touch input through CDP
+ * (`touchDrag`), so those run in Chromium only — `browserName !== 'chromium'`. (Mouse drags are
+ * pointer events since 2026-11-22, so the old WebKit "no HTML5 drop" skip is gone.)
  */
-export const hasNoNativeDnd = ({ browserName }: { browserName: string }): boolean =>
-    browserName === 'webkit' && process.platform === 'win32';
-export const WEBKIT_NO_NATIVE_DND =
-    'Playwright WebKit on Windows delivers no HTML5 drop for a mouse-driven drag (dragTo / mouse down-move-up: drop count 0); Chromium + Firefox cover it';
 export const CDP_TOUCH_ONLY =
     'Touch drags are real touch input through CDP Input.dispatchTouchEvent (core createPointerDrag listens to pointer events), which only Chromium has';
 

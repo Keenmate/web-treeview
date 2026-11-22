@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Locator, nodeByPath, WEBKIT_NO_NATIVE_DND, hasNoNativeDnd } from './fixtures';
+import { test, expect, type Page, type Locator, nodeByPath } from './fixtures';
 
 /**
  * Screen-reader announcements through core `announce()` (the page's one polite
@@ -43,7 +43,6 @@ test('a settled search says the match count; no match says "No results found"', 
 });
 
 test.describe('drops', () => {
-  test.skip(hasNoNativeDnd, WEBKIT_NO_NATIVE_DND);
 
   test('a placed drop says what moved where', async ({ page }) => {
     const t = tree(page, 'tree');

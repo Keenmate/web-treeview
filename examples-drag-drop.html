@@ -8,7 +8,10 @@
     <h2>DD01 · Drag Between Trees</h2>
     <p><strong>Source tree (left):</strong> Drag to reorganize nodes (move). Enable "Allow Ctrl+drag to copy" then hold Ctrl while dragging to copy nodes.
         With <code>selection-mode="multiple"</code> (default below), Ctrl/Shift+click multiple nodes and drag any one of them &mdash; the whole selected set moves together.
-        <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag (it's still a valid drop target).
+        <strong>🔒 File C (pinned)</strong> has <code>isDraggable:false</code> &mdash; it shows no grab cursor and won't start a drag.
+        Folders accept drops, files don't: <code>getIsDropAllowedCallback</code> reads an <code>isFolder</code> flag on the data
+        (not <code>hasChildren</code> &mdash; the callback runs while the data is inserted, before children are linked), so a file
+        never lights up and releasing over one shows the 🚫.
         <strong>Target tree (right):</strong> Drag from source to add nodes. Starts empty to demo drop placeholder.</p>
     <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>shouldHandleKeyboardShortcuts</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
 
@@ -227,11 +230,11 @@
     // ── Sample Data ──────────────────────────────────────────────────
 
     const sourceData = [
-        { id: 1, path: '1', name: 'Source Folder', sortOrder: 10 },
+        { id: 1, path: '1', name: 'Source Folder', sortOrder: 10, isFolder: true },
         { id: 2, path: '1.1', name: 'File A', sortOrder: 10 },
         { id: 3, path: '1.2', name: 'File B', sortOrder: 20 },
         { id: 4, path: '1.3', name: '🔒 File C (pinned)', sortOrder: 30, isDraggable: false },
-        { id: 5, path: '2', name: 'Another Folder', sortOrder: 20 },
+        { id: 5, path: '2', name: 'Another Folder', sortOrder: 20, isFolder: true },
         { id: 6, path: '2.1', name: 'Document 1', sortOrder: 10 },
         { id: 7, path: '2.2', name: 'Document 2', sortOrder: 20 }
     ];
@@ -299,6 +302,8 @@
     function initTree(id, data, opts = {}) {
         const el = document.getElementById(id);
         if (opts.getIsDraggableCallback) el.getIsDraggableCallback = opts.getIsDraggableCallback;
+        if (opts.getIsDropAllowedCallback) el.getIsDropAllowedCallback = opts.getIsDropAllowedCallback;
+        if (opts.orderMember) el.orderMember = opts.orderMember;
         el.nodes = structuredClone(data);
         el.idMember = 'id';
         el.pathMember = 'path';
@@ -417,12 +422,15 @@
     window.resetTarget = function() {
         const nodes = [];
         let id = 1000;
+        // Every 7th item is pinned (not draggable) so the demo shows the per-node opt-out at scale.
+        let counter = 0;
+        const pin = () => (++counter % 7 === 0 ? { isDraggable: false } : {});
         for (let i = 1; i <= 10; i++) {
-            nodes.push({ id: id++, path: `${i}`, name: `Folder ${i}`, sortOrder: i * 10 });
+            nodes.push({ id: id++, path: `${i}`, name: `Folder ${i}`, sortOrder: i * 10, isFolder: true, ...pin() });
             for (let j = 1; j <= 3; j++) {
-                nodes.push({ id: id++, path: `${i}.${j}`, name: `Subfolder ${i}.${j}`, sortOrder: j * 10 });
+                nodes.push({ id: id++, path: `${i}.${j}`, name: `Subfolder ${i}.${j}`, sortOrder: j * 10, isFolder: true, ...pin() });
                 for (let k = 1; k <= 2 + (i % 2); k++) {
-                    nodes.push({ id: id++, path: `${i}.${j}.${k}`, name: `File ${i}.${j}.${k}`, sortOrder: k * 10 });
+                    nodes.push({ id: id++, path: `${i}.${j}.${k}`, name: `File ${i}.${j}.${k}`, sortOrder: k * 10, ...pin() });
                 }
             }
         }
@@ -564,6 +572,9 @@
         // cursor and won't start a drag (it's still a valid drop TARGET). Wired
         // via initTree BEFORE .data so the stored isDraggable field is correct.
         const isDraggableCb = ({ node }) => node.data?.isDraggable !== false;
+        // Folders accept drops; files don't. A data flag, not node.hasChildren: the callback runs while the
+        // data is inserted, before a parent's children are linked.
+        const isFolderCb = ({ node }) => node.data?.isFolder === true;
 
         function wireClipboard(el, treeName) {
             el.clickBehavior = 'select';
@@ -597,9 +608,26 @@
             treeId: 'source-tree',
             isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
             shouldAutoHandleCopy: true,
-            getIsDraggableCallback: isDraggableCb
+            getIsDraggableCallback: isDraggableCb,
+            getIsDropAllowedCallback: isFolderCb,
+            orderMember: 'sortOrder'
         });
         sourceTreeEl.onNodeDrop = handleSourceDrop;
+        sourceTreeEl.onNodeDragStart = ({ node }) => addLog(`Drag start "${node?.data?.name}"`);
+        // A custom look for the dimmed source row left in place while the ghost travels. The row
+        // lives in the shadow root, so the rule goes in through customStyles (the page's --kmwc-*
+        // tokens inherit into it).
+        sourceTreeEl.draggedNodeClass = 'dd-source-dragging';
+        sourceTreeEl.customStyles = `
+            .dd-source-dragging {
+                opacity: 0.6;
+                outline: 1px dashed var(--kmwc-accent-color);
+                outline-offset: 2px;
+                border-radius: 4px;
+                background-color: var(--kmwc-accent-light-bg);
+                transform-origin: left center;
+                transform: scale(0.97);
+            }`;
         wireClipboard(sourceTreeEl, 'source-tree');
         wireSelectionOutput(sourceTreeEl, 'source', 'Source selection');
 
@@ -609,7 +637,9 @@
             treeId: 'target-tree',
             isCopyAllowed: document.getElementById('ctrl-allow-copy').checked,
             shouldAutoHandleCopy: true,
-            getIsDraggableCallback: isDraggableCb
+            getIsDraggableCallback: isDraggableCb,
+            getIsDropAllowedCallback: isFolderCb,
+            orderMember: 'sortOrder'
         });
         targetTreeEl.onNodeDrop = handleTargetDrop;
         wireClipboard(targetTreeEl, 'target-tree');

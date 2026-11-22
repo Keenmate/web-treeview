@@ -7,7 +7,8 @@ import { test, expect } from './fixtures';
  * the element's default (C-CA-37 — one source, the input table).
  *
  * Fixture: test/engine-custom-renderer.html — #list (custom renderer), #bare (engine with only `nodes`,
- * built-in renderer), #element (<web-treeview>, same nodes, no attributes)
+ * built-in renderer), #drawn (built-in renderer + renderNodeCallback + header), #element (<web-treeview>, same
+ * nodes, no attributes)
  *   1 Documents ── 1.1 Projects
  *   2 Photos
  */
@@ -65,6 +66,27 @@ test("an engine given only nodes renders like the element (the element's default
   await expect(bare).toHaveText(['Documents', 'Projects', 'Photos']);
 });
 
+test('setOptions(partial) merges: a standalone setOptions({ isReadonly }) keeps renderNodeCallback + regions (C-CA-39)', async ({ page }) => {
+  const custom = page.locator('#drawn .custom-node');
+  await expect(custom).toHaveText(['* Documents', '* Photos']);
+  await page.evaluate(() => (window as any).drawnEngine.setOptions({ isReadonly: true }));
+  await expect(page.locator('#drawn')).toHaveClass(/wtv__container--readonly/);
+  await expect(custom).toHaveText(['* Documents', '* Photos']);
+  await expect(page.locator('#drawn .custom-header')).toHaveText('Header');
+  // A later structural change still draws through the kept callback.
+  await page.evaluate(() => (window as any).drawnEngine.expandAll());
+  await expect(custom).toHaveText(['* Documents', '* Projects', '* Photos']);
+});
+
+test('setOptions(partial) hands the renderer only the keys it carries', async ({ page }) => {
+  const keys = await page.evaluate(() => {
+    (window as any).configKeys = [];
+    (window as any).engine.setOptions({ isReadonly: true });
+    return (window as any).configKeys;
+  });
+  expect(keys).toEqual(['isReadonly']);
+});
+
 test("a headless TreeViewState given only data has the element's defaults (id / path / displayValue)", async ({ page }) => {
   const rows = await page.evaluate(() => {
     const state = (window as any).bareState;
@@ -86,4 +108,17 @@ test('a headless TreeViewState takes settings one way: setOptions(partial) merge
   });
   expect(result).toEqual({ before: { idMember: 'id', selectionMode: 'single' }, selectionMode: 'multiple',
     isCheckboxesShown: true, idMember: 'id', hasData: true, hasUpdateProps: false });
+});
+
+test('a fresh-but-equal tooltipDelay object is no node-config change (no row rebuild)', async ({ page }) => {
+  const emits = await page.evaluate(() => {
+    const state = (window as any).bareState;
+    let count = 0;
+    state.on('config-change', () => count++);
+    state.setOptions({ tooltipDelay: { show: 250, hide: 50 } });
+    state.setOptions({ tooltipDelay: { show: 250, hide: 50 } });   // equal values, new object
+    state.setOptions({ tooltipDelay: { show: 300, hide: 50 } });
+    return count;
+  });
+  expect(emits).toBe(2);
 });

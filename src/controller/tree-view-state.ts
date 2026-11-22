@@ -5072,7 +5072,15 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     };
     // Every config batch re-sends the full options, so this runs on each one: only an actual change
     // re-renders the rows (a `config-change` is a full row rebuild — focus / transient row state lost).
-    if ((Object.keys(next) as (keyof NodeConfig)[]).every((key) => next[key] === prev[key])) return;
+    // `tooltipDelay` is an object (a fresh-but-equal one must not rebuild rows) — compared by value, shallowly.
+    const isSame = (key: keyof NodeConfig): boolean => {
+      const a = next[key], b = prev[key];
+      if (a === b) return true;
+      if (key !== 'tooltipDelay' || !a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+      const ka = Object.keys(a), kb = Object.keys(b);
+      return ka.length === kb.length && ka.every((k) => (a as any)[k] === (b as any)[k]);
+    };
+    if ((Object.keys(next) as (keyof NodeConfig)[]).every(isSame)) return;
     this._nodeConfig = next;
     this.log.RENDER.debug('config-change, focusedNodeClass =', JSON.stringify(this._focusedNodeClass));
     this.emit('config-change', this._nodeConfig);

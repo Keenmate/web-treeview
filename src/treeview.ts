@@ -425,7 +425,16 @@ export class TreeViewEngine<T = any> {
       );
     }
     this.engine.setOptions(engineConfig);
-    const rendererConfig = this.mapToRendererConfig(props);
+    // The renderer gets only the keys this partial carries (mapped from the MERGED options): `mapToRendererConfig`
+    // writes every key, so mapping the bare partial would reset every untouched renderer setting
+    // (`renderNodeCallback`, regions, menus …) to undefined — `setOptions({ isReadonly: true })` must not.
+    const rendererConfig = this.mapToRendererConfig(this.options);
+    for (const key of Object.keys(rendererConfig) as (keyof RendererConfig<T>)[]) {
+      if (!(key in props)) delete rendererConfig[key];
+    }
+    if ('renderIconCallback' in props) rendererConfig.renderNodeIcon = this.nodeIconHtml;
+    // The label texts are read through `this.labels` (labels → translateCallback → locale): any of them re-applies them.
+    if ('locale' in props || 'translateCallback' in props) rendererConfig.labels = this.labels;
     // `renderNodeIcon` is the same function every time; re-sending it means "the icon sources changed"
     // (RendererConfig.renderNodeIcon) — only when this tree's own `renderIconCallback` was replaced.
     if (!('renderIconCallback' in props) || props.renderIconCallback === prevIconCb) delete rendererConfig.renderNodeIcon;

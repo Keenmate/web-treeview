@@ -12,9 +12,11 @@
          renderer) next to #element (<web-treeview>, same nodes, no attributes): every option the engine isn't
          given has the element's default (displayValueMember 'displayValue', …). Targeted by
          e2e/engine-custom-renderer.spec.ts. window.bareState = a headless TreeViewState given only `data`
-         (level 2) — the same defaults (id / path / displayValue). -->
+         (level 2) — the same defaults (id / path / displayValue). #drawn = an engine (built-in renderer) with a
+         renderNodeCallback + header region — a later partial setOptions() must keep both. -->
     <div id="list"></div>
     <div id="bare"></div>
+    <div id="drawn"></div>
     <web-treeview id="element"></web-treeview>
 
     <script type="module">
@@ -76,6 +78,12 @@
 
         // No options but the data: the element's defaults apply (one source, the input table).
         window.bareEngine = new TreeViewEngine(document.getElementById('bare'), { nodes: nodes() });
+        // Built-in renderer + custom node rendering + a header region; setOptions(partial) must not reset them.
+        window.drawnEngine = new TreeViewEngine(document.getElementById('drawn'), {
+            nodes: nodes(),
+            renderNodeCallback: ({ node }) => `<span class="custom-node">* ${node.data.displayValue}</span>`,
+            renderHeaderCallback: () => '<span class="custom-header">Header</span>',
+        });
         // Level 2: a bare headless TreeViewState — no engine, no renderer; the same defaults.
         window.bareState = new TreeViewState({ data: nodes() });
         document.getElementById('element').nodes = nodes();

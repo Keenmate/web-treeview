@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — engine setOptions(partial) keeps the renderer settings it doesn't name (2026-11-22)
+- A standalone `TreeViewEngine.setOptions(partial)` (e.g. `{ isReadonly: true }`) reset every renderer setting the
+  partial didn't carry — `renderNodeCallback`, the header / footer / empty regions, the context menu renderers — to
+  undefined. It now merges (rulebook C-CA-39): the renderer gets only the keys in the partial, mapped from the merged
+  options; `null` still clears where documented. A `locale` / `translateCallback` change re-applies the label texts.
+  `<web-treeview>` was unaffected (it sends its full config).
+- A fresh-but-equal `tooltipDelay` object no longer counts as a node-config change (compared by value), so it doesn't
+  rebuild the rows.
+
 ### Changed — node tooltips fade through core (2026-11-22)
 - `.wtv__tooltip` drops its own opacity / visibility fade: core `createTooltip` fades it in AND out (`km-tooltip--hiding`,
   `--base-duration-fast`, follows `motion`) and sets `data-placement` (the resolved side) on it. `.wtv__tooltip--visible`

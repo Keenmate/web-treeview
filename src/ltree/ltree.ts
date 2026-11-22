@@ -294,6 +294,12 @@ export function createLTree<T>(
 		get changeTracker() {
 			return changeTracker;
 		},
+		/** Re-stamp the tree's id: every existing node + the nodes inserted from now on. A drag tells
+		 *  same-tree from cross-tree by `node.treeId`, so a renamed tree must not keep the old one. */
+		setTreeId(treeId: string) {
+			_treeId = treeId;
+			for (const node of index.values()) node.treeId = treeId;
+		},
 		idMember: _idMember,
 		pathMember: _pathMember,
 		parentPathMember: _parentPathMember,

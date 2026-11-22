@@ -464,8 +464,25 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   get treeId() { return this._treeId; }
   set treeId(v: string) {
-    this._treeId = v;
+    this._setTreeId(v);
     if (this.tree) this.tree.treePathSeparator = this._treePathSeparator;
+  }
+
+  /**
+   * Rename the tree. Keeps the cross-tree registry, the nodes' `treeId` and the container's
+   * `data-tree-id` (re-rendered) in step: a pointer drag from another tree finds this one by the
+   * container's id through the registry, and tells same-tree from cross-tree by `node.treeId` — a
+   * tree renamed after construction (`el.treeId = 'target'`) used to stay registered under its
+   * generated id, so a drop onto it was handled by the SOURCE tree.
+   */
+  private _setTreeId(treeId: string): void {
+    if (!treeId || treeId === this._treeId) return;
+    const isRegistered = getClipboardTree(this._treeId) === (this as unknown);
+    if (isRegistered) unregisterClipboardTree(this._treeId, this);
+    this._treeId = treeId;
+    if (isRegistered) registerClipboardTree(this._treeId, this);
+    this.tree?.setTreeId(treeId);
+    this._scheduleNotify();
   }
 
   get treePathSeparator() { return this._treePathSeparator; }
@@ -4147,7 +4164,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       updates.expandLevel !== undefined && (updates.expandLevel ?? null) !== (this._expandLevel ?? null);
     if (updates.expandLevel !== undefined) this._expandLevel = updates.expandLevel ?? null;
 
-    if (updates.treeId !== undefined) this._treeId = updates.treeId || this._treeId;
+    if (updates.treeId !== undefined) this._setTreeId(updates.treeId || this._treeId);
     if (updates.treePathSeparator !== undefined)
       this.treePathSeparator = updates.treePathSeparator ?? '.';
     if (updates.focusedNode !== undefined) this._focusedNode = updates.focusedNode;

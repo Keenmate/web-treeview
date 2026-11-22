@@ -110,6 +110,9 @@ export interface Ltree<T> {
 
 	changeTracker: Symbol | undefined;
 
+	/** Re-stamp the tree's id on every node (and on the nodes inserted from now on). */
+	setTreeId(treeId: string): void;
+
 	idMember: string | null | undefined;
 	pathMember: string | null | undefined;
 	parentPathMember: string | null | undefined;

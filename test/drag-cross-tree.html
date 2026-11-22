@@ -14,6 +14,7 @@
       ?autocopy=off   auto-handle-copy="false" on both trees
       ?nocopy         allow-copy unset (copy not allowed)
       ?redact         source tree has nodeOutputTransformationCallback (" (copy)" suffix)
+      ?late-ids       both trees are renamed AFTER setup (el.treeId = …, like examples DD01)
       ?multi          selection-mode="multiple"; tree A = Multi-A (A-1, A-2), Multi-B, Multi-C (TV-5)
     -->
     <web-treeview id="tree-a" tree-id="A" expand-level="2" drag-drop-mode="both" allow-copy="true"></web-treeview>
@@ -54,6 +55,10 @@
         if (params.has('redact')) extraA.nodeOutputTransformationCallback = ({ data }) => ({ ...data, name: `${data.name} (copy)` });
         setupTree(a, dataA, extraA);
         setupTree(b, dataB);
+        if (params.has('late-ids')) {
+            a.treeId = 'source-late';
+            b.treeId = 'target-late';
+        }
         for (const [t, label] of [[a, 'A'], [b, 'B']]) {
             t.addEventListener('node-drop', (e) => {
                 const d = e.detail;

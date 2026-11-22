@@ -52,6 +52,23 @@ test.describe('same tree (baseline for the synthesized drag)', () => {
   });
 });
 
+test.describe('trees renamed after setup (el.treeId = …, examples DD01)', () => {
+  // The registry + node.treeId must follow the rename: a drop onto B used to be handled by A
+  // (as a root drop), and hovering B lit up A's row at the same path.
+  test('a cross-tree move lands on B', async ({ page }) => {
+    await load(page, '?late-ids');
+    await drag(page, 'A', '2', 'B', '1');
+    await expect.poll(() => drops(page)).toEqual(['B:node-drop:move:A-Leaf:child:B-Folder:dropped=null']);
+    expect(await names(page, 'A')).toEqual(['A-Folder', '  A-File', 'A-Leaf']);
+  });
+
+  test('a same-tree move still moves (node.treeId follows the rename)', async ({ page }) => {
+    await load(page, '?late-ids');
+    await drag(page, 'A', '2', 'A', '1');
+    await expect.poll(() => names(page, 'A')).toEqual(['A-Folder', '  A-File', '  A-Leaf']);
+  });
+});
+
 test.describe('A → B', () => {
   test('a cross-tree move is handed to the consumer: node-drop on B, dropped=null, trees untouched', async ({ page }) => {
     await load(page);

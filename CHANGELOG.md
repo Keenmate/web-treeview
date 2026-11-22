@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — a tree renamed after setup is found by a drag from another tree (2026-11-22)
+- `el.treeId = …` (or `setOptions({ treeId })`) after construction left the tree in the cross-tree registry under
+  its generated id, and its nodes kept the old `treeId`. With the pointer drag (which finds the target tree by its
+  container's `data-tree-id` through that registry) a drop onto such a tree was handled by the SOURCE tree — DD01
+  logged "Cannot drop at root level in source tree" — and hovering it lit up the source tree's row at the same
+  path. A rename now re-registers the tree, re-stamps every node (`Ltree.setTreeId`) and re-renders the
+  container's `data-tree-id`. Guarded by `e2e/drag-cross-tree.spec.ts` "trees renamed after setup" (`?late-ids`).
+
 ### Changed — drag and drop is ONE pointer drag for mouse, pen and touch (2026-11-22)
 - Mouse and pen drags were native HTML5 drag-and-drop; only touch ran on core `createPointerDrag` (since
   2026-11-18). Now every pointer type does: a mouse / pen press on a draggable row's content starts after a 5px

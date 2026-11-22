@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Internal — base-variables sweep (C-BV-3 / C-BV-6) (2026-11-22)
+- `component-variables.manifest.json` marks the 26 unset-by-design knobs `"input": true` (the 25
+  `--wtv-context-menu-*` pass-throughs to core `--_km-menu-*`, `--wtv-font-family`) and the 6 `--base-*` read
+  only by core's menu CSS (`--base-dropdown-bg` / `-border` / `-box-shadow`, `--base-line-height-normal`,
+  `--base-overlay-bg`, `--base-touch-target-min`) `"readBy": "@keenmate/web-components-core"`; the obsolete
+  C-BV-3 / C-BV-6 VALIDATION-NOTES entry is dropped.
+- The RTL sign `--wtv-dir-sign` is internal (set by `.wtv__container:dir(rtl)`, never a theme knob) and is now
+  the private `--_wtv-dir-sign`. No visual change.
+
 ### Added — render callbacks get `labels` / `isReadonly` / `isDisabled` and re-run when they change (2026-11-22)
 - The ctx of `renderNodeCallback` and of the region callbacks (`renderHeaderCallback`, `renderFooterCallback`,
   `renderEmptyStateCallback`, `renderEmptyZoneCallback` — `ContainerRenderContext`) carries `labels` (core
@@ -405,7 +414,7 @@ tests in `e2e/regressions.spec.ts` (fixture `test/regressions.html`) and `e2e/dr
 - The built-in clipboard / delete shortcuts (Ctrl/Cmd+C/X/V, Ctrl+Insert, Shift+Insert, Shift+Delete, Delete, Escape cancel-cut), Ctrl/Cmd+A and Shift+F10 / ContextMenu are matched with core's `matchesShortcut()` (one table, `TREE_SHORTCUTS`); the own key comparisons are gone. Same keys. Modifiers now match exactly (Ctrl+Shift+C no longer copies, Ctrl+Delete no longer deletes), and a key typed into a text field inside a node (`isTypingTarget`) is left to the field (Delete / Ctrl+C there no longer act on the selected nodes).
 
 ### Fixed — right-to-left pages (2026-11-17)
-- In a `dir="rtl"` tree the indent, icon / label / checkbox gaps, drop pads, drop arrows and the drag-denied badge sat as in LTR. `tree.css` uses logical properties now (`inset-inline-*`, `margin-inline-*`), the flat-row indent is `padding-inline-start`, and the collapsed chevron, drop arrows, child-drop glow edge, selected brackets and scroll arrows mirror (`--wtv-dir-sign`, `:dir(rtl)`). The drop position (before / after / child) is measured from the row's inline start (core `isRtl()`), and the keyboard context menu opens at the node's start corner.
+- In a `dir="rtl"` tree the indent, icon / label / checkbox gaps, drop pads, drop arrows and the drag-denied badge sat as in LTR. `tree.css` uses logical properties now (`inset-inline-*`, `margin-inline-*`), the flat-row indent is `padding-inline-start`, and the collapsed chevron, drop arrows, child-drop glow edge, selected brackets and scroll arrows mirror (`--_wtv-dir-sign`, `:dir(rtl)`). The drop position (before / after / child) is measured from the row's inline start (core `isRtl()`), and the keyboard context menu opens at the node's start corner.
 - ArrowLeft / ArrowRight follow the reading direction (WAI-ARIA tree): in RTL ArrowLeft expands / moves into the first child and ArrowRight goes to the parent. Read per key, so a runtime `dir` change anywhere up the tree applies at once. LTR pages are unchanged.
 
 ### Internal — core helpers replace own copies (2026-11-17)

@@ -140,7 +140,7 @@
   position: absolute;
   inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-before-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
+  transform: translate(calc(-50% * var(--_wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-before-rotation) * var(--_wtv-dir-sign, 1))) scaleX(var(--_wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -162,7 +162,7 @@
   position: absolute;
   inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-after-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
+  transform: translate(calc(-50% * var(--_wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-after-rotation) * var(--_wtv-dir-sign, 1))) scaleX(var(--_wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -176,7 +176,7 @@
 
 .wtv__node .wtv__node-content.wtv__node-content--glow-child {
   border-radius: 0 !important;
-  box-shadow: inset calc(-1 * var(--wtv-dir-sign, 1) * var(--wtv-drop-glow-size)) 0 0 0 var(--wtv-drop-glow-child-color);
+  box-shadow: inset calc(-1 * var(--_wtv-dir-sign, 1) * var(--wtv-drop-glow-size)) 0 0 0 var(--wtv-drop-glow-child-color);
   background-color: var(--wtv-drop-glow-child-bg);
 }
 
@@ -185,7 +185,7 @@
   position: absolute;
   inset-inline-start: var(--wtv-drop-arrow-position);
   top: 50%;
-  transform: translate(calc(-50% * var(--wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-child-rotation) * var(--wtv-dir-sign, 1))) scaleX(var(--wtv-dir-sign, 1));
+  transform: translate(calc(-50% * var(--_wtv-dir-sign, 1)), -50%) rotate(calc(var(--wtv-drop-arrow-child-rotation) * var(--_wtv-dir-sign, 1))) scaleX(var(--_wtv-dir-sign, 1));
   width: var(--wtv-drop-arrow-size);
   height: var(--wtv-drop-arrow-size);
   /* Mask, filled with the zone's glow colour (alpha dropped) — a theme that
@@ -223,13 +223,13 @@
    rather than --expand, so a custom escape-hatch glyph class (e.g. FontAwesome,
    which replaces --expand) still rotates. */
 .wtv__node .wtv__toggle-icon.wtv__clickable {
-  transform: rotate(calc(var(--wtv-icon-rotate-collapsed, 0deg) * var(--wtv-dir-sign, 1)));
+  transform: rotate(calc(var(--wtv-icon-rotate-collapsed, 0deg) * var(--_wtv-dir-sign, 1)));
 }
 
 /* Expanded orientation — the state marker `--expanded` is applied by the renderer
    for BOTH rotate and swap modes (swap just doesn't rotate; see below). */
 .wtv__node .wtv__toggle-icon.wtv__clickable.wtv__toggle-icon--expanded {
-  transform: rotate(calc(var(--wtv-icon-rotate-expanded, 90deg) * var(--wtv-dir-sign, 1)));
+  transform: rotate(calc(var(--wtv-icon-rotate-expanded, 90deg) * var(--_wtv-dir-sign, 1)));
 }
 
 /* Dedicated per-node icon wrapper (<span class="wtv__node-icon">, iconMember / iconCallback),
@@ -1039,7 +1039,7 @@
 /* -1 in a right-to-left tree: flips the toggle glyph's rotation, the drop arrows and
    the child-glow edge (the rules above multiply by it). Follows `dir` live. */
 .wtv__container:dir(rtl) {
-  --wtv-dir-sign: -1;
+  --_wtv-dir-sign: -1;
 }
 
 /* The toggle glyph itself is mirrored; the element's rotation is negated (via the sign),

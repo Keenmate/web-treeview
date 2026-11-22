@@ -83,22 +83,3 @@ which falls back to the `--base-drop-target-*` tokens. The C-CSS-8 / C-BV-1 auto
 `rgb(` and count it as a literal. Rulebook gap: `_agent-progress/rulebook-gaps-from-devkit.md` #4
 (skip `rgb(from …)` / `hsl(from …)` / `oklch(from …)` whose source is a `var()`). PASS with note; drop
 this entry when the check accepts relative colour.
-
-## C-BV-3 / C-BV-6 — input variables and core-consumed `--base-*`
-
-Two groups are by design and not declared on `:host`:
-
-- **Input variables** (C-BV-3 "bare-read but not defined", C-BV-6 "componentVariables not defined"):
-  the `--wtv-context-menu-*` knobs and `--wtv-font-family`. The tree forwards them to core `/menu`'s
-  private slots (`--_km-menu-bg: var(--wtv-context-menu-bg)`, no fallback) and reads
-  `var(--wtv-font-family, var(--base-font-family, …))`, so an unset knob resolves tree → page-wide
-  `--km-menu-*` → `--base-*` → core default. Declaring them on `:host` would fill the slot and cut that
-  chain. They are listed in the manifest because that is where a consumer finds them.
-- **`--base-*` read by core, not by the tree's CSS** (C-BV-6 "baseVariables not read in CSS"):
-  `--base-dropdown-bg` / `-border` / `-box-shadow` and `--base-line-height-normal` are read by core's
-  menu CSS (`@keenmate/web-components-core/menu`), which renders inside the tree's shadow root; the
-  manifest lists them so a theme knows they reach the tree.
-
-Rulebook gaps: `_agent-progress/rulebook-gaps-from-devkit.md` #1 and #15 (a documented "input variable"
-manifest marker, and accepting `--base-*` consumed via a core module). PASS with note; drop this entry
-when the rulebook accepts both.

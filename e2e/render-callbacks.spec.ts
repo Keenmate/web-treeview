@@ -83,6 +83,63 @@ test.describe('render results (core renderSlot)', () => {
     expect(await input.evaluate((el) => el.getRootNode() instanceof ShadowRoot && (el.getRootNode() as ShadowRoot).activeElement === el)).toBe(true);
   });
 
+  test('an unrelated input change keeps the custom-rendered rows: same row element, focus kept', async ({ page }) => {
+    const t = tree(page, 'results');
+    const row = nodeByPath(t, '1.2');
+    const input = row.locator('.custom-input');
+    await row.evaluate((el: any) => { el.dataset.mark = 'row-kept'; });
+    await input.evaluate((el: any) => { el.dataset.mark = 'kept'; el.focus(); });
+    await t.evaluate(async (el: any) => {
+      el.isReadonly = true;
+      await el.whenSettled();
+      el.labels = { 'messages.noData': 'Nothing' };
+      el.contextMenuXOffset = 12;
+      el.scrollHighlightTimeout = 900;
+      await el.whenSettled();
+    });
+    await expect(t).toHaveAttribute('readonly', '');
+    await expect(row).toHaveAttribute('data-mark', 'row-kept');
+    await expect(input).toHaveAttribute('data-mark', 'kept');
+    expect(await input.evaluate((el) => (el.getRootNode() as ShadowRoot).activeElement === el)).toBe(true);
+  });
+
+  test('a replaced renderNodeCallback still re-renders the rows', async ({ page }) => {
+    const t = tree(page, 'results');
+    await t.evaluate(async (el: any) => {
+      el.renderNodeCallback = ({ node }: any) => `<i class="new-node">${node.path}</i>`;
+      await el.whenSettled();
+    });
+    await expect(nodeByPath(t, '1').locator('.wtv__node-content .new-node')).toHaveText('1');
+    await expect(nodeByPath(t, '1.2').locator('.custom-input')).toHaveCount(0);
+  });
+
+  test('header / footer are redrawn only when their callback changes, not on an unrelated input change', async ({ page }) => {
+    const t = tree(page, 'chrome');
+    const header = t.locator('.wtv__header .custom-header');
+    // A Node result (not a string) so a redraw would mount a NEW element; count the hook calls too.
+    const calls = await t.evaluate(async (el: any) => {
+      (window as any).headerCalls = 0;
+      el.renderHeaderCallback = () => {
+        (window as any).headerCalls++;
+        const h = document.createElement('h4');
+        h.className = 'custom-header';
+        h.textContent = 'Counted';
+        return h;
+      };
+      el.renderFooterCallback = () => { (window as any).footerCalls = ((window as any).footerCalls || 0) + 1; return 'F'; };
+      await el.whenSettled();
+      return [(window as any).headerCalls, (window as any).footerCalls];
+    });
+    expect(calls).toEqual([1, 1]);
+    await header.evaluate((el: any) => { el.dataset.mark = 'kept'; });
+    await t.evaluate(async (el: any) => { el.isReadonly = true; await el.whenSettled(); el.contextMenuXOffset = 7; await el.whenSettled(); });
+    await expect(header).toHaveAttribute('data-mark', 'kept');
+    expect(await page.evaluate(() => [(window as any).headerCalls, (window as any).footerCalls])).toEqual([1, 1]);
+    await t.evaluate(async (el: any) => { el.renderHeaderCallback = () => '<h4 class="custom-header">New</h4>'; await el.whenSettled(); });
+    await expect(header).toHaveText('New');
+    await expect(header).not.toHaveAttribute('data-mark', 'kept');
+  });
+
   test('renderHeaderCallback false hides the header; renderFooterCallback null leaves the (default) empty footer', async ({ page }) => {
     const t = tree(page, 'results');
     await expect(t.locator('.wtv__header')).toBeHidden();

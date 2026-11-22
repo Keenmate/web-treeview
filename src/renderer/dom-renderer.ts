@@ -351,6 +351,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   updateConfig(config: Partial<RendererConfig<T>>): void {
     const prevNodeCb = this.config.renderNodeCallback;
     const prevIconCb = this.config.renderIconCallback;
+    const prevHeaderCb = this.config.renderHeaderCallback;
+    const prevFooterCb = this.config.renderFooterCallback;
     Object.assign(this.config, config);
     if ('labels' in config) this._refreshLabels();
     if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
@@ -367,8 +369,15 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
       this._applyTitleOverflow(config.nodeTitleOverflow);
     }
-    if ('renderHeaderCallback' in config) this._renderRegion(this.headerEl, this.config.renderHeaderCallback);
-    if ('renderFooterCallback' in config) this._renderRegion(this.footerEl, this.config.renderFooterCallback);
+    // `<web-treeview>` re-sends its full config on every batch (callbacks keep their identity — TreeViewEngine
+    // memoizes the adapters), so the regions and rows are redrawn only on an ACTUAL callback change: an unrelated
+    // input change keeps the row elements, focus and every transient row / region state.
+    if ('renderHeaderCallback' in config && config.renderHeaderCallback !== prevHeaderCb) {
+      this._renderRegion(this.headerEl, this.config.renderHeaderCallback);
+    }
+    if ('renderFooterCallback' in config && config.renderFooterCallback !== prevFooterCb) {
+      this._renderRegion(this.footerEl, this.config.renderFooterCallback);
+    }
     // Re-render nodes if renderNodeCallback changed (so a callback assigned after the initial data
     // render re-paints the rows; a removed one brings the built-in label back).
     const isNodeCbChanged = 'renderNodeCallback' in config && config.renderNodeCallback !== prevNodeCb;
@@ -378,7 +387,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // rows, focus, scroll and every other state stay untouched.
     const isIconsChanged = 'renderNodeIcon' in config ||
       ('renderIconCallback' in config && config.renderIconCallback !== prevIconCb);
-    if ((isNodeCbChanged || (config.renderNodeCallback && !isIconsChanged)) && this.state) {
+    if (isNodeCbChanged && this.state) {
       this._fullRender(this.state.getSnapshot());
     } else if (isIconsChanged) {
       this._refreshIcons();

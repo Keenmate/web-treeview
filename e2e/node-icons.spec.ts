@@ -110,8 +110,9 @@ test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)'
 		const tree = page.locator('#default');
 		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
 		await expect(iconAt(page, 'default', '1.1.1').locator('i')).toHaveClass('wtv__icon fa-user');
-		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		// Select a leaf: a branch click (expand-and-focus) would collapse 1.1 — 1.1.1 leaves the DOM (racy).
+		await tree.locator('[data-tree-path="1.1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await leaf.evaluate((el) => { (window as any).__row = el; });
 
 		await page.evaluate(() => {
@@ -122,7 +123,7 @@ test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)'
 		await expect(iconAt(page, 'default', '1').locator('i')).toHaveClass('wtv__icon fa-sitemap');
 		// State kept: same row element (no rebuild), selection + expansion intact, focus still inside the tree.
 		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
 		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
 
@@ -137,8 +138,8 @@ test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)'
 		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
 		// Nobody claims 'consumer-glyph' yet → icon-font fallback.
 		await expect(glyph('1.1.1').locator('i')).toHaveCount(1);
-		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await tree.locator('[data-tree-path="1.1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await leaf.evaluate((el) => { (window as any).__row = el; });
 		const before = await page.evaluate(() => (window as any).__consumerRuns);
 
@@ -150,7 +151,7 @@ test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)'
 		expect(await page.evaluate(() => (window as any).__consumerRuns)).toBeGreaterThan(before);
 		// Same row element (no rebuild), selection + expansion kept, focus still inside the tree.
 		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
 		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
 	});
@@ -160,14 +161,14 @@ test.describe("replacing the tree's own renderIconCallback (in place, no rebuild
 	test('node icons repaint on the same rows — selection, expansion and focus kept', async ({ page }) => {
 		const tree = page.locator('#custom');
 		const row = tree.locator('[data-tree-path="1"]').first();
-		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await tree.locator('[data-tree-path="1.1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await row.evaluate((el) => { (window as any).__row = el; });
 
 		await tree.evaluate((el: any) => { el.renderIconCallback = (name: string) => (name === 'both' ? '<em>new</em>' : null); });
 		await expect(iconAt(page, 'custom', '1').locator('em')).toHaveText('new');
 		expect(await row.evaluate((el) => el === (window as any).__row)).toBe(true);
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
 		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
 	});
@@ -177,13 +178,13 @@ test.describe("replacing the tree's own renderIconCallback (in place, no rebuild
 		const glyph = (path: string) => tree.locator(`[data-tree-path="${path}"] .consumer-icon`).first();
 		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
 		await expect(glyph('1.1.1').locator('i')).toHaveCount(1);
-		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
+		await tree.locator('[data-tree-path="1.1.1"] .wtv__node-content').first().click();
 		await leaf.evaluate((el) => { (window as any).__row = el; });
 
 		await tree.evaluate((el: any) => { el.renderIconCallback = (name: string) => (name === 'consumer-glyph' ? '<em data-own>o</em>' : null); });
 		await expect(glyph('1.1.1').locator('em[data-own]')).toHaveText('o');
 		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
-		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1.1"]').first()).toHaveAttribute('data-selected', 'true');
 		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
 
 		// Removing it falls back to icon-font again, still in place.

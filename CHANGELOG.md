@@ -31,7 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   node that draws icons through core `renderIcon` repaints too. Replacing the tree's own `renderIconCallback` takes the
   same in-place path (it used to rebuild every row) and re-sends `renderNodeIcon` to the renderer as well.
 - Fixed: every input change rebuilt all rows (the engine re-emitted its node config on each config batch); it now
-  re-renders the rows only when that node config actually changed, so focus and transient row state survive.
+  re-renders the rows only when that node config actually changed, so focus and transient row state survive. With a
+  `renderNodeCallback` the renderer also rebuilt every row (and redrew the header / footer) on each batch — `<web-treeview>`
+  re-sends its full config; it now rebuilds the rows only when `renderNodeCallback` itself is replaced, and redraws the
+  header / footer only when their callback is, so an unrelated input change keeps the row elements and focus.
 
 ### Docs — tooltip sizing demo (2026-11-21)
 

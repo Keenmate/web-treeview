@@ -89,6 +89,9 @@ test('tooltip-placement="right" + tooltip-offset=24: the tooltip sits 24px right
 	await r.hover();
 	const tip = page.locator('#placed .wtv__tooltip.wtv__tooltip--visible');
 	await expect(tip).toBeVisible();
+	// Core's entry slide (`translate: -4px 0` → 0 over --base-duration-fast) — measure once it has settled
+	// (mid-slide the box sits up to 4px short, beyond the 3px tolerance: the flake under load).
+	await tip.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
 	const rb = (await r.boundingBox())!;
 	const tb = (await tip.boundingBox())!;
 	expect(Math.abs(tb.x - (rb.x + rb.width + 24))).toBeLessThan(3);

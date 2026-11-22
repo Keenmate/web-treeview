@@ -412,6 +412,7 @@ export class TreeViewEngine<T = any> {
   setOptions(props: Partial<TreeViewEngineOptions<T>>): void {
     // An option set to `undefined` goes back to its default (as `el.x = undefined` does on the element).
     props = withEngineDefaults(props, true);
+    const prevIconCb = this.options.renderIconCallback;
     Object.assign(this.options, props);
     // Map the MERGED options, not the partial: the mapping fills absent keys (`data: nodes || []`, `idMember || 'id'`),
     // so a partial `update({ locale })` on a standalone engine would wipe the tree. The element sends its full config anyway.
@@ -425,6 +426,9 @@ export class TreeViewEngine<T = any> {
     }
     this.engine.setOptions(engineConfig);
     const rendererConfig = this.mapToRendererConfig(props);
+    // `renderNodeIcon` is the same function every time; re-sending it means "the icon sources changed"
+    // (RendererConfig.renderNodeIcon) — only when this tree's own `renderIconCallback` was replaced.
+    if (!('renderIconCallback' in props) || props.renderIconCallback === prevIconCb) delete rendererConfig.renderNodeIcon;
     if (Object.keys(rendererConfig).length > 0) {
       this.renderer.updateConfig(rendererConfig);
     }
@@ -449,7 +453,8 @@ export class TreeViewEngine<T = any> {
   /**
    * Repaint every node icon (the page-wide `window.components.renderIconCallback` changed —
    * `<web-treeview>` calls it from core `iconsChanged()`). Re-sends `renderNodeIcon` to the renderer
-   * (`updateConfig`); the built-in renderer redraws the icons in place, all tree state kept.
+   * (`updateConfig`); the built-in renderer redraws the icons in place AND re-runs `renderNodeCallback`
+   * on the rendered rows (a custom node may draw icons through core `renderIcon`), all tree state kept.
    */
   refreshIcons(): void {
     this.renderer.updateConfig({ renderNodeIcon: this.nodeIconHtml });

@@ -24,6 +24,9 @@
 
         <h2>renderIconCallback (element hook) + the page-wide hook</h2>
         <div class="tree"><web-treeview id="custom" expand-level="3" icon-member="icon" align-node-icons="false"></web-treeview></div>
+
+        <h2>renderNodeCallback drawing its own icon with core renderIcon (repaints on a hook change)</h2>
+        <div class="tree"><web-treeview id="consumer" expand-level="3"></web-treeview></div>
     </main>
 
     <script type="module">
@@ -36,6 +39,7 @@
         };
 
         import('/src/index.ts');
+        const { renderIcon } = await import('/test/core-render-icon.js');
 
         const data = [
             { id: 1, path: '1', name: 'Region', icon: 'fa-sitemap', color: '#7c3aed' },
@@ -57,6 +61,17 @@
             const c = document.getElementById('custom');
             const e = document.getElementById('emoji');
             const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name' };
+            const k = document.getElementById('consumer');
+            // A custom node drawing a NON-built-in icon name through core renderIcon (host = the tree:
+            // its renderIconCallback, then the page-wide hook). Counts the runs (memoized per node).
+            window.__consumerRuns = 0;
+            Object.assign(k, common, {
+                nodes: data,
+                renderNodeCallback: ({ node, element }) => {
+                    window.__consumerRuns++;
+                    return `<span class="consumer-icon">${renderIcon('consumer-glyph', { host: element })}</span><span class="consumer-label">${node.data.name}</span>`;
+                }
+            });
             Object.assign(d, common, { nodes: data });
             Object.assign(e, common, {
                 nodes: data,

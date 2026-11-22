@@ -5040,7 +5040,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // ── Internal: nodeConfig ────────────────────────────────────────────
 
   private _updateNodeConfig() {
-    this._nodeConfig = {
+    const prev = this._nodeConfig;
+    const next: NodeConfig = {
       clickBehavior: this._clickBehavior,
       iconSet: this._iconSet,
       leafIconClass: this._leafIconClass,
@@ -5069,6 +5070,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       nodeClass: this._nodeClass,
       nodeContentClass: this._nodeContentClass
     };
+    // Every config batch re-sends the full options, so this runs on each one: only an actual change
+    // re-renders the rows (a `config-change` is a full row rebuild — focus / transient row state lost).
+    if ((Object.keys(next) as (keyof NodeConfig)[]).every((key) => next[key] === prev[key])) return;
+    this._nodeConfig = next;
     this.log.RENDER.debug('config-change, focusedNodeClass =', JSON.stringify(this._focusedNodeClass));
     this.emit('config-change', this._nodeConfig);
   }

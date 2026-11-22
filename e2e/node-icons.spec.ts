@@ -130,4 +130,65 @@ test.describe('the page-wide hook assigned later (core iconsChanged(), C-CA-40)'
 		await page.evaluate(() => { (window as any).components.renderIconCallback = null; });
 		await expect(iconAt(page, 'default', '1.1.1').locator('i')).toHaveClass('wtv__icon fa-user');
 	});
+
+	test('re-runs a renderNodeCallback that draws icons with core renderIcon (its cache is invalidated) — state kept', async ({ page }) => {
+		const tree = page.locator('#consumer');
+		const glyph = (path: string) => tree.locator(`[data-tree-path="${path}"] .consumer-icon`).first();
+		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
+		// Nobody claims 'consumer-glyph' yet → icon-font fallback.
+		await expect(glyph('1.1.1').locator('i')).toHaveCount(1);
+		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await leaf.evaluate((el) => { (window as any).__row = el; });
+		const before = await page.evaluate(() => (window as any).__consumerRuns);
+
+		await page.evaluate(() => {
+			(window as any).components.renderIconCallback = (name: string) => (name === 'consumer-glyph' ? '<b data-test-icon>g</b>' : null);
+		});
+		await expect(glyph('1.1.1').locator('b[data-test-icon]')).toHaveText('g');
+		await expect(glyph('1').locator('b[data-test-icon]')).toHaveText('g');
+		expect(await page.evaluate(() => (window as any).__consumerRuns)).toBeGreaterThan(before);
+		// Same row element (no rebuild), selection + expansion kept, focus still inside the tree.
+		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
+		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
+	});
+});
+
+test.describe("replacing the tree's own renderIconCallback (in place, no rebuild)", () => {
+	test('node icons repaint on the same rows — selection, expansion and focus kept', async ({ page }) => {
+		const tree = page.locator('#custom');
+		const row = tree.locator('[data-tree-path="1"]').first();
+		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await row.evaluate((el) => { (window as any).__row = el; });
+
+		await tree.evaluate((el: any) => { el.renderIconCallback = (name: string) => (name === 'both' ? '<em>new</em>' : null); });
+		await expect(iconAt(page, 'custom', '1').locator('em')).toHaveText('new');
+		expect(await row.evaluate((el) => el === (window as any).__row)).toBe(true);
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-expanded', 'true');
+		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
+	});
+
+	test('a renderNodeCallback drawing icons with core renderIcon re-runs on the same rows', async ({ page }) => {
+		const tree = page.locator('#consumer');
+		const glyph = (path: string) => tree.locator(`[data-tree-path="${path}"] .consumer-icon`).first();
+		const leaf = tree.locator('[data-tree-path="1.1.1"]').first();
+		await expect(glyph('1.1.1').locator('i')).toHaveCount(1);
+		await tree.locator('[data-tree-path="1.1"] .wtv__node-content').first().click();
+		await leaf.evaluate((el) => { (window as any).__row = el; });
+
+		await tree.evaluate((el: any) => { el.renderIconCallback = (name: string) => (name === 'consumer-glyph' ? '<em data-own>o</em>' : null); });
+		await expect(glyph('1.1.1').locator('em[data-own]')).toHaveText('o');
+		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
+		await expect(tree.locator('[data-tree-path="1.1"]').first()).toHaveAttribute('data-selected', 'true');
+		expect(await tree.evaluate((el) => el.matches(':focus-within'))).toBe(true);
+
+		// Removing it falls back to icon-font again, still in place.
+		await tree.evaluate((el: any) => { el.renderIconCallback = null; });
+		await expect(glyph('1.1.1').locator('i')).toHaveCount(1);
+		expect(await leaf.evaluate((el) => el === (window as any).__row)).toBe(true);
+	});
 });

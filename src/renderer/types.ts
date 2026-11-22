@@ -61,10 +61,11 @@ export interface RendererConfig<T> {
   /** The node icon's markup for a resolved icon VALUE (iconMember / iconCallback) — core `renderIcon`
    *  (markup → built-in name → the instance `renderIconCallback` → the page-wide one → icon-font
    *  `<i class="wtv__icon …">` → text), drawn INTO the `.wtv__node-icon` wrapper. `''` = no icon.
-   *  Re-sent through `updateConfig({ renderNodeIcon })` (same function) when the page-wide
-   *  `window.components.renderIconCallback` changed — a renderer repaints its icons then. */
+   *  Re-sent through `updateConfig({ renderNodeIcon })` (same function) when the icon sources changed
+   *  (the page-wide `window.components.renderIconCallback`, or the instance `renderIconCallback` replaced) —
+   *  a renderer repaints its icons (and any custom node render that draws icons) then. */
   renderNodeIcon?: (value: string, node: LTreeNode<T>, ctx: NodeRenderContext) => string;
-  /** The instance icon hook — only compared here: a changed one re-paints the icons. */
+  /** The instance icon hook — only compared here: a changed one re-paints the icons in place. */
   renderIconCallback?: unknown;
   /** Informational display when the tree has no data (e.g. "No items to display"). The result is read by
    *  core `renderSlot` (string = HTML, Node = mounted, `null` / `undefined` = the built-in text, `false` = hidden). */

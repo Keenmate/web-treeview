@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `TreeViewEngine.refreshIcons()`: re-sends `renderNodeIcon` to the renderer (`updateConfig`); the built-in renderer
   redraws the icons in place, a custom `TreeViewRenderer` repaints its icons there. `<web-treeview>` calls it from
   `iconsChanged()`; a standalone engine calls it itself.
+- The repaint also re-runs `renderNodeCallback` on the rendered rows (its per-node cache is invalidated), so a custom
+  node that draws icons through core `renderIcon` repaints too. Replacing the tree's own `renderIconCallback` takes the
+  same in-place path (it used to rebuild every row) and re-sends `renderNodeIcon` to the renderer as well.
+- Fixed: every input change rebuilt all rows (the engine re-emitted its node config on each config batch); it now
+  re-renders the rows only when that node config actually changed, so focus and transient row state survive.
 
 ### Docs — tooltip sizing demo (2026-11-21)
 

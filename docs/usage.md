@@ -274,7 +274,8 @@ tree.getIconCallback = ({ node }) => node.data.svg; // per-node markup: return i
 
 An icon font (FontAwesome, …) must reach the shadow root — inject its CSS through `customStyles` /
 `window.components['web-treeview'].customStyles`.
-Changing `window.components.renderIconCallback` later repaints the icons.
+Changing `window.components.renderIconCallback` (or the tree's own `renderIconCallback`) later repaints the icons in
+place — `renderNodeCallback` re-runs on the rendered rows too, so icons a custom node draws with core `renderIcon` follow.
 
 ### Per-node callbacks — `(ctx: NodeContext) => …`, `ctx = { node, controller, element }`
 
@@ -773,7 +774,7 @@ user input goes back as state calls (`toggleNodeExpanded(path)`, `selectNode(pat
 `handleKeydown(event)`, …) so the hooks, events and announcements fire exactly as in the element. `config` carries the
 resolved UI strings (`config.labels.text(key)`), the node-icon drawer (`config.renderNodeIcon(value, node, ctx)` —
 core `renderIcon` with your `renderIconCallback`; when the page-wide `window.components.renderIconCallback` changes,
-call `engine.refreshIcons()` — it re-sends `renderNodeIcon` through `updateConfig`, so repaint your icons there) and the loader drawer (`config.renderLoadingCallback` — core
+call `engine.refreshIcons()` — it re-sends `renderNodeIcon` through `updateConfig` (as does replacing `renderIconCallback`), so repaint your icons there) and the loader drawer (`config.renderLoadingCallback` — core
 `renderLoader` with your hook).
 
 Minimal example — an indented list, click toggles:

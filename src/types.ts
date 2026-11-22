@@ -246,8 +246,7 @@ export interface TreeViewConfig<T = any> {
    *  expand; the rest appear at once. Default `50`; `0` = none. */
   rowAnimationLimit?: number | null;
 
-  // Flat rendering
-  isFlatRenderingEnabled?: boolean | null;
+  // Row indent
   flatIndentSize?: string | number;
 
   // Virtual scroll
@@ -389,10 +388,10 @@ export interface TreeViewConfig<T = any> {
   selectionMode?: 'single' | 'multiple';
   /** Replace individual keyboard-navigation methods — merged over the defaults
    *  (`{ ...defaults, ...navigationOverrides }`), so a method you leave out keeps its
-   *  built-in behavior. Keys: navTo, navNext, navPrev, navNextSibling, navPrevSibling,
-   *  navInto, navOut, navBackOut, navToggle, navFirst, navLast, navPageDown, navPageUp,
-   *  navSelectNext, navSelectPrev, navSelectFirst, navSelectLast, navSelectPageDown,
-   *  navSelectPageUp. Reassign to swap at runtime; `null` restores the defaults. */
+   *  built-in behavior. Keys: focusAndSelectNode, focusNext, focusPrevious, focusNextAtLevel, focusPreviousAtLevel,
+   *  focusFirstChild, focusParent, collapseParent, toggleFocusedNodeExpanded, focusFirst, focusLast, focusNextPage, focusPreviousPage,
+   *  extendSelectionNext, extendSelectionPrevious, extendSelectionToFirst, extendSelectionToLast, extendSelectionNextPage,
+   *  extendSelectionPreviousPage. Reassign to swap at runtime; `null` restores the defaults. */
   navigationOverrides?: TreeNavigationOverrides<T> | null;
   /** Render a checkbox per selectable node. Default `false`. */
   isCheckboxesShown?: boolean;
@@ -684,25 +683,25 @@ export interface TreeViewMethods<T = any> {
   clearFocus(options?: TreeMutationOptions): void;
 
   // Navigation
-  navTo(path: string): void;
-  navNext(): void;
-  navPrev(): void;
-  navNextSibling(): void;
-  navPrevSibling(): void;
-  navInto(): void;
-  navOut(): void;
-  navBackOut(): void;
-  navToggle(): void;
-  navFirst(): void;
-  navLast(): void;
-  navPageDown(): void;
-  navPageUp(): void;
-  navSelectNext(): void;
-  navSelectPrev(): void;
-  navSelectFirst(): void;
-  navSelectLast(): void;
-  navSelectPageDown(): void;
-  navSelectPageUp(): void;
+  focusAndSelectNode(path: string): void;
+  focusNext(): void;
+  focusPrevious(): void;
+  focusNextAtLevel(): void;
+  focusPreviousAtLevel(): void;
+  focusFirstChild(): void;
+  focusParent(): void;
+  collapseParent(): void;
+  toggleFocusedNodeExpanded(): void;
+  focusFirst(): void;
+  focusLast(): void;
+  focusNextPage(): void;
+  focusPreviousPage(): void;
+  extendSelectionNext(): void;
+  extendSelectionPrevious(): void;
+  extendSelectionToFirst(): void;
+  extendSelectionToLast(): void;
+  extendSelectionNextPage(): void;
+  extendSelectionPreviousPage(): void;
 
   // Clipboard
   copyNodes(paths?: string[]): void;

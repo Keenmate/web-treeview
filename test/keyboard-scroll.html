@@ -12,7 +12,7 @@
 <body>
     <!--
       200 root rows (paths 1 … 200) in a 300px scroll box (#box).
-      ?override=1  navigationOverrides.navTo = select only (no scroll)
+      ?override=1  navigationOverrides.focusAndSelectNode = select only (no scroll)
     -->
     <div id="box"></div>
 
@@ -28,7 +28,7 @@
         setupTree(tree, data);
         if (params.get('override')) {
             tree.navigationOverrides = {
-                navTo(path) { tree.selectNode(path); },
+                focusAndSelectNode(path) { tree.selectNode(path); },
             };
         }
         document.getElementById('box').appendChild(tree);

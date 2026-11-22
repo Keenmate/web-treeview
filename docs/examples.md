@@ -359,7 +359,7 @@ the browser: `<web-treeview locale="de">` announces "1.234 results". Localizatio
 
 | Mode | Config | DOM Nodes | Best For |
 |------|--------|-----------|----------|
-| Flat (default) | `enable-flat-rendering="true"` | All | Most trees (up to ~10k nodes) |
+| Flat (default) | — | All | Most trees (up to ~10k nodes) |
 | Virtual | `enable-virtual-scroll` | ~50 | Large trees (10k+) |
 
 ```html

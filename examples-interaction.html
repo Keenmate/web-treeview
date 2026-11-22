@@ -149,13 +149,13 @@
                     focused-node-class="demo-focused-outline"></web-treeview>
             </div>
             <div class="controls">
-                <button id="in3-first">navFirst()</button>
-                <button id="in3-last">navLast()</button>
-                <button id="in3-next">navNext()</button>
-                <button id="in3-prev">navPrev()</button>
-                <button id="in3-into">navInto()</button>
-                <button id="in3-out">navOut()</button>
-                <button id="in3-toggle">navToggle()</button>
+                <button id="in3-first">focusFirst()</button>
+                <button id="in3-last">focusLast()</button>
+                <button id="in3-next">focusNext()</button>
+                <button id="in3-prev">focusPrevious()</button>
+                <button id="in3-into">focusFirstChild()</button>
+                <button id="in3-out">focusParent()</button>
+                <button id="in3-toggle">toggleFocusedNodeExpanded()</button>
             </div>
         </div>
         <div>
@@ -585,9 +585,9 @@ function restoreFromUrl(nodePath) {
         });
 
         const navBtns = {
-            'in3-first': 'navFirst', 'in3-last': 'navLast',
-            'in3-next': 'navNext', 'in3-prev': 'navPrev',
-            'in3-into': 'navInto', 'in3-out': 'navOut', 'in3-toggle': 'navToggle',
+            'in3-first': 'focusFirst', 'in3-last': 'focusLast',
+            'in3-next': 'focusNext', 'in3-prev': 'focusPrevious',
+            'in3-into': 'focusFirstChild', 'in3-out': 'focusParent', 'in3-toggle': 'toggleFocusedNodeExpanded',
         };
         for (const [id, method] of Object.entries(navBtns)) {
             document.getElementById(id).addEventListener('click', () => in3[method]());

@@ -1,7 +1,7 @@
 import { test, expect, type Page, nodeByPath, nodeContent } from './fixtures';
 
 /**
- * Programmatic navigation (nav*) + scroll highlight (/test/nav-api.html).
+ * Programmatic navigation (focus* / extendSelection*) + scroll highlight (/test/nav-api.html).
  *
  *   1 A ── 1.1 A1, 1.2 A2      (expand-level=1 → level 2 visible…
  *   2 B ── 2.1 B1               … B is expanded too)
@@ -20,58 +20,58 @@ const state = (page: Page): Promise<{ focused: string | null; selected: string[]
 const nav = (page: Page, fn: string, ...args: unknown[]) =>
   page.evaluate(([fn, args]) => (window as any).tree[fn as string](...(args as unknown[])), [fn, args] as const);
 
-test('navTo focuses and selects the node', async ({ page }) => {
+test('focusAndSelectNode focuses and selects the node', async ({ page }) => {
   await load(page);
-  await nav(page, 'navTo', '2.1');
+  await nav(page, 'focusAndSelectNode', '2.1');
   expect(await state(page)).toMatchObject({ focused: '2.1', selected: ['2.1'] });
   await expect(nodeContent(nodeByPath(page, '2.1'))).toHaveClass(/wtv__node-content--focused/);
 });
 
-test('navNext / navPrev walk the visible rows (starting from the first / last)', async ({ page }) => {
+test('focusNext / focusPrevious walk the visible rows (starting from the first / last)', async ({ page }) => {
   await load(page);
-  await nav(page, 'navNext');
+  await nav(page, 'focusNext');
   expect((await state(page)).focused).toBe('1');
-  await nav(page, 'navNext');
+  await nav(page, 'focusNext');
   expect((await state(page)).focused).toBe('1.1');
-  await nav(page, 'navPrev');
+  await nav(page, 'focusPrevious');
   expect((await state(page)).focused).toBe('1');
-  await nav(page, 'navPrev'); // already first → stays
+  await nav(page, 'focusPrevious'); // already first → stays
   expect((await state(page)).focused).toBe('1');
 });
 
-test('navPrev with nothing focused starts at the last visible row', async ({ page }) => {
+test('focusPrevious with nothing focused starts at the last visible row', async ({ page }) => {
   await load(page);
-  await nav(page, 'navPrev');
+  await nav(page, 'focusPrevious');
   expect((await state(page)).focused).toBe('3');
 });
 
-test('navFirst / navLast jump to the ends', async ({ page }) => {
+test('focusFirst / focusLast jump to the ends', async ({ page }) => {
   await load(page);
-  await nav(page, 'navTo', '2');
-  await nav(page, 'navLast');
+  await nav(page, 'focusAndSelectNode', '2');
+  await nav(page, 'focusLast');
   expect((await state(page)).focused).toBe('3');
-  await nav(page, 'navFirst');
+  await nav(page, 'focusFirst');
   expect((await state(page)).focused).toBe('1');
 });
 
-test('navToggle collapses / expands the focused branch; navInto expands and enters', async ({ page }) => {
+test('toggleFocusedNodeExpanded collapses / expands the focused branch; focusFirstChild expands and enters', async ({ page }) => {
   await load(page);
-  await nav(page, 'navTo', '1');
-  await nav(page, 'navToggle');
+  await nav(page, 'focusAndSelectNode', '1');
+  await nav(page, 'toggleFocusedNodeExpanded');
   await expect(nodeByPath(page, '1.1')).toHaveCount(0);
-  await nav(page, 'navInto');
+  await nav(page, 'focusFirstChild');
   await expect(nodeByPath(page, '1.1')).toBeVisible();
   expect((await state(page)).focused).toBe('1.1');
 });
 
-test('navOut goes to the parent; navNextSibling / navPrevSibling stay on the level', async ({ page }) => {
+test('focusParent goes to the parent; focusNextAtLevel / focusPreviousAtLevel stay on the level', async ({ page }) => {
   await load(page);
-  await nav(page, 'navTo', '1.2');
-  await nav(page, 'navOut');
+  await nav(page, 'focusAndSelectNode', '1.2');
+  await nav(page, 'focusParent');
   expect((await state(page)).focused).toBe('1');
-  await nav(page, 'navNextSibling');
+  await nav(page, 'focusNextAtLevel');
   expect((await state(page)).focused).toBe('2');
-  await nav(page, 'navPrevSibling');
+  await nav(page, 'focusPreviousAtLevel');
   expect((await state(page)).focused).toBe('1');
 });
 

@@ -492,8 +492,7 @@ export interface TreeViewStateOptions<T> {
   onRenderProgress?: (stats: RenderStats) => void;
   onRenderComplete?: (stats: RenderStats) => void;
 
-  // Flat rendering
-  isFlatRenderingEnabled?: boolean;
+  // Row indent
   flatIndentSize?: string;
 
   // Virtual scroll
@@ -675,7 +674,6 @@ export interface TreeViewStateSnapshot<T> {
   hasNodes: boolean;
   isRendering: boolean;
   bodyClass: string | null | undefined;
-  isFlatRenderingEnabled: boolean;
   flatIndentSize: string;
   focusedNode: LTreeNode<T> | null | undefined;
   selectedPaths: Set<string>;

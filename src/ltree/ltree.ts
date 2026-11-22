@@ -1520,7 +1520,7 @@ export function createLTree<T>(
 		 * @param position - Optional position relative to sibling ('before' or 'after')
 		 * @returns Object with success status, the created root node, and count of nodes created
 		 */
-		copyNodeWithDescendants(
+		duplicateNode(
 			sourceNode: LTreeNode<T>,
 			targetParentPath: string,
 			transformData: (data: T, node: LTreeNode<T>) => T | null,
@@ -1546,7 +1546,7 @@ export function createLTree<T>(
 				// Add the node
 				const result = this.addNode(parentPath, transformedData);
 				if (!result.success || !result.node) {
-					dataLog().debug(`copyNodeWithDescendants: Failed to add node`, result.error);
+					dataLog().debug(`duplicateNode: Failed to add node`, result.error);
 					return null;
 				}
 

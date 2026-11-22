@@ -198,8 +198,7 @@ a child listed before its parent is dropped as an orphan and reported in
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `enable-flat-rendering` | `boolean` | `true` | Flat DOM list with `paddingLeft` indent (config key: `isFlatRenderingEnabled`) |
-| `flat-indent-size` | `string \| number` (CSS length) | `var(--wtv-indent-size)` | Per-level indent step in flat mode; a bare number means px on both paths (`"20"` / `el.flatIndentSize = 20` → `20px`); `null` is refused — `undefined` or removing the attribute resets |
+| `flat-indent-size` | `string \| number` (CSS length) | `var(--wtv-indent-size)` | Per-level row indent step; a bare number means px on both paths (`"20"` / `el.flatIndentSize = 20` → `20px`); `null` is refused — `undefined` or removing the attribute resets |
 | `enable-progressive-render` | `boolean` | `true` | RAF-batched rendering for large trees (config key: `isProgressiveRenderEnabled`) |
 | `row-animation-limit` | `number` | `50` | Rows an expand reveals animate in (fade + slide, `--wtv-row-animation-duration` / `-distance`); at most this many per expand, the rest appear at once; `0` = none (config key: `rowAnimationLimit`). No on/off attribute: `motion="none"` / reduced motion stop it, `--wtv-row-animation-duration: 0s` stops just the rows |
 | `initial-batch-size` | `number` | — | First batch size |
@@ -434,7 +433,7 @@ A throwing before-hook cancels the operation (the error is logged).
 | `nodeOutputTransformationCallback` | `({ data, operation, phase, isRoot, rootIndex, position, source, target }) => T` | OUTPUT (egress) transform — clean / redact `data` as a node leaves the source (copy / cut / copy-drop) |
 | `nodeInputTransformationCallback` | `({ data, … }) => T \| null` | INPUT (ingress) transform — derive ids / values as a node lands (paste / copy-drop); return `null` to skip a node (skipping a root skips its subtree) |
 
-The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase: 'output' \| 'input', isRoot, rootIndex, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during the output phase. The `transform` arguments of `pasteNodes`, `duplicateNodes` and `copyNodeWithDescendants` take the same one-ctx shape.
+The transform ctx is `NodeTransformContext` + `data`: `{ data, operation, phase: 'output' \| 'input', isRoot, rootIndex, position, source, target }`, where `source` and `target` are symmetric NodeRefs (`{ path, node, parent, siblings }`); `target` and `position` are `null` during the output phase. The `transform` arguments of `pasteNodes`, `duplicateNodes` and `duplicateNode` take the same one-ctx shape.
 
 ### Event twins (`on*`)
 
@@ -500,17 +499,17 @@ All methods are available on the element **and** on `el.controller`.
 | `removeNodes` | `(paths[]): { removed, failed }` | Remove nodes (+ descendants) programmatically — no `beforeDeleteCallback`, no `node-delete` (those belong to the user Delete command: Delete key / context-menu `delete`) |
 | `cancelCut` | `()` | Cancel pending cut |
 | `hasClipboardContent` / `getClipboardOperation` | `(): boolean` / `(): 'copy' \| 'cut' \| null` | Clipboard state |
-| `navTo` | `(path)` | Focus a specific node |
-| `navNext` / `navPrev` | `()` | Focus next / previous visible node |
-| `navNextSibling` / `navPrevSibling` | `()` | Focus next / previous sibling at same level |
-| `navInto` / `navOut` | `()` | Move into child / to parent |
-| `navBackOut` | `()` | Collapse parent and focus it |
-| `navToggle` | `()` | Toggle expand/collapse on current node |
-| `navFirst` / `navLast` | `()` | Focus first / last visible node |
-| `navPageDown` / `navPageUp` | `()` | Focus the node ~10 visible rows down / up (clamped) |
-| `navSelectNext` / `navSelectPrev` | `()` | Extend the selected range to the next / previous sibling (multi mode; no-op in single) |
-| `navSelectFirst` / `navSelectLast` | `()` | Extend the selected range to the first / last visible node (multi mode) |
-| `navSelectPageDown` / `navSelectPageUp` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
+| `focusAndSelectNode` | `(path)` | Focus a specific node |
+| `focusNext` / `focusPrevious` | `()` | Focus next / previous visible node |
+| `focusNextAtLevel` / `focusPreviousAtLevel` | `()` | Focus next / previous sibling at same level |
+| `focusFirstChild` / `focusParent` | `()` | Move into child / to parent |
+| `collapseParent` | `()` | Collapse parent and focus it |
+| `toggleFocusedNodeExpanded` | `()` | Toggle expand/collapse on current node |
+| `focusFirst` / `focusLast` | `()` | Focus first / last visible node |
+| `focusNextPage` / `focusPreviousPage` | `()` | Focus the node ~10 visible rows down / up (clamped) |
+| `extendSelectionNext` / `extendSelectionPrevious` | `()` | Extend the selected range to the next / previous sibling (multi mode; no-op in single) |
+| `extendSelectionToFirst` / `extendSelectionToLast` | `()` | Extend the selected range to the first / last visible node (multi mode) |
+| `extendSelectionNextPage` / `extendSelectionPreviousPage` | `()` | Extend the selected range ~10 visible rows down / up (multi mode) |
 | `addBranch` | `(parentPath, data[]): InsertBranchResult` | Add a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
 | `insertBranch` | `(targetPath, data[], position): InsertBranchResult` | Insert a batch before / after `targetPath` (items' paths under the target's parent) or under it (`'child'` = `addBranch(targetPath, …)`). The block's top-level nodes keep their order from `data`; with `orderMember` they get order values spread between the target and its neighbour |
 | `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `addBranch`); adds `removed` / `added` |
@@ -535,7 +534,7 @@ same `block`, so a `center` jump centres the row in the window.
 
 | `source` | When | Defaults (`options`) |
 |---|---|---|
-| `'keyboard'` | Arrow keys, PageUp / PageDown, Home / End, Shift range moves (`navTo`) | `block: 'nearest'`, `inline: 'nearest'`, `behavior: 'auto'` (keys never animate), `shouldRevealContainer: false` |
+| `'keyboard'` | Arrow keys, PageUp / PageDown, Home / End, Shift range moves (`focusAndSelectNode`) | `block: 'nearest'`, `inline: 'nearest'`, `behavior: 'auto'` (keys never animate), `shouldRevealContainer: false` |
 | `'scroll-to-path'` | `scrollToPath(path, options)` | the call's `block` (`'center'`) / `inline` (`'nearest'`) / `behavior` (the `--wtv-scroll-behavior` token) / `shouldRevealContainer` (`true`) |
 | `'paste'` | The reveal after a paste into a node (`position: 'child'`) | `block: 'nearest'`, `inline: 'nearest'`, the token behavior, `shouldRevealContainer: false` |
 
@@ -580,35 +579,35 @@ resolves then. Until `ready` the host is `visibility: hidden` (FOUC guard).
 Every navigation key goes through a navigation object — the built-in defaults merged with
 `navigationOverrides` (`{ ...defaults, ...navigationOverrides }`, same as svelte-treeview). Replace
 only the methods you need; the rest keep their default. The methods are called on the merged
-object, so inside a `function` override `this` is the active navigation (`this.navTo(path)`,
-`this.navNext()`). The defaults move through `navTo`, so overriding `navTo` affects every built-in
-move. `el.controller.nav*()` routes through the overrides too. `beforeKeydownCallback` still runs
+object, so inside a `function` override `this` is the active navigation (`this.focusAndSelectNode(path)`,
+`this.focusNext()`). The defaults move through `focusAndSelectNode`, so overriding `focusAndSelectNode` affects every built-in
+move. The `el.controller` keyboard-navigation methods (`focusNext()`, `extendSelectionNext()`, …) route through the overrides too. `beforeKeydownCallback` still runs
 first and can suppress a key entirely.
 
 Every keyboard move scrolls the newly focused node into view with `block: 'nearest'` — nothing
 moves while the row is already visible; otherwise the nearest scroll container (and the page, if
-needed) scrolls just enough to show it. This covers all `nav*` / `navSelect*` moves, PageUp/PageDown,
-Home/End and `navInto` after a lazy load. With virtual scroll the scroll offset moves to the row
-first, so it gets rendered. Mouse clicks don't scroll. The scroll lives in the default `navTo` (and
-in the Shift-extend moves) — an overridden `navTo` decides for itself (call
+needed) scrolls just enough to show it. This covers all `focus*` / `extendSelection*` moves, PageUp/PageDown,
+Home/End and `focusFirstChild` after a lazy load. With virtual scroll the scroll offset moves to the row
+first, so it gets rendered. Mouse clicks don't scroll. The scroll lives in the default `focusAndSelectNode` (and
+in the Shift-extend moves) — an overridden `focusAndSelectNode` decides for itself (call
 `el.controller.scrollToPath(path, …)` if you want a scroll).
 
 ```js
 // ArrowDown / ArrowUp walk every visible row (into children) instead of jumping between siblings.
 tree.navigationOverrides = {
-  navNextSibling() { this.navNext(); },
-  navPrevSibling() { this.navPrev(); },
+  focusNextAtLevel() { this.focusNext(); },
+  focusPreviousAtLevel() { this.focusPrevious(); },
 };
 tree.navigationOverrides = null; // back to the defaults
 ```
 
 | Key | Method | Shift variant (multi mode) |
 |-----|--------|----------------------------|
-| `ArrowDown` / `ArrowUp` | `navNextSibling` / `navPrevSibling` | `navSelectNext` / `navSelectPrev` |
-| `Home` / `End` | `navFirst` / `navLast` | `navSelectFirst` / `navSelectLast` |
-| `PageDown` / `PageUp` | `navPageDown` / `navPageUp` | `navSelectPageDown` / `navSelectPageUp` |
-| `ArrowRight` / `ArrowLeft` / `Backspace` | `navInto` / `navOut` / `navBackOut` | — |
-| `Enter` | `navToggle` (the node's default action: expand / collapse) | — |
+| `ArrowDown` / `ArrowUp` | `focusNextAtLevel` / `focusPreviousAtLevel` | `extendSelectionNext` / `extendSelectionPrevious` |
+| `Home` / `End` | `focusFirst` / `focusLast` | `extendSelectionToFirst` / `extendSelectionToLast` |
+| `PageDown` / `PageUp` | `focusNextPage` / `focusPreviousPage` | `extendSelectionNextPage` / `extendSelectionPreviousPage` |
+| `ArrowRight` / `ArrowLeft` / `Backspace` | `focusFirstChild` / `focusParent` / `collapseParent` | — |
+| `Enter` | `toggleFocusedNodeExpanded` (the node's default action: expand / collapse) | — |
 | `Space` | toggle selection: the focused node's checkbox when checkboxes are shown; else `toggleFocusedSelect` (multiple mode) / `selectNode` (single mode) | — |
 
 ## Events

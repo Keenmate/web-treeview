@@ -122,14 +122,14 @@ The 10 `keyboard-nav.spec.ts` skips are now real tests, plus anchor / single-mod
 
 **Follow-up resolved 2026-10-25 (user-approved, svelte parity):** keyboard moves
 didn't scroll — PageDown / End in a long tree moved focus off-screen. The default
-`navTo` and `_navSelectTo` now call `engine.revealNode(path)`: virtual scroll moves
+`focusAndSelectNode` and `_extendSelectionTo` now call `engine.revealNode(path)`: virtual scroll moves
 the offset to the row's nearest edge first (so the pending render includes it), then
 after the render the row's `scrollIntoView({ block: 'nearest' })` runs (retried over
 frames while progressive rendering catches up; a newer move supersedes). Unlike
 svelte (centers via `scrollToPath`), it only scrolls when the row is off-screen.
-Clicks don't scroll; an overridden `navTo` controls it. Tests:
+Clicks don't scroll; an overridden `focusAndSelectNode` controls it. Tests:
 `keyboard-scroll.spec.ts` (PageDown ×3, no-scroll inside the viewport, End/Home,
-Shift+End, click on a partly hidden row, `navTo` override, virtual End/Home + PageDown).
+Shift+End, click on a partly hidden row, `focusAndSelectNode` override, virtual End/Home + PageDown).
 
 ## 5. ~~(TV-5) Multi-drag top-level absorption doesn't move~~ — closed (not reproducible)
 

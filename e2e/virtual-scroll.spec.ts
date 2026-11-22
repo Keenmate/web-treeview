@@ -77,7 +77,7 @@ test.describe('virtual-scroll', () => {
   });
 });
 
-test.describe('enable-flat-rendering', () => {
+test.describe('flat-indent-size', () => {
   test('rows are siblings, indented by (level − 1) × flat-indent-size', async ({ page }) => {
     await page.goto(`${PAGE}?mode=flat`);
     await expect(nodeByPath(page, '1.1.1')).toBeVisible();

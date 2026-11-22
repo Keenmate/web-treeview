@@ -579,14 +579,14 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
-  copyNodeWithDescendants(
+  duplicateNode(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
     transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null,
     siblingPath?: string,
     position?: 'before' | 'after'
   ): any {
-    return this.#live?.copyNodeWithDescendants(sourceNode, targetParentPath, transform, siblingPath, position);
+    return this.#live?.duplicateNode(sourceNode, targetParentPath, transform, siblingPath, position);
   }
 
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any {
@@ -797,25 +797,25 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
-  navTo(path: string): void { this.#live?.navTo(path); }
-  navNext(): void { this.#live?.navNext(); }
-  navPrev(): void { this.#live?.navPrev(); }
-  navNextSibling(): void { this.#live?.navNextSibling(); }
-  navPrevSibling(): void { this.#live?.navPrevSibling(); }
-  navInto(): void { this.#live?.navInto(); }
-  navOut(): void { this.#live?.navOut(); }
-  navBackOut(): void { this.#live?.navBackOut(); }
-  navToggle(): void { this.#live?.navToggle(); }
-  navFirst(): void { this.#live?.navFirst(); }
-  navLast(): void { this.#live?.navLast(); }
-  navPageDown(): void { this.#live?.navPageDown(); }
-  navPageUp(): void { this.#live?.navPageUp(); }
-  navSelectNext(): void { this.#live?.navSelectNext(); }
-  navSelectPrev(): void { this.#live?.navSelectPrev(); }
-  navSelectFirst(): void { this.#live?.navSelectFirst(); }
-  navSelectLast(): void { this.#live?.navSelectLast(); }
-  navSelectPageDown(): void { this.#live?.navSelectPageDown(); }
-  navSelectPageUp(): void { this.#live?.navSelectPageUp(); }
+  focusAndSelectNode(path: string): void { this.#live?.focusAndSelectNode(path); }
+  focusNext(): void { this.#live?.focusNext(); }
+  focusPrevious(): void { this.#live?.focusPrevious(); }
+  focusNextAtLevel(): void { this.#live?.focusNextAtLevel(); }
+  focusPreviousAtLevel(): void { this.#live?.focusPreviousAtLevel(); }
+  focusFirstChild(): void { this.#live?.focusFirstChild(); }
+  focusParent(): void { this.#live?.focusParent(); }
+  collapseParent(): void { this.#live?.collapseParent(); }
+  toggleFocusedNodeExpanded(): void { this.#live?.toggleFocusedNodeExpanded(); }
+  focusFirst(): void { this.#live?.focusFirst(); }
+  focusLast(): void { this.#live?.focusLast(); }
+  focusNextPage(): void { this.#live?.focusNextPage(); }
+  focusPreviousPage(): void { this.#live?.focusPreviousPage(); }
+  extendSelectionNext(): void { this.#live?.extendSelectionNext(); }
+  extendSelectionPrevious(): void { this.#live?.extendSelectionPrevious(); }
+  extendSelectionToFirst(): void { this.#live?.extendSelectionToFirst(); }
+  extendSelectionToLast(): void { this.#live?.extendSelectionToLast(); }
+  extendSelectionNextPage(): void { this.#live?.extendSelectionNextPage(); }
+  extendSelectionPreviousPage(): void { this.#live?.extendSelectionPreviousPage(); }
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
 

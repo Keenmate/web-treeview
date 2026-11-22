@@ -139,7 +139,7 @@ test.describe('ArrowRight / ArrowLeft — descend and ascend', () => {
   });
 });
 
-// ── Backspace: navBackOut (collapse parent, focus parent) ──────────────────
+// ── Backspace: collapseParent (collapse parent, focus parent) ──────────────────
 
 test.describe('Backspace — collapse parent and focus it', () => {
   test('Backspace collapses the focused node\'s parent and moves focus there', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('Backspace — collapse parent and focus it', () => {
   });
 });
 
-// ── Enter: navToggle (Space toggles selection — e2e/events.spec.ts) ───────
+// ── Enter: toggleFocusedNodeExpanded (Space toggles selection — e2e/events.spec.ts) ───────
 
 test.describe('Enter — toggle expand state of focused node', () => {
   test('Enter collapses an expanded parent', async ({ page }) => {
@@ -260,7 +260,7 @@ test.describe('Shift+ArrowDown / Shift+ArrowUp — extend selection by sibling',
 
     await page.keyboard.press('Shift+ArrowDown');
 
-    // navSelectNext walks to the next level-2 sibling → '1.2'.
+    // extendSelectionNext walks to the next level-2 sibling → '1.2'.
     // Range fills visible-flat from '1.1' to '1.2' = [1.1, 1.1.1, 1.1.2, 1.2].
     await expect(page.getByTestId('focused-path')).toHaveText('1.2');
     await expect(page.getByTestId('selected-size')).toHaveText('4');
@@ -372,7 +372,7 @@ test.describe('navigationOverrides', () => {
     // ArrowDown → next VISIBLE node (descends into children) instead of next sibling.
     await page.evaluate(() => {
       (document.getElementById('tree') as any).navigationOverrides = {
-        navNextSibling() { (this as any).navNext(); },
+        focusNextAtLevel() { (this as any).focusNext(); },
       };
     });
     await clickToFocus(page, '1');
@@ -393,19 +393,19 @@ test.describe('navigationOverrides', () => {
   test('the controller nav methods route through the override too', async ({ page }) => {
     await page.evaluate(() => {
       const tree = document.getElementById('tree') as any;
-      tree.navigationOverrides = { navPageDown() { (this as any).navTo('4'); } };
+      tree.navigationOverrides = { focusNextPage() { (this as any).focusAndSelectNode('4'); } };
     });
     await clickToFocus(page, '1');
-    await page.evaluate(() => (document.getElementById('tree') as any).controller.navPageDown());
+    await page.evaluate(() => (document.getElementById('tree') as any).controller.focusNextPage());
     await expect(page.getByTestId('focused-path')).toHaveText('4');
   });
 
-  test('overriding navTo changes every built-in move', async ({ page }) => {
+  test('overriding focusAndSelectNode changes every built-in move', async ({ page }) => {
     await page.evaluate(() => {
       const w = window as any;
       w.__navToCalls = [];
       (document.getElementById('tree') as any).navigationOverrides = {
-        navTo(path: string) { w.__navToCalls.push(path); },
+        focusAndSelectNode(path: string) { w.__navToCalls.push(path); },
       };
     });
     await clickToFocus(page, '1');
@@ -419,13 +419,13 @@ test.describe('navigationOverrides', () => {
   test('reassigning at runtime swaps the behaviour; null restores the defaults', async ({ page }) => {
     await clickToFocus(page, '1');
     await page.evaluate(() => {
-      (document.getElementById('tree') as any).navigationOverrides = { navNextSibling() { (this as any).navTo('3'); } };
+      (document.getElementById('tree') as any).navigationOverrides = { focusNextAtLevel() { (this as any).focusAndSelectNode('3'); } };
     });
     await page.keyboard.press('ArrowDown');
     await expect(page.getByTestId('focused-path')).toHaveText('3');
 
     await page.evaluate(() => {
-      (document.getElementById('tree') as any).navigationOverrides = { navNextSibling() { (this as any).navTo('5'); } };
+      (document.getElementById('tree') as any).navigationOverrides = { focusNextAtLevel() { (this as any).focusAndSelectNode('5'); } };
     });
     await page.keyboard.press('Home');
     await page.keyboard.press('ArrowDown');
@@ -442,7 +442,7 @@ test.describe('navigationOverrides', () => {
       const w = window as any;
       w.__overrideCalls = 0;
       const tree = document.getElementById('tree') as any;
-      tree.navigationOverrides = { navPageDown() { w.__overrideCalls++; } };
+      tree.navigationOverrides = { focusNextPage() { w.__overrideCalls++; } };
       tree.beforeKeydownCallback = (ctx: { event: KeyboardEvent }) => (ctx.event.key === 'PageDown' ? false : undefined);
     });
     await clickToFocus(page, '1');

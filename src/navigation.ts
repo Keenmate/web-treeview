@@ -5,52 +5,52 @@
  * individual method via `navigationOverrides` (a {@link TreeNavigationOverrides}).
  * The merged object is `{ ...defaults, ...overrides }`, so a method left out keeps
  * its default. Methods are called on the merged object — inside a `function`
- * (non-arrow) override `this` is the active navigation, so `this.navTo(path)`
+ * (non-arrow) override `this` is the active navigation, so `this.focusAndSelectNode(path)`
  * reaches the (possibly overridden) primitive. The defaults move through
- * `navTo`, so overriding `navTo` changes every built-in move.
+ * `focusAndSelectNode`, so overriding `focusAndSelectNode` changes every built-in move.
  */
 
 export interface TreeNavigation<T> {
   /** Select a node and focus it (core navigation primitive) */
-  navTo(path: string): void;
+  focusAndSelectNode(path: string): void;
   /** Navigate to the next visible node */
-  navNext(): void;
+  focusNext(): void;
   /** Navigate to the previous visible node */
-  navPrev(): void;
+  focusPrevious(): void;
   /** ArrowDown — move to the next visible node at the same level */
-  navNextSibling(): void;
+  focusNextAtLevel(): void;
   /** ArrowUp — move to the previous visible node at the same level */
-  navPrevSibling(): void;
+  focusPreviousAtLevel(): void;
   /** ArrowRight — move to the first child (expands if collapsed) */
-  navInto(): void;
+  focusFirstChild(): void;
   /** ArrowLeft — move to the parent node (no collapse) */
-  navOut(): void;
+  focusParent(): void;
   /** Backspace — collapse the parent and move to it */
-  navBackOut(): void;
+  collapseParent(): void;
   /** Enter — toggle expand/collapse of the current node */
-  navToggle(): void;
+  toggleFocusedNodeExpanded(): void;
   /** Home — move to the first visible node */
-  navFirst(): void;
+  focusFirst(): void;
   /** End — move to the last visible node */
-  navLast(): void;
+  focusLast(): void;
   /** PageDown — jump forward ~10 visible nodes */
-  navPageDown(): void;
+  focusNextPage(): void;
   /** PageUp — jump back ~10 visible nodes */
-  navPageUp(): void;
+  focusPreviousPage(): void;
 
   // ── Shift+navigation: extend the selected range (no-op in single mode) ──
   /** Shift+ArrowDown — extend the selection to the next visible node at the same level */
-  navSelectNext(): void;
+  extendSelectionNext(): void;
   /** Shift+ArrowUp — extend the selection to the previous visible node at the same level */
-  navSelectPrev(): void;
+  extendSelectionPrevious(): void;
   /** Shift+Home — extend the selection to the first visible node */
-  navSelectFirst(): void;
+  extendSelectionToFirst(): void;
   /** Shift+End — extend the selection to the last visible node */
-  navSelectLast(): void;
+  extendSelectionToLast(): void;
   /** Shift+PageDown — extend the selection forward ~10 visible nodes */
-  navSelectPageDown(): void;
+  extendSelectionNextPage(): void;
   /** Shift+PageUp — extend the selection back ~10 visible nodes */
-  navSelectPageUp(): void;
+  extendSelectionPreviousPage(): void;
 }
 
 export type TreeNavigationOverrides<T> = Partial<TreeNavigation<T>>;

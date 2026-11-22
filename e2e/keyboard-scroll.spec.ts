@@ -2,7 +2,7 @@ import { test, expect, type Page, nodeByPath, nodeContent } from './fixtures';
 
 /**
  * Keyboard navigation scrolls the focused node into view (svelte-treeview's
- * navTo → scroll, with block 'nearest'): /test/keyboard-scroll.html — 200 root
+ * focusAndSelectNode → scroll, with block 'nearest'): /test/keyboard-scroll.html — 200 root
  * rows in a 300px scroll box (#box). Virtual scroll: /test/virtual-scroll.html.
  */
 
@@ -56,7 +56,7 @@ test('End scrolls to the bottom, Home back to the top', async ({ page }) => {
   await expect.poll(() => boxScrollTop(page)).toBe(0);
 });
 
-test('Shift+End (navSelectLast) scrolls too', async ({ page }) => {
+test('Shift+End (extendSelectionToLast) scrolls too', async ({ page }) => {
   await load(page);
   await page.evaluate(() => (window as any).tree.setAttribute('selection-mode', 'multiple'));
   await page.keyboard.press('Shift+End');
@@ -80,7 +80,7 @@ test('a mouse click on a partly hidden row does not scroll', async ({ page }) =>
   expect(await boxScrollTop(page)).toBe(0);
 });
 
-test('a navigationOverrides.navTo override controls the scroll (no scroll when it does not)', async ({ page }) => {
+test('a navigationOverrides.focusAndSelectNode override controls the scroll (no scroll when it does not)', async ({ page }) => {
   await load(page, '?override=1');
   await page.keyboard.press('PageDown');
   await page.keyboard.press('PageDown');

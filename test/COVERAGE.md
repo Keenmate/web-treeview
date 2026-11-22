@@ -55,7 +55,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Custom CSS (core `createCustomStyles`): `custom-styles` / `customStyles` (callback wins), page-wide `window.components['web-treeview'].customStyles` on every tree + instance override (page `<style>` first), page `getCustomStylesCallback(ctx)` per tree, `@import` linked once in the document head and released on `destroy()` | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` (+ `custom-import.css`) |
 | `body-class`, `leaf-icon-class`, `align-node-icons` (default on / off) | ✓ | `render-callbacks.spec.ts` | `render-callbacks.html` |
 | Virtual scroll (DOM rows ≈ viewport + overscan, scroll window, far `scrollToPath`; a `25rem` container height sizes the window by the measured height) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
-| `enable-flat-rendering` + `flat-indent-size` (CSS length: bare number = px, invalid refused), runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
+| `flat-indent-size` (CSS length: bare number = px, invalid refused), runtime changes incl. `enable-progressive-render` (NOTES #9) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | `enable-progressive-render` batches complete, also after a mid-flight tree change (NOTES #10) | ✓ | `virtual-scroll.spec.ts` | `virtual-scroll.html` |
 | Lazy load via `beforeExpandCallback` (async load → `addBranch` → expand; re-expand no reload) | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
 | `beforeExpandCallback`: `false` cancels, rejection (warn), spinner + `aria-busy` while pending, repeat toggles ignored, keyboard waits for the load, no call for `expandAll` | ✓ | `lazy-load.spec.ts` | `lazy-load.html` |
@@ -115,8 +115,8 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | --- | :-: | --- | --- |
 | Arrow Up/Down/Left/Right, Backspace, Enter (expand / collapse), Home/End | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
 | PageUp/PageDown + Shift+Arrow/Home/End/PageUp/PageDown extend (multi; no-op in single) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
-| `navigationOverrides` (single-key override, `navTo` override, controller routing, runtime swap / `null`, `beforeKeydownCallback` first) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
-| Keyboard moves scroll the focused node into view (`block: 'nearest'`): PageDown ×3, End/Home, Shift+End, no scroll inside the viewport / on click, `navTo` override; virtual End/Home + PageDown | ✓ | `keyboard-scroll.spec.ts` | `keyboard-scroll.html`, `virtual-scroll.html` |
+| `navigationOverrides` (single-key override, `focusAndSelectNode` override, controller routing, runtime swap / `null`, `beforeKeydownCallback` first) | ✓ | `keyboard-nav.spec.ts` | `keyboard-nav.html` |
+| Keyboard moves scroll the focused node into view (`block: 'nearest'`): PageDown ×3, End/Home, Shift+End, no scroll inside the viewport / on click, `focusAndSelectNode` override; virtual End/Home + PageDown | ✓ | `keyboard-scroll.spec.ts` | `keyboard-scroll.html`, `virtual-scroll.html` |
 | `beforeScrollCallback`: ctx per source (`scroll-to-path` / `keyboard` / `paste`, container, default options), `false` skips (container + page still, `scrollToPath` resolves true), `{ block: 'start' }` re-aligns, keyboard instant; `scrollToPath` `shouldRevealContainer` reveals an off-screen tree / page stays put without it | ✓ | `before-scroll.spec.ts` | `before-scroll.html` |
 | Motion level (core rc17): default speeds, `motion` none / snappy / smooth on the element, `window.components.motion`, a `data-motion` section, `none` stops the drop-zone bob, OS reduced motion beats `motion="smooth"` | ✓ | `motion.spec.ts` | `motion.html` |
 | Delete key + `beforeDeleteCallback` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
@@ -126,7 +126,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Copy + paste keeps both rows rendered (rows keyed by path, NOTES #8) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
-| `navTo/Next/Prev/First/Last/Into/Out/Toggle/NextSibling/PrevSibling` API | ✓ | `nav-api.spec.ts` | `nav-api.html` |
+| `focusAndSelectNode/Next/Prev/First/Last/Into/Out/Toggle/NextSibling/PrevSibling` API | ✓ | `nav-api.spec.ts` | `nav-api.html` |
 
 ## 6. Clipboard & mutation API
 
@@ -143,7 +143,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | `cancelCut` / `hasClipboardContent` / `getClipboardOperation` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-paste=false` (event with entries, no mutation) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-copy=false` (copy-drop only notifies) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
-| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/copyNodeWithDescendants/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
+| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/duplicateNode/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 | `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 
 ## 7. Drag & drop

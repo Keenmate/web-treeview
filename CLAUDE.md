@@ -278,7 +278,7 @@ Neither is "more mature" — svelte-treeview is broader (two rendering modes, ea
   `nodeOutputTransformationCallback({ data, …NodeTransformContext })` = OUTPUT/egress (clean/redact
   at snapshot), `nodeInputTransformationCallback({ data, … })` = INPUT/ingress (derive ids/names at
   insert; returning `null` skips a node + its subtree). The `pasteNodes` / `duplicateNodes` /
-  `copyNodeWithDescendants` transform args take the same one ctx.
+  `duplicateNode` transform args take the same one ctx.
 - Events (present tense, `composed: false`, each with an `on*` twin that receives the DETAIL):
   `node-click` (not fired by a checkbox toggle), `node-double-click`, `node-copy` / `node-cut` /
   `node-delete` (`{ operation?, paths, nodes }`), `node-paste` (detail = the `PasteResult`; not

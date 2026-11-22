@@ -616,10 +616,6 @@
             },
             {
               "kind": "field",
-              "name": "isFlatRenderingEnabled"
-            },
-            {
-              "kind": "field",
               "name": "flatIndentSize"
             },
             {
@@ -1602,7 +1598,7 @@
             },
             {
               "kind": "method",
-              "name": "copyNodeWithDescendants",
+              "name": "duplicateNode",
               "return": {
                 "type": {
                   "text": "{ success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string }"
@@ -2288,7 +2284,7 @@
             },
             {
               "kind": "method",
-              "name": "navTo",
+              "name": "focusAndSelectNode",
               "return": {
                 "type": {
                   "text": "void"
@@ -2306,7 +2302,7 @@
             },
             {
               "kind": "method",
-              "name": "navNext",
+              "name": "focusNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -2316,7 +2312,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrev",
+              "name": "focusPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -2326,7 +2322,7 @@
             },
             {
               "kind": "method",
-              "name": "navNextSibling",
+              "name": "focusNextAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -2336,7 +2332,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrevSibling",
+              "name": "focusPreviousAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -2346,7 +2342,7 @@
             },
             {
               "kind": "method",
-              "name": "navInto",
+              "name": "focusFirstChild",
               "return": {
                 "type": {
                   "text": "void"
@@ -2356,7 +2352,7 @@
             },
             {
               "kind": "method",
-              "name": "navOut",
+              "name": "focusParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -2366,7 +2362,7 @@
             },
             {
               "kind": "method",
-              "name": "navBackOut",
+              "name": "collapseParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -2376,7 +2372,7 @@
             },
             {
               "kind": "method",
-              "name": "navToggle",
+              "name": "toggleFocusedNodeExpanded",
               "return": {
                 "type": {
                   "text": "void"
@@ -2386,7 +2382,7 @@
             },
             {
               "kind": "method",
-              "name": "navFirst",
+              "name": "focusFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -2396,7 +2392,7 @@
             },
             {
               "kind": "method",
-              "name": "navLast",
+              "name": "focusLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -2406,7 +2402,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageDown",
+              "name": "focusNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -2416,7 +2412,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageUp",
+              "name": "focusPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -2426,7 +2422,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectNext",
+              "name": "extendSelectionNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -2436,7 +2432,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPrev",
+              "name": "extendSelectionPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -2446,7 +2442,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectFirst",
+              "name": "extendSelectionToFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -2456,7 +2452,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectLast",
+              "name": "extendSelectionToLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -2466,7 +2462,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageDown",
+              "name": "extendSelectionNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -2476,7 +2472,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageUp",
+              "name": "extendSelectionPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -5783,7 +5779,7 @@
             },
             {
               "kind": "method",
-              "name": "copyNodeWithDescendants",
+              "name": "duplicateNode",
               "parameters": [
                 {
                   "name": "sourceNode",
@@ -6375,7 +6371,7 @@
             },
             {
               "kind": "method",
-              "name": "navTo",
+              "name": "focusAndSelectNode",
               "return": {
                 "type": {
                   "text": "void"
@@ -6392,7 +6388,7 @@
             },
             {
               "kind": "method",
-              "name": "navNext",
+              "name": "focusNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -6401,7 +6397,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrev",
+              "name": "focusPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -6410,7 +6406,7 @@
             },
             {
               "kind": "method",
-              "name": "navNextSibling",
+              "name": "focusNextAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -6419,7 +6415,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrevSibling",
+              "name": "focusPreviousAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -6428,7 +6424,7 @@
             },
             {
               "kind": "method",
-              "name": "navInto",
+              "name": "focusFirstChild",
               "return": {
                 "type": {
                   "text": "void"
@@ -6437,7 +6433,7 @@
             },
             {
               "kind": "method",
-              "name": "navOut",
+              "name": "focusParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -6446,7 +6442,7 @@
             },
             {
               "kind": "method",
-              "name": "navBackOut",
+              "name": "collapseParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -6455,7 +6451,7 @@
             },
             {
               "kind": "method",
-              "name": "navToggle",
+              "name": "toggleFocusedNodeExpanded",
               "return": {
                 "type": {
                   "text": "void"
@@ -6464,7 +6460,7 @@
             },
             {
               "kind": "method",
-              "name": "navFirst",
+              "name": "focusFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -6473,7 +6469,7 @@
             },
             {
               "kind": "method",
-              "name": "navLast",
+              "name": "focusLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -6482,7 +6478,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageDown",
+              "name": "focusNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -6491,7 +6487,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageUp",
+              "name": "focusPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -6500,7 +6496,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectNext",
+              "name": "extendSelectionNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -6509,7 +6505,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPrev",
+              "name": "extendSelectionPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -6518,7 +6514,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectFirst",
+              "name": "extendSelectionToFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -6527,7 +6523,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectLast",
+              "name": "extendSelectionToLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -6536,7 +6532,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageDown",
+              "name": "extendSelectionNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -6545,7 +6541,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageUp",
+              "name": "extendSelectionPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -7447,7 +7443,7 @@
             },
             {
               "kind": "method",
-              "name": "copyNodeWithDescendants",
+              "name": "duplicateNode",
               "return": {
                 "type": {
                   "text": "any"
@@ -8277,7 +8273,7 @@
             },
             {
               "kind": "method",
-              "name": "navTo",
+              "name": "focusAndSelectNode",
               "return": {
                 "type": {
                   "text": "void"
@@ -8294,7 +8290,7 @@
             },
             {
               "kind": "method",
-              "name": "navNext",
+              "name": "focusNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -8303,7 +8299,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrev",
+              "name": "focusPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -8312,7 +8308,7 @@
             },
             {
               "kind": "method",
-              "name": "navNextSibling",
+              "name": "focusNextAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -8321,7 +8317,7 @@
             },
             {
               "kind": "method",
-              "name": "navPrevSibling",
+              "name": "focusPreviousAtLevel",
               "return": {
                 "type": {
                   "text": "void"
@@ -8330,7 +8326,7 @@
             },
             {
               "kind": "method",
-              "name": "navInto",
+              "name": "focusFirstChild",
               "return": {
                 "type": {
                   "text": "void"
@@ -8339,7 +8335,7 @@
             },
             {
               "kind": "method",
-              "name": "navOut",
+              "name": "focusParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -8348,7 +8344,7 @@
             },
             {
               "kind": "method",
-              "name": "navBackOut",
+              "name": "collapseParent",
               "return": {
                 "type": {
                   "text": "void"
@@ -8357,7 +8353,7 @@
             },
             {
               "kind": "method",
-              "name": "navToggle",
+              "name": "toggleFocusedNodeExpanded",
               "return": {
                 "type": {
                   "text": "void"
@@ -8366,7 +8362,7 @@
             },
             {
               "kind": "method",
-              "name": "navFirst",
+              "name": "focusFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -8375,7 +8371,7 @@
             },
             {
               "kind": "method",
-              "name": "navLast",
+              "name": "focusLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -8384,7 +8380,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageDown",
+              "name": "focusNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -8393,7 +8389,7 @@
             },
             {
               "kind": "method",
-              "name": "navPageUp",
+              "name": "focusPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -8402,7 +8398,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectNext",
+              "name": "extendSelectionNext",
               "return": {
                 "type": {
                   "text": "void"
@@ -8411,7 +8407,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPrev",
+              "name": "extendSelectionPrevious",
               "return": {
                 "type": {
                   "text": "void"
@@ -8420,7 +8416,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectFirst",
+              "name": "extendSelectionToFirst",
               "return": {
                 "type": {
                   "text": "void"
@@ -8429,7 +8425,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectLast",
+              "name": "extendSelectionToLast",
               "return": {
                 "type": {
                   "text": "void"
@@ -8438,7 +8434,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageDown",
+              "name": "extendSelectionNextPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -8447,7 +8443,7 @@
             },
             {
               "kind": "method",
-              "name": "navSelectPageUp",
+              "name": "extendSelectionPreviousPage",
               "return": {
                 "type": {
                   "text": "void"
@@ -9355,17 +9351,6 @@
             },
             {
               "kind": "field",
-              "name": "isFlatRenderingEnabled",
-              "privacy": "public",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "true",
-              "attribute": "enable-flat-rendering",
-              "description": "Render the visible nodes as a flat list (perf)."
-            },
-            {
-              "kind": "field",
               "name": "flatIndentSize",
               "privacy": "public",
               "type": {
@@ -9491,7 +9476,7 @@
                 "text": "TreeNavigationOverrides | null"
               },
               "default": "null",
-              "description": "Replace individual keyboard-navigation methods (navNextSibling, navPageDown, navSelectNext, …), merged over the defaults. JS property only; `null` restores the defaults."
+              "description": "Replace individual keyboard-navigation methods (focusNextAtLevel, focusNextPage, extendSelectionNext, …), merged over the defaults. JS property only; `null` restores the defaults."
             },
             {
               "kind": "field",
@@ -10863,15 +10848,6 @@
               "description": "Arm the drop target while a tree NODE is dragged anywhere over the page (any tree): the host gets the `armed` attribute + `:state(armed)`, and an empty tree shows its drop zone at once with `--wtv-drop-placeholder-bg-armed` (the zone under the pointer keeps the engaged look). Cleared on drop anywhere, when the drag leaves the window, on Escape / `dragend`, and on disconnect. Never armed while `drag-drop-mode=\"none\"`, disabled or read-only. One shared page listener for all instances (same option as web-dropzone)."
             },
             {
-              "name": "enable-flat-rendering",
-              "fieldName": "isFlatRenderingEnabled",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "true",
-              "description": "Render the visible nodes as a flat list (perf)."
-            },
-            {
               "name": "flat-indent-size",
               "fieldName": "flatIndentSize",
               "type": {
@@ -11351,7 +11327,7 @@
             },
             {
               "name": "--wtv-font-family",
-              "description": "Component font family (overrides --base-font-family)"
+              "description": "Component font family (overrides --base-font-family). Input variable: not declared on :host, read as var(--wtv-font-family, var(--base-font-family, …))"
             },
             {
               "name": "--wtv-font-size-xs",
@@ -11899,103 +11875,103 @@
             },
             {
               "name": "--wtv-context-menu-z-index",
-              "description": "Menu z-index"
+              "description": "Menu z-index. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-bg",
-              "description": "Menu background"
+              "description": "Menu background. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-bg-hover",
-              "description": "Item hover background"
+              "description": "Item hover background. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-text-color-hover",
-              "description": "Hover text color (unset: unchanged)"
+              "description": "Hover text color (unset: unchanged). Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-text-color",
-              "description": "Item text color"
+              "description": "Item text color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-border",
-              "description": "Menu border shorthand"
+              "description": "Menu border shorthand. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-border-radius",
-              "description": "Menu radius"
+              "description": "Menu radius. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-box-shadow",
-              "description": "Menu shadow"
+              "description": "Menu shadow. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-min-width",
-              "description": "Menu min width"
+              "description": "Menu min width. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-padding",
-              "description": "Menu padding"
+              "description": "Menu padding. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-font-size",
-              "description": "Item font size"
+              "description": "Item font size. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-item-padding",
-              "description": "Item padding"
+              "description": "Item padding. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-item-gap",
-              "description": "Gap between icon, label, shortcut, arrow"
+              "description": "Gap between icon, label, shortcut, arrow. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-toggled-color",
-              "description": "Toggled item color"
+              "description": "Toggled item color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-icon-width",
-              "description": "Icon column width"
+              "description": "Icon column width. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-icon-font-size",
-              "description": "Icon font size"
+              "description": "Icon font size. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-arrow-font-size",
-              "description": "Submenu arrow font size (unset → --km-menu-arrow-font-size, 0.8em)"
+              "description": "Submenu arrow font size (unset → --km-menu-arrow-font-size, 0.8em). Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-shortcut-color",
-              "description": "Shortcut text (and svelte submenu arrow) color"
+              "description": "Shortcut text (and svelte submenu arrow) color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-shortcut-font-size",
-              "description": "Shortcut text size"
+              "description": "Shortcut text size. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-divider-label-color",
-              "description": "Named divider label color"
+              "description": "Named divider label color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-danger-color",
-              "description": "Danger item text color"
+              "description": "Danger item text color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-danger-bg-hover",
-              "description": "Danger item hover background"
+              "description": "Danger item hover background. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-divider-color",
-              "description": "Divider line color"
+              "description": "Divider line color. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-divider-margin",
-              "description": "Divider margin"
+              "description": "Divider margin. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-context-menu-disabled-opacity",
-              "description": "Disabled item opacity"
+              "description": "Disabled item opacity. Input variable: unset by default, maps onto core --_km-menu-* (unset → page-wide --km-menu-* → --base-* → core default)"
             },
             {
               "name": "--wtv-loader-icon",

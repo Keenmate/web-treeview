@@ -485,7 +485,7 @@
             return;
         }
 
-        // Cross-tree drags - use copyNodeWithDescendants to include children.
+        // Cross-tree drags - use duplicateNode to include children.
         let parentPath, siblingPath, copyPosition;
         if (dropNode === null) {
             parentPath = '';
@@ -513,7 +513,7 @@
             const usePos = i === 0 ? copyPosition : undefined;
             const rootSort = batchSort;
             batchSort += 10;
-            const result = targetTreeEl.copyNodeWithDescendants(
+            const result = targetTreeEl.duplicateNode(
                 srcNode,
                 useParent,
                 ({ data }) => ({

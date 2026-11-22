@@ -137,21 +137,21 @@ test('duplicateNodes without a transform keeps every row rendered (duplicate ids
   await expect.poll(() => domOutline(page)).toEqual(await outline(page));
 });
 
-test('copyNodeWithDescendants copies the subtree through the transform', async ({ page }) => {
+test('duplicateNode copies the subtree through the transform', async ({ page }) => {
   await load(page);
   const r = await run(
     page,
-    `tree.copyNodeWithDescendants(tree.getNodeByPath('2'), '3', ({ data }) => ({ ...data, id: data.id * 1000 }))`
+    `tree.duplicateNode(tree.getNodeByPath('2'), '3', ({ data }) => ({ ...data, id: data.id * 1000 }))`
   );
   expect(r).toBeTruthy();
   await expect.poll(() => domOutline(page)).toEqual([...INITIAL, '  Veg', '    Carrot', '      Baby carrot']);
 });
 
-test('copyNodeWithDescendants: transform returning null skips that node', async ({ page }) => {
+test('duplicateNode: transform returning null skips that node', async ({ page }) => {
   await load(page);
   await run(
     page,
-    `tree.copyNodeWithDescendants(tree.getNodeByPath('2'), '3', ({ data }) => data.name === 'Baby carrot' ? null : ({ ...data, id: data.id * 1000 }))`
+    `tree.duplicateNode(tree.getNodeByPath('2'), '3', ({ data }) => data.name === 'Baby carrot' ? null : ({ ...data, id: data.id * 1000 }))`
   );
   await expect.poll(() => domOutline(page)).toEqual([...INITIAL, '  Veg', '    Carrot']);
 });

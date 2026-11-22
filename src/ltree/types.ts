@@ -272,7 +272,7 @@ export interface Ltree<T> {
 	applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
 
 	// Cross-tree copy method
-	copyNodeWithDescendants(
+	duplicateNode(
 		sourceNode: LTreeNode<T>,
 		targetParentPath: string,
 		transformData: (data: T, node: LTreeNode<T>) => T | null,

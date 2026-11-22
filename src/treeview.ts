@@ -39,13 +39,13 @@ const CONTROLLER_METHODS = [
   'expandAll', 'collapseAll', 'expandNodes', 'collapseNodes', 'toggleNodeExpanded', 'sortNodes', 'sortAll',
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree', 'refreshNode', 'refreshSiblings', 'isNodeDropAllowed',
-  'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNodes',
+  'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNode', 'duplicateNodes',
   'applyChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected', 'toggleFocusedSelect',
   'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
-  'isNodeChecked', 'focusNode', 'clearFocus', 'navTo', 'navNext', 'navPrev', 'navNextSibling',
-  'navPrevSibling', 'navInto', 'navOut', 'navBackOut', 'navToggle', 'navFirst', 'navLast', 'navPageDown', 'navPageUp',
-  'navSelectNext', 'navSelectPrev', 'navSelectFirst', 'navSelectLast', 'navSelectPageDown', 'navSelectPageUp', 'copyNodes', 'cutNodes',
+  'isNodeChecked', 'focusNode', 'clearFocus', 'focusAndSelectNode', 'focusNext', 'focusPrevious', 'focusNextAtLevel',
+  'focusPreviousAtLevel', 'focusFirstChild', 'focusParent', 'collapseParent', 'toggleFocusedNodeExpanded', 'focusFirst', 'focusLast', 'focusNextPage', 'focusPreviousPage',
+  'extendSelectionNext', 'extendSelectionPrevious', 'extendSelectionToFirst', 'extendSelectionToLast', 'extendSelectionNextPage', 'extendSelectionPreviousPage', 'copyNodes', 'cutNodes',
   'pasteNodes', 'cancelCut', 'removeNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
   'closeContextMenu', 'activateMenuItem',
 ] as const satisfies readonly (keyof TreeViewController)[];
@@ -660,14 +660,14 @@ export class TreeViewEngine<T = any> {
   }
 
   /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
-  copyNodeWithDescendants(
+  duplicateNode(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
     transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null,
     siblingPath?: string,
     position?: 'before' | 'after'
   ) {
-    return this.engine.copyNodeWithDescendants(
+    return this.engine.duplicateNode(
       sourceNode, targetParentPath, (data, node) => transform(this.ctx({ data, node })), siblingPath, position);
   }
 
@@ -824,25 +824,25 @@ export class TreeViewEngine<T = any> {
 
   // ── Navigation (proxy to engine) ────────────────────────────────────
 
-  navTo(path: string): void { this.engine.navTo(path); }
-  navNext(): void { this.engine.navNext(); }
-  navPrev(): void { this.engine.navPrev(); }
-  navNextSibling(): void { this.engine.navNextSibling(); }
-  navPrevSibling(): void { this.engine.navPrevSibling(); }
-  navInto(): void { this.engine.navInto(); }
-  navOut(): void { this.engine.navOut(); }
-  navBackOut(): void { this.engine.navBackOut(); }
-  navToggle(): void { this.engine.navToggle(); }
-  navFirst(): void { this.engine.navFirst(); }
-  navLast(): void { this.engine.navLast(); }
-  navPageDown(): void { this.engine.navPageDown(); }
-  navPageUp(): void { this.engine.navPageUp(); }
-  navSelectNext(): void { this.engine.navSelectNext(); }
-  navSelectPrev(): void { this.engine.navSelectPrev(); }
-  navSelectFirst(): void { this.engine.navSelectFirst(); }
-  navSelectLast(): void { this.engine.navSelectLast(); }
-  navSelectPageDown(): void { this.engine.navSelectPageDown(); }
-  navSelectPageUp(): void { this.engine.navSelectPageUp(); }
+  focusAndSelectNode(path: string): void { this.engine.focusAndSelectNode(path); }
+  focusNext(): void { this.engine.focusNext(); }
+  focusPrevious(): void { this.engine.focusPrevious(); }
+  focusNextAtLevel(): void { this.engine.focusNextAtLevel(); }
+  focusPreviousAtLevel(): void { this.engine.focusPreviousAtLevel(); }
+  focusFirstChild(): void { this.engine.focusFirstChild(); }
+  focusParent(): void { this.engine.focusParent(); }
+  collapseParent(): void { this.engine.collapseParent(); }
+  toggleFocusedNodeExpanded(): void { this.engine.toggleFocusedNodeExpanded(); }
+  focusFirst(): void { this.engine.focusFirst(); }
+  focusLast(): void { this.engine.focusLast(); }
+  focusNextPage(): void { this.engine.focusNextPage(); }
+  focusPreviousPage(): void { this.engine.focusPreviousPage(); }
+  extendSelectionNext(): void { this.engine.extendSelectionNext(); }
+  extendSelectionPrevious(): void { this.engine.extendSelectionPrevious(); }
+  extendSelectionToFirst(): void { this.engine.extendSelectionToFirst(); }
+  extendSelectionToLast(): void { this.engine.extendSelectionToLast(); }
+  extendSelectionNextPage(): void { this.engine.extendSelectionNextPage(); }
+  extendSelectionPreviousPage(): void { this.engine.extendSelectionPreviousPage(); }
 
   // ── Clipboard (proxy to engine) ─────────────────────────────────────
 
@@ -991,7 +991,6 @@ export class TreeViewEngine<T = any> {
       rowAnimationLimit: o.rowAnimationLimit ?? undefined,
       initialBatchSize: o.initialBatchSize,
       maxBatchSize: o.maxBatchSize,
-      isFlatRenderingEnabled: o.isFlatRenderingEnabled ?? true,
       flatIndentSize: typeof o.flatIndentSize === 'number' ? `${o.flatIndentSize}px` : o.flatIndentSize,
 
       isVirtualScrollEnabled: o.isVirtualScrollEnabled ?? false,

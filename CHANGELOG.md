@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Removed — `isFlatRenderingEnabled` / `enable-flat-rendering` (2026-11-22)
+- Flat rows are the only rendering mode, so the input had nothing to switch: `false` only dropped the row
+  indent and the progressive batching. Rows are always indented by `flat-indent-size`; batching is
+  `enable-progressive-render`'s alone. svelte-treeview removed it in 5.0.0-rc16. No alias.
+
+### Changed — `copyNodeWithDescendants` → `duplicateNode` (2026-11-22)
+- One verb for "make a copy in the tree without the clipboard": `duplicateNode` (one subtree) next to
+  `duplicateNodes` (a batch). `copy*` stays the clipboard's (`copyNodes` / `cutNodes` / `pasteNodes`). Same
+  arguments and result; on the element, `el.controller` (it was missing from the facade), `TreeViewEngine` and `LTree`. Same in svelte-treeview
+  (5.0.0-rc18); `duplicate` is now in the Keenmate verb glossary (D-NC-13). No alias.
+
+### Changed — keyboard-navigation methods renamed: `nav*` → `focus*` / `extendSelection*` (2026-11-22)
+- The 19 keyboard-navigation methods (on the element, `el.controller`, `TreeViewEngine`, the `TreeNavigation`
+  interface and so the `navigationOverrides` keys) say what they do instead of the `nav` abbreviation (Keenmate
+  naming guideline: moving the cursor is `focus`; Shift+key grows a range, so `extendSelection`). Same in
+  svelte-treeview (5.0.0-rc18); no aliases. Behaviour unchanged.
+
+| Key | Was | Now |
+|---|---|---|
+| (API) | `navTo(path)` | `focusAndSelectNode(path)` — focus + replace the selection + scroll into view (NOT `focusNode`, which only moves the focus) |
+| (API) | `navNext` / `navPrev` | `focusNext` / `focusPrevious` |
+| ↓ / ↑ | `navNextSibling` / `navPrevSibling` | `focusNextAtLevel` / `focusPreviousAtLevel` — the next visible row at the same depth, which can be a cousin in another branch |
+| → | `navInto` | `focusFirstChild` (expands first if collapsed) |
+| ← | `navOut` | `focusParent` |
+| Backspace | `navBackOut` | `collapseParent` (collapses the parent, then focuses it) |
+| Enter | `navToggle` | `toggleFocusedNodeExpanded` |
+| Home / End | `navFirst` / `navLast` | `focusFirst` / `focusLast` |
+| PageDown / PageUp | `navPageDown` / `navPageUp` | `focusNextPage` / `focusPreviousPage` |
+| Shift+↓ / ↑ | `navSelectNext` / `navSelectPrev` | `extendSelectionNext` / `extendSelectionPrevious` |
+| Shift+Home / End | `navSelectFirst` / `navSelectLast` | `extendSelectionToFirst` / `extendSelectionToLast` |
+| Shift+PageDown / PageUp | `navSelectPageDown` / `navSelectPageUp` | `extendSelectionNextPage` / `extendSelectionPreviousPage` |
+
 ### Internal — base-variables sweep (C-BV-3 / C-BV-6) (2026-11-22)
 - `component-variables.manifest.json` marks the 26 unset-by-design knobs `"input": true` (the 25
   `--wtv-context-menu-*` pass-throughs to core `--_km-menu-*`, `--wtv-font-family`) and the 6 `--base-*` read

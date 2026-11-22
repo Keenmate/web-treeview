@@ -164,7 +164,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // Behaviour
   private _isLoading: boolean = false;
-  private _isFlatRenderingEnabled: boolean = true;
   private _flatIndentSize: string = 'var(--wtv-indent-size)';
   private _isProgressiveRenderEnabled: boolean = true;
   private _initialBatchSize: number = 20;
@@ -651,8 +650,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
   set isLoading(v: boolean) { this._isLoading = v; this._scheduleNotify(); }
 
-  get isFlatRenderingEnabled() { return this._isFlatRenderingEnabled; }
-  set isFlatRenderingEnabled(v: boolean) { this._isFlatRenderingEnabled = v; this._scheduleNotify(); }
 
   get flatIndentSize() { return this._flatIndentSize; }
   set flatIndentSize(v: string) { this._flatIndentSize = v; this._scheduleNotify(); }
@@ -896,7 +893,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  When virtual scroll is active, bypasses the progressive render filter
    *  because virtual scroll already limits rendered nodes to the visible window. */
   get allVisibleFlatNodes(): LTreeNode<T>[] {
-    if (!this._isVirtualScrollEnabled && this._isFlatRenderingEnabled && this._isProgressiveRenderEnabled) {
+    if (!this._isVirtualScrollEnabled && this._isProgressiveRenderEnabled) {
       return this.tree?.visibleFlatNodes?.filter(
         (n) => this.flatRenderedIds.has(n.path)
       ) ?? [];
@@ -970,7 +967,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
     this._isLoading = props.isLoading ?? false;
 
-    this._isFlatRenderingEnabled = props.isFlatRenderingEnabled ?? true;
     this._flatIndentSize = props.flatIndentSize ?? 'var(--wtv-indent-size)';
     this._isProgressiveRenderEnabled = props.isProgressiveRenderEnabled ?? true;
     this._initialBatchSize = props.initialBatchSize ?? 20;
@@ -1851,7 +1847,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return result;
   }
 
-  copyNodeWithDescendants(
+  duplicateNode(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
     transformData: (data: T, node: LTreeNode<T>) => T | null,
@@ -1859,7 +1855,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     position?: 'before' | 'after'
   ): { success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string } {
     this._skipInsertArray = true;
-    const result = this.tree?.copyNodeWithDescendants(
+    const result = this.tree?.duplicateNode(
       sourceNode, targetParentPath, transformData, siblingPath, position
     ) || { success: false, count: 0, error: 'Tree not initialized' };
     queueMicrotask(() => { this._skipInsertArray = false; });
@@ -2060,7 +2056,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         return transform(data, ctx);
       };
 
-      const result = tree.copyNodeWithDescendants(root, parentPath, wrapped, siblingPath, rootPosition);
+      const result = tree.duplicateNode(root, parentPath, wrapped, siblingPath, rootPosition);
       if (result.success && result.rootNode) {
         copiedNodes.push(result.rootNode);
         prevRootPath = result.rootNode.path;
@@ -2945,49 +2941,49 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── Navigation API (delegates to the active navigation strategy) ──
   //
-  // Every nav* method calls through `this._navigation` — the defaults from
+  // Every keyboard-navigation method (focus* / extendSelection* / collapseParent / toggleFocusedNodeExpanded) calls through `this._navigation` — the defaults from
   // `createDefaultNavigation()` merged with the consumer's `navigationOverrides`
-  // (svelte-treeview parity). The defaults move via `this._navigation.navTo`, so an
-  // overridden `navTo` applies to every built-in move.
+  // (svelte-treeview parity). The defaults move via `this._navigation.focusAndSelectNode`, so an
+  // overridden `focusAndSelectNode` applies to every built-in move.
 
   /** Navigate to a specific path (selects and focuses it). */
-  navTo(path: string): void { this._navigation.navTo(path); }
+  focusAndSelectNode(path: string): void { this._navigation.focusAndSelectNode(path); }
   /** Navigate to the next visible node. */
-  navNext(): void { this._navigation.navNext(); }
+  focusNext(): void { this._navigation.focusNext(); }
   /** Navigate to the previous visible node. */
-  navPrev(): void { this._navigation.navPrev(); }
+  focusPrevious(): void { this._navigation.focusPrevious(); }
   /** ArrowDown — next visible node at the same level. */
-  navNextSibling(): void { this._navigation.navNextSibling(); }
+  focusNextAtLevel(): void { this._navigation.focusNextAtLevel(); }
   /** ArrowUp — previous visible node at the same level. */
-  navPrevSibling(): void { this._navigation.navPrevSibling(); }
+  focusPreviousAtLevel(): void { this._navigation.focusPreviousAtLevel(); }
   /** ArrowRight — into the first child (expands if collapsed). */
-  navInto(): void { this._navigation.navInto(); }
+  focusFirstChild(): void { this._navigation.focusFirstChild(); }
   /** ArrowLeft — to the parent (no collapse). */
-  navOut(): void { this._navigation.navOut(); }
+  focusParent(): void { this._navigation.focusParent(); }
   /** Backspace — collapse the parent and move to it. */
-  navBackOut(): void { this._navigation.navBackOut(); }
+  collapseParent(): void { this._navigation.collapseParent(); }
   /** Enter — toggle expand/collapse on the current node. */
-  navToggle(): void { this._navigation.navToggle(); }
+  toggleFocusedNodeExpanded(): void { this._navigation.toggleFocusedNodeExpanded(); }
   /** Home — first visible node. */
-  navFirst(): void { this._navigation.navFirst(); }
+  focusFirst(): void { this._navigation.focusFirst(); }
   /** End — last visible node. */
-  navLast(): void { this._navigation.navLast(); }
+  focusLast(): void { this._navigation.focusLast(); }
   /** PageDown — jump forward ~10 visible nodes. */
-  navPageDown(): void { this._navigation.navPageDown(); }
+  focusNextPage(): void { this._navigation.focusNextPage(); }
   /** PageUp — jump back ~10 visible nodes. */
-  navPageUp(): void { this._navigation.navPageUp(); }
+  focusPreviousPage(): void { this._navigation.focusPreviousPage(); }
   /** Shift+ArrowDown — extend the selection to the next same-level node (multi mode only). */
-  navSelectNext(): void { this._navigation.navSelectNext(); }
+  extendSelectionNext(): void { this._navigation.extendSelectionNext(); }
   /** Shift+ArrowUp — extend the selection to the previous same-level node (multi mode only). */
-  navSelectPrev(): void { this._navigation.navSelectPrev(); }
+  extendSelectionPrevious(): void { this._navigation.extendSelectionPrevious(); }
   /** Shift+Home — extend the selection to the first visible node (multi mode only). */
-  navSelectFirst(): void { this._navigation.navSelectFirst(); }
+  extendSelectionToFirst(): void { this._navigation.extendSelectionToFirst(); }
   /** Shift+End — extend the selection to the last visible node (multi mode only). */
-  navSelectLast(): void { this._navigation.navSelectLast(); }
+  extendSelectionToLast(): void { this._navigation.extendSelectionToLast(); }
   /** Shift+PageDown — extend the selection forward ~10 visible nodes (multi mode only). */
-  navSelectPageDown(): void { this._navigation.navSelectPageDown(); }
+  extendSelectionNextPage(): void { this._navigation.extendSelectionNextPage(); }
   /** Shift+PageUp — extend the selection back ~10 visible nodes (multi mode only). */
-  navSelectPageUp(): void { this._navigation.navSelectPageUp(); }
+  extendSelectionPreviousPage(): void { this._navigation.extendSelectionPreviousPage(); }
 
   /** (Re)build the active navigation: the defaults with every function-valued
    *  override (for a known method) on top. `null` / `undefined` → defaults only. */
@@ -3025,58 +3021,58 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return {
       // Every built-in keyboard move lands here: select + focus, then bring the
       // row into view (block 'nearest' — no scroll when it's already visible).
-      navTo: (path: string) => {
+      focusAndSelectNode: (path: string) => {
         this.selectNode(path);
         this.revealNode(path);
       },
 
-      navNext: () => {
+      focusNext: () => {
         const flat = visible();
         if (flat.length === 0) return;
         if (!this._focusedNode) {
-          this._navigation.navTo(flat[0].path);
+          this._navigation.focusAndSelectNode(flat[0].path);
           return;
         }
         const idx = indexOfFocused(flat);
-        if (idx >= 0 && idx < flat.length - 1) this._navigation.navTo(flat[idx + 1].path);
+        if (idx >= 0 && idx < flat.length - 1) this._navigation.focusAndSelectNode(flat[idx + 1].path);
       },
 
-      navPrev: () => {
+      focusPrevious: () => {
         const flat = visible();
         if (flat.length === 0) return;
         if (!this._focusedNode) {
-          this._navigation.navTo(flat[flat.length - 1].path);
+          this._navigation.focusAndSelectNode(flat[flat.length - 1].path);
           return;
         }
         const idx = indexOfFocused(flat);
-        if (idx > 0) this._navigation.navTo(flat[idx - 1].path);
+        if (idx > 0) this._navigation.focusAndSelectNode(flat[idx - 1].path);
       },
 
-      navNextSibling: () => {
+      focusNextAtLevel: () => {
         const flat = visible();
         if (flat.length === 0) return;
         const idx = indexOfFocused(flat);
         if (idx === -1) {
-          this._navigation.navTo(flat[0].path);
+          this._navigation.focusAndSelectNode(flat[0].path);
           return;
         }
         const target = sameLevelFrom(flat, idx, 1);
-        if (target) this._navigation.navTo(target.path);
+        if (target) this._navigation.focusAndSelectNode(target.path);
       },
 
-      navPrevSibling: () => {
+      focusPreviousAtLevel: () => {
         const flat = visible();
         if (flat.length === 0) return;
         const idx = indexOfFocused(flat);
         if (idx === -1) {
-          this._navigation.navTo(flat[flat.length - 1].path);
+          this._navigation.focusAndSelectNode(flat[flat.length - 1].path);
           return;
         }
         const target = sameLevelFrom(flat, idx, -1);
-        if (target) this._navigation.navTo(target.path);
+        if (target) this._navigation.focusAndSelectNode(target.path);
       },
 
-      navInto: () => {
+      focusFirstChild: () => {
         const node = this._focusedNode;
         if (!node || !node.hasChildren) return;
         // visibleFlatNodes updates synchronously — move to the first child.
@@ -3084,7 +3080,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
           if (this._focusedNode?.path !== node.path) return; // focus moved while loading
           const flat = visible();
           const idx = flat.findIndex(n => n.path === node.path);
-          if (idx >= 0 && idx + 1 < flat.length) this._navigation.navTo(flat[idx + 1].path);
+          if (idx >= 0 && idx + 1 < flat.length) this._navigation.focusAndSelectNode(flat[idx + 1].path);
         };
         if (node.isExpanded) {
           moveIn();
@@ -3097,14 +3093,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       },
 
       // To the parent, no collapse (matches svelte-treeview).
-      navOut: () => {
+      focusParent: () => {
         const node = this._focusedNode;
         if (!node) return;
         const parentPath = parentPathOf(node.path);
-        if (parentPath) this._navigation.navTo(parentPath);
+        if (parentPath) this._navigation.focusAndSelectNode(parentPath);
       },
 
-      navBackOut: () => {
+      collapseParent: () => {
         const node = this._focusedNode;
         if (!node) return;
         const parentPath = parentPathOf(node.path);
@@ -3112,84 +3108,84 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         // A non-collapsible parent (getNodeIsCollapsible) stays open — only focus moves.
         const parent = this.tree?.getNodeByPath(parentPath);
         if (parent && this.getNodeIsCollapsible(parent)) this.collapseNodes(parentPath);
-        this._navigation.navTo(parentPath);
+        this._navigation.focusAndSelectNode(parentPath);
       },
 
       // Enter / Space = the toggle glyph: accordion, the pending beforeExpand guard,
       // getNodeIsCollapsible and a mid-collapse cancel all apply.
       // (svelte-treeview REVIEW-2026-11-19 B3)
-      navToggle: () => {
+      toggleFocusedNodeExpanded: () => {
         const node = this._focusedNode;
         if (!node || !node.hasChildren) return;
         this.toggleNodeExpanded(node.path);
         this._scheduleNotify();
       },
 
-      navFirst: () => {
+      focusFirst: () => {
         const flat = visible();
-        if (flat.length > 0) this._navigation.navTo(flat[0].path);
+        if (flat.length > 0) this._navigation.focusAndSelectNode(flat[0].path);
       },
 
-      navLast: () => {
+      focusLast: () => {
         const flat = visible();
-        if (flat.length > 0) this._navigation.navTo(flat[flat.length - 1].path);
+        if (flat.length > 0) this._navigation.focusAndSelectNode(flat[flat.length - 1].path);
       },
 
-      navPageDown: () => {
+      focusNextPage: () => {
         const flat = visible();
         if (flat.length === 0) return;
         const idx = indexOfFocused(flat);
         const target = Math.min((idx === -1 ? 0 : idx) + NAV_PAGE_SIZE, flat.length - 1);
-        this._navigation.navTo(flat[target].path);
+        this._navigation.focusAndSelectNode(flat[target].path);
       },
 
-      navPageUp: () => {
+      focusPreviousPage: () => {
         const flat = visible();
         if (flat.length === 0) return;
         const idx = indexOfFocused(flat);
         const target = Math.max((idx === -1 ? flat.length : idx) - NAV_PAGE_SIZE, 0);
-        this._navigation.navTo(flat[target].path);
+        this._navigation.focusAndSelectNode(flat[target].path);
       },
 
       // ── Shift+navigation: extend the selected range ─────────────
-      navSelectNext: () => {
+      extendSelectionNext: () => {
         const flat = visible();
         const idx = indexOfFocused(flat);
         if (idx === -1) return;
         const target = sameLevelFrom(flat, idx, 1);
-        if (target) this._navSelectTo(target.path);
+        if (target) this._extendSelectionTo(target.path);
       },
 
-      navSelectPrev: () => {
+      extendSelectionPrevious: () => {
         const flat = visible();
         const idx = indexOfFocused(flat);
         if (idx === -1) return;
         const target = sameLevelFrom(flat, idx, -1);
-        if (target) this._navSelectTo(target.path);
+        if (target) this._extendSelectionTo(target.path);
       },
 
-      navSelectFirst: () => {
+      extendSelectionToFirst: () => {
         const flat = visible();
-        if (flat.length > 0) this._navSelectTo(flat[0].path);
+        if (flat.length > 0) this._extendSelectionTo(flat[0].path);
       },
 
-      navSelectLast: () => {
+      extendSelectionToLast: () => {
         const flat = visible();
-        if (flat.length > 0) this._navSelectTo(flat[flat.length - 1].path);
+        if (flat.length > 0) this._extendSelectionTo(flat[flat.length - 1].path);
       },
 
-      navSelectPageDown: () => {
-        const flat = visible();
-        const idx = indexOfFocused(flat);
-        if (idx === -1) return;
-        this._navSelectTo(flat[Math.min(idx + NAV_PAGE_SIZE, flat.length - 1)].path);
-      },
-
-      navSelectPageUp: () => {
+      extendSelectionNextPage: () => {
         const flat = visible();
         const idx = indexOfFocused(flat);
         if (idx === -1) return;
-        this._navSelectTo(flat[Math.max(idx - NAV_PAGE_SIZE, 0)].path);
+        this._extendSelectionTo(flat[Math.min(idx + NAV_PAGE_SIZE, flat.length - 1)].path);
+      },
+
+      extendSelectionPreviousPage: () => {
+        const flat = visible();
+        const idx = indexOfFocused(flat);
+        if (idx === -1) return;
+        this._extendSelectionTo(flat[Math.max(idx - NAV_PAGE_SIZE, 0)].path);
       },
     };
   }
@@ -3198,7 +3194,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  range runs from the Shift anchor (core `selection.anchor` — seeded from the
    *  focused node on the first Shift move; a plain move resets it to the new
    *  node). No-op in single selection mode. */
-  private _navSelectTo(path: string): void {
+  private _extendSelectionTo(path: string): void {
     if (this._selectionMode !== 'multiple') return;
     const focused = this._focusedNode;
     if (this._selection.anchor === null && focused) this._selection.setAnchor(focused.path);
@@ -3210,7 +3206,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _revealToken = 0;
 
   /**
-   * Keyboard navigation's scroll-into-view (svelte-treeview's navTo →
+   * Keyboard navigation's scroll-into-view (svelte-treeview's focusAndSelectNode →
    * scrollToPath, but `block: 'nearest'`: scrolls only when the row is off-screen,
    * no highlight, no expand). Virtual scroll: the scroll offset is moved to the
    * row FIRST (nearest edge), so the pending render slices a window that contains
@@ -4508,10 +4504,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (updates.initialBatchSize !== undefined) this._initialBatchSize = updates.initialBatchSize ?? 20;
     if (updates.maxBatchSize !== undefined) this._maxBatchSize = updates.maxBatchSize ?? 500;
     if (updates.rowAnimationLimit !== undefined) this._rowAnimationLimit = updates.rowAnimationLimit ?? 50;
-    const nextFlat = updates.isFlatRenderingEnabled !== undefined ? (updates.isFlatRenderingEnabled ?? true) : this._isFlatRenderingEnabled;
     const nextProgressive = updates.isProgressiveRenderEnabled !== undefined ? (updates.isProgressiveRenderEnabled ?? true) : this._isProgressiveRenderEnabled;
-    if (nextFlat !== this._isFlatRenderingEnabled || nextProgressive !== this._isProgressiveRenderEnabled) {
-      this._isFlatRenderingEnabled = nextFlat;
+    if (nextProgressive !== this._isProgressiveRenderEnabled) {
       this._isProgressiveRenderEnabled = nextProgressive;
       // Switching at runtime: show what is visible now (no re-batching of rows
       // the user already sees); later inserts batch as usual.
@@ -4718,7 +4712,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       hasNodes: this._hasAnyNode(),
       isRendering: this._isRendering,
       bodyClass: this._bodyClass,
-      isFlatRenderingEnabled: this._isFlatRenderingEnabled,
       flatIndentSize: this._flatIndentSize,
       focusedNode: this.focusedNode,
       selectedPaths: this._selectedPaths,
@@ -4933,7 +4926,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // ── Internal: progressive flat rendering ────────────────────────────
 
   private _updateProgressiveRendering() {
-    if (!this._isFlatRenderingEnabled || !this._isProgressiveRenderEnabled || !this.tree?.visibleFlatNodes)
+    if (!this._isProgressiveRenderEnabled || !this.tree?.visibleFlatNodes)
       return;
     // Virtual scroll already limits rendered nodes to the visible window —
     // skip progressive rendering to avoid background batches firing _scheduleNotify

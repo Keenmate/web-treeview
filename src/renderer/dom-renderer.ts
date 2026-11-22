@@ -837,13 +837,13 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       // Shift variants extend the selected range (a no-op in single selection mode).
       case 'ArrowDown':
         event.preventDefault();
-        if (shift) this.state.navSelectNext();
-        else this.state.navNextSibling();
+        if (shift) this.state.extendSelectionNext();
+        else this.state.focusNextAtLevel();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        if (shift) this.state.navSelectPrev();
-        else this.state.navPrevSibling();
+        if (shift) this.state.extendSelectionPrevious();
+        else this.state.focusPreviousAtLevel();
         break;
       // ArrowRight / ArrowLeft = forward (into / expand) / back (out / collapse) along the
       // reading direction: swapped in a right-to-left tree (WAI-ARIA tree RTL rule). Read live
@@ -852,18 +852,18 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       case 'ArrowLeft': {
         event.preventDefault();
         const isForward = (event.key === 'ArrowRight') !== isRtl(this.bodyEl ?? this.container);
-        if (isForward) this.state.navInto();
-        else this.state.navOut();
+        if (isForward) this.state.focusFirstChild();
+        else this.state.focusParent();
         break;
       }
       case 'Backspace':
         event.preventDefault();
-        this.state.navBackOut();
+        this.state.collapseParent();
         break;
       case 'Enter':
         // WAI-ARIA tree: Enter = the node's default action (expand / collapse).
         event.preventDefault();
-        this.state.navToggle();
+        this.state.toggleFocusedNodeExpanded();
         break;
       case ' ': {
         // WAI-ARIA tree: Space toggles selection — the focused node's checkbox when
@@ -883,23 +883,23 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       case 'Home':
         event.preventDefault();
-        if (shift) this.state.navSelectFirst();
-        else this.state.navFirst();
+        if (shift) this.state.extendSelectionToFirst();
+        else this.state.focusFirst();
         break;
       case 'End':
         event.preventDefault();
-        if (shift) this.state.navSelectLast();
-        else this.state.navLast();
+        if (shift) this.state.extendSelectionToLast();
+        else this.state.focusLast();
         break;
       case 'PageDown':
         event.preventDefault();
-        if (shift) this.state.navSelectPageDown();
-        else this.state.navPageDown();
+        if (shift) this.state.extendSelectionNextPage();
+        else this.state.focusNextPage();
         break;
       case 'PageUp':
         event.preventDefault();
-        if (shift) this.state.navSelectPageUp();
-        else this.state.navPageUp();
+        if (shift) this.state.extendSelectionPreviousPage();
+        else this.state.focusPreviousPage();
         break;
       case 'Escape':
         // handleKeydown already consumed Escape when a cut was pending
@@ -1482,10 +1482,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
             this._updateNodeElement(el, node, snapshot);
           }
         }
-        // Update indent for flat mode
-        if (snapshot.isFlatRenderingEnabled) {
-          el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
-        }
+        // Row indent
+        el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
         // Row animation: the reveal was cleared → drop the modifier (never ADD it to a
         // reused row — only a row created during the reveal plays).
         if (!snapshot.revealedPaths.has(node.path)) el.classList.remove('wtv__node--opening');
@@ -1812,10 +1810,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // source id) — aria-activedescendant and any id lookup must hit exactly one row.
     if (this.state) el.id = rowDomId(this.state.treeId, node.path);
 
-    // Flat mode indent
-    if (snapshot.isFlatRenderingEnabled) {
-      el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
-    }
+    // Row indent
+    el.style.paddingInlineStart = `calc((${node.level} - 1) * ${snapshot.flatIndentSize})`;
 
     const nodeConfig = this.lastNodeConfig;
 

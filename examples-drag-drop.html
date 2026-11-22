@@ -83,13 +83,13 @@
         <div>
             <p class="demo-label">Source Tree (Reorganizable)</p>
             <div class="tree-container" id="source-container">
-                <web-treeview id="source-tree"></web-treeview>
+                <web-treeview id="source-tree" defer></web-treeview>
             </div>
         </div>
         <div>
             <p class="demo-label" id="target-label">Target Tree (Empty - Drop Here!)</p>
             <div class="tree-container" id="target-container">
-                <web-treeview id="target-tree"></web-treeview>
+                <web-treeview id="target-tree" defer></web-treeview>
             </div>
         </div>
     </div>
@@ -192,7 +192,7 @@
     </div>
 
     <div class="tree-container" id="tree-restricted-container">
-        <web-treeview id="tree-restricted"></web-treeview>
+        <web-treeview id="tree-restricted" defer></web-treeview>
     </div>
 
     <div class="output" id="restricted-output" style="display: none;">
@@ -207,7 +207,7 @@
     <p>Use <code>beforeDropCallback</code> to validate or reject drops. In this example, "Important" nodes cannot be moved.</p>
 
     <div class="tree-container" id="tree5-container">
-        <web-treeview id="tree5"></web-treeview>
+        <web-treeview id="tree5" defer></web-treeview>
     </div>
 
     <div class="note">
@@ -293,13 +293,11 @@
     // hot-module reload — which re-runs interaction state but NOT the const
     // literals — could resurrect a previous session's edits. structuredClone
     // guarantees a clean start on every (re)init.
+    // The trees carry `defer` in the markup (core): nothing is built while they're configured here —
+    // treeId, data, members and callbacks land in any order — and they build ONCE, with their final
+    // settings, when the setup below calls release().
     function initTree(id, data, opts = {}) {
         const el = document.getElementById(id);
-        // Wire per-node draggability before .data (matches the e2e fixture +
-        // svelte's build-time resolution). Behavior resolves through
-        // getNodeIsDraggable() so a fresh load is always correct; a "pinned node
-        // still drags" symptom is an HMR half-reload leaving the callback unwired
-        // — hard-reload to clear it.
         if (opts.getIsDraggableCallback) el.getIsDraggableCallback = opts.getIsDraggableCallback;
         el.nodes = structuredClone(data);
         el.idMember = 'id';
@@ -754,5 +752,8 @@
             appendLogLine(log5, { name: 'ALLOWED', detail: `${draggedNode.data?.name} → ${dropNode?.data?.name} (${position})`, variant: 'success' });
             return true;
         };
+
+        // Everything is wired — build the deferred trees now (core `defer` → `release()`).
+        for (const tree of [sourceTreeEl, targetTreeEl, restrictedTree, tree5]) tree.release();
     });
 </script>

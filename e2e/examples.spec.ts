@@ -44,16 +44,16 @@ test.describe('Localization page (examples-localization.html)', () => {
     await page.locator('#lo04-caption').check();
     await expect(out('lo04-out')).toHaveText('aria-label: Načítání…');
 
-    // LO05 — the page locale formats {count} in the search announcement.
+    // LO05 — the page locale formats {ctx.count} in the search announcement.
     await page.locator('input[name="lo05-locale"][value="de-DE"]').check();
-    await expect(out('lo05-out')).toHaveText('announced: 1.234 results');
+    await expect(out('lo05-out')).toHaveText('announced: Results: 1.234');
     await page.locator('input[name="lo05-locale"][value="en-IN"]').check();
-    await expect(out('lo05-out')).toHaveText('announced: 1,234 results');
+    await expect(out('lo05-out')).toHaveText('announced: Results: 1,234');
     // … the element's own `locale` beats the page one; unset = the page locale again.
     await page.locator('input[name="lo05-el-locale"][value="de"]').check();
-    await expect(out('lo05-out')).toHaveText('announced: 1.234 results');
+    await expect(out('lo05-out')).toHaveText('announced: Results: 1.234');
     await page.locator('input[name="lo05-el-locale"][value=""]').check();
-    await expect(out('lo05-out')).toHaveText('announced: 1,234 results');
+    await expect(out('lo05-out')).toHaveText('announced: Results: 1,234');
 
     expect(consoleErrors).toEqual([]);
   });

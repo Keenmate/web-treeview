@@ -1,7 +1,7 @@
 import { test, expect, type Page } from './fixtures';
 
 /**
- * The `locale` input (rulebook C-CA-38): the numbers in labels (`{count}` in the search announcement
+ * The `locale` input (rulebook C-CA-38): the numbers in labels (`{ctx.count}` in the search announcement
  * `ariaLabels.searchResults`, core `formatNumber`) follow the element's `locale` → the page-wide
  * `window.components.locale.locale` → the browser. `'auto'` = unset (core `resolveLocale`). The same option on a
  * bare `TreeViewEngine` (default `null`, one source: the input table).
@@ -31,7 +31,7 @@ const searchElement = (page: Page) =>
     el.searchTerm = 'Item';
   });
 
-test('locale="de" formats {count}; unset follows window.components.locale.locale; the element wins; auto = unset', async ({ page }) => {
+test('locale="de" formats {ctx.count}; unset follows window.components.locale.locale; the element wins; auto = unset', async ({ page }) => {
   await page.evaluate(() => {
     const el = document.createElement('web-treeview') as any;
     el.id = 'big';
@@ -46,7 +46,7 @@ test('locale="de" formats {count}; unset follows window.components.locale.locale
   expect(await page.evaluate(() => (document.getElementById('big') as any).locale)).toBe('de');
 
   await searchElement(page);
-  await expect(region(page)).toHaveText('1.234 results');
+  await expect(region(page)).toHaveText('Results: 1.234');
 
   // Unset → the page locale.
   await page.evaluate(() => {
@@ -54,17 +54,17 @@ test('locale="de" formats {count}; unset follows window.components.locale.locale
     document.getElementById('big')!.removeAttribute('locale');
   });
   await searchElement(page);
-  await expect(region(page)).toHaveText('1,234 results');
+  await expect(region(page)).toHaveText('Results: 1,234');
 
   // The element's own locale (property) beats the page one.
   await page.evaluate(() => { (window as any).components.locale = { locale: 'en-US' }; (document.getElementById('big') as any).locale = 'de-DE'; });
   await searchElement(page);
-  await expect(region(page)).toHaveText('1.234 results');
+  await expect(region(page)).toHaveText('Results: 1.234');
 
   // 'auto' is unset: the page locale again.
   await page.evaluate(() => { (document.getElementById('big') as any).locale = 'auto'; });
   await searchElement(page);
-  await expect(region(page)).toHaveText('1,234 results');
+  await expect(region(page)).toHaveText('Results: 1,234');
 });
 
 test('a TreeViewEngine without the element: the locale option (default null = page locale), setOptions({ locale })', async ({ page }) => {
@@ -90,11 +90,11 @@ test('a TreeViewEngine without the element: the locale option (default null = pa
   });
 
   await search();
-  await expect(region(page)).toHaveText('1.234 results'); // unset → the page locale
+  await expect(region(page)).toHaveText('Results: 1.234'); // unset → the page locale
 
   await page.evaluate(() => (window as any).bigEngine.setOptions({ locale: 'en-US' }));
   await search();
-  await expect(region(page)).toHaveText('1,234 results'); // the engine's own locale wins
+  await expect(region(page)).toHaveText('Results: 1,234'); // the engine's own locale wins
   // A partial update keeps the tree (it maps the merged options, not just the partial).
   await page.evaluate(() => (window as any).bigEngine.setOptions({ searchTerm: null }));
   await expect(page.locator('#big-engine .wtv__node-label').first()).toHaveText('Item 1');

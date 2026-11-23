@@ -24,6 +24,10 @@ import type {
   ContextMenuRenderContext,
   ContextMenuItemRenderContext,
   ContainerRenderContext,
+  SearchResultsLabelContext,
+  DropLabelContext,
+  DropItemsLabelContext,
+  DropDeniedLabelContext,
 } from './interaction';
 import type { SearchOptions } from 'flexsearch';
 import { adoptStyles, ICON_CSS, renderIcon, type RenderIconCallback, announce, withComponentContext, createControllerFacade, renderLoader, type RenderLoaderCallback, type SlotResult, runBeforeCallback, runBeforeCallbackEager, runBeforeCallbackSync, type BeforeCallbackResult } from '@keenmate/web-components-core';
@@ -140,7 +144,7 @@ export class TreeViewEngine<T = any> {
       tag: 'web-treeview',
       // This tree's own translateCallback (the element's input, or a plain TreeViewEngine option) → the page-wide one.
       getTranslateCallback: () => this.options.translateCallback ?? undefined,
-      // The `locale` option (the element's `locale` input; default `null` = page-wide → browser): `{count}` numbers
+      // The `locale` option (the element's `locale` input; default `null` = page-wide → browser): `{ctx.count}` numbers
       // through core formatNumber + translateCallback's ctx.locale.
       getLocale: () => this.options.locale ?? null,
     });
@@ -180,8 +184,8 @@ export class TreeViewEngine<T = any> {
   // ── Screen-reader announcements (core `announce()`) ─────────────────
 
   /** Announce a label through the page's polite live region; a label set to `''` stays silent. */
-  private say(key: keyof TreeViewLabels, params?: Record<string, unknown>): void {
-    const text = this.labels.text(key, params as any);
+  private say(key: keyof TreeViewLabels, ctx?: object): void {
+    const text = this.labels.text(key, ctx ? { ctx } : undefined);
     if (text) announce(text, { document: this.hostElement().ownerDocument });
   }
 
@@ -194,8 +198,8 @@ export class TreeViewEngine<T = any> {
    *  filling — a fresh status follows when it completes; a cleared search is silent). */
   private readonly searchStatusBridge = (s: SearchStatus): void => {
     if (s.searchTerm && !s.isIndexing) {
-      if (s.matchCount === 0) this.say('ariaLabels.searchNoResults');
-      else this.say(s.matchCount === 1 ? 'ariaLabels.searchResultsOne' : 'ariaLabels.searchResults', { count: s.matchCount });
+      const ctx: SearchResultsLabelContext = { count: s.matchCount, searchTerm: s.searchTerm };
+      this.say(s.matchCount === 0 ? 'ariaLabels.searchNoResults' : 'ariaLabels.searchResults', ctx);
     }
     this.options.onSearchStatusChange?.(this.ctx({ searchTerm: s.searchTerm, matchCount: s.matchCount, isLimited: s.isLimited, limit: s.limit, isIndexing: s.isIndexing }));
   };
@@ -204,19 +208,21 @@ export class TreeViewEngine<T = any> {
    *  (a consumer-owned drop — `dropped: null` — is the consumer's to announce). */
   private readonly nodeDropBridge = (d: NodeDropContext<T>): void => {
     if (d.dropped?.length) {
-      const name = d.dragged.length > 1
-        ? this.labels.text('ariaLabels.dropItems', { count: d.dragged.length })
+      const count = d.dragged.length;
+      const name = count > 1
+        ? this.labels.text('ariaLabels.dropItems', { ctx: { count } satisfies DropItemsLabelContext })
         : this.nodeName(d.dropped[0].node);
       const target = d.target?.node ? this.nodeName(d.target.node) : this.labels.text('ariaLabels.dropTreeRoot');
       const where = !d.target || d.position === 'child' ? 'Into' : d.position === 'before' ? 'Before' : 'After';
-      this.say(`ariaLabels.${d.operation === 'copy' ? 'copied' : 'moved'}${where}` as keyof TreeViewLabels, { name, target });
+      const ctx: DropLabelContext = { name, target, count };
+      this.say(`ariaLabels.${d.operation === 'copy' ? 'copied' : 'moved'}${where}` as keyof TreeViewLabels, ctx);
     }
     this.options.onNodeDrop?.(this.ctx(d));
   };
 
   /** `node-drop-reject` bridge: say the drop was refused, and why. */
   private readonly nodeDropDeniedBridge = (ref: NodeRef<T>): void => {
-    this.say('ariaLabels.dropDenied', { target: this.nodeName(ref.node) });
+    this.say('ariaLabels.dropDenied', { target: this.nodeName(ref.node) } satisfies DropDeniedLabelContext);
     this.options.onNodeDropReject?.(this.ctx(ref));
   };
 

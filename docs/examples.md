@@ -346,14 +346,17 @@ window.components.locale = {
     'web-treeview.messages.noData': 'Žádná data', 'web-treeview.menuItems.copy': 'Kopírovat',
     'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
   },
-  // translateCallback: ({ key, params }) => i18next.t(key, params), // key = 'web-treeview.messages.noData'
+  // translateCallback: ({ key, params }) => i18next.t(key, { ...params, count: params.ctx?.count }), // key = 'web-treeview.messages.noData'
 };
 // One tree only, no page setup — its own hook (asked first; null = not mine):
-tree.translateCallback = ({ key, params }) => (i18next.exists(key) ? i18next.t(key, params) : null);
+tree.translateCallback = ({ key, params }) => {
+  const options = { ...params, count: params.ctx?.count };   // ctx.count drives i18next's plural forms
+  return i18next.exists(key, options) ? i18next.t(key, options) : null;
+};
 ```
 
-Numbers in labels (`{count}` in "{count} results") follow the tree's `locale` input → `window.components.locale.locale` →
-the browser: `<web-treeview locale="de">` announces "1.234 results". Localization page LO05.
+Numbers in labels (`{ctx.count}` in "Results: {ctx.count}") follow the tree's `locale` input → `window.components.locale.locale` →
+the browser: `<web-treeview locale="de">` announces "Results: 1.234". Localization page LO05.
 
 ## Rendering modes
 

@@ -137,7 +137,7 @@ el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ?
 <div class="card">
     <h2>LO05 · <code>locale</code> + formatting</h2>
     <p>
-        Numbers in labels (<code>{count}</code> in the search announcement <code>ariaLabels.searchResults</code>, "{count} results")
+        Numbers in labels (<code>{ctx.count}</code> in the search announcement <code>ariaLabels.searchResults</code>, "Results: {ctx.count}")
         are formatted (core <code>formatNumber</code>) for the tree's <code>locale</code> input → the page language
         <code>window.components.locale.locale</code> → the browser. The tree formats no dates — this number is its only
         locale-specific output. The tree below has 1,234 nodes; <em>Search</em> filters them all and the screen-reader announcement
@@ -159,10 +159,10 @@ el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ?
     <div class="tree-container tree-container-sm"><web-treeview id="lo05" use-internal-search-index="true" search-result-limit="5000"></web-treeview></div>
     <div class="output"><div class="output-label">last screen-reader announcement</div><pre id="lo05-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
-el.searchTerm = 'Item';   // announces "1.234 results"
+el.searchTerm = 'Item';   // announces "Results: 1.234"
 
 // the element's own locale wins over the page one (removeAttribute / null = the page locale again)
-el.setAttribute('locale', 'cs');   // announces "1 234 results"</code></pre></div>
+el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></div>
 </div>
 
 <!-- ============================================================= -->
@@ -280,7 +280,7 @@ el.setAttribute('locale', 'cs');   // announces "1 234 results"</code></pre></di
             refreshAll();
         });
 
-        // ── LO05 · element locale → page locale + the {count} search announcement.
+        // ── LO05 · element locale → page locale + the {ctx.count} search announcement.
         const search = async () => {
             const tree = $('lo05');
             tree.searchTerm = null;

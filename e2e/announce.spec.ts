@@ -35,11 +35,27 @@ test.beforeEach(async ({ page }) => {
 
 test('a settled search says the match count; no match says "No results found"', async ({ page }) => {
   await search(page, 'tree', 'Ap');
-  await expect(region(page)).toHaveText('2 results');
+  await expect(region(page)).toHaveText('Results: 2');
   await search(page, 'tree', 'Banana');
-  await expect(region(page)).toHaveText('1 result');
+  await expect(region(page)).toHaveText('Results: 1');
   await search(page, 'tree', 'zzz');
   await expect(region(page)).toHaveText('No results found');
+});
+
+test('labels read the spot context ({ctx.*}); translateCallback gets it as params.ctx', async ({ page }) => {
+  await page.evaluate(() => {
+    (document.getElementById('tree') as any).labels = { 'ariaLabels.searchResults': '{ctx.searchTerm}: {ctx.count}' };
+  });
+  await search(page, 'tree', 'Ap');
+  await expect(region(page)).toHaveText('Ap: 2');
+  await page.evaluate(() => {
+    const el = document.getElementById('tree') as any;
+    el.labels = {};
+    el.translateCallback = ({ key, params }: any) =>
+      key === 'web-treeview.ariaLabels.searchResults' ? `${params.ctx.count === 1 ? 'one' : 'many'} (${params.ctx.searchTerm})` : null;
+  });
+  await search(page, 'tree', 'Banana');
+  await expect(region(page)).toHaveText('one (Banana)');
 });
 
 test.describe('drops', () => {

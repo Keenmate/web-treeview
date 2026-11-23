@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — BREAKING: labels read the spot's context (`{ctx.*}`, `ctx.count`) (2026-11-23)
+- Every dynamic label passes its context as `{ ctx }` (core `/locale` dotted paths, rulebook D-NC-24): templates read
+  `{ctx.count}`, `{ctx.name}`, `{ctx.target}`, `{ctx.searchTerm}`; bare `{count}` / `{name}` / `{target}` are no longer
+  filled (no aliases). A `translateCallback` gets the same object as `params.ctx` — `ctx.count` is the number the noun
+  agrees with, for the app's plural forms (core never pluralizes). New exported plain-data contexts:
+  `SearchResultsLabelContext` `{ count, searchTerm }` (`ariaLabels.searchResults` / `searchNoResults`),
+  `DropLabelContext` `{ name, target, count }` (`movedInto` … `copiedAfter`), `DropItemsLabelContext` `{ count }`
+  (`dropItems`), `DropDeniedLabelContext` `{ target }` (`dropDenied`).
+- English defaults avoid a plural noun after a number: `ariaLabels.searchResults` "Results: {ctx.count}" (was
+  "{count} results"), `ariaLabels.dropItems` "Items ({ctx.count})" (was "{count} items"). `ariaLabels.searchResultsOne`
+  is removed (the app's i18n picks the singular from `ctx.count`).
+- Render callbacks keep `ctx.labels` (core `createLabelsView`); its JSDoc shows `ctx.labels.text(key, { ctx })`.
+  Guarded by `e2e/announce.spec.ts` "labels read the spot context"; `announce` / `locale-input` / `examples` specs
+  assert the new English.
+
 ### Fixed — a tree renamed after setup is found by a drag from another tree (2026-11-22)
 - `el.treeId = …` (or `setOptions({ treeId })`) after construction left the tree in the cross-tree registry under
   its generated id, and its nodes kept the old `treeId`. With the pointer drag (which finds the target tree by its

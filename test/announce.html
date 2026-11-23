@@ -10,7 +10,7 @@
 </head>
 <body>
     <!-- Core announce() through the page's one polite [data-km-announcer] live region:
-         a settled search ("{count} results" / no results), a placed drop, a refused drop.
+         a settled search ("Results: {ctx.count}" / no results), a placed drop, a refused drop.
          #tree — the default labels; #silent — every ariaLabels.* announcement ''.
          Targeted by e2e/announce.spec.ts. -->
     <div id="host"></div>
@@ -40,7 +40,7 @@
         window.tree = make('tree');
         window.silent = make('silent', {
             labels: {
-                'ariaLabels.searchResults': '', 'ariaLabels.searchResultsOne': '', 'ariaLabels.searchNoResults': '',
+                'ariaLabels.searchResults': '', 'ariaLabels.searchNoResults': '',
                 'ariaLabels.movedInto': '', 'ariaLabels.movedBefore': '', 'ariaLabels.movedAfter': '',
                 'ariaLabels.dropDenied': '',
             },

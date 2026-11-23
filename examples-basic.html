@@ -258,7 +258,7 @@ await tree.collapseNodes('1');</code></pre>
     'web-treeview.labels.dropBefore': 'Před', 'web-treeview.labels.dropAfter': 'Za', 'web-treeview.labels.dropChild': 'Dovnitř',
   },
   // optional: i18next / ICU for every label (key = the full key, 'web-treeview.menuItems.copy')
-  // translateCallback: ({ key, params }) =&gt; i18next.t(key, params),
+  // translateCallback: ({ key, params }) =&gt; i18next.t(key, { ...params, count: params.ctx?.count }),
 };
 window.components.locale = null;   // back to English</code></pre>
     </div>

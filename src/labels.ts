@@ -5,7 +5,9 @@
  * per key by core `/locale` `createLabels` (see `TreeViewEngine`): the instance `labels`
  * (short `messages.noData` or full `web-treeview.messages.noData` key) → the page-wide
  * flat dictionary `window.components.locale.labels['web-treeview.<key>']` → the English
- * defaults below. Placeholders use `{name}`.
+ * defaults below. Dynamic texts read the spot's context: `{ctx.count}`, `{ctx.name}`, … (core `/locale` dotted
+ * paths; numbers formatted in the tree's locale). The context of each key is named in its JSDoc; a `translateCallback`
+ * gets it as `params.ctx` (`ctx.count` = the number the text's noun agrees with — core never picks plural forms).
  */
 
 /** Every UI string of `<web-treeview>`. */
@@ -53,24 +55,25 @@ export interface TreeViewLabels {
 
   /**
    * Screen-reader announcements (core `announce()`, the page's one polite live region).
-   * `''` silences one. A search settled with matches (`{count}`); `ariaLabels.searchResultsOne` for exactly one.
+   * `''` silences one. A search settled with matches — ctx `SearchResultsLabelContext` (`{ctx.count}` = the matches,
+   * `{ctx.searchTerm}`).
    */
   'ariaLabels.searchResults': string;
-  'ariaLabels.searchResultsOne': string;
-  /** A search settled with no matches. */
+  /** A search settled with no matches (ctx `SearchResultsLabelContext`, `ctx.count` = 0). */
   'ariaLabels.searchNoResults': string;
-  /** The tree placed dropped nodes (`{name}` = the node, `{target}` = the drop target). */
+  /** The tree placed dropped nodes — ctx `DropLabelContext` (`{ctx.name}` = the node, or `ariaLabels.dropItems` for
+   *  several; `{ctx.target}` = the drop target; `ctx.count` = the dropped nodes). */
   'ariaLabels.movedInto': string;
   'ariaLabels.movedBefore': string;
   'ariaLabels.movedAfter': string;
   'ariaLabels.copiedInto': string;
   'ariaLabels.copiedBefore': string;
   'ariaLabels.copiedAfter': string;
-  /** The `{name}` of a drop that placed several nodes (`{count}`). */
+  /** The `ctx.name` of a drop that placed several nodes — ctx `DropItemsLabelContext` (`{ctx.count}` = the nodes). */
   'ariaLabels.dropItems': string;
-  /** The `{target}` of a drop onto the empty tree / the top level. */
+  /** The `ctx.target` of a drop onto the empty tree / the top level. */
   'ariaLabels.dropTreeRoot': string;
-  /** A refused drop and its reason (`{target}` = the node that doesn't accept drops). */
+  /** A refused drop and its reason — ctx `DropDeniedLabelContext` (`{ctx.target}` = the node that doesn't accept drops). */
   'ariaLabels.dropDenied': string;
 }
 
@@ -102,16 +105,15 @@ export const DEFAULT_LABELS: Readonly<TreeViewLabels> = Object.freeze({
   'menuItems.sortSubtree': 'Sort subtree',
   'menuItems.sortAll': 'Sort all',
   'menuItems.back': 'Back',
-  'ariaLabels.searchResults': '{count} results',
-  'ariaLabels.searchResultsOne': '1 result',
+  'ariaLabels.searchResults': 'Results: {ctx.count}',
   'ariaLabels.searchNoResults': 'No results found',
-  'ariaLabels.movedInto': '{name} moved into {target}',
-  'ariaLabels.movedBefore': '{name} moved before {target}',
-  'ariaLabels.movedAfter': '{name} moved after {target}',
-  'ariaLabels.copiedInto': '{name} copied into {target}',
-  'ariaLabels.copiedBefore': '{name} copied before {target}',
-  'ariaLabels.copiedAfter': '{name} copied after {target}',
-  'ariaLabels.dropItems': '{count} items',
+  'ariaLabels.movedInto': '{ctx.name} moved into {ctx.target}',
+  'ariaLabels.movedBefore': '{ctx.name} moved before {ctx.target}',
+  'ariaLabels.movedAfter': '{ctx.name} moved after {ctx.target}',
+  'ariaLabels.copiedInto': '{ctx.name} copied into {ctx.target}',
+  'ariaLabels.copiedBefore': '{ctx.name} copied before {ctx.target}',
+  'ariaLabels.copiedAfter': '{ctx.name} copied after {ctx.target}',
+  'ariaLabels.dropItems': 'Items ({ctx.count})',
   'ariaLabels.dropTreeRoot': 'the tree',
-  'ariaLabels.dropDenied': 'Cannot drop here: {target} does not accept dropped items',
+  'ariaLabels.dropDenied': 'Cannot drop here: {ctx.target} does not accept dropped items',
 });

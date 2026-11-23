@@ -205,8 +205,9 @@ export interface IconRenderContext<T = any> extends NodeContext<T>, NodeRenderCo
  * effective disabled state) re-runs the rendered callbacks in place; a change of anything else does not.
  */
 export interface ContainerRenderContext<T = any> extends TreeViewContext<T> {
-  /** The tree's UI strings (core `createLabelsView`): `ctx.labels.text(key, params)` / `ctx.labels.html(key, params)` —
-   *  instance `labels` → own / page-wide `translateCallback` → page-wide labels → English, `{count}` locale-formatted. */
+  /** The tree's UI strings (core `createLabelsView`): `ctx.labels.text(key, { ctx })` / `ctx.labels.html(key, { ctx })` —
+   *  instance `labels` → own / page-wide `translateCallback` → page-wide labels → English; a template reads the given
+   *  ctx (`{ctx.count}`, numbers locale-formatted). */
   labels: LabelsView<TreeViewLabels>;
   /** Read-only (`isReadonly`): the user can't change the data. */
   isReadonly: boolean;
@@ -351,4 +352,35 @@ export interface RenderStatsEventDetail<T = any> extends TreeViewContext<T> {
 export interface ContainerResizeEventDetail<T = any> extends TreeViewContext<T> {
   size: ContainerSize;
   deviceClass: DeviceClass;
+}
+
+// ── Label contexts ({ ctx } of the dynamic `labels` keys — `{ctx.count}`, `{ctx.name}`, …) ──
+// Plain data; a `translateCallback` gets the same object as `params.ctx` (`ctx.count` = the
+// number the text's noun agrees with, so the app's i18n can pick the plural form).
+
+/** ctx of `ariaLabels.searchResults` / `ariaLabels.searchNoResults` (a settled search). */
+export interface SearchResultsLabelContext {
+  /** The matches (`0` for `searchNoResults`). */
+  count: number;
+  /** The settled search term. */
+  searchTerm: string;
+}
+/** ctx of the drop announcements `ariaLabels.movedInto` / `movedBefore` / `movedAfter` / `copiedInto` / `copiedBefore` / `copiedAfter`. */
+export interface DropLabelContext {
+  /** The dropped node's display text, or `ariaLabels.dropItems` when several nodes were dropped. */
+  name: string;
+  /** The drop target's display text, or `ariaLabels.dropTreeRoot` for the top level / the empty tree. */
+  target: string;
+  /** The dropped nodes. */
+  count: number;
+}
+/** ctx of `ariaLabels.dropItems` (the `ctx.name` of a multi-node drop). */
+export interface DropItemsLabelContext {
+  /** The dropped nodes. */
+  count: number;
+}
+/** ctx of `ariaLabels.dropDenied` (a refused drop). */
+export interface DropDeniedLabelContext {
+  /** The display text of the node that doesn't accept drops. */
+  target: string;
 }

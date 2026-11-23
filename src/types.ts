@@ -561,7 +561,7 @@ export interface TreeViewConfig<T = any> {
   renderEmptyStateCallback?: (ctx: ContainerRenderContext<T>) => SlotResult;
   /** UI strings, a partial object of flat `<elementType>.<name>` keys (`messages.noData`, `menuItems.copy`, … — see `TreeViewLabels`) merged per key over the English defaults. */
   labels?: Partial<TreeViewLabels> | null;
-  /** BCP-47 locale for the numbers in labels (`{count}` — core `formatNumber`) and `translateCallback`'s `ctx.locale`;
+  /** BCP-47 locale for the numbers in labels (`{ctx.count}` — core `formatNumber`) and `translateCallback`'s `ctx.locale`;
    *  `null` / unset (default, the element's input-table default) = the page-wide `window.components.locale`, else the
    *  browser language (`'auto'` = unset). An `update({ locale })` re-applies the built-in texts. */
   locale?: string | null;

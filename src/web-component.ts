@@ -568,11 +568,11 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.updateNode(path, dataUpdates);
   }
 
-  /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
+  /** Copy one node (+ descendants) under a parent; `transform({ data, node, targetParentPath })` may return null to skip (targetParentPath = where that node lands). */
   duplicateNode(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
-    transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null,
+    transform: (ctx: { data: T; node: LTreeNode<T>; targetParentPath: string } & TreeViewContext<T>) => T | null,
     siblingPath?: string,
     position?: 'before' | 'after'
   ): any {

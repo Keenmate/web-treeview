@@ -665,16 +665,16 @@ export class TreeViewEngine<T = any> {
     return this.engine.updateNode(path, dataUpdates);
   }
 
-  /** Copy one node (+ descendants) under a parent; `transform({ data, node })` may return null to skip. */
+  /** Copy one node (+ descendants) under a parent; `transform({ data, node, targetParentPath })` may return null to skip (targetParentPath = where that node lands). */
   duplicateNode(
     sourceNode: LTreeNode<T>,
     targetParentPath: string,
-    transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null,
+    transform: (ctx: { data: T; node: LTreeNode<T>; targetParentPath: string } & TreeViewContext<T>) => T | null,
     siblingPath?: string,
     position?: 'before' | 'after'
   ) {
     return this.engine.duplicateNode(
-      sourceNode, targetParentPath, (data, node) => transform(this.ctx({ data, node })), siblingPath, position);
+      sourceNode, targetParentPath, (data, node, parentPath) => transform(this.ctx({ data, node, targetParentPath: parentPath })), siblingPath, position);
   }
 
   /** Batch-move a complete manifest under a target (honors "holes"). */

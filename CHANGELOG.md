@@ -26,6 +26,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   LO07 announces a search in Czech plural forms ("1 výsledek / 3 výsledky / 5 výsledků") via the tree's own
   `translateCallback` — asserted in `e2e/examples.spec.ts`.
 
+### Fixed — a 'before' / 'after' paste lands next to the target (2026-11-23)
+
+- `pasteNodes(target, transform, 'before' | 'after')` appended every pasted root to the target's parent; now the first lands right before / after the target and the rest follow in source order — the placement `duplicateNodes` (copy-drop) always had. As with any placement, it applies with `orderMember` or `enable-sorting="false"`; otherwise the sort decides. Guarded by `e2e/regressions.spec.ts` "B12" (fails on the old code). Same as svelte-treeview.
+
+### Changed — one transform context for paste and copy-drop (2026-11-23)
+
+- Paste and `duplicateNodes` now run the same insert, so the input transform sees the same context from both: a ROOT gets `target` = the anchor + the requested `position`; a DESCENDANT gets `target` = its new parent + `position: 'child'` (a copy-drop used to hand descendants the drop anchor). `source` is always `nodeRef`'s: a top-level copy-drop source now has `siblings` = the top-level nodes (was `[]`).
+- `PasteResult.skipped` counts the nodes refused (transform `null`, add failed, the self-paste guard), not the descendants that go with them.
+- `duplicateNode`'s transform context gains `targetParentPath` (where that node lands).
+
+### Internal — clipboard on the shared subtree insert (2026-11-23)
+
+- `pasteNodes` rebuilds each clipboard entry as a detached node tree (`_snapshotTree`) and runs `_duplicateSubtrees` — the insert behind `duplicateNodes` — instead of its own add-node loop; `copyNodes` / `cutNodes` are one `_captureToClipboard(operation)`; `_leafAwareTarget`, `_nodeRefIn`, `_anchorRef` exist once. Same as svelte-treeview (REVIEW-2026-11-19 §3.4).
+
 ### Fixed — state follows a removal or move (2026-11-23)
 
 - Removing nodes (`removeNode`, `removeBranch`, `replaceBranch`, `applyChanges`, the source of a cut-paste — same tree or another one) now drops them from the selection, the checked set and the cut set, and unfocuses a removed focused node; `selectedPaths` / `checkedPaths` / `focusedNode` used to keep reporting deleted nodes. In cascade mode the parents re-derive after any change to the tree: removing a checked child clears the parent's [-], removing the last unchecked one checks the parent, and `moveNode` updates both the old and the new parent. `selection-change` / `checked-change` / `focus-change` fire for what changed. Guarded by `e2e/regressions.spec.ts` "B2" (svelte-treeview REVIEW-2026-11-19 B2).

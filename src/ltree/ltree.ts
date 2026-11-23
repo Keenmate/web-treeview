@@ -1531,7 +1531,7 @@ export function createLTree<T>(
 		duplicateNode(
 			sourceNode: LTreeNode<T>,
 			targetParentPath: string,
-			transformData: (data: T, node: LTreeNode<T>) => T | null,
+			transformData: (data: T, node: LTreeNode<T>, targetParentPath: string) => T | null,
 			siblingPath?: string,
 			position?: 'before' | 'after'
 		): { success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string } {
@@ -1548,7 +1548,8 @@ export function createLTree<T>(
 				// Transform the data (user assigns new IDs, etc.). The live source node
 				// is the 2nd arg so batch callers (duplicateNodes) can gate on a manifest.
 				// Returning null/undefined SKIPS this node AND its subtree (a "hole").
-				const transformedData = transformData(node.data, node);
+				// The 3rd arg is where this node lands.
+				const transformedData = transformData(node.data, node, parentPath);
 				if (transformedData == null) return null;
 
 				// Add the node

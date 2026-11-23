@@ -94,7 +94,7 @@ export interface TreeViewController<T = any> {
   removeNode(path: string, includeDescendants?: boolean): any;
   moveNode(sourcePath: string, targetPath: string, position: DropPosition): any;
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any;
-  duplicateNode(sourceNode: LTreeNode<T>, targetParentPath: string, transform: (ctx: { data: T; node: LTreeNode<T> } & TreeViewContext<T>) => T | null, siblingPath?: string, position?: 'before' | 'after'): any;
+  duplicateNode(sourceNode: LTreeNode<T>, targetParentPath: string, transform: (ctx: { data: T; node: LTreeNode<T>; targetParentPath: string } & TreeViewContext<T>) => T | null, siblingPath?: string, position?: 'before' | 'after'): any;
   duplicateNodes(paths: string[], targetPath: string, position: DropPosition, transform?: NodeTransformCallback<T>, sourceTree?: Ltree<T>): any;
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;

@@ -125,6 +125,30 @@ test('R2: pasting a 3-level subtree with an id-minting transform keeps the grand
   expect(names.filter((n) => n === 'Delta')).toHaveLength(2);
 });
 
+test('B12: a before / after paste lands next to the target, roots in source order', async ({ page }) => {
+  await load(page);
+  const childNames = (path: string) =>
+    page.evaluate((p) => (window as any).__main.getChildren(p).map((n: any) => n.data.name), path);
+  await page.evaluate(() => ((window as any).__main.isSortingEnabled = false));
+  await expect.poll(() => page.evaluate(() => (window as any).__main.isSortingEnabled)).toBe(false);
+  const paste = (paths: string[], target: string, position: string) =>
+    page.evaluate(
+      ([paths, target, position]) => {
+        const t = (window as any).__main;
+        t.copyNodes(paths);
+        return t.pasteNodes(target, undefined, position);
+      },
+      [paths, target, position] as const
+    );
+  expect(await paste(['1.1.1', '1.1.2'], '1.2', 'before')).toMatchObject({ success: true, count: 2, skipped: 0 });
+  // Used to be appended to the parent: Beta, Eta match, Gamma, Delta.
+  expect(await childNames('1')).toEqual(['Beta', 'Gamma', 'Delta', 'Eta match']);
+  await paste(['1.1.1', '1.1.2'], '2.1', 'after');
+  expect(await childNames('2')).toEqual(['Zeta match', 'Gamma', 'Delta']);
+  await paste(['1.2'], '2.1', 'after');
+  expect(await childNames('2')).toEqual(['Zeta match', 'Eta match', 'Gamma', 'Delta']);
+});
+
 test.describe('while filtered', () => {
   test.beforeEach(async ({ page }) => {
     await load(page);

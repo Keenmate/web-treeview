@@ -16,6 +16,7 @@
 import type { Index, SearchOptions } from 'flexsearch';
 import { type LTreeNode, VisualState } from '../ltree/ltree-node';
 import { createLTree } from '../ltree/ltree';
+import { DEFAULT_INDEXER_BATCH_SIZE } from '../ltree/indexer';
 import {
   type Ltree,
   type InsertArrayResult,
@@ -200,6 +201,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // is to recreate the tree, so setOptions must know the previous value to
   // detect a real change (buildConfig resends the attribute on every update).
   private _expandLevel: number | null | undefined = undefined;
+  /** The indexer settings the LTree was built with (a change rebuilds it). */
+  private _indexerBatchSize: number | undefined = undefined;
+  private _indexerTimeout: number | undefined = undefined;
 
   // Drag and drop
   private _dragDropMode: DragDropMode = 'none';
@@ -1114,6 +1118,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._bodyClass = props.bodyClass;
 
     this._expandLevel = props.expandLevel ?? null;
+    this._indexerBatchSize = props.indexerBatchSize ?? undefined;
+    this._indexerTimeout = props.indexerTimeout ?? undefined;
     if (props.log) this.log = props.log;
     this._dragDropMode = props.dragDropMode ?? 'none';
     this._isCopyAllowed = props.isCopyAllowed ?? false;
@@ -4172,6 +4178,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       changed(updates.levelMember, t.levelMember) ||
       changed(updates.hasChildrenMember, t.hasChildrenMember) ||
       changed(updates.isExpandedMember, t.isExpandedMember) ||
+      changed(updates.isSelectableMember, t.isSelectableMember) ||
       changed(updates.isCheckedMember, t.isCheckedMember) ||
       changed(updates.isDraggableMember, t.isDraggableMember) ||
       changed(updates.isDropAllowedMember, t.isDropAllowedMember) ||
@@ -4190,7 +4197,24 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       changed(updates.getIsCollapsibleCallback, t.getIsCollapsibleCallback) ||
       changed(updates.getAllowedDropPositionsCallback, t.getAllowedDropPositionsCallback) ||
       changed(updates.sortCallback, t.sortCallback) ||
+      // Compared as the LTree reads them (the element resends `isSorted: false` / the indexer
+      // defaults with every batch; the tree may hold `undefined`) — else every batch rebuilds.
+      (updates.isSorted !== undefined && !!updates.isSorted !== !!t.isSorted) ||
+      // A new separator re-reads every path (the setter alone switched it without rebuilding).
+      (updates.treePathSeparator !== undefined && (updates.treePathSeparator || '.') !== (t.treePathSeparator || '.')) ||
+      (updates.indexerBatchSize !== undefined &&
+        (updates.indexerBatchSize || DEFAULT_INDEXER_BATCH_SIZE) !== (this._indexerBatchSize || DEFAULT_INDEXER_BATCH_SIZE)) ||
+      (updates.indexerTimeout !== undefined && (updates.indexerTimeout || 50) !== (this._indexerTimeout || 50)) ||
       indexChanged;
+    if (updates.indexerBatchSize !== undefined) this._indexerBatchSize = updates.indexerBatchSize ?? undefined;
+    if (updates.indexerTimeout !== undefined) this._indexerTimeout = updates.indexerTimeout ?? undefined;
+    // A new expand / checked mapping is a request for the data's seed, not the kept state.
+    const isExpansionReseeded =
+      changed(updates.isExpandedMember, t.isExpandedMember) ||
+      changed(updates.getIsExpandedCallback, t.getIsExpandedCallback);
+    const isCheckedReseeded =
+      changed(updates.isCheckedMember, t.isCheckedMember) ||
+      changed(updates.getIsCheckedCallback, t.getIsCheckedCallback);
 
     // expandLevel is baked into the LTree's construction closure, so a real
     // change can only take effect by recreating the tree. Unlike a member
@@ -4412,58 +4436,57 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       // nodes otherwise reset to the expandLevel default. Capture BEFORE the new
       // tree replaces this.tree. Skipped when the user explicitly changed
       // expandLevel (then the new seed IS the desired expansion).
-      const preservedExpanded = this._collectExpandedPaths();
-      // Recreate LTree with updated member mappings
-      const resolvedIdMember = updates.idMember ?? this.tree.idMember;
-      const resolvedPathMember = updates.pathMember ?? this.tree.pathMember;
-      const resolvedDisplayValueMember = updates.displayValueMember ?? this.tree.displayValueMember;
-      const resolvedExpandLevel = updates.expandLevel ?? null;
+      const preservedExpanded = isExpansionReseeded ? null : this._collectExpandedPaths();
+      // Recreate the LTree from the merged options (this._options holds every setOptions so far)
+      const o = this._options;
       const data = updates.data ?? this._data;
       this.log.INIT.debug(`[${this._treeId}] Recreating LTree due to member mapping changes`, {
-        idMember: resolvedIdMember,
-        pathMember: resolvedPathMember,
-        displayValueMember: resolvedDisplayValueMember,
-        parentPathMember: updates.parentPathMember ?? this.tree.parentPathMember,
-        expandLevel: resolvedExpandLevel,
+        idMember: o.idMember,
+        pathMember: o.pathMember,
+        displayValueMember: o.displayValueMember,
+        parentPathMember: o.parentPathMember,
+        expandLevel: this._expandLevel,
+        isExpansionReseeded,
+        isCheckedReseeded,
         dataLength: data?.length ?? 0
       });
       this.tree = createLTree<T>(
-        updates.idMember ?? this.tree.idMember,
-        updates.pathMember ?? this.tree.pathMember,
-        updates.parentPathMember ?? this.tree.parentPathMember,
-        updates.levelMember ?? this.tree.levelMember,
-        updates.hasChildrenMember ?? this.tree.hasChildrenMember,
-        updates.isExpandedMember ?? this.tree.isExpandedMember,
-        updates.getIsExpandedCallback ?? this.tree.getIsExpandedCallback,
-        updates.isSelectableMember ?? this.tree.isSelectableMember,
-        updates.getIsSelectableCallback ?? this.tree.getIsSelectableCallback,
-        updates.isCheckedMember ?? this.tree.isCheckedMember,
-        updates.getIsCheckedCallback ?? this.tree.getIsCheckedCallback,
-        updates.isDraggableMember ?? this.tree.isDraggableMember,
-        updates.getIsDraggableCallback ?? this.tree.getIsDraggableCallback,
-        updates.isDropAllowedMember ?? this.tree.isDropAllowedMember,
-        updates.getIsDropAllowedCallback ?? this.tree.getIsDropAllowedCallback,
-        updates.allowedDropPositionsMember ?? this.tree.allowedDropPositionsMember,
-        updates.displayValueMember ?? this.tree.displayValueMember,
-        updates.getDisplayValueCallback ?? this.tree.getDisplayValueCallback,
-        updates.searchValueMember ?? this.tree.searchValueMember,
-        updates.getSearchValueCallback ?? this.tree.getSearchValueCallback,
-        updates.getAllowedDropPositionsCallback,
-        updates.isCollapsibleMember,
-        updates.getIsCollapsibleCallback,
-        updates.orderMember,
+        o.idMember,
+        o.pathMember,
+        o.parentPathMember,
+        o.levelMember,
+        o.hasChildrenMember,
+        o.isExpandedMember,
+        o.getIsExpandedCallback,
+        o.isSelectableMember,
+        o.getIsSelectableCallback,
+        o.isCheckedMember,
+        o.getIsCheckedCallback,
+        o.isDraggableMember,
+        o.getIsDraggableCallback,
+        o.isDropAllowedMember,
+        o.getIsDropAllowedCallback,
+        o.allowedDropPositionsMember,
+        o.displayValueMember,
+        o.getDisplayValueCallback,
+        o.searchValueMember,
+        o.getSearchValueCallback,
+        o.getAllowedDropPositionsCallback,
+        o.isCollapsibleMember,
+        o.getIsCollapsibleCallback,
+        o.orderMember,
         this._treeId,
         this._treePathSeparator,
-        updates.expandLevel ?? null,
+        this._expandLevel,
         this._shouldUseInternalSearchIndex,
         this._initializeIndexCallback,
-        updates.indexerBatchSize,
-        updates.indexerTimeout,
+        this._indexerBatchSize,
+        this._indexerTimeout,
         {
           log: this.log,
-          isSorted: updates.isSorted ?? this.tree.isSorted,
+          isSorted: o.isSorted,
           isSortingEnabled: this._isSortingEnabled,
-          sortCallback: updates.sortCallback,
+          sortCallback: o.sortCallback,
           displayValueFallback: updates.displayValueFallback ?? this.tree.displayValueFallback
         }
       );
@@ -4476,6 +4499,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         this._skipInsertArray = true;
         queueMicrotask(() => { this._skipInsertArray = false; });
         this._insertResult = this.tree.insertArray(data);
+        if (isCheckedReseeded) this._checkedPaths = new Set();
         this._seedCheckedPathsFromTree();
         this._reapplyRuntimeChecked();
         if (!expandLevelChanged) this._reapplyExpanded(preservedExpanded);

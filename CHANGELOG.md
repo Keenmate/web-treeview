@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — every option built into the LTree rebuilds it; a rebuild keeps the other options (2026-11-23)
+- `isSelectableMember`, `isSorted`, `treePathSeparator`, `indexerBatchSize` and `indexerTimeout` changed after setup were ignored (a new `treePathSeparator` switched the separator without re-reading the paths); like every other member / mapping they now rebuild the LTree from the current data. The rebuild reads the merged options: one built from a partial `setOptions` (a single changed key) used to drop the options that were not in it — `orderMember`, `sortCallback`, `isCollapsibleMember`, `getIsCollapsibleCallback`, `getAllowedDropPositionsCallback`, the indexer settings and `expandLevel` (later data then loaded with nothing expanded).
+- A new `isExpandedMember` / `getIsExpandedCallback` re-seeds the expansion from the data (like `expandLevel`), and a new `isCheckedMember` / `getIsCheckedCallback` the checks; any other rebuild keeps both by path, as before. Same rules as svelte-treeview (its REVIEW §3.1, B17). Guarded by `e2e/regressions.spec.ts` "options after setup".
+
 ### Changed — BREAKING: labels read the spot's context (`{ctx.*}`, `ctx.count`) (2026-11-23)
 - Every dynamic label passes its context as `{ ctx }` (core `/locale` dotted paths, rulebook D-NC-24): templates read
   `{ctx.count}`, `{ctx.name}`, `{ctx.target}`, `{ctx.searchTerm}`; bare `{count}` / `{name}` / `{target}` are no longer

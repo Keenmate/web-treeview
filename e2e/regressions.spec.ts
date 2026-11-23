@@ -318,3 +318,26 @@ test.describe('B20: statistics', () => {
     expect(await page.evaluate(() => (window as any).__main.getTree().statistics.filteredNodeCount)).toBe(4);
   });
 });
+
+test.describe('options after setup (svelte §3.1)', () => {
+  test.beforeEach(({ page }) => load(page));
+
+  test('B17: a new member re-inserts the data — expansion, selection and checks kept by path', async ({ page }) => {
+    await box(page, '2.1').click();
+    await label(page, '1.1.1').click();
+    await page.evaluate(() => (window as any).__main.collapseNodes('2'));
+    await expect(row(page, '2.1')).toHaveCount(0);
+
+    await page.evaluate(() => ((window as any).__main.displayValueMember = 'path'));
+    await expect(label(page, '1.1.1')).toHaveText('1.1.1');
+    await expect(row(page, '2.1')).toHaveCount(0);
+    await expect(content(page, '1.1.1')).toHaveClass(/wtv__node-content--selected/);
+    await expect(box(page, '2')).toBeChecked();
+  });
+
+  test('B17: expandLevel re-seeds the expansion', async ({ page }) => {
+    await page.evaluate(() => ((window as any).__main.expandLevel = 1));
+    await expect(row(page, '1.1')).toBeVisible();
+    await expect(row(page, '1.1.1')).toHaveCount(0);
+  });
+});

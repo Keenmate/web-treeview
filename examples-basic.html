@@ -122,7 +122,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
 <!-- Example 5: Events -->
 <div class="card">
     <h2>BU05 · Events</h2>
-    <p>Listen to tree events: <code>node-click</code>, <code>focus-change</code>, <code>tree-change</code>.</p>
+    <p>Listen to tree events: <code>node-click</code>, <code>focus-change</code>, <code>nodes-change</code>.</p>
 
     <div class="tree-container" id="tree5-container">
         <web-treeview id="tree5" expand-level="1"></web-treeview>
@@ -173,7 +173,7 @@ element.setAttribute('display-value-member', 'label');</code></pre>
             <input type="checkbox" id="ra-fade">
             Plain fade (<code>--wtv-row-animation-distance: 0</code>)
         </label>
-        <label><code>row-animation-limit</code>
+        <label><code>max-animated-row-count</code>
             <select id="ra-limit">
                 <option value="50" selected>50 (default)</option>
                 <option value="5">5</option>
@@ -216,7 +216,7 @@ web-treeview.my-tree {
 &lt;web-treeview motion="none"&gt;&lt;/web-treeview&gt;
 
 &lt;!-- At most 5 rows animate per expand / collapse; the rest appear / go at once --&gt;
-&lt;web-treeview row-animation-limit="5"&gt;&lt;/web-treeview&gt;</code></pre>
+&lt;web-treeview max-animated-row-count="5"&gt;&lt;/web-treeview&gt;</code></pre>
     </div>
     <div class="code-block" data-language="js">
 <pre><code>// The collapse applies after the rows animated out — await it before reading state
@@ -225,7 +225,7 @@ await tree.collapseNodes('1');</code></pre>
     </div>
 
     <p class="form-text mt-1">
-        Only expands and collapses animate &mdash; never the first render, a reload, a filter or a re-render. Toggling a node again while its rows are animating out cancels the collapse (it stays open). <code>row-animation-limit</code> is a performance cap: expanding a node with thousands of children animates just the first rows.
+        Only expands and collapses animate &mdash; never the first render, a reload, a filter or a re-render. Toggling a node again while its rows are animating out cancels the collapse (it stays open). <code>max-animated-row-count</code> is a performance cap: expanding a node with thousands of children animates just the first rows.
     </p>
 </div>
 
@@ -492,7 +492,7 @@ window.components.locale = null;   // back to English</code></pre>
 
         tree5.addEventListener('node-click', (e) => logEvent('node-click', e.detail));
         tree5.addEventListener('focus-change', (e) => logEvent('focus-change', e.detail));
-        tree5.addEventListener('tree-change', () => logEvent('tree-change'));
+        tree5.addEventListener('nodes-change', () => logEvent('nodes-change'));
 
         // Example 6: Accordion expand
         const accTree = document.getElementById('tree-acc');
@@ -518,7 +518,7 @@ window.components.locale = null;   // back to English</code></pre>
             raTree.style.setProperty('--wtv-row-animation-duration', RA_SPEED[document.getElementById('ra-speed').value]);
             if (document.getElementById('ra-fade').checked) raTree.style.setProperty('--wtv-row-animation-distance', '0');
             else raTree.style.removeProperty('--wtv-row-animation-distance');
-            raTree.setAttribute('row-animation-limit', document.getElementById('ra-limit').value);
+            raTree.setAttribute('max-animated-row-count', document.getElementById('ra-limit').value);
             raTree.setAttribute('motion', document.getElementById('ra-motion').value);
         };
         for (const id of ['ra-speed', 'ra-fade', 'ra-limit', 'ra-motion'])

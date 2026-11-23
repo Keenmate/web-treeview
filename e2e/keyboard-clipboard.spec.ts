@@ -119,7 +119,7 @@ test.describe('copy / cut / paste', () => {
   });
 });
 
-test.describe('handle-keyboard-shortcuts=false', () => {
+test.describe('enable-keyboard-shortcuts=false', () => {
   test('Ctrl+C / Ctrl+X / Delete do nothing', async ({ page }) => {
     await load(page, '?shortcuts=off');
     await clickNode(page, '1.2');

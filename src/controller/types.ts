@@ -11,7 +11,7 @@ import type {
   DropOperation,
   InsertArrayResult,
   TreeChange,
-  ApplyChangesResult
+  ProcessChangesResult
 } from '../ltree/types';
 import type { RenderStats } from '../renderer/render-coordinator';
 import type { TreeNavigationOverrides } from '../navigation';
@@ -21,8 +21,8 @@ import type { Index, SearchOptions } from 'flexsearch';
 // ─── Selection ──────────────────────────────────────────────────────────
 
 export interface SelectionModifiers {
-  ctrl: boolean;
-  shift: boolean;
+  isCtrlPressed: boolean;
+  isShiftPressed: boolean;
 }
 
 export type RangeSelectionMode = 'visual' | 'logical';
@@ -448,7 +448,7 @@ export interface TreeViewStateOptions<T> {
   isSortingEnabled?: boolean | null | undefined;
   clickBehavior?: ClickBehavior | null | undefined;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default true. */
-  shouldHandleKeyboardShortcuts?: boolean | null | undefined;
+  isKeyboardShortcutsEnabled?: boolean | null | undefined;
   /** Read-only: the cut / paste / delete shortcuts are off (copy stays). Default false. */
   isReadonly?: boolean | null | undefined;
   /** Long-press hold (ms) before a touch-drag engages. Default 300. */
@@ -460,11 +460,11 @@ export interface TreeViewStateOptions<T> {
   isTreeDropZoneEnabled?: boolean | null | undefined;
   initializeIndexCallback?: (() => Index) | null;
   searchTerm?: string | null | undefined;
-  shouldUseInternalSearchIndex?: boolean | null | undefined;
+  isInternalSearchIndexEnabled?: boolean | null | undefined;
   indexerBatchSize?: number | null | undefined;
   indexerTimeout?: number | null | undefined;
   /** Max matches a search/filter returns (default 1000; FlexSearch's own silent default was 100). */
-  searchResultLimit?: number | null | undefined;
+  maxSearchResultCount?: number | null | undefined;
   /** EXPERIMENTAL — which descendants of a filter match stay visible. */
   filterScope?: import('../ltree/types').FilterScope | null | undefined;
   /** EXPERIMENTAL — the `x` for the depth-limited filterScopes (default 1). */
@@ -482,7 +482,7 @@ export interface TreeViewStateOptions<T> {
   initialBatchSize?: number;
   maxBatchSize?: number;
   // Row animation (docs/PLAN-row-animation.md; on/off = core `motion`)
-  rowAnimationLimit?: number;
+  maxAnimatedRowCount?: number;
   onRenderStart?: () => void;
   onRenderProgress?: (stats: RenderStats) => void;
   onRenderComplete?: (stats: RenderStats) => void;
@@ -651,14 +651,14 @@ export interface TreeViewStateSnapshot<T> {
    *  multi-drag members + their descendants, minus leave-behind holes) — so the dragged visual
    *  dims the whole set, not just the roots. Empty when no drag is in progress. */
   draggedPaths: string[];
-  /** Rows the last expand revealed (capped at rowAnimationLimit) — a row
+  /** Rows the last expand revealed (capped at maxAnimatedRowCount) — a row
    *  CREATED while its path is in here gets `wtv__node--opening`. Empty when idle. */
   revealedPaths: ReadonlySet<string>;
   isDragInProgress: boolean;
   hoveredNodeForDropPath: string | null;
   activeDropPosition: DropPosition | null;
   currentDropOperation: DropOperation;
-  isContextMenuVisible: boolean;
+  isContextMenuOpen: boolean;
   contextMenuX: number;
   contextMenuY: number;
   contextMenuXOffset: number;
@@ -694,9 +694,9 @@ export interface TreeViewStateEvents<T> {
   /** The expanded set changed through an expand / collapse method — emitted synchronously
    *  (after that call's node-expand / node-collapse); the whole new set. */
   'expanded-change': string[];
-  /** The data / structure changed (add / insert / update / move / remove, applyChanges,
+  /** The data / structure changed (add / insert / update / move / remove, processChanges,
    *  branch ops, paste, duplicate, sort) — one per change, on the microtask after it. */
-  'tree-change': void;
+  'nodes-change': void;
   'config-change': NodeConfig;
   'data-change': { nodes: LTreeNode<T>[] };
 }

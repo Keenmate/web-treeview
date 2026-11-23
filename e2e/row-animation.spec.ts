@@ -4,7 +4,7 @@ import { test, expect, type Page, type Locator } from './fixtures';
  * Row animation (docs/PLAN-row-animation.md) on /test/row-animation.html — mirror of
  * svelte-treeview's e2e/row-animation.spec.ts. On by default — part of core `motion`, no on/off
  * attribute (SPEC §12.16). The rows an expand reveals get wtv__node--opening (the first
- * row-animation-limit in visible order), cleared after the CSS duration (read back with core
+ * max-animated-row-count in visible order), cleared after the CSS duration (read back with core
  * readAnimationMs). Never on first render, a re-render (focus click) or a data reload;
  * motion="none", reduced motion or --wtv-row-animation-duration: 0s → no reveal at all.
  */
@@ -34,7 +34,7 @@ test('--wtv-row-animation-duration: 0s turns off just the rows', async ({ page }
   expect(await opening(page, 'off')).toEqual([]);
 });
 
-test('default (no attribute): exactly the revealed rows animate, capped at row-animation-limit, then the class goes', async ({ page }) => {
+test('default (no attribute): exactly the revealed rows animate, capped at max-animated-row-count, then the class goes', async ({ page }) => {
   await toggle(page, 'on', '1');
   await expect(row(page, 'on', '1.5')).toBeVisible();
   expect(await opening(page, 'on')).toEqual(['1.1', '1.2', '1.3']);
@@ -113,7 +113,7 @@ test('collapse: await collapseNodes() settles after the animation, with the rows
   expect(rowsLeft).toBe(0);
 });
 
-test('collapseAll: animates the first row-animation-limit rows out, then collapses everything', async ({ page }) => {
+test('collapseAll: animates the first max-animated-row-count rows out, then collapses everything', async ({ page }) => {
   await page.getByTestId('expand-all').click();
   await expect.poll(() => opening(page, 'on'), { timeout: 3000 }).toEqual([]);
   await page.getByTestId('collapse-all').click();

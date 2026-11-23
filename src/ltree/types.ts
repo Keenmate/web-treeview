@@ -22,17 +22,17 @@ export interface SortCompareContext<T = any> {
 export interface SortOptions<T = any> {
 	/** Ascending comparator (negative = `a` first). Default: the tree's own rule — `sortCallback`
 	 *  → `orderMember` → `Intl.Collator(numeric)` by display value. With `orderMember` set, a
-	 *  custom compare rewrites the order values (10, 20, 30…) and fires `nodes-reorder`. */
+	 *  custom compare rewrites the order values (10, 20, 30…) and fires `nodes-sort`. */
 	compareCallback?: (ctx: SortCompareContext<T>) => number;
 	/** `'desc'` reverses whichever rule applies (with `orderMember`: the values are rewritten,
 	 *  like a custom compare). Default `'asc'`. */
 	direction?: 'asc' | 'desc';
-	/** Suppress `nodes-reorder` only — the tree always re-renders. */
+	/** Suppress `nodes-sort` only — the tree always re-renders. */
 	isSilent?: boolean;
 }
 
 /** One parent whose children's `orderMember` values a sort rewrote. */
-export interface NodesReorderContext<T = any> {
+export interface NodesSortContext<T = any> {
 	/** The parent ('' = root). */
 	parentPath: string;
 	/** All its children, in the new order. */
@@ -53,7 +53,7 @@ export type DropZoneLayout = 'around' | 'before' | 'after' | 'wave' | 'wave2';
 export type DropOperation = 'move' | 'copy';
 
 // Incremental update types
-/** One `applyChanges` operation: `add` (last child of `parentPath`), `insert` (before / after /
+/** One `processChanges` operation: `add` (last child of `parentPath`), `insert` (before / after /
  *  as a child of `targetPath`), `update` (merge `data` into the node's data), `remove`. */
 export type TreeChange<T> =
 	| { operation: 'add'; parentPath: string; data: T; pathSegment?: string }
@@ -61,7 +61,7 @@ export type TreeChange<T> =
 	| { operation: 'update'; path: string; data: Partial<T> }
 	| { operation: 'remove'; path: string };
 
-export interface ApplyChangesResult {
+export interface ProcessChangesResult {
 	successful: number;
 	failed: Array<{ changeIndex: number; operation: string; path: string; error: string }>;
 }
@@ -159,7 +159,7 @@ export interface Ltree<T> {
 	 *  start collapsed; matches + their ancestors are always expanded. */
 	shouldExpandFilterDescendants?: boolean;
 	/** Max matches a search/filter returns (default DEFAULT_SEARCH_RESULT_LIMIT). */
-	searchResultLimit?: number;
+	maxSearchResultCount?: number;
 	/** Fired as the async search index fills (per idle batch) and once on completion. */
 	onIndexProgress?: (progress: IndexProgress) => void;
 	/** Fired every time filterNodes applies or clears a filter. */
@@ -203,7 +203,7 @@ export interface Ltree<T> {
 	/** @internal */
 	_resolveSearchLimit(searchOptions?: SearchOptions): number;
 	/** @internal Runs the index query with the result limit + truncation detection. */
-	_runSearch(
+	_searchWithLimit(
 		searchTerm: string,
 		searchOptions?: SearchOptions
 	): { nodes: LTreeNode<T>[]; isLimited: boolean; limit: number };
@@ -248,15 +248,14 @@ export interface Ltree<T> {
 	_sortByLevel(items: LTreeNode<T>[]): LTreeNode<T>[];
 	/** The automatic re-sort after a mutation: `refreshSiblings` unless `isSortingEnabled` is false. */
 	_autoSortSiblings(parentPath: string): void;
-	_sortChildrenOf(parent: LTreeNode<T>, options: SortOptions<T> | undefined, out: NodesReorderContext<T>[]): void;
+	_sortChildrenOf(parent: LTreeNode<T>, options: SortOptions<T> | undefined, out: NodesSortContext<T>[]): void;
 	/** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites. */
-	sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[];
+	sortNodes(paths: string | string[], options?: SortOptions<T>): NodesSortContext<T>[];
 	/** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
-	sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[];
+	sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesSortContext<T>[];
 
 	/** While filtered, rebuild the filtered view after an edit (once per microtask). */
 	_scheduleRefilter(): void;
-	_emitTreeChanged(): void;
 
 	refresh(): void;
 
@@ -272,7 +271,7 @@ export interface Ltree<T> {
 	addNode(parentPath: string, data: T, pathSegment?: string): { success: boolean; node?: LTreeNode<T>; error?: string };
 	insertNode(targetPath: string, data: T, position: DropPosition): { success: boolean; node?: LTreeNode<T>; error?: string };
 	updateNode(path: string, dataUpdates: Partial<T>): { success: boolean; node?: LTreeNode<T>; error?: string };
-	applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
+	processChanges(changes: TreeChange<T>[]): ProcessChangesResult;
 
 	// Cross-tree copy method
 	duplicateNode(

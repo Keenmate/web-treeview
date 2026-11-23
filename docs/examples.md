@@ -139,7 +139,7 @@ tree.cancelCut();             // Cancel a pending cut
 
 // Built-in keyboard shortcuts when the tree has focus:
 // Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V, Delete / Shift+Delete, Escape (cancel cut)
-// Set handle-keyboard-shortcuts="false" (shouldHandleKeyboardShortcuts) to opt out.
+// Set enable-keyboard-shortcuts="false" (isKeyboardShortcutsEnabled) to opt out.
 //
 // beforeKeydownCallback runs first and can intercept any key — return false to suppress
 // both the default navigation and the built-in shortcuts for that key:

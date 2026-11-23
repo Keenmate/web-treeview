@@ -77,8 +77,8 @@ Original report:
 
 **Where:** `src/ltree/ltree.ts` `replaceBranch()` (~1582-1584).
 
-**Symptom:** it calls `insertBranch()` (which emits `_emitTreeChanged()`) and
-then emits again → two `tree-change` notifications for one operation.
+**Symptom:** it calls `insertBranch()` (which emits `refresh()`) and
+then emits again → two `nodes-change` notifications for one operation.
 `removed` is the number of *direct* children removed, not the number of nodes
 (descendants are removed too but not counted).
 
@@ -580,7 +580,7 @@ transform over each manifest node before the input transform (phase
 
 ## 22. ~~Desktop drops on a refusing node: no `node-drop-reject`, tree drop zone bypassed~~ — fixed
 
-**Fixed 2026-10-25:** `dragOver()` accepts the dragover on a refusing row (`preventDefault`, no hover / indicators) so the browser fires `drop`; `drop()` then applies the same gate as the zone / touch paths — `enable-tree-drop-zone` routes it to `handleTreeZoneDrop` (target=null), otherwise `_indicateDropDenied` fires `node-drop-reject` + the 🚫 flash. Both `test.fail`s in `drag-visuals.spec.ts` pass. Side effect: the cursor over a refusing row shows the drop cursor (needed for `drop` to fire at all — svelte-treeview does the same).
+**Fixed 2026-10-25:** `dragOver()` accepts the dragover on a refusing row (`preventDefault`, no hover / indicators) so the browser fires `drop`; `drop()` then applies the same gate as the zone / touch paths — `enable-tree-drop-zone` routes it to `handleTreeZoneDrop` (target=null), otherwise `_showDropBlockedIndicator` fires `node-drop-reject` + the 🚫 flash. Both `test.fail`s in `drag-visuals.spec.ts` pass. Side effect: the cursor over a refusing row shows the drop cursor (needed for `drop` to fire at all — svelte-treeview does the same).
 
 **Revised 2026-10-26 (drop cursor):** the side effect is gone. Without `enable-tree-drop-zone` a refusing row now REFUSES the dragover — no `preventDefault`, `dataTransfer.dropEffect = 'none'` (🚫 cursor), no hover indicators (a previous row's hover clears). The engine remembers that row (`_refusedDropNode`; cleared by a dragover on anything else, leaving the body, or any drop); `dragend` (`_onNodeDragEnd` for the source tree, the document `dragend` → `announceRefusedDrop()` for a cross-tree target) then fires `node-drop-reject` + the 🚫 flash on it — only when no drop happened. With `enable-tree-drop-zone` the old behaviour stays (dragover accepted, `drop()` routes to `handleTreeZoneDrop`). Touch / zone paths unchanged. Caveat: an Esc-cancel while over a refusing row also announces the reject (dragend can't tell the two apart). The dead `.wtv__root-drop-zone` selector in the touch drop path (nothing renders it) is removed. Tests: `drag-visuals.spec.ts` › "drop cursor over a refusing node (NOTES #22)".
 
@@ -589,7 +589,7 @@ Original report:
 **Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a
 node drop to the engine's public `drop()` (`tree-view-state.ts` ~2986), which
 silently skips a node with `isDropAllowed=false`. The reject feedback
-(`_indicateDropDenied` → `onNodeDropDenied` → `node-drop-reject`, 🚫 flash)
+(`_showDropBlockedIndicator` → `onNodeDropDenied` → `node-drop-reject`, 🚫 flash)
 and the `enable-tree-drop-zone` rerouting live in `_onNodeDropInternal`
 (~4465-4495), which the DOM renderer never calls. (A real browser also needs
 `dragover` to be accepted on the refusing row for `drop` to fire at all.)
@@ -600,7 +600,7 @@ routed to the tree (no `node-drop` with `target=null`). The touch path
 (long-press a locked node → `node-drag-reject`) works.
 
 **Suggested fix:** have the renderer use the same gate as
-`_onNodeDropInternal` (or make `drop()` call `_indicateDropDenied` /
+`_onNodeDropInternal` (or make `drop()` call `_showDropBlockedIndicator` /
 `handleTreeZoneDrop`), and accept `dragover` on refusing rows when a tree drop
 zone or reject feedback is wanted.
 

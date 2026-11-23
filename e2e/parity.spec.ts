@@ -22,9 +22,9 @@ const events = (page: Page) => page.evaluate(() => (window as any).__events);
 const rows = (page: Page) => page.evaluate(() => (window as any).rowNames());
 
 test.describe('search index default', () => {
-  test('shouldUseInternalSearchIndex defaults to true: searchNodes finds without opting in', async ({ page }) => {
+  test('isInternalSearchIndexEnabled defaults to true: searchNodes finds without opting in', async ({ page }) => {
     await make(page, { props: { searchValueMember: 'name' } });
-    expect(await prop(page, 'shouldUseInternalSearchIndex')).toBe(null); // unset → the engine default (on)
+    expect(await prop(page, 'isInternalSearchIndexEnabled')).toBe(null); // unset → the engine default (on)
     await expect.poll(async () => ((await call(page, 'searchNodes', 'gamma')) as any[]).length).toBe(1);
   });
 

@@ -32,7 +32,7 @@
 
         await customElements.whenDefined('web-treeview');
         const tree = document.getElementById('tree');
-        if (params.get('shortcuts') === 'off') tree.setAttribute('handle-keyboard-shortcuts', 'false');
+        if (params.get('shortcuts') === 'off') tree.setAttribute('enable-keyboard-shortcuts', 'false');
         setupTree(tree, data);
         logEvents(tree, 'kc-log', ['node-copy', 'node-cut', 'node-paste', 'node-delete', 'selection-change']);
         window.tree = tree;

@@ -12,7 +12,7 @@
 <body>
     <main>
         <h1>Sorting Fixture</h1>
-        <p>isSortingEnabled / enable-sorting, sortNodes / sortAll, nodes-reorder, sort menu built-ins.
+        <p>isSortingEnabled / enable-sorting, sortNodes / sortAll, nodes-sort, sort menu built-ins.
             <code>window.make({ attrs, props, nodes })</code> builds a fresh tree in <code>#host</code>.</p>
         <div class="tree-container" id="host"></div>
     </main>
@@ -45,7 +45,7 @@
             Object.assign(tree, props);
             tree.nodes = nodes ?? window.baseNodes();
             window.__reorders = [];
-            tree.addEventListener('nodes-reorder', (e) => window.__reorders.push({
+            tree.addEventListener('nodes-sort', (e) => window.__reorders.push({
                 parentPath: e.detail.parentPath,
                 nodes: e.detail.nodes.map((n) => n.path),
                 changes: e.detail.changes,

@@ -394,7 +394,7 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
         }
 
         tree.addEventListener('focus-change', refreshFocusLabel);
-        tree.addEventListener('tree-change', refreshState);
+        tree.addEventListener('nodes-change', refreshState);
 
         function newNode(name, icon) {
             return { id: nextId++, path: '', name, icon, sortOrder: 100 };
@@ -534,8 +534,8 @@ tree.getContextMenuItemsCallback = ({ node }) =&gt; [
         }
 
         source.addEventListener('selection-change', updateClipboardStatus);
-        source.addEventListener('tree-change', updateClipboardStatus);
-        target.addEventListener('tree-change', updateClipboardStatus);
+        source.addEventListener('nodes-change', updateClipboardStatus);
+        target.addEventListener('nodes-change', updateClipboardStatus);
 
         source.onNodeCopy = ({ paths }) => { addCbLog(`Copied ${paths.length} node(s)`); updateClipboardStatus(); };
         source.onNodeCut = ({ paths }) => { addCbLog(`Cut ${paths.length} node(s) — paste to move`); updateClipboardStatus(); };

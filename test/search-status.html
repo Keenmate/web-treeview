@@ -17,9 +17,9 @@
 <body>
     <main>
         <h1>Search Status Fixture</h1>
-        <!-- search-result-limit truncation detection, search-status-change, index-progress,
+        <!-- max-search-result-count truncation detection, search-status-change, index-progress,
              and a tree that STARTS with a search-term before its index is built.
-             ?term=<initial search-term>  ?limit=<search-result-limit>  ?count=<groups>  ?batch=<indexer-batch-size>
+             ?term=<initial search-term>  ?limit=<max-search-result-count>  ?count=<groups>  ?batch=<indexer-batch-size>
              Data: groups × 10 leaves ("Group g", "Leaf g-l"). Mirrors svelte-treeview's
              /test/search-status. Targeted by e2e/search-status.spec.ts. -->
 
@@ -30,7 +30,7 @@
         </div>
 
         <div class="tree-container">
-            <web-treeview id="tree" expand-level="1" use-internal-search-index="true"></web-treeview>
+            <web-treeview id="tree" expand-level="1" enable-internal-search-index="true"></web-treeview>
         </div>
 
         <dl class="readouts">
@@ -70,7 +70,7 @@
             tree.displayValueMember = 'name';
             tree.searchValueMember = 'name';
             tree.sortCallback = ({ nodes }) => nodes;
-            if (params.get('limit')) tree.searchResultLimit = Number(params.get('limit'));
+            if (params.get('limit')) tree.maxSearchResultCount = Number(params.get('limit'));
             if (params.get('batch')) tree.indexerBatchSize = Number(params.get('batch'));
             tree.addEventListener('search-status-change', (e) => {
                 const s = e.detail;
@@ -86,8 +86,8 @@
             tree.nodes = data;
 
             termInput.addEventListener('input', () => { tree.searchTerm = termInput.value; });
-            document.querySelector('[data-testid="limit-5"]').addEventListener('click', () => { tree.searchResultLimit = 5; });
-            document.querySelector('[data-testid="limit-default"]').addEventListener('click', () => { tree.searchResultLimit = 1000; });
+            document.querySelector('[data-testid="limit-5"]').addEventListener('click', () => { tree.maxSearchResultCount = 5; });
+            document.querySelector('[data-testid="limit-default"]').addEventListener('click', () => { tree.maxSearchResultCount = 1000; });
         });
     </script>
 </body>

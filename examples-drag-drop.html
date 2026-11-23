@@ -13,7 +13,7 @@
         (not <code>hasChildren</code> &mdash; the callback runs while the data is inserted, before children are linked), so a file
         never lights up and releasing over one shows the 🚫.
         <strong>Target tree (right):</strong> Drag from source to add nodes. Starts empty to demo drop placeholder.</p>
-    <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>shouldHandleKeyboardShortcuts</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
+    <p><strong>Clipboard (cross-tree):</strong> select nodes in either tree and press <strong>Ctrl/Cmd+C</strong> (copy) or <strong>X</strong> (cut), then click the other tree and <strong>Ctrl/Cmd+V</strong> to paste. While the target is empty, "Show drop zone when target empty" keeps the zone focusable so you can copy on the left, hover the zone, and paste without clicking first. <strong>Delete</strong> removes the selected node(s); <strong>Esc</strong> cancels a pending cut. These come from the built-in <code>isKeyboardShortcutsEnabled</code> &mdash; this demo only supplies the paste transform (fresh ids / <em>Copy N</em> names) and a self-paste redirect.</p>
 
     <div class="controls">
         <button class="btn-outline" onclick="clearTarget()">Clear Target Tree</button>
@@ -389,7 +389,7 @@
             sourceTreeEl.dropZoneStart = zoneStart;
             sourceTreeEl.dropZoneMaxWidth = `${maxWidth}px`;
             sourceTreeEl.isCopyAllowed = isCopyAllowed;
-            sourceTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
+            sourceTreeEl.isKeyboardShortcutsEnabled = keyboardShortcuts;
             sourceTreeEl.setAttribute('selection-mode', selectionMode);
         }
 
@@ -400,7 +400,7 @@
             targetTreeEl.dropZoneStart = zoneStart;
             targetTreeEl.dropZoneMaxWidth = `${maxWidth}px`;
             targetTreeEl.isCopyAllowed = isCopyAllowed;
-            targetTreeEl.shouldHandleKeyboardShortcuts = keyboardShortcuts;
+            targetTreeEl.isKeyboardShortcutsEnabled = keyboardShortcuts;
             targetTreeEl.isEmptyDropPlaceholderShown = showEmptyPlaceholder;
             targetTreeEl.shouldHighlightOnPageDrag = highlightOnPageDrag;
             targetTreeEl.setAttribute('selection-mode', selectionMode);

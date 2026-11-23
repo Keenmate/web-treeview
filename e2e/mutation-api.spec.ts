@@ -9,7 +9,7 @@ import { test, expect, type Page, nodeByPath, logLines } from './fixtures';
  *
  * `outline()` reads the model (visible flat nodes), `domOutline()` the rendered
  * rows — both "  "-indented by level — so each test checks the DOM reflects the
- * model, plus the result shape and one `tree-change` per operation.
+ * model, plus the result shape and one `nodes-change` per operation.
  */
 
 const PAGE = '/test/mutation-api.html';
@@ -25,7 +25,7 @@ async function load(page: Page) {
 
 const outline = (page: Page) => page.evaluate(() => (window as any).outline());
 const domOutline = (page: Page) => page.evaluate(() => (window as any).domOutline());
-const treeChanges = async (page: Page) => (await logLines(page, LOG)).filter((l) => l.startsWith('tree-change')).length;
+const treeChanges = async (page: Page) => (await logLines(page, LOG)).filter((l) => l.startsWith('nodes-change')).length;
 
 /** Run `expr` against `tree`, return its JSON-safe result (node objects → paths). */
 async function run(page: Page, expr: string) {
@@ -37,14 +37,14 @@ async function run(page: Page, expr: string) {
   }, expr);
 }
 
-/** Expect `n` tree-change events since `before`, settled (no stragglers). */
+/** Expect `n` nodes-change events since `before`, settled (no stragglers). */
 async function expectTreeChanges(page: Page, before: number, n: number) {
   await expect.poll(() => treeChanges(page)).toBe(before + n);
   await page.waitForTimeout(100);
   expect(await treeChanges(page)).toBe(before + n);
 }
 
-test('addNode adds a child; DOM reflects it; one tree-change', async ({ page }) => {
+test('addNode adds a child; DOM reflects it; one nodes-change', async ({ page }) => {
   await load(page);
   const before = await treeChanges(page);
   const r = await run(page, `tree.addNode('3', { id: 31, name: 'Almond' })`);
@@ -156,10 +156,10 @@ test('duplicateNode: transform returning null skips that node', async ({ page })
   await expect.poll(() => domOutline(page)).toEqual([...INITIAL, '  Veg', '    Carrot']);
 });
 
-test('applyChanges applies add/insert/update/remove, reports failures, one tree-change', async ({ page }) => {
+test('processChanges applies add/insert/update/remove, reports failures, one nodes-change', async ({ page }) => {
   await load(page);
   const before = await treeChanges(page);
-  const r = await run(page, `tree.applyChanges([
+  const r = await run(page, `tree.processChanges([
     { operation: 'add', parentPath: '3', data: { id: 31, name: 'Almond' } },
     { operation: 'insert', targetPath: '1.1', position: 'before', data: { id: 13, name: 'Cherry' } },
     { operation: 'update', path: '1', data: { name: 'FRUIT' } },

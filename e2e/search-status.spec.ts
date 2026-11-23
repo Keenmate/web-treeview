@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Search status API on /test/search-status.html: search-result-limit truncation detection,
+ * Search status API on /test/search-status.html: max-search-result-count truncation detection,
  * search-status-change, index-progress, and a tree that STARTS with a search-term.
  * Mirrors svelte-treeview's e2e/search-status.spec.ts.
  * Fixture: 20 groups × 10 leaves ("Group g", "Leaf g-l") = 220 nodes.
@@ -27,7 +27,7 @@ test("default limit is no longer FlexSearch's silent 100", async ({ page }) => {
   await expect(page.getByTestId('status')).toHaveText('Leaf|200|false|1000');
 });
 
-test('search-result-limit truncates and reports isLimited', async ({ page }) => {
+test('max-search-result-count truncates and reports isLimited', async ({ page }) => {
   await page.goto(PAGE);
   await expect(page.getByTestId('index-complete')).toHaveText('true');
   await page.getByTestId('term').fill('Leaf');

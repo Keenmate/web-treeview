@@ -157,7 +157,7 @@
             expandLevel: +$('cfg-expand-level').value,
             isSorted: $('cfg-sorted').checked,
             nodeCountTarget: +$('cfg-node-count').value,
-            shouldUseInternalSearchIndex: $('cfg-search-index').checked,
+            isInternalSearchIndexEnabled: $('cfg-search-index').checked,
             indexerBatchSize: +$('cfg-indexer-batch').value,
             isProgressiveRenderEnabled: $('opt-progressive').checked,
             initialBatchSize: +$('opt-initial-batch').value,
@@ -172,7 +172,7 @@
         if (c.expandLevel !== undefined) $('cfg-expand-level').value = c.expandLevel;
         if (c.isSorted !== undefined) $('cfg-sorted').checked = c.isSorted;
         if (c.nodeCountTarget !== undefined) $('cfg-node-count').value = c.nodeCountTarget;
-        if (c.shouldUseInternalSearchIndex !== undefined) $('cfg-search-index').checked = c.shouldUseInternalSearchIndex;
+        if (c.isInternalSearchIndexEnabled !== undefined) $('cfg-search-index').checked = c.isInternalSearchIndexEnabled;
         if (c.indexerBatchSize !== undefined) $('cfg-indexer-batch').value = c.indexerBatchSize;
         if (c.isProgressiveRenderEnabled !== undefined) $('opt-progressive').checked = c.isProgressiveRenderEnabled;
         if (c.initialBatchSize !== undefined) $('opt-initial-batch').value = c.initialBatchSize;
@@ -268,7 +268,7 @@
             searchValueMember: 'name',
             expandLevel: +$('cfg-expand-level').value,
             isSorted: $('cfg-sorted').checked || undefined,
-            shouldUseInternalSearchIndex: $('cfg-search-index').checked || undefined,
+            isInternalSearchIndexEnabled: $('cfg-search-index').checked || undefined,
             indexerBatchSize: +$('cfg-indexer-batch').value,
             isVirtualScrollEnabled: isVirtual,
         };

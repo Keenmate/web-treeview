@@ -30,7 +30,7 @@
         await customElements.whenDefined('web-treeview');
         const tree = document.getElementById('tree');
         setupTree(tree, data);
-        logEvents(tree, 'mu-log', ['tree-change']);
+        logEvents(tree, 'mu-log', ['nodes-change']);
         window.tree = tree;
 
         /** Names in render order, indented by level: "Fruits", "  Apple", … */

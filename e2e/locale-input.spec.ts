@@ -36,8 +36,8 @@ test('locale="de" formats {ctx.count}; unset follows window.components.locale.lo
     const el = document.createElement('web-treeview') as any;
     el.id = 'big';
     el.setAttribute('locale', 'de');
-    el.setAttribute('use-internal-search-index', 'true');
-    el.setAttribute('search-result-limit', '5000');
+    el.setAttribute('enable-internal-search-index', 'true');
+    el.setAttribute('max-search-result-count', '5000');
     el.displayValueMember = 'name';
     el.searchValueMember = 'name';
     el.nodes = Array.from({ length: 1234 }, (_, i) => ({ id: i + 1, path: String(i + 1), name: `Item ${i + 1}` }));
@@ -76,7 +76,7 @@ test('a TreeViewEngine without the element: the locale option (default null = pa
     (window as any).components.locale = { locale: 'de-DE' };
     (window as any).bigEngine = new TreeViewEngine(box, {
       nodes: Array.from({ length: 1234 }, (_, i) => ({ id: i + 1, path: String(i + 1), name: `Item ${i + 1}` })),
-      displayValueMember: 'name', searchValueMember: 'name', searchResultLimit: 5000,
+      displayValueMember: 'name', searchValueMember: 'name', maxSearchResultCount: 5000,
     });
     const { ENGINE_DEFAULTS } = await import('/src/inputs.ts' as string);
     return { hasKey: 'locale' in ENGINE_DEFAULTS, value: ENGINE_DEFAULTS.locale };

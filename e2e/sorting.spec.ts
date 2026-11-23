@@ -2,7 +2,7 @@ import { test, expect, type Page } from './fixtures';
 
 /**
  * Sorting (round 3, svelte-treeview parity): `isSortingEnabled` / `enable-sorting`,
- * `sortNodes` / `sortAll` (+ `SortOptions`), `nodes-reorder`, the `sort*` menu built-ins.
+ * `sortNodes` / `sortAll` (+ `SortOptions`), `nodes-sort`, the `sort*` menu built-ins.
  * Fixture: test/sorting.html (`window.make({ attrs, props, nodes })` builds a fresh tree).
  *
  * Base data (input order): roots "Item 10"(o30), "Item 2"(o10), "Item 1"(o20);
@@ -94,7 +94,7 @@ test.describe('sortNodes / sortAll', () => {
     await call(page, 'sortAll', null);
     expect(await children(page, '')).toEqual(['Item 1', 'Item 2', 'Item 10']);
     await expect.poll(() => rows(page)).toEqual(['Item 1', 'Item 2', 'a', 'b', 'x', 'y', 'Item 10']);
-    expect(await reorders(page)).toEqual([]); // no orderMember → never nodes-reorder
+    expect(await reorders(page)).toEqual([]); // no orderMember → never nodes-sort
   });
 
   test('compareCallback + direction desc; sortNodes("") sorts the roots', async ({ page }) => {
@@ -105,12 +105,12 @@ test.describe('sortNodes / sortAll', () => {
     expect(await children(page, '')).toEqual(['Item 10', 'Item 2', 'Item 1']);
   });
 
-  test('with orderMember: a custom compare rewrites the order values (10, 20, 30) and fires nodes-reorder per parent', async ({ page }) => {
+  test('with orderMember: a custom compare rewrites the order values (10, 20, 30) and fires nodes-sort per parent', async ({ page }) => {
     await make(page, { props: { orderMember: 'order' } });
     await page.evaluate(() => {
       const w = window as any;
       w.__twin = 0;
-      w.tree.onNodesReorder = () => w.__twin++;
+      w.tree.onNodesSort = () => w.__twin++;
       w.tree.sortAll(null, { compareCallback: ({ a, b }: any) => a.data.name.localeCompare(b.data.name, undefined, { numeric: true }) });
     });
     expect(await children(page, '')).toEqual(['Item 1', 'Item 2', 'Item 10']);

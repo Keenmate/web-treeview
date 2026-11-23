@@ -53,6 +53,19 @@ test.describe('Built-in Delete', () => {
     await expect(page.getByTestId('del-log')).toHaveText('');
   });
 
+  test('deleteNodes() on the element runs the Delete command: node-delete fires; beforeDeleteCallback can block it', async ({ page }) => {
+    await goto(page);
+    const result = await page.evaluate(() => (document.querySelector('web-treeview') as any).deleteNodes(['1.2']));
+    expect(result).toEqual({ removed: 1, blocked: 0 });
+    await expect(nodeAt(page, '1.2')).toHaveCount(0);
+    await expect(page.getByTestId('del-log')).toContainText('deleted Notes.txt');
+
+    await page.getByText('beforeDelete → block').click();
+    const blocked = await page.evaluate(() => (document.querySelector('web-treeview') as any).deleteNodes(['2']));
+    expect(blocked.removed).toBe(0);
+    await expect(nodeAt(page, '2')).toBeVisible();
+  });
+
   test('beforeDeleteCallback returning false blocks the Delete command', async ({ page }) => {
     await goto(page);
     await page.getByText('beforeDelete → block').click();

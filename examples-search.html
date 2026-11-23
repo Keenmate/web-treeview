@@ -37,7 +37,7 @@
 
     <div class="code-block" data-language="js" data-kmwc-snippet>
 <pre><code>// Enable the internal index + point it at the label member
-tree.shouldUseInternalSearchIndex = true;
+tree.isInternalSearchIndexEnabled = true;
 tree.searchValueMember = 'name';
 
 function onInput() {
@@ -120,7 +120,7 @@ function navigateTo(i) {
 <!-- SF03 · Internal Search Index (FlexSearch) -->
 <div class="card">
     <h2>SF03 · Internal Search Index (FlexSearch)</h2>
-    <p>Search is backed by an internal <strong>FlexSearch</strong> index, built asynchronously off the node data. It is on by default (<code>shouldUseInternalSearchIndex</code>); tell it which value to index via <code>searchValueMember</code> (or the <code>getSearchValueCallback</code> for multi-field / computed text). Without the index enabled, <code>filterNodes</code> / <code>searchNodes</code> have nothing to query.</p>
+    <p>Search is backed by an internal <strong>FlexSearch</strong> index, built asynchronously off the node data. It is on by default (<code>isInternalSearchIndexEnabled</code>); tell it which value to index via <code>searchValueMember</code> (or the <code>getSearchValueCallback</code> for multi-field / computed text). Without the index enabled, <code>filterNodes</code> / <code>searchNodes</code> have nothing to query.</p>
 
     <table class="reference-table">
         <thead>
@@ -133,8 +133,8 @@ function navigateTo(i) {
         </thead>
         <tbody>
             <tr class="is-highlight">
-                <td><code>shouldUseInternalSearchIndex</code></td>
-                <td><code>use-internal-search-index</code></td>
+                <td><code>isInternalSearchIndexEnabled</code></td>
+                <td><code>enable-internal-search-index</code></td>
                 <td><code>boolean</code></td>
                 <td>Build the internal FlexSearch index (required for search/filter). Default <code>true</code>; <code>false</code> = no index, search finds nothing</td>
             </tr>
@@ -175,8 +175,8 @@ function navigateTo(i) {
                 <td>The active filter term &mdash; the declarative twin of <code>filterNodes(text)</code></td>
             </tr>
             <tr>
-                <td><code>searchResultLimit</code></td>
-                <td><code>search-result-limit</code></td>
+                <td><code>maxSearchResultCount</code></td>
+                <td><code>max-search-result-count</code></td>
                 <td><code>number</code></td>
                 <td>Max matches a search / filter returns (default 1000); <code>search-status-change</code> reports <code>isLimited</code></td>
             </tr>
@@ -221,7 +221,7 @@ function navigateTo(i) {
                 <td><code>search-status-change</code></td>
                 <td><code>onSearchStatusChange</code></td>
                 <td><code>{ searchTerm, matchCount, isLimited, limit, isIndexing }</code></td>
-                <td>A filter was applied or cleared (also the automatic re-filter when indexing completes); <code>isLimited</code> = more matched than <code>search-result-limit</code></td>
+                <td>A filter was applied or cleared (also the automatic re-filter when indexing completes); <code>isLimited</code> = more matched than <code>max-search-result-count</code></td>
             </tr>
         </tbody>
     </table>
@@ -246,11 +246,11 @@ function navigateTo(i) {
 
     <div class="code-block" data-language="js" data-kmwc-snippet>
 <pre><code>// Simple: index a single member
-tree.shouldUseInternalSearchIndex = true;
+tree.isInternalSearchIndexEnabled = true;
 tree.searchValueMember = 'name';
 
 // Advanced: index a computed string across several fields
-tree.shouldUseInternalSearchIndex = true;
+tree.isInternalSearchIndexEnabled = true;
 tree.getSearchValueCallback = ({ node }) =>
   `${node.data?.name} ${node.data?.description ?? ''}`;</code></pre>
     </div>
@@ -371,7 +371,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         tree.pathMember = 'path';
         tree.displayValueMember = 'name';
         tree.searchValueMember = 'name';
-        tree.shouldUseInternalSearchIndex = true;
+        tree.isInternalSearchIndexEnabled = true;
         tree.expandLevel = 1;
         tree.nodes = locationTree;
 
@@ -468,7 +468,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         sf02a.pathMember = 'path';
         sf02a.displayValueMember = 'name';
         sf02a.searchValueMember = 'name';
-        sf02a.shouldUseInternalSearchIndex = true;
+        sf02a.isInternalSearchIndexEnabled = true;
         sf02a.nodes = projectTree;
 
         const sf02b = document.getElementById('sf02b-tree');
@@ -476,7 +476,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         sf02b.pathMember = 'path';
         sf02b.displayValueMember = 'name';
         sf02b.searchValueMember = 'name';
-        sf02b.shouldUseInternalSearchIndex = true;
+        sf02b.isInternalSearchIndexEnabled = true;
         sf02b.nodes = projectTree;
 
         const sf02out = document.getElementById('sf02-output');
@@ -506,7 +506,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         sf03.pathMember = 'path';
         sf03.displayValueMember = 'name';
         sf03.searchValueMember = 'name';
-        sf03.shouldUseInternalSearchIndex = true;
+        sf03.isInternalSearchIndexEnabled = true;
         sf03.nodes = orgTree;
 
         const sf03out = document.getElementById('sf03-output');
@@ -514,7 +514,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         const sf03toggle = document.getElementById('sf03-index-toggle');
 
         window.applyIndexToggle = () => {
-            sf03.shouldUseInternalSearchIndex = sf03toggle.checked;
+            sf03.isInternalSearchIndexEnabled = sf03toggle.checked;
             sf03.nodes = [...orgTree];        // rebuild (and re-index if enabled)
             if (sf03input.value.trim()) window.onIndexDemo(sf03input.value);
         };
@@ -551,7 +551,7 @@ tree.scrollToPath('27.5', { shouldRevealContainer: false });</code></pre>
         sf04.pathMember = 'path';
         sf04.displayValueMember = 'name';
         sf04.searchValueMember = 'name';
-        sf04.shouldUseInternalSearchIndex = true;
+        sf04.isInternalSearchIndexEnabled = true;
         sf04.beforeScrollCallback = ({ source, path, container, options }) => {
             const where = container ? (container.id || container.className) : 'page';
             let verdict = 'defaults';

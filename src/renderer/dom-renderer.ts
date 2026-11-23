@@ -639,7 +639,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.container?.classList.toggle('wtv__container--disabled', isDisabled);
     if (isDisabled) {
       this._closeMenu();
-      if (this.state?.isContextMenuVisible) this.state.closeContextMenu();
+      if (this.state?.isContextMenuOpen) this.state.closeContextMenu();
       this._closeReveal();
       for (const h of this.tooltips.values()) h.hide();
     }
@@ -680,8 +680,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Build selection modifiers from event
     const modifiers = {
-      ctrl: event.ctrlKey || event.metaKey,
-      shift: event.shiftKey
+      isCtrlPressed: event.ctrlKey || event.metaKey,
+      isShiftPressed: event.shiftKey
     };
 
     // Checkbox click
@@ -751,7 +751,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const node = this.state.getNodeByPath(path);
       if (node) {
         const behavior = this.lastNodeConfig?.clickBehavior ?? 'expand-and-focus';
-        const isPlainClick = !modifiers.ctrl && !modifiers.shift;
+        const isPlainClick = !modifiers.isCtrlPressed && !modifiers.isShiftPressed;
 
         // Manual double-click detection (the native dblclick is unreliable under
         // the flat diff reconciler — the first click bumps _rev and patches the
@@ -919,7 +919,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (node) {
         this.state.nodeCallbacks.onNodeRightClicked(node, event);
       }
-    } else if (this.state.isContextMenuVisible) {
+    } else if (this.state.isContextMenuOpen) {
       // The browser's keyboard-initiated `contextmenu` (Shift+F10 / ContextMenu key)
       // targets the focused body — ours is already open, don't show the native one too.
       event.preventDefault();
@@ -2073,7 +2073,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _updateContextMenu(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.state || !this.container) return;
     const node = snapshot.contextMenuNode;
-    if (!snapshot.isContextMenuVisible || !node || !this._isActive) {
+    if (!snapshot.isContextMenuOpen || !node || !this._isActive) {
       this._closeMenu();
       return;
     }
@@ -2117,7 +2117,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (this._menu !== menu) return; // replaced by a newer open
         this._menu = null;
         this._menuKey = null;
-        if (this.state?.isContextMenuVisible) this.state.closeContextMenu();
+        if (this.state?.isContextMenuOpen) this.state.closeContextMenu();
       },
     });
     if (!menu.isOpen) {

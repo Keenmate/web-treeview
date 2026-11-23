@@ -37,7 +37,7 @@ import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-compon
 import { TreeViewEngine, createTreeViewController } from './treeview';
 import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, SortOptions, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import { watchNodeDrag, type PasteResult } from './clipboard';
@@ -55,7 +55,7 @@ import type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
-  NodesReorderEventDetail,
+  NodesSortEventDetail,
   TreeEventDetail,
   TreeViewActionEventDetail,
   RenderStartEventDetail,
@@ -92,8 +92,8 @@ type TreeViewEvents = {
   'checked-change': SelectionChangeEventDetail;
   'focus-change': FocusChangeEventDetail;
   'expanded-change': ExpandedChangeEventDetail;
-  'nodes-reorder': NodesReorderEventDetail;
-  'tree-change': TreeEventDetail;
+  'nodes-sort': NodesSortEventDetail;
+  'nodes-change': TreeEventDetail;
   'action': TreeViewActionEventDetail;
   'render-start': RenderStartEventDetail;
   'render-progress': RenderStatsEventDetail;
@@ -120,14 +120,14 @@ const EVENTS: readonly EventDef[] = [
   { name: 'checked-change', description: 'The checked (checkbox) set changed. `detail`: `{ paths, nodes }`. Twin: `onCheckedChange(detail)`.' },
   { name: 'focus-change', description: 'The focused node changed. `detail`: `{ focusedNode }`. Twin: `onFocusChange(detail)`.' },
   { name: 'expanded-change', description: 'The expanded set changed (toggle, keyboard, expandNodes / collapseNodes, expandAll / collapseAll, accordion, data changes) — one event per change: synchronously right after an expand / collapse (after its `node-expand` / `node-collapse`), on the next microtask after a data change. `detail`: `{ paths }` = the whole new set (same as `expandedPaths`). Not fired for `{ isSilent: true }` operations nor for assigning `expandedPaths`. Twin: `onExpandedChange(detail)`.' },
-  { name: 'nodes-reorder', description: 'A sort (`sortNodes` / `sortAll` / the `sort*` menu items) with a `compareCallback` or `direction: "desc"` rewrote the `orderMember` values (10, 20, 30…) of the children of one parent — one event per parent; never without `orderMember`. `detail`: `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`. Twin: `onNodesReorder(detail)`.' },
-  { name: 'tree-change', description: 'The data / structure changed — add / insert / update / move / remove, `applyChanges`, add / insert / replace / removeBranch, paste, drop, duplicate, sort. One event per change (a compound op such as a multi-node drop fires once), on the microtask after it. Not for expand / select / check / focus nor for loading `nodes`; read the new state from `controller.nodes`. `detail`: the context only. Twin: `onTreeChange(detail)`.' },
+  { name: 'nodes-sort', description: 'A sort (`sortNodes` / `sortAll` / the `sort*` menu items) with a `compareCallback` or `direction: "desc"` rewrote the `orderMember` values (10, 20, 30…) of the children of one parent — one event per parent; never without `orderMember`. `detail`: `{ parentPath, nodes, changes: [{ path, oldOrder, newOrder }] }`. Twin: `onNodesSort(detail)`.' },
+  { name: 'nodes-change', description: 'The data / structure changed — add / insert / update / move / remove, `processChanges`, add / insert / replace / removeBranch, paste, drop, duplicate, sort. One event per change (a compound op such as a multi-node drop fires once), on the microtask after it. Not for expand / select / check / focus nor for loading `nodes`; read the new state from `controller.nodes`. `detail`: the context only. Twin: `onNodesChange(detail)`.' },
   { name: 'action', description: 'A context-menu item was activated. `detail`: `action` (built-in name or `custom`), `id`, `item`, `source: "context-menu"`, `node` / `path` / `parent` / `siblings`, `sourceEvent`, `triggerElement`. Fires after the item’s `onClick`, before the built-in. Twin: `onAction(detail)`.' },
   { name: 'render-start', description: 'A progressive render began (`isRendering` turns true). `detail`: the context only. Twin: `onRenderStart(detail)`.' },
   { name: 'render-progress', description: 'A progressive-render batch finished. `detail`: `{ pending, processed }`. Twin: `onRenderProgress(detail)`.' },
   { name: 'render-complete', description: 'The progressive render finished (`isRendering` turns false). `detail`: `{ pending, processed }`. Twin: `onRenderComplete(detail)`.' },
   { name: 'index-progress', description: 'The async search index filled another batch, and once more with `isComplete: true` at the end — search / filter results are partial until then. `detail`: `{ processed, total, isComplete }`. Twin: `onIndexProgress(detail)`.' },
-  { name: 'search-status-change', description: 'A filter was applied or cleared (also the automatic re-filter when indexing completes). `detail`: `{ searchTerm, matchCount, isLimited, limit, isIndexing }` — `isLimited` = more matched than `search-result-limit` and the rest were cut off. Twin: `onSearchStatusChange(detail)`.' },
+  { name: 'search-status-change', description: 'A filter was applied or cleared (also the automatic re-filter when indexing completes). `detail`: `{ searchTerm, matchCount, isLimited, limit, isIndexing }` — `isLimited` = more matched than `max-search-result-count` and the rest were cut off. Twin: `onSearchStatusChange(detail)`.' },
   { name: 'container-resize', description: 'The tree container was resized (also once when the tree starts observing). `detail`: `{ size: { width, height }, deviceClass }` — `size` is also `el.containerSize`. Twin: `onContainerResize(detail)`.' },
 ];
 
@@ -163,8 +163,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onCheckedChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
   declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
   declare onExpandedChange: ((detail: ExpandedChangeEventDetail<T>) => void) | null;
-  declare onNodesReorder: ((detail: NodesReorderEventDetail<T>) => void) | null;
-  declare onTreeChange: ((detail: TreeEventDetail<T>) => void) | null;
+  declare onNodesSort: ((detail: NodesSortEventDetail<T>) => void) | null;
+  declare onNodesChange: ((detail: TreeEventDetail<T>) => void) | null;
   declare onAction: ((detail: TreeViewActionEventDetail<T>) => void) | null;
   declare onRenderStart: ((detail: RenderStartEventDetail<T>) => void) | null;
   declare onRenderProgress: ((detail: RenderStatsEventDetail<T>) => void) | null;
@@ -195,8 +195,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     onCheckedChange: (d) => this.emit('checked-change', d),
     onFocusChange: (d) => this.emit('focus-change', d),
     onExpandedChange: (d) => this.emit('expanded-change', d),
-    onNodesReorder: (d) => this.emit('nodes-reorder', d),
-    onTreeChange: (d) => this.emit('tree-change', d),
+    onNodesSort: (d) => this.emit('nodes-sort', d),
+    onNodesChange: (d) => this.emit('nodes-change', d),
     onAction: (d) => this.emit('action', d),
     onRenderStart: (d) => { this.#isRendering = true; this.emit('render-start', d); },
     onRenderProgress: (d) => this.emit('render-progress', d),
@@ -594,8 +594,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   }
 
   /** Apply a batch of add / update / remove changes. */
-  applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
-    return this.#live?.applyChanges(changes) ?? { successful: 0, failed: [] };
+  processChanges(changes: TreeChange<T>[]): ProcessChangesResult {
+    return this.#live?.processChanges(changes) ?? { successful: 0, failed: [] };
   }
 
   /** Access the underlying LTree for advanced programmatic usage. */
@@ -766,7 +766,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
   /** Sort the children of each node (one level; `''` = the roots) by the tree's rule
    *  (`sortCallback` → `orderMember` → display value, numeric-aware) or `options.compareCallback`;
-   *  `direction: 'desc'` reverses it. Fires `nodes-reorder` when `orderMember` values were
+   *  `direction: 'desc'` reverses it. Fires `nodes-sort` when `orderMember` values were
    *  rewritten (unless `isSilent`). Works with `isSortingEnabled` off too. */
   sortNodes(paths: string | string[], options?: SortOptions<T>): void {
     this.#live?.sortNodes(paths, options);
@@ -833,6 +833,15 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   /** Programmatic removal (no `beforeDeleteCallback`, no `node-delete` — those belong to the user Delete command). */
   removeNodes(paths: string[]): { removed: number; failed: number } {
     return this.#live?.removeNodes(paths) ?? { removed: 0, failed: 0 };
+  }
+
+  /**
+   * The user's Delete command (the Delete key / the `delete` menu action) on `paths` — default:
+   * the selection, else the focused node. `beforeDeleteCallback` may narrow or block it; fires
+   * `node-delete` with the pre-removal nodes. Programmatic removal without a veto: {@link removeNodes}.
+   */
+  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
+    return this.#live?.deleteNodes(paths) ?? { removed: 0, blocked: 0 };
   }
 
   hasClipboardContent(): boolean {

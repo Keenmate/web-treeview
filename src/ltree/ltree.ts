@@ -12,12 +12,12 @@ import {
 	isSelfOrDescendant
 } from '../helpers/ltree-helpers';
 
-import type { Ltree, FilterScope, ExpandOptions, SortOptions, NodesReorderContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './types';
+import type { Ltree, FilterScope, ExpandOptions, SortOptions, NodesSortContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './types';
 import { createSearchIndex } from './flex';
 import { Indexer, DEFAULT_INDEXER_BATCH_SIZE } from './indexer';
 
 /** Default max matches a search/filter returns (FlexSearch's silent default is 100).
- *  Override with `searchResultLimit` or a per-call `{ limit }`. */
+ *  Override with `maxSearchResultCount` or a per-call `{ limit }`. */
 export const DEFAULT_SEARCH_RESULT_LIMIT = 1000;
 import { perf } from '../perf-logger';
 import { defaultTreeLoggers } from '../logger';
@@ -64,7 +64,7 @@ export function createLTree<T>(
 	_treePathSeparator?: string | null | undefined,
 
 	_expandLevel?: number | null | undefined,
-	_shouldUseInternalSearchIndex?: boolean | null | undefined,
+	_isInternalSearchIndexEnabled?: boolean | null | undefined,
 	_initializeIndexCallback?: () => Index,
 	_indexerBatchSize?: number | null | undefined,
 	_indexerTimeout?: number | null | undefined,
@@ -130,7 +130,7 @@ export function createLTree<T>(
 	}
 	let searchIndex: Index | null | undefined = null;
 
-	if (_shouldUseInternalSearchIndex)
+	if (_isInternalSearchIndexEnabled)
 		searchIndex = _initializeIndexCallback ? _initializeIndexCallback() : createSearchIndex();
 
 	// Replaces Svelte's $state(Symbol()) — plain variable + callback pattern
@@ -192,7 +192,7 @@ export function createLTree<T>(
 	let indexer: Indexer<T> | null = null;
 
 	// Initialize indexer when search index is available
-	if (_shouldUseInternalSearchIndex && searchIndex) {
+	if (_isInternalSearchIndexEnabled && searchIndex) {
 		indexer = new Indexer<T>(
 			_treeId || 'unknown',
 			searchIndex,
@@ -525,7 +525,7 @@ export function createLTree<T>(
 				} else {
 					successfulCount++;
 					// Collect items for batch indexing
-					if (_shouldUseInternalSearchIndex && indexer) {
+					if (_isInternalSearchIndexEnabled && indexer) {
 						flatTreeNodes.push(node);
 						itemsToIndex.push({ node, index: realIndex });
 						realIndex++;
@@ -535,7 +535,7 @@ export function createLTree<T>(
 					if (!noEmitChanges && !hasRenderedExpandLevel && _expandLevel && index === lastExpandLevelIndex) {
 						// We've processed all nodes up to expandLevel - render now!
 						hasRenderedExpandLevel = true;
-						this._emitTreeChanged();
+						this.refresh();
 					}
 				}
 			});
@@ -568,7 +568,7 @@ export function createLTree<T>(
 
 			// Final render (only if we haven't already rendered progressively)
 			if (!noEmitChanges) {
-				this._emitTreeChanged();
+				this.refresh();
 			}
 
 			const insertTime = perf.end(`[${_treeId}] insertArray:insert`, data.length);
@@ -619,7 +619,7 @@ export function createLTree<T>(
 			maxLevel = Math.max(maxLevel, newNode.level || 0);
 
 			if (!noEmitChanges) {
-				this._emitTreeChanged();
+				this.refresh();
 			}
 
 			return null;
@@ -634,7 +634,7 @@ export function createLTree<T>(
 				filteredRoot.children = [];
 				filteredIndex.clear();
 				this.isFiltered = false;
-				this._emitTreeChanged();
+				this.refresh();
 				this.onSearchStatus?.({
 					searchTerm: '',
 					matchCount: 0,
@@ -645,12 +645,12 @@ export function createLTree<T>(
 				return;
 			}
 
-			if (!_shouldUseInternalSearchIndex) {
+			if (!_isInternalSearchIndexEnabled) {
 				return;
 			}
 
 			perf.start(`[${_treeId}] filterNodes:search`);
-			const { nodes, isLimited, limit } = this._runSearch(_searchText!, _searchOptions);
+			const { nodes, isLimited, limit } = this._searchWithLimit(_searchText!, _searchOptions);
 			const foundPaths = nodes.map((n) => n.path);
 			perf.end(`[${_treeId}] filterNodes:search`, nodes.length);
 
@@ -666,10 +666,10 @@ export function createLTree<T>(
 
 		_resolveSearchLimit(_searchOptions?: SearchOptions): number {
 			const explicit = (_searchOptions as { limit?: number } | undefined)?.limit;
-			return explicit ?? this.searchResultLimit ?? DEFAULT_SEARCH_RESULT_LIMIT;
+			return explicit ?? this.maxSearchResultCount ?? DEFAULT_SEARCH_RESULT_LIMIT;
 		},
 
-		_runSearch(
+		_searchWithLimit(
 			_searchText: string,
 			_searchOptions?: SearchOptions
 		): { nodes: LTreeNode<T>[]; isLimited: boolean; limit: number } {
@@ -690,11 +690,11 @@ export function createLTree<T>(
 				return [];
 			}
 
-			if (!_shouldUseInternalSearchIndex) {
+			if (!_isInternalSearchIndexEnabled) {
 				return [];
 			}
 
-			return this._runSearch(_searchText!, _searchOptions).nodes;
+			return this._searchWithLimit(_searchText!, _searchOptions).nodes;
 		},
 
 		createFilteredTree(targetPaths: string[]): void {
@@ -742,7 +742,7 @@ export function createLTree<T>(
 			const rootNodes = [...filteredRoot.children];
 			filteredTree = rootNodes;
 			this.isFiltered = true;
-			this._emitTreeChanged();
+			this.refresh();
 
 			perf.end(`[${_treeId}] createFilteredTree`, rootNodes.length);
 
@@ -790,7 +790,7 @@ export function createLTree<T>(
 			filteredIndex.clear();
 			filteredTree = null;
 			this.isFiltered = false;
-			this._emitTreeChanged();
+			this.refresh();
 		},
 
 		expandAll(
@@ -860,7 +860,7 @@ export function createLTree<T>(
 			}
 
 			// isSilent = no events only; the tree always re-renders.
-			this._emitTreeChanged();
+			this.refresh();
 			perf.end(`[${_treeId}] expandAll`);
 		},
 
@@ -894,7 +894,7 @@ export function createLTree<T>(
 				}
 			}
 
-			this._emitTreeChanged(); // isSilent = no events only; always re-render
+			this.refresh(); // isSilent = no events only; always re-render
 			perf.end(`[${_treeId}] collapseAll`);
 		},
 
@@ -947,7 +947,7 @@ export function createLTree<T>(
 			}
 
 			if (hasChanges) {
-				this._emitTreeChanged();
+				this.refresh();
 			}
 
 			perf.end(`[${_treeId}] expandNodes`);
@@ -977,7 +977,7 @@ export function createLTree<T>(
 			}
 
 			if (hasChanges) {
-				this._emitTreeChanged();
+				this.refresh();
 			}
 
 			return this; // Return the API object for chaining
@@ -1046,8 +1046,11 @@ export function createLTree<T>(
 			return node.isDropAllowed;
 		},
 
+		/** The tree changed: new change tracker, visibleFlatNodes cache invalidated, listener told. */
 		refresh(): void {
-			this._emitTreeChanged();
+			changeTracker = Symbol();
+			cachedVisibleFlatNodesTracker = null;
+			if (onChangeCallback) onChangeCallback();
 		},
 
 		/**
@@ -1090,7 +1093,7 @@ export function createLTree<T>(
 
 			parent.children = this._sortSiblings(parent.children);
 
-			this._emitTreeChanged();
+			this.refresh();
 		},
 
 		/**
@@ -1101,7 +1104,7 @@ export function createLTree<T>(
 		refreshNode(path: string): void {
 			// For now, just trigger a tree change
 			// Future optimization: only re-render the specific subtree
-			this._emitTreeChanged();
+			this.refresh();
 		},
 
 		/**
@@ -1230,7 +1233,7 @@ export function createLTree<T>(
 			}
 			if (!isPlaced) newChildren.push(...block);
 			parent.children = newChildren;
-			this._emitTreeChanged();
+			this.refresh();
 		},
 
 		/**
@@ -1303,7 +1306,7 @@ export function createLTree<T>(
 			// (svelte-treeview REVIEW-2026-11-19 B20)
 			nodeCount -= removedPaths.size;
 
-			this._emitTreeChanged();
+			this.refresh();
 			return { success: true, node };
 		},
 
@@ -1390,14 +1393,14 @@ export function createLTree<T>(
 
 			// Add to flat tree for search indexing (slot number = index id) and index it
 			flatTreeNodes.push(newNode);
-			if (indexer && _shouldUseInternalSearchIndex) {
+			if (indexer && _isInternalSearchIndexEnabled) {
 				indexer.addItem({ node: newNode, index: flatTreeNodes.length - 1 });
 			}
 
 			// Re-sort siblings to place new node in correct position (appended when sorting is off)
 			this._autoSortSiblings(parentPath);
 
-			this._emitTreeChanged();
+			this.refresh();
 			return { success: true, node: newNode };
 		},
 
@@ -1425,7 +1428,7 @@ export function createLTree<T>(
 			bumpRev(node);
 
 			// Re-index for search if needed
-			if (indexer && _shouldUseInternalSearchIndex) {
+			if (indexer && _isInternalSearchIndexEnabled) {
 				const flatIndex = flatTreeNodes.indexOf(node);
 				if (flatIndex !== -1) {
 					indexer.addItem({ node, index: flatIndex });
@@ -1437,7 +1440,7 @@ export function createLTree<T>(
 				this._autoSortSiblings(node.parentPath || '');
 			}
 
-			this._emitTreeChanged();
+			this.refresh();
 			return { success: true, node };
 		},
 
@@ -1446,7 +1449,7 @@ export function createLTree<T>(
 		 * @param changes - Array of add / insert / update / remove operations
 		 * @returns Object with count of successful operations and array of failures
 		 */
-		applyChanges(changes: import('./types').TreeChange<T>[]): import('./types').ApplyChangesResult {
+		processChanges(changes: import('./types').TreeChange<T>[]): import('./types').ProcessChangesResult {
 			const failures: Array<{ changeIndex: number; operation: string; path: string; error: string }> = [];
 			let successCount = 0;
 
@@ -1512,7 +1515,7 @@ export function createLTree<T>(
 
 			// Single emission after all changes
 			if (successCount > 0) {
-				this._emitTreeChanged();
+				this.refresh();
 			}
 
 			return { successful: successCount, failed: failures };
@@ -1668,7 +1671,7 @@ export function createLTree<T>(
 				} else {
 					insertedCount++;
 					affectedParents.add(node.parentPath ?? '');
-					if (_shouldUseInternalSearchIndex) flatTreeNodes.push(node);
+					if (_isInternalSearchIndexEnabled) flatTreeNodes.push(node);
 				}
 			}
 
@@ -1703,7 +1706,7 @@ export function createLTree<T>(
 			}
 
 			// Batch add to indexer
-			if (_shouldUseInternalSearchIndex && indexer) {
+			if (_isInternalSearchIndexEnabled && indexer) {
 				const startIdx = flatTreeNodes.length - insertedCount;
 				const itemsToIndex: { node: LTreeNode<T>; index: number }[] = [];
 				for (let i = startIdx; i < flatTreeNodes.length; i++) {
@@ -1721,7 +1724,7 @@ export function createLTree<T>(
 			}
 
 			// Single emission
-			this._emitTreeChanged();
+			this.refresh();
 
 			return { success: true, count: insertedCount, failed, parentNode };
 		},
@@ -1785,7 +1788,7 @@ export function createLTree<T>(
 
 			// Delegate to addBranch for the new data (it emits unless there is nothing to insert)
 			const result = this.addBranch(parentPath, data);
-			if (!data || data.length === 0) this._emitTreeChanged();
+			if (!data || data.length === 0) this.refresh();
 			return { ...result, removed: removedCount, added: result.count };
 		},
 
@@ -1826,7 +1829,7 @@ export function createLTree<T>(
 				this.removeNode(path, true);
 			}
 
-			this._emitTreeChanged();
+			this.refresh();
 			return { success: true, count: removedCount };
 		},
 
@@ -1865,7 +1868,7 @@ export function createLTree<T>(
 				}
 			};
 			traverse(root);
-			this._emitTreeChanged();
+			this.refresh();
 		},
 
 		/**
@@ -1930,11 +1933,11 @@ export function createLTree<T>(
 
 		_autoSortSiblings(parentPath: string): void {
 			if (this.isSortingEnabled) this.refreshSiblings(parentPath);
-			else this._emitTreeChanged();
+			else this.refresh();
 		},
 
 		/** Sort one parent's children; collects the orderMember rewrite (if any) into `out`. */
-		_sortChildrenOf(parent: LTreeNode<T>, options: SortOptions<T> | undefined, out: NodesReorderContext<T>[]): void {
+		_sortChildrenOf(parent: LTreeNode<T>, options: SortOptions<T> | undefined, out: NodesSortContext<T>[]): void {
 			const children = parent.children as LTreeNode<T>[];
 			if (children.length === 0) return;
 			const sorted = this._sortSiblings(children, options);
@@ -1944,7 +1947,7 @@ export function createLTree<T>(
 			// rewrite them (10, 20, 30…) so the new order persists.
 			const om = this.orderMember;
 			if (!om || (!options?.compareCallback && options?.direction !== 'desc')) return;
-			const changes: NodesReorderContext<T>['changes'] = [];
+			const changes: NodesSortContext<T>['changes'] = [];
 			sorted.forEach((node, i) => {
 				if (!node.data) return;
 				const oldOrder = getField(node.data, om) as number | undefined;
@@ -1956,20 +1959,20 @@ export function createLTree<T>(
 			if (changes.length > 0) out.push({ parentPath: parent === root ? '' : parent.path || '', nodes: sorted, changes });
 		},
 
-		sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
+		sortNodes(paths: string | string[], options?: SortOptions<T>): NodesSortContext<T>[] {
 			this._scheduleRefilter();
-			const out: NodesReorderContext<T>[] = [];
+			const out: NodesSortContext<T>[] = [];
 			for (const p of Array.isArray(paths) ? paths : [paths]) {
 				const node = isEmptyString(p) ? root : index.get(p);
 				if (node) this._sortChildrenOf(node, options, out);
 			}
-			this._emitTreeChanged();
+			this.refresh();
 			return out;
 		},
 
-		sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
+		sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesSortContext<T>[] {
 			this._scheduleRefilter();
-			const out: NodesReorderContext<T>[] = [];
+			const out: NodesSortContext<T>[] = [];
 			const list = paths == null ? [] : (Array.isArray(paths) ? paths : [paths]).filter((p) => !isEmptyString(p));
 			const targets = list.length === 0 ? [root] : list.map((p) => index.get(p));
 			const walk = (node: LTreeNode<T>) => {
@@ -1977,7 +1980,7 @@ export function createLTree<T>(
 				for (const child of node.children as LTreeNode<T>[]) walk(child);
 			};
 			for (const t of targets) if (t) walk(t);
-			this._emitTreeChanged();
+			this.refresh();
 			return out;
 		},
 
@@ -2026,14 +2029,6 @@ export function createLTree<T>(
 					this.filterNodes(_lastFilterSearchText as string, _lastFilterSearchOptions);
 				}
 			});
-		},
-
-		_emitTreeChanged: function () {
-			changeTracker = Symbol();
-			// Invalidate visibleFlatNodes cache
-			cachedVisibleFlatNodesTracker = null;
-			// Notify listener
-			if (onChangeCallback) onChangeCallback();
 		},
 
 		...opts

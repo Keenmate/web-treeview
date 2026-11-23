@@ -122,7 +122,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Ctrl+C/X/V, Ctrl/Shift+Insert, Shift+Del, Esc cancels cut | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Cut rows are dimmed, Escape un-dims (NOTES #6) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Copy + paste keeps both rows rendered (rows keyed by path, NOTES #8) | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
-| `handle-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
+| `enable-keyboard-shortcuts=false` | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | Ctrl+A selects visible selectable; Esc clears selection, keeps checks | ✓ | `keyboard-clipboard.spec.ts` | `keyboard-clipboard.html` |
 | `focusAndSelectNode/Next/Prev/First/Last/Into/Out/Toggle/NextSibling/PrevSibling` API | ✓ | `nav-api.spec.ts` | `nav-api.html` |
 
@@ -130,7 +130,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| `addBranch` / positioned `insertBranch` (+ `orderMember`, `data-members.spec.ts`) / `replaceBranch` / `removeBranch`; `insertNode`; `applyChanges` add / insert / update / remove (`mutation-api.spec.ts`) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
+| `addBranch` / positioned `insertBranch` (+ `orderMember`, `data-members.spec.ts`) / `replaceBranch` / `removeBranch`; `insertNode`; `processChanges` add / insert / update / remove (`mutation-api.spec.ts`) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | `addBranch` failed[] (mixed validity, empty / duplicate / not-under-parent / orphan), subtree insert, warn once; `replaceBranch` shape (NOTES #1) | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
 | `replaceBranch` notifies the tree once (NOTES #2) | ✓ | `branch-operations.spec.ts` | (LTree direct) |
 | Cut / paste branch, paste-into-self error | ✓ | `branch-operations.spec.ts` | `branch-operations.html` |
@@ -141,7 +141,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | `cancelCut` / `hasClipboardContent` / `getClipboardOperation` | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-paste=false` (event with entries, no mutation) | ✓ | `clipboard-extended.spec.ts` | `clipboard-extended.html` |
 | `auto-handle-copy=false` (copy-drop only notifies) | ✓ | `drag-cross-tree.spec.ts` | `drag-cross-tree.html` |
-| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/duplicateNode/applyChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
+| `addNode/updateNode/removeNode/moveNode(s)/duplicateNodes/duplicateNode/processChanges` | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 | `duplicateNodes` without transform keeps rows rendered (NOTES #8) | ✓ | `mutation-api.spec.ts` | `mutation-api.html` |
 
 ## 7. Drag & drop
@@ -179,7 +179,7 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | Internal index off; `filterNodes` | ✓ | `search-config.spec.ts` | `search-config.html` |
 | Index stays correct across `removeNode` / `removeBranch`; `addNode` indexes the new node | ✓ | `search-index-removal.spec.ts` | `search.html` |
 | A tree that STARTS with a `search-term` (filtered before the index is built) shows its matches once indexing completes (completion re-filter) | ✓ | `search-status.spec.ts` | `search-status.html` |
-| `search-result-limit` (default 1000, not FlexSearch's silent 100) + `search-status-change` `isLimited`; `index-progress` completes with processed === total | ✓ | `search-status.spec.ts` | `search-status.html` |
+| `max-search-result-count` (default 1000, not FlexSearch's silent 100) + `search-status-change` `isLimited`; `index-progress` completes with processed === total | ✓ | `search-status.spec.ts` | `search-status.html` |
 | EXPERIMENTAL `filter-scope` (`matches` / `descendants` / `tree-depth` / `subtree-height` / `levels-below`) + `filter-descendant-depth` + `expand-filter-descendants` | ✓ | `filter-scope.spec.ts` | `filter-scope.html` |
 
 ## 9. Context menu & actions
@@ -188,9 +188,9 @@ drag is core `createPointerDrag`, driven by pointer events), so they run in Chro
 | --- | :-: | --- | --- |
 | `getContextMenuItemsCallback` items, submenu, disabled, divider | ✓ | `context-menu.spec.ts` | `context-menu.html` |
 | Core action items, built-ins (incl. expand / collapse -subtree / -all, selection targeting), `beforeActionCallback`, `action` event | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
-| Sorting: numeric display sort, sortCallback > orderMember, `isSortingEnabled` / `enable-sorting` (input order, addNode appends, exact insert / move positions, re-enable re-sorts), `sortNodes` / `sortAll` + `SortOptions`, `nodes-reorder` (orderMember rewrite), `sort*` menu built-ins | ✓ | `sorting.spec.ts` | `sorting.html` |
+| Sorting: numeric display sort, sortCallback > orderMember, `isSortingEnabled` / `enable-sorting` (input order, addNode appends, exact insert / move positions, re-enable re-sorts), `sortNodes` / `sortAll` + `SortOptions`, `nodes-sort` (orderMember rewrite), `sort*` menu built-ins | ✓ | `sorting.spec.ts` | `sorting.html` |
 | svelte parity: search-index default on, `initializeIndexCallback`, `filterNodes` / `searchNodes` `searchOptions`, `refreshNode` / `refreshSiblings`, `isNodeDropAllowed`, `render-start/progress/complete` + `isRendering`, `containerSize` + `container-resize`, `selectionAnchor`, `toggleFocusedSelect`, `auto-handle-move`, `node-title-overflow` (wrap / ellipsis / info reveal; the reveal closes on a checkbox click, a tree-body scroll and a page scroll, not on a scroll inside it), `scrollToPath` options | ✓ | `parity.spec.ts` | `parity.html` |
-| event semantics: silent `expandedPaths` / `selectedPaths` / `checkedPaths` assignment (incl. pre-build replay), synchronous `expanded-change` from methods, `tree-change` = structure only (one per mutation), WAI-ARIA `Space` (checkbox / multiple toggle / single select) | ✓ | `events.spec.ts` | `events.html` |
+| event semantics: silent `expandedPaths` / `selectedPaths` / `checkedPaths` assignment (incl. pre-build replay), synchronous `expanded-change` from methods, `nodes-change` = structure only (one per mutation), WAI-ARIA `Space` (checkbox / multiple toggle / single select) | ✓ | `events.spec.ts` | `events.html` |
 | `el.nodes` = input before the build, live state after (core `getLiveValue`) | ✓ | `lifecycle.spec.ts` | (inline) |
 | One-ctx callbacks + `el.controller` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `renderContextMenuCallback` / `renderContextMenuItemCallback` | ✓ | `context-menu-render.spec.ts` | `context-menu-render.html` |

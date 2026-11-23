@@ -8,7 +8,7 @@ import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
 import type { IndexProgress, SearchStatus } from './ltree/types';
-import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, DropPosition, TreeChange, ApplyChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, DropPosition, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewEngineOptions, ScrollToPathOptions } from './types';
@@ -44,13 +44,13 @@ const CONTROLLER_METHODS = [
   'filterNodes', 'searchNodes', 'scrollToPath', 'getNodeByPath', 'getChildren',
   'getSiblings', 'getNodeRef', 'getVisibleFlatNodes', 'getTree', 'refreshNode', 'refreshSiblings', 'isNodeDropAllowed',
   'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNode', 'duplicateNodes',
-  'applyChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
+  'processChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected', 'toggleFocusedSelect',
   'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
   'isNodeChecked', 'focusNode', 'clearFocus', 'focusAndSelectNode', 'focusNext', 'focusPrevious', 'focusNextAtLevel',
   'focusPreviousAtLevel', 'focusFirstChild', 'focusParent', 'collapseParent', 'toggleFocusedNodeExpanded', 'focusFirst', 'focusLast', 'focusNextPage', 'focusPreviousPage',
   'extendSelectionNext', 'extendSelectionPrevious', 'extendSelectionToFirst', 'extendSelectionToLast', 'extendSelectionNextPage', 'extendSelectionPreviousPage', 'copyNodes', 'cutNodes',
-  'pasteNodes', 'cancelCut', 'removeNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
+  'pasteNodes', 'cancelCut', 'removeNodes', 'deleteNodes', 'hasClipboardContent', 'getClipboardOperation', 'openContextMenu',
   'closeContextMenu', 'activateMenuItem',
 ] as const satisfies readonly (keyof TreeViewController)[];
 
@@ -159,9 +159,9 @@ export class TreeViewEngine<T = any> {
     this.engine.on('expanded-change', (paths: string[]) => {
       this.options.onExpandedChange?.(this.ctx({ paths }));
     });
-    // Data / structure mutations → `tree-change` (one per change; not expand / select / focus).
-    this.engine.on('tree-change', () => {
-      this.options.onTreeChange?.(this.ctx({}));
+    // Data / structure mutations → `nodes-change` (one per change; not expand / select / focus).
+    this.engine.on('nodes-change', () => {
+      this.options.onNodesChange?.(this.ctx({}));
     });
     // A changed focused node → `focus-change`.
     this.engine.on('state-change', (snapshot: any) => {
@@ -414,7 +414,7 @@ export class TreeViewEngine<T = any> {
       case 'copy': this.engine.copyNodes(paths); break;
       case 'cut': this.engine.cutNodes(paths); break;
       case 'paste': this.engine.pasteNodes(node.path); break;
-      case 'delete': this.engine.runDeleteCommand(paths); break;
+      case 'delete': this.engine.deleteNodes(paths); break;
       case 'expand': this.engine.expandNodes(paths); break;
       // Collapses settle after the rows animated out — the action event fires after that.
       case 'collapse': await this.engine.collapseNodes(paths); break;
@@ -526,10 +526,10 @@ export class TreeViewEngine<T = any> {
     this.announceReorders(this.engine.sortAll(paths, options), options);
   }
 
-  /** `nodes-reorder` — one per parent whose `orderMember` values the sort rewrote. */
-  private announceReorders(reorders: NodesReorderContext<T>[], options?: SortOptions<T>): void {
+  /** `nodes-sort` — one per parent whose `orderMember` values the sort rewrote. */
+  private announceReorders(reorders: NodesSortContext<T>[], options?: SortOptions<T>): void {
     if (options?.isSilent) return;
-    for (const r of reorders) this.options.onNodesReorder?.(this.ctx({ ...r }));
+    for (const r of reorders) this.options.onNodesSort?.(this.ctx({ ...r }));
   }
 
   expandAll(paths?: string | string[] | null, options?: ExpandOptions): void {
@@ -694,8 +694,8 @@ export class TreeViewEngine<T = any> {
     return this.engine.duplicateNodes(paths, targetPath, position, this.transform(transform), sourceTree);
   }
 
-  applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
-    return this.engine.applyChanges(changes);
+  processChanges(changes: TreeChange<T>[]): ProcessChangesResult {
+    return this.engine.processChanges(changes);
   }
 
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
@@ -881,6 +881,15 @@ export class TreeViewEngine<T = any> {
     return this.engine.removeNodes(paths);
   }
 
+  /**
+   * The user's Delete command (the Delete key / the `delete` menu action) on `paths` — default:
+   * the selection, else the focused node. `beforeDeleteCallback` may narrow or block it; fires
+   * `node-delete` with the pre-removal nodes. Programmatic removal without a veto: {@link removeNodes}.
+   */
+  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
+    return this.engine.deleteNodes(paths);
+  }
+
   // ── Renderer swap ───────────────────────────────────────────────────
 
   /** Swap renderer at runtime without losing tree state. */
@@ -979,11 +988,11 @@ export class TreeViewEngine<T = any> {
       shouldExpandAsAccordion: o.shouldExpandAsAccordion,
       clickBehavior: o.clickBehavior,
       searchTerm: o.searchTerm,
-      shouldUseInternalSearchIndex: o.shouldUseInternalSearchIndex,
+      isInternalSearchIndexEnabled: o.isInternalSearchIndexEnabled,
       initializeIndexCallback: o.initializeIndexCallback,
       indexerBatchSize: o.indexerBatchSize,
       indexerTimeout: o.indexerTimeout,
-      searchResultLimit: o.searchResultLimit,
+      maxSearchResultCount: o.maxSearchResultCount,
       filterScope: o.filterScope,
       filterDescendantDepth: o.filterDescendantDepth,
       shouldExpandFilterDescendants: o.shouldExpandFilterDescendants,
@@ -994,7 +1003,7 @@ export class TreeViewEngine<T = any> {
       isLoading: o.isLoading ?? false,
 
       isProgressiveRenderEnabled: o.isProgressiveRenderEnabled ?? true,
-      rowAnimationLimit: o.rowAnimationLimit ?? undefined,
+      maxAnimatedRowCount: o.maxAnimatedRowCount ?? undefined,
       initialBatchSize: o.initialBatchSize,
       maxBatchSize: o.maxBatchSize,
       flatIndentSize: typeof o.flatIndentSize === 'number' ? `${o.flatIndentSize}px` : o.flatIndentSize,
@@ -1013,7 +1022,7 @@ export class TreeViewEngine<T = any> {
       shouldAutoHandleCopy: o.shouldAutoHandleCopy,
       shouldAutoHandleMove: o.shouldAutoHandleMove,
       shouldAutoHandlePaste: o.shouldAutoHandlePaste,
-      shouldHandleKeyboardShortcuts: o.shouldHandleKeyboardShortcuts,
+      isKeyboardShortcutsEnabled: o.isKeyboardShortcutsEnabled,
       isReadonly: o.isReadonly,
       touchDragDelay: o.touchDragDelay,
       shouldIndicateUndraggable: o.shouldIndicateUndraggable,

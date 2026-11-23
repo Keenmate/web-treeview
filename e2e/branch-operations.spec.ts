@@ -388,7 +388,7 @@ test('replaceBranch keeps the search index aligned: a node after the replaced br
   // Rebuild the fixture tree with the internal search index on (keyed by flat position).
   await page.evaluate(() => {
     const t = (window as any).tree;
-    t.shouldUseInternalSearchIndex = true;
+    t.isInternalSearchIndexEnabled = true;
     t.searchValueMember = 'name';
     t.nodes = [
       { id: 1, path: '1', name: 'Root-A', sortOrder: 10 },

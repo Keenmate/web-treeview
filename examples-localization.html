@@ -57,7 +57,7 @@
     </div>
     <div class="grid grid-2">
         <div class="tree-container tree-container-sm"><web-treeview id="lo02a"></web-treeview></div>
-        <div class="tree-container tree-container-sm"><web-treeview id="lo02b" class="lo-tree" search-term="zzz" use-internal-search-index="true"></web-treeview></div>
+        <div class="tree-container tree-container-sm"><web-treeview id="lo02b" class="lo-tree" search-term="zzz" enable-internal-search-index="true"></web-treeview></div>
     </div>
     <div class="output"><div class="output-label">rendered strings</div><pre id="lo02-out"></pre></div>
     <div class="code-block" data-language="js" data-kmwc-snippet><pre><code>// e.g. const labels = await (await fetch('/i18n/cs.json')).json();
@@ -177,7 +177,7 @@ el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ?
         <label><input type="radio" name="lo05-el-locale" value="de"> locale="de"</label>
         <label><input type="radio" name="lo05-el-locale" value="cs"> locale="cs"</label>
     </div>
-    <div class="tree-container tree-container-sm"><web-treeview id="lo05" use-internal-search-index="true" search-result-limit="5000"></web-treeview></div>
+    <div class="tree-container tree-container-sm"><web-treeview id="lo05" enable-internal-search-index="true" max-search-result-count="5000"></web-treeview></div>
     <div class="output"><div class="output-label">last screen-reader announcement</div><pre id="lo05-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
 el.searchTerm = 'Item';   // announces "Results: 1.234"

@@ -13,7 +13,7 @@ export type {
   ReplaceBranchResult,
   RemoveBranchResult,
   TreeChange,
-  ApplyChangesResult,
+  ProcessChangesResult,
   DragDropMode,
   DropZoneLayout,
   DropOperation
@@ -54,7 +54,7 @@ export type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
-  NodesReorderEventDetail,
+  NodesSortEventDetail,
   TreeEventDetail,
   RenderStartEventDetail,
   RenderStatsEventDetail,
@@ -157,7 +157,7 @@ import type {
   SelectionChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
-  NodesReorderEventDetail,
+  NodesSortEventDetail,
   TreeEventDetail,
   RenderStartEventDetail,
   RenderStatsEventDetail,
@@ -217,7 +217,7 @@ export interface TreeViewConfig<T = any> {
 
   // Search
   /** Build the internal FlexSearch index (needed by `filterNodes` / `searchNodes` / `searchTerm`). Default `true`. */
-  shouldUseInternalSearchIndex?: boolean | null;
+  isInternalSearchIndexEnabled?: boolean | null;
   /** Factory for a custom FlexSearch `Index` (tokenizer, charset, …) used instead of the
    *  built-in one. JS only; a change rebuilds the index. */
   initializeIndexCallback?: (() => import('flexsearch').Index) | null;
@@ -227,7 +227,7 @@ export interface TreeViewConfig<T = any> {
   indexerTimeout?: number | null;
   /** Max matches a search / filter returns (default 1000 — FlexSearch's own silent default
    *  was 100). Check `isLimited` in `search-status-change` to tell users it was truncated. */
-  searchResultLimit?: number | null;
+  maxSearchResultCount?: number | null;
   /** EXPERIMENTAL — which descendants of a filter match stay visible (ancestors always do):
    *  `matches` (default), `descendants`, `tree-depth`, `subtree-height`, `levels-below`. */
   filterScope?: FilterScope | null;
@@ -244,7 +244,7 @@ export interface TreeViewConfig<T = any> {
   /** Rows an expand reveals animate in (part of `motion` — `motion="none"`, reduced motion or
    *  `--wtv-row-animation-duration: 0s` make it instant). At most this many rows animate per
    *  expand; the rest appear at once. Default `50`; `0` = none. */
-  rowAnimationLimit?: number | null;
+  maxAnimatedRowCount?: number | null;
 
   // Row indent
   flatIndentSize?: string | number;
@@ -445,7 +445,7 @@ export interface TreeViewConfig<T = any> {
    *  reconciler. Fires for every `clickBehavior`. */
   onNodeDoubleClick?: (detail: NodeEventDetail<T>) => void;
   /** Twin of `node-expand` — a node actually expanded (UI, keyboard, `expandNodes`; not
-   *  `expandAll` / expand-level seeding, which only fire `tree-change`). */
+   *  `expandAll` / expand-level seeding, which only fire `nodes-change`). */
   onNodeExpand?: (detail: NodeEventDetail<T>) => void;
   /** Twin of `node-collapse` — a node actually collapsed (UI, keyboard, `collapseNodes`,
    *  an accordion sibling; not `collapseAll`). */
@@ -522,14 +522,14 @@ export interface TreeViewConfig<T = any> {
   beforeScrollCallback?: (ctx: TreeViewBeforeScrollContext<T>) => void | false | Partial<TreeViewScrollOptions>;
   /** Twin of `action` (a context-menu item was activated). */
   onAction?: (detail: TreeViewActionEventDetail<T>) => void;
-  /** Twin of `tree-change` (the data / structure changed — one per mutation; not expand / select / check / focus). */
-  onTreeChange?: (detail: TreeEventDetail<T>) => void;
+  /** Twin of `nodes-change` (the data / structure changed — one per mutation; not expand / select / check / focus). */
+  onNodesChange?: (detail: TreeEventDetail<T>) => void;
   /** Twin of `focus-change`. */
   onFocusChange?: (detail: FocusChangeEventDetail<T>) => void;
   /** Twin of `expanded-change` (the expanded set changed; `detail.paths` = the whole new set). */
   onExpandedChange?: (detail: ExpandedChangeEventDetail<T>) => void;
-  /** Twin of `nodes-reorder` (a sort rewrote one parent's `orderMember` values). */
-  onNodesReorder?: (detail: NodesReorderEventDetail<T>) => void;
+  /** Twin of `nodes-sort` (a sort rewrote one parent's `orderMember` values). */
+  onNodesSort?: (detail: NodesSortEventDetail<T>) => void;
   /** Twin of `render-start` (a progressive render began). */
   onRenderStart?: (detail: RenderStartEventDetail<T>) => void;
   /** Twin of `render-progress` (`detail.pending` / `detail.processed`). */
@@ -543,7 +543,7 @@ export interface TreeViewConfig<T = any> {
   /** Twin of `search-status-change` (`detail.searchTerm`, `matchCount`, `isLimited`, `limit`, `isIndexing`). */
   onSearchStatusChange?: (detail: SearchStatusEventDetail<T>) => void;
   /** Opt out of the built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts. Default `true`. */
-  shouldHandleKeyboardShortcuts?: boolean;
+  isKeyboardShortcutsEnabled?: boolean;
   /** Long-press hold (ms) before a touch-drag engages. Default `300`. */
   touchDragDelay?: number | null;
   /** Built-in "can't move/drop this" feedback (🚫 badge + haptic). Default `true`. */
@@ -743,8 +743,8 @@ export interface TreeEventMap<T = any> {
   'checked-change': CustomEvent<SelectionChangeEventDetail<T>>;
   'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
   'expanded-change': CustomEvent<ExpandedChangeEventDetail<T>>;
-  'nodes-reorder': CustomEvent<NodesReorderEventDetail<T>>;
-  'tree-change': CustomEvent<TreeEventDetail<T>>;
+  'nodes-sort': CustomEvent<NodesSortEventDetail<T>>;
+  'nodes-change': CustomEvent<TreeEventDetail<T>>;
   'action': CustomEvent<TreeViewActionEventDetail<T>>;
   'render-start': CustomEvent<RenderStartEventDetail<T>>;
   'render-progress': CustomEvent<RenderStatsEventDetail<T>>;

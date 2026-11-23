@@ -13,7 +13,7 @@ import type { LabelsView } from '@keenmate/web-components-core/locale';
 import type { TreeViewLabels } from './labels';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { FilterScope, IndexProgress, SearchStatus } from './ltree/types';
-import type { Ltree, ExpandOptions, SortOptions, NodesReorderContext, TreeChange, ApplyChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, TreeChange, ProcessChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
 import type {
   NodeRef,
   NodeRenderContext,
@@ -96,7 +96,7 @@ export interface TreeViewController<T = any> {
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any;
   duplicateNode(sourceNode: LTreeNode<T>, targetParentPath: string, transform: (ctx: { data: T; node: LTreeNode<T>; targetParentPath: string } & TreeViewContext<T>) => T | null, siblingPath?: string, position?: 'before' | 'after'): any;
   duplicateNodes(paths: string[], targetPath: string, position: DropPosition, transform?: NodeTransformCallback<T>, sourceTree?: Ltree<T>): any;
-  applyChanges(changes: TreeChange<T>[]): ApplyChangesResult;
+  processChanges(changes: TreeChange<T>[]): ProcessChangesResult;
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
@@ -154,6 +154,8 @@ export interface TreeViewController<T = any> {
   pasteNodes(targetPath: string, transform?: NodeTransformCallback<T> | null, position?: DropPosition): PasteResult<T>;
   cancelCut(): void;
   removeNodes(paths: string[]): { removed: number; failed: number };
+  /** The user's Delete command: `beforeDeleteCallback` → remove → `node-delete`; default = the selection, else the focused node. */
+  deleteNodes(paths?: string[]): { removed: number; blocked: number };
   hasClipboardContent(): boolean;
   getClipboardOperation(): 'copy' | 'cut' | null;
   // context menu
@@ -327,9 +329,9 @@ export interface FocusChangeEventDetail<T = any> extends TreeViewContext<T> {
 export interface ExpandedChangeEventDetail<T = any> extends TreeViewContext<T> {
   paths: string[];
 }
-/** `nodes-reorder`: one parent whose children's `orderMember` values a sort rewrote. */
-export type NodesReorderEventDetail<T = any> = NodesReorderContext<T> & TreeViewContext<T>;
-/** `tree-change`: the context only. */
+/** `nodes-sort`: one parent whose children's `orderMember` values a sort rewrote. */
+export type NodesSortEventDetail<T = any> = NodesSortContext<T> & TreeViewContext<T>;
+/** `nodes-change`: the context only. */
 export type TreeEventDetail<T = any> = TreeViewContext<T>;
 /** `render-start`: the context only. */
 export type RenderStartEventDetail<T = any> = TreeViewContext<T>;

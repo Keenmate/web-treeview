@@ -135,7 +135,7 @@ test.describe('Search folding (core normalizeSearchText)', () => {
     await gotoSearch(page);
     const out = await page.evaluate(async () => {
       const el = document.createElement('web-treeview') as any;
-      el.setAttribute('use-internal-search-index', 'true');
+      el.setAttribute('enable-internal-search-index', 'true');
       el.displayValueMember = 'name';
       el.searchValueMember = 'name';
       el.nodes = [
@@ -166,7 +166,7 @@ test.describe('Search value resolution', () => {
     await gotoSearch(page);
     const out = await page.evaluate(async () => {
       const el = document.createElement('web-treeview') as any;
-      el.setAttribute('use-internal-search-index', 'true');
+      el.setAttribute('enable-internal-search-index', 'true');
       el.displayValueMember = 'name';
       el.searchValueMember = 'keywords';
       el.getSearchValueCallback = (node: any) => `${node.data?.name} callback`;

@@ -27,10 +27,10 @@ import {
   type DragDropMode,
   type DropOperation,
   type TreeChange,
-  type ApplyChangesResult,
+  type ProcessChangesResult,
   type ExpandOptions,
   type SortOptions,
-  type NodesReorderContext,
+  type NodesSortContext,
   type FilterScope,
   type IndexProgress,
   type SearchStatus
@@ -180,11 +180,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _maxBatchSize: number = 500;
   // ROW ANIMATION (docs/PLAN-row-animation.md): rows an expand reveals get
   // wtv__node--opening (CSS @keyframes, timed by the motion tokens) — at most
-  // rowAnimationLimit. No on/off property: core `motion` is the one switch (SPEC §12.16 /
+  // maxAnimatedRowCount. No on/off property: core `motion` is the one switch (SPEC §12.16 /
   // C-NC-15); --wtv-row-animation-duration: 0s turns off just rows. The renderer adds the
   // class only to rows it CREATES while the path is in the reveal, so a reused /
   // scrolled-back row never replays.
-  private _rowAnimationLimit = 50;
+  private _maxAnimatedRowCount = 50;
   private _revealedPaths: ReadonlySet<string> = new Set();
   private _revealGeneration = 0;
   private _revealDepth = 0;
@@ -212,13 +212,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _shouldAutoHandleMove: boolean = true;
   private _shouldAutoHandlePaste: boolean = true;
   // Opt out of built-in Ctrl/Cmd+C/X/V + Delete + Esc shortcuts (default on).
-  private _shouldHandleKeyboardShortcuts: boolean = true;
+  private _isKeyboardShortcutsEnabled: boolean = true;
   // Read-only (`isReadonly`): the user can't change the data — the cut / paste / delete shortcuts
   // are off (copy stays). Programmatic calls are not gated.
   private _isReadonly: boolean = false;
   // Internal FlexSearch index (default on) + an optional custom index factory. Both are
   // baked into the LTree at construction — a change recreates it.
-  private _shouldUseInternalSearchIndex: boolean = true;
+  private _isInternalSearchIndexEnabled: boolean = true;
   private _initializeIndexCallback: (() => Index) | undefined;
   // Long-press hold (ms) before a touch-drag engages (svelte-treeview rc14).
   private _touchDragDelay: number = 300;
@@ -301,7 +301,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private searchStatusCb: ((status: SearchStatus) => void) | undefined;
 
   // Search: result limit + EXPERIMENTAL filter scope (pushed onto the ltree, see _wireTreeSearch)
-  private _searchResultLimit: number | undefined = undefined;
+  private _maxSearchResultCount: number | undefined = undefined;
   private _filterScope: FilterScope = 'matches';
   private _filterDescendantDepth = 1;
   private _shouldExpandFilterDescendants = true;
@@ -355,7 +355,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // ── Internal mutable state ──────────────────────────────────────────
 
   // Context menu
-  private _contextMenuVisible: boolean = false;
+  private _isContextMenuOpen: boolean = false;
   private _contextMenuX: number = 0;
   private _contextMenuY: number = 0;
   private _contextMenuNode: LTreeNode<T> | null = null;
@@ -454,17 +454,17 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
   }
 
-  /** A data / structure mutation ran (add / insert / update / move / remove, applyChanges,
-   *  branch ops, paste, duplicate, sort): `tree-change` once, on the microtask after it —
+  /** A data / structure mutation ran (add / insert / update / move / remove, processChanges,
+   *  branch ops, paste, duplicate, sort): `nodes-change` once, on the microtask after it —
    *  coalesced, so a compound op (drop of many nodes, paste, duplicate) fires one event.
-   *  Never for expand / select / check / focus or loading `nodes` (svelte onTreeChange). */
-  private _treeChangePending = false;
+   *  Never for expand / select / check / focus or loading `nodes` (svelte onNodesChange). */
+  private _nodesChangePending = false;
   private _markStructureChanged(): void {
-    if (this._treeChangePending) return;
-    this._treeChangePending = true;
+    if (this._nodesChangePending) return;
+    this._nodesChangePending = true;
     queueMicrotask(() => {
-      this._treeChangePending = false;
-      this.emit('tree-change', undefined);
+      this._nodesChangePending = false;
+      this.emit('nodes-change', undefined);
     });
   }
 
@@ -473,7 +473,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   /**
    * THE bracket around every change to the tree's structure or data (move / add / remove /
-   * paste / branch ops / applyChanges…): announces it (`tree-change`, microtask) and, after
+   * paste / branch ops / processChanges…): announces it (`nodes-change`, microtask) and, after
    * the outermost one, brings the path-keyed state back in line with the tree
    * (_reconcileAfterMutation). Nested calls (moveNodes → moveNode, a cross-tree cut-paste
    * removing its sources) reconcile once. (svelte-treeview REVIEW-2026-11-19 §3.3)
@@ -501,7 +501,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    */
   private _reconcileAfterMutation(): void {
     if (!this.tree?.root) return;
-    const isLive = (path: string) => this._realNode(path) !== null;
+    const isLive = (path: string) => this._getRealNode(path) !== null;
 
     const selected = this._selection.values();
     const liveSelected = selected.filter(isLive);
@@ -523,7 +523,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
     const prevChecked = this._checkedPaths;
     const checked = new Set([...prevChecked].filter(isLive));
-    // No checkboxes = the checked set is the selection mirror (_mirrorSelectedToChecked),
+    // No checkboxes = the checked set is the selection mirror (_reconcileCheckedFromSelection),
     // which has no cascade.
     const isCascade = this._checkboxMode === 'cascade' && this._shouldShowCheckboxes;
     if (isCascade && prevChecked.size > 0) this._rederiveCascadeStates(checked);
@@ -531,14 +531,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       checked.size !== prevChecked.size || [...checked].some((p) => !prevChecked.has(p));
     if (isCheckedChanged) {
       this._checkedPaths = checked;
-      this._syncFilteredCheckState();
+      this._reconcileFilteredCheckState();
     }
 
     if (isSelectionChanged) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
+      this._dispatchSelectionChange();
+      this._reconcileCheckedFromSelection();
     }
-    if (isCheckedChanged) this._emitCheckedChange();
+    if (isCheckedChanged) this._dispatchCheckedChange();
     if (isSelectionChanged || isCheckedChanged || isFocusRemoved) {
       this.tree.refresh();
       this._scheduleNotify();
@@ -633,7 +633,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  (svelte-treeview REVIEW-2026-11-19 R5) */
   get focusedNode() {
     const node = this._focusedNode;
-    return node && this.tree ? (this._realNode(node.path) ?? node) : node;
+    return node && this.tree ? (this._getRealNode(node.path) ?? node) : node;
   }
   set focusedNode(v: LTreeNode<T> | null | undefined) {
     this._focusedNode = v;
@@ -667,7 +667,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._checkboxMode = v;
     this._reconcileVisualStatesForMode();
     // The emitted projection depends on the mode — re-notify with the new view.
-    this._emitCheckedChange();
+    this._dispatchCheckedChange();
   }
 
   get cascadeCheckPolicy() { return this._cascadeCheckPolicy; }
@@ -675,14 +675,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (this._cascadeCheckPolicy === v) return;
     this._cascadeCheckPolicy = v;
     // Re-project the (unchanged) canonical set through the new policy and notify.
-    this._emitCheckedChange();
+    this._dispatchCheckedChange();
     this._scheduleNotify();
   }
 
   /** The emitted (policy-projected) selection — what `getCheckedPaths()` and the
    *  `checked-change` event expose. Equals the canonical set in independent mode
    *  or under the 'all' policy. */
-  get emittedPaths(): Set<string> { return this._projectChecked(this._checkedPaths); }
+  get emittedPaths(): Set<string> { return this._computeEmittedCheckedPaths(this._checkedPaths); }
 
   /** Bindable: the multi-select selected set. */
   get selectedPaths(): Set<string> { return this._selectedPaths; }
@@ -707,10 +707,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Max matches a search/filter returns (undefined = DEFAULT_SEARCH_RESULT_LIMIT, 1000). */
-  get searchResultLimit() { return this._searchResultLimit; }
-  set searchResultLimit(v: number | undefined) {
-    if (this._searchResultLimit === v) return;
-    this._searchResultLimit = v;
+  get maxSearchResultCount() { return this._maxSearchResultCount; }
+  set maxSearchResultCount(v: number | undefined) {
+    if (this._maxSearchResultCount === v) return;
+    this._maxSearchResultCount = v;
     this._wireTreeSearch();
     this._reapplySearchFilter();
   }
@@ -752,7 +752,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _wireTreeSearch(): void {
     const tree = this.tree;
     if (!tree) return;
-    tree.searchResultLimit = this._searchResultLimit;
+    tree.maxSearchResultCount = this._maxSearchResultCount;
     tree.filterScope = this._filterScope;
     tree.filterDescendantDepth = this._filterDescendantDepth;
     tree.shouldExpandFilterDescendants = this._shouldExpandFilterDescendants;
@@ -800,7 +800,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   get isProgressiveRenderEnabled() { return this._isProgressiveRenderEnabled; }
   get initialBatchSize() { return this._initialBatchSize; }
   get maxBatchSize() { return this._maxBatchSize; }
-  get rowAnimationLimit() { return this._rowAnimationLimit; }
+  get maxAnimatedRowCount() { return this._maxAnimatedRowCount; }
   get revealedPaths(): ReadonlySet<string> { return this._revealedPaths; }
 
   get bodyClass() { return this._bodyClass; }
@@ -941,7 +941,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   // Context menu state
-  get isContextMenuVisible() { return this._contextMenuVisible; }
+  get isContextMenuOpen() { return this._isContextMenuOpen; }
   get contextMenuX() { return this._contextMenuX; }
   get contextMenuY() { return this._contextMenuY; }
   get contextMenuNode() { return this._contextMenuNode; }
@@ -963,7 +963,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       cancelAnimationFrame(this.flatRenderAnimationFrame);
       this.flatRenderAnimationFrame = null;
       this.flatRenderQueue = [];
-      this._finishRenderPass();
+      this._completeRenderPass();
     }
     this._scheduleNotify();
   }
@@ -1099,7 +1099,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._shouldShowCheckboxes = props.isCheckboxesShown ?? false;
     this._checkboxMode = props.checkboxMode ?? 'independent';
     this._cascadeCheckPolicy = props.cascadeCheckPolicy ?? 'rolled-up';
-    this._searchResultLimit = props.searchResultLimit ?? undefined;
+    this._maxSearchResultCount = props.maxSearchResultCount ?? undefined;
     this._filterScope = props.filterScope ?? 'matches';
     this._filterDescendantDepth = props.filterDescendantDepth ?? 1;
     this._shouldExpandFilterDescendants = props.shouldExpandFilterDescendants ?? true;
@@ -1114,7 +1114,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._isProgressiveRenderEnabled = props.isProgressiveRenderEnabled ?? true;
     this._initialBatchSize = props.initialBatchSize ?? 20;
     this._maxBatchSize = props.maxBatchSize ?? 500;
-    this._rowAnimationLimit = props.rowAnimationLimit ?? 50;
+    this._maxAnimatedRowCount = props.maxAnimatedRowCount ?? 50;
     this._bodyClass = props.bodyClass;
 
     this._expandLevel = props.expandLevel ?? null;
@@ -1126,9 +1126,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._shouldAutoHandleCopy = props.shouldAutoHandleCopy ?? true;
     this._shouldAutoHandleMove = props.shouldAutoHandleMove ?? true;
     this._shouldAutoHandlePaste = props.shouldAutoHandlePaste ?? true;
-    this._shouldHandleKeyboardShortcuts = props.shouldHandleKeyboardShortcuts ?? true;
+    this._isKeyboardShortcutsEnabled = props.isKeyboardShortcutsEnabled ?? true;
     this._isReadonly = props.isReadonly ?? false;
-    this._shouldUseInternalSearchIndex = props.shouldUseInternalSearchIndex ?? true;
+    this._isInternalSearchIndexEnabled = props.isInternalSearchIndexEnabled ?? true;
     this._initializeIndexCallback = props.initializeIndexCallback ?? undefined;
     this._touchDragDelay = props.touchDragDelay ?? 300;
     this._shouldIndicateUndraggable = props.shouldIndicateUndraggable ?? true;
@@ -1234,7 +1234,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._treeId,
       this._treePathSeparator,
       props.expandLevel,
-      this._shouldUseInternalSearchIndex,
+      this._isInternalSearchIndexEnabled,
       this._initializeIndexCallback,
       props.indexerBatchSize,
       props.indexerTimeout,
@@ -1322,7 +1322,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     options?: ExpandOptions
   ) {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
-    this._settleClosing(paths);
+    this._commitPendingCollapses(paths);
     if (!this.beforeExpandCb) {
       this._expandWithEvents(paths, options);
       return;
@@ -1335,7 +1335,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         now.push(p);
         continue;
       }
-      this._gateExpand(node, () => {
+      this._checkBeforeExpand(node, () => {
         if (isSyncPhase) now.push(p);
         else this._expandWithEvents([p], options);
       });
@@ -1392,7 +1392,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         if (!n.isExpanded && n.hasChildren) changing.set(prefix, n);
       }
     }
-    this._withReveal(() => this.tree.expandNodes(paths, options));
+    this._animateExpand(() => this.tree.expandNodes(paths, options));
     if (!options?.isSilent)
       for (const n of changing.values()) if (n.isExpanded) this.nodeExpandCb?.(this.nodeRef(n));
     this._markExpanded(options?.isSilent);
@@ -1406,7 +1406,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * resolved `false` (a rejection was already turned into `false` by the adapter).
    * A request for a node that is already pending is ignored (`false`).
    */
-  private _gateExpand(node: LTreeNode<T>, apply: () => void): boolean | Promise<boolean> {
+  private _checkBeforeExpand(node: LTreeNode<T>, apply: () => void): boolean | Promise<boolean> {
     const path = node.path;
     if (this._expandPending.has(path)) return false;
     const cb = this.beforeExpandCb;
@@ -1456,7 +1456,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (!this.tree.getNodeIsCollapsible(node)) return;
     if (this._expandPending.has(path)) return;
     // Toggled again while its rows animate out = re-expand: cancel, it stays open.
-    if (this._settleClosing([path])) {
+    if (this._commitPendingCollapses([path])) {
       this.log.UI.debug(`Node re-expanded mid-collapse (animation cancelled): ${path}`, { path, id: node.id });
       return;
     }
@@ -1473,11 +1473,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this.collapseNodes(path, options);
       return;
     }
-    this._gateExpand(node, () => this._toggleExpandApply(path, options));
+    this._checkBeforeExpand(node, () => this._expandFromToggle(path, options));
   }
 
   /** The expand half of a UI toggle, after the gate: accordion side-effect + expand + events. */
-  private _toggleExpandApply(path: string, options?: ExpandOptions): void {
+  private _expandFromToggle(path: string, options?: ExpandOptions): void {
     const node = this.getNodeByPath(path);
     if (!node || node.isExpanded) return;
     if (options?.isExclusive) {
@@ -1485,7 +1485,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       return;
     }
     const collapsedSiblings: LTreeNode<T>[] = [];
-    this._withReveal(() => {
+    this._animateExpand(() => {
       if (this._shouldExpandAsAccordion) {
         const siblings = this.tree.getSiblings(path);
         for (const sibling of siblings) {
@@ -1509,20 +1509,20 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     nodePath?: string | string[] | null | undefined,
     options?: ExpandOptions
   ) {
-    this._settleClosing(nodePath == null ? null : Array.isArray(nodePath) ? nodePath : [nodePath]);
-    this._withReveal(() => this.tree?.expandAll(nodePath, options));
+    this._commitPendingCollapses(nodePath == null ? null : Array.isArray(nodePath) ? nodePath : [nodePath]);
+    this._animateExpand(() => this.tree?.expandAll(nodePath, options));
     this._markExpanded(options?.isSilent);
   }
 
   /**
    * Row animation: run an expand and record the rows it made visible (the first
-   * `rowAnimationLimit` in visible order) as the reveal. Nested calls (the accordion toggle →
+   * `maxAnimatedRowCount` in visible order) as the reveal. Nested calls (the accordion toggle →
    * _expandWithEvents) record once, around the outermost. Nothing to animate (duration 0s —
    * motion "none", reduced motion, the token — or a limit of 0) → just `apply()`, so a
    * motion-off tree never builds the before-set.
    */
-  private _withReveal(apply: () => void): void {
-    if (this._revealDepth > 0 || !this.tree || !this._isRowAnimationOn()) {
+  private _animateExpand(apply: () => void): void {
+    if (this._revealDepth > 0 || !this.tree || !this._isRowAnimationEnabled()) {
       apply();
       return;
     }
@@ -1534,7 +1534,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     } finally {
       this._revealDepth--;
     }
-    const limit = Math.max(0, this._rowAnimationLimit ?? 50);
+    const limit = Math.max(0, this._maxAnimatedRowCount ?? 50);
     const revealed = new Set<string>();
     if (limit > 0)
       for (const n of this.tree.visibleFlatNodes ?? []) {
@@ -1594,13 +1594,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   /**
    * Row animation, collapse half: animate out the visible rows under `targets` (the first
-   * `rowAnimationLimit`; the rest go with the collapse), then `apply()` the real collapse — core
+   * `maxAnimatedRowCount`; the rest go with the collapse), then `apply()` the real collapse — core
    * `animateOut` (closing class + inert + --km-exit-height, waits for the CSS animation; 0s → at
    * once). Nothing to animate → `apply()` now.
    */
   private _animateCollapse(targets: string[], apply: () => void): Promise<void> {
     const container = this.containerElement;
-    if (!targets.length || !container || !this._isRowAnimationOn()) {
+    if (!targets.length || !container || !this._isRowAnimationEnabled()) {
       apply();
       return Promise.resolve();
     }
@@ -1608,7 +1608,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const targetSet = new Set(targets);
     const isUnderTarget = (path: string): boolean =>
       getAncestorPaths(path, sep).some((a) => targetSet.has(a));
-    const limit = Math.max(0, this._rowAnimationLimit ?? 50);
+    const limit = Math.max(0, this._maxAnimatedRowCount ?? 50);
     const hiding: string[] = [];
     for (const n of this.tree.visibleFlatNodes ?? []) {
       if (hiding.length >= limit) break;
@@ -1649,7 +1649,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * collapseAll in flight) is applied NOW, so calls keep their order: `collapseAll();
    * expandNodes(x)` ends exactly as it does without motion. Returns whether one was cancelled.
    */
-  private _settleClosing(paths: readonly string[] | null): boolean {
+  private _commitPendingCollapses(paths: readonly string[] | null): boolean {
     const sep = this._treePathSeparator || '.';
     const isRelated = (t: string) =>
       paths == null || paths.some((p) => isSelfOrDescendant(p, t, sep) || isSelfOrDescendant(t, p, sep));
@@ -1667,8 +1667,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Rows animate: a limit above 0 and a resolved `--wtv-row-animation-duration` above 0s. */
-  private _isRowAnimationOn(): boolean {
-    if ((this._rowAnimationLimit ?? 50) <= 0) return false;
+  private _isRowAnimationEnabled(): boolean {
+    if ((this._maxAnimatedRowCount ?? 50) <= 0) return false;
     const el = this.containerElement;
     if (!el || typeof getComputedStyle !== 'function') return false;
     const raw = getComputedStyle(el).getPropertyValue('--wtv-row-animation-duration').trim();
@@ -1677,13 +1677,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites
-   *  (the facade fires `nodes-reorder` for them). */
-  sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
+   *  (the facade fires `nodes-sort` for them). */
+  sortNodes(paths: string | string[], options?: SortOptions<T>): NodesSortContext<T>[] {
     return this._mutate(() => this.tree?.sortNodes(paths, options) ?? []);
   }
 
   /** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
-  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
+  sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesSortContext<T>[] {
     return this._mutate(() => this.tree?.sortAll(paths, options) ?? []);
   }
 
@@ -1740,7 +1740,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (this._selectionMode !== 'multiple') return;
     const node = this._focusedNode;
     if (!node || !node.isSelectable) return;
-    this._applySelection(node.path, { ctrl: true, shift: false });
+    this._applySelection(node.path, { isCtrlPressed: true, isShiftPressed: false });
   }
 
   getNodeByPath(path: string): LTreeNode<T> | null {
@@ -1835,7 +1835,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  guarantee the lead stays (you can prune siblings but not the node under the
    *  cursor). Descendants are KEPT — moveNodes treats an omitted descendant as a
    *  hole. Order is preserved (= landing order). (svelte-treeview rc13) */
-  private _normalizeDragManifest(paths: string[], leadPath: string): string[] {
+  private _validateDragManifest(paths: string[], leadPath: string): string[] {
     const seen = new Set<string>();
     const deduped: string[] = [];
     for (const p of paths) {
@@ -1974,9 +1974,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
   }
 
-  applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
+  processChanges(changes: TreeChange<T>[]): ProcessChangesResult {
     return this._mutate(() => {
-      const result = this.tree?.applyChanges(changes) || { successful: 0, failed: [] };
+      const result = this.tree?.processChanges(changes) || { successful: 0, failed: [] };
       return result;
     });
   }
@@ -2003,7 +2003,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * want whole subtrees (multi-drag, DropGroup routing) must complete their set
    * first, else every unlisted descendant reads as a hole. (svelte-treeview rc13)
    */
-  private _completeManifest(paths: string[]): string[] {
+  private _getPathsWithDescendants(paths: string[]): string[] {
     if (!this.tree) return paths;
     const set = new Set<string>(paths);
     for (const p of paths) {
@@ -2018,8 +2018,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * NodeRefs (every descendant included) for beforeDragStartCallback's
    * ctx.dragged. Same-tree only (nodes are live at drag start).
    */
-  private _completeDraggedRefs(refs: NodeRef<T>[]): NodeRef<T>[] {
-    return this._completeManifest(refs.map((r) => r.path)).map((p) => this.nodeRef(p));
+  private _getDraggedRefsWithDescendants(refs: NodeRef<T>[]): NodeRef<T>[] {
+    return this._getPathsWithDescendants(refs.map((r) => r.path)).map((p) => this.nodeRef(p));
   }
 
   /**
@@ -2274,9 +2274,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * paths (not in this tree) are skipped for the consumer to place. Fires drop once
    * with all placed nodes. (svelte-treeview rc13)
    */
-  private _executeDropGroups(
+  private _processDropGroups(
     groups: DropGroup[],
-    fireDrop: (dropped: LTreeNode<T>[] | null) => void
+    dispatchDrop: (dropped: LTreeNode<T>[] | null) => void
   ): boolean {
     const resolved = groups
       .filter((g) => g?.targetPath && g.paths?.length)
@@ -2294,13 +2294,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._mutate(() => {
       for (const group of resolved) {
         if (!group.nodes.length) continue;
-        const manifest = this._completeManifest(group.nodes.map((n) => n.path));
+        const manifest = this._getPathsWithDescendants(group.nodes.map((n) => n.path));
         const r = this.moveNodes(manifest, group.targetNode?.path ?? group.targetPath, group.position);
         movedNodes.push(...r.movedNodes);
         if (!r.success) allOk = false;
       }
     });
-    fireDrop(movedNodes.length ? movedNodes : null);
+    dispatchDrop(movedNodes.length ? movedNodes : null);
     return allOk;
   }
 
@@ -2370,8 +2370,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     options?: TreeMutationOptions
   ): void {
     const modifiers: SelectionModifiers | undefined =
-      mode === 'toggle' ? { ctrl: true, shift: false }
-      : mode === 'range' ? { ctrl: false, shift: true }
+      mode === 'toggle' ? { isCtrlPressed: true, isShiftPressed: false }
+      : mode === 'range' ? { isCtrlPressed: false, isShiftPressed: true }
       : undefined;
     this._applySelection(path, modifiers, options);
     this._markSilentFocus(options);
@@ -2411,8 +2411,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       }
     }
     if (!options?.isSilent) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
+      this._dispatchSelectionChange();
+      this._reconcileCheckedFromSelection();
     }
     this._markSilentFocus(options);
     this.tree.refresh();
@@ -2427,8 +2427,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._selection.setAnchor(null);
     this.selectNodes(paths, { isSilent: true });
     this._syncSelection();
-    if (!options?.isSilent) this._emitSelectionChange();
-    this._mirrorSelectedToChecked(options?.isSilent);
+    if (!options?.isSilent) this._dispatchSelectionChange();
+    this._reconcileCheckedFromSelection(options?.isSilent);
     this._markSilentFocus(options);
     this.tree.refresh();
     this._scheduleNotify();
@@ -2449,8 +2449,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     }
     this._syncSelection();
     if (!options?.isSilent) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
+      this._dispatchSelectionChange();
+      this._reconcileCheckedFromSelection();
     }
     this._markSilentFocus(options);
     this.tree.refresh();
@@ -2490,8 +2490,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._focusedNode = visible[visible.length - 1];
     }
     if (!options?.isSilent) {
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
+      this._dispatchSelectionChange();
+      this._reconcileCheckedFromSelection();
     }
     this._markSilentFocus(options);
     this.tree.refresh();
@@ -2541,8 +2541,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _onSelectionGesture(): void {
     this._syncSelection();
     if (this._isSelectionSilent) return;
-    this._emitSelectionChange();
-    this._mirrorSelectedToChecked();
+    this._dispatchSelectionChange();
+    this._reconcileCheckedFromSelection();
   }
 
   /** Internal: do the click-driven selection work. Called by both the
@@ -2560,8 +2560,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const node = this.tree?.getNodeByPath(path);
     if (!node) return;
 
-    const ctrl = modifiers?.ctrl ?? false;
-    const shift = modifiers?.shift ?? false;
+    const ctrl = modifiers?.isCtrlPressed ?? false;
+    const shift = modifiers?.isShiftPressed ?? false;
     // Ctrl+click on an unselectable node: nothing (not even focus).
     if (ctrl && !shift && !node.isSelectable) return;
 
@@ -2580,14 +2580,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Emit the `selectionChangeCallback` callback. */
-  private _emitSelectionChange(): void {
+  private _dispatchSelectionChange(): void {
     this.selectionChangeCb?.({ paths: [...this._selectedPaths], nodes: this.getSelectedNodes() });
   }
 
   /** Emit the `checkedChangeCallback` callback (checkbox state). */
-  private _emitCheckedChange(): void {
+  private _dispatchCheckedChange(): void {
     if (!this.checkedChangeCb) return;
-    const paths = this._projectChecked(this._checkedPaths);
+    const paths = this._computeEmittedCheckedPaths(this._checkedPaths);
     const nodes: LTreeNode<T>[] = [];
     for (const p of paths) {
       const n = this.tree?.getNodeByPath(p);
@@ -2604,7 +2604,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * branch collapses to its root (stop descending), indeterminate branches descend
    * to emit their checked bits. (svelte-treeview rc14)
    */
-  private _projectChecked(canonical: Set<string>): Set<string> {
+  private _computeEmittedCheckedPaths(canonical: Set<string>): Set<string> {
     if (this._checkboxMode !== 'cascade' || this._cascadeCheckPolicy === 'all' || !this.tree) {
       return new Set(canonical);
     }
@@ -2635,10 +2635,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  mirror it onto `_checkedPaths` so consumers reading the bindable
    *  checkbox state see what the user picked via the mouse. With checkboxes
    *  visible the two sets stay independent. Mirrors svelte-treeview rc09. */
-  private _mirrorSelectedToChecked(isSilent = false): void {
+  private _reconcileCheckedFromSelection(isSilent = false): void {
     if (this._shouldShowCheckboxes) return;
     this._checkedPaths = new Set(this._selectedPaths);
-    if (!isSilent) this._emitCheckedChange();
+    if (!isSilent) this._dispatchCheckedChange();
   }
 
   // ── Checked API (checkbox / data state) ────────────────────────────
@@ -2657,7 +2657,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  'rolled-up' mode, the leaves in 'leaves', or the full canonical set in 'all' /
    *  independent mode. Use the `checkedPaths` getter for the raw canonical set. */
   getCheckedPaths(): Set<string> {
-    return this._projectChecked(this._checkedPaths);
+    return this._computeEmittedCheckedPaths(this._checkedPaths);
   }
 
   /** Check if a node is in the checked set. */
@@ -2683,7 +2683,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const prev = this._checkedPaths;
     const next = new Set(prev);
     for (const path of paths) {
-      const n = this._realNode(path);
+      const n = this._getRealNode(path);
       if (!n) continue;
       if (isChecked) next.add(path);
       else next.delete(path);
@@ -2694,13 +2694,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._reconcileCascadeStates(paths, next, isAffectedSynced);
     } else {
       for (const path of paths) {
-        const n = this._realNode(path);
+        const n = this._getRealNode(path);
         if (n) n.visualState = n.isChecked ? VisualState.checked : VisualState.unchecked;
       }
     }
     const isChanged = next.size !== prev.size || [...next].some((p) => !prev.has(p));
     this._checkedPaths = next;
-    this._syncFilteredCheckState();
+    this._reconcileFilteredCheckState();
     return isChanged;
   }
 
@@ -2729,7 +2729,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._setCheckedWithCascade([path], true);
-    if (changed && !options?.isSilent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2739,7 +2739,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   checkNodes(paths: string[], options?: TreeMutationOptions): void {
     const changed = this._setCheckedWithCascade(paths, true);
-    if (changed && !options?.isSilent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2751,7 +2751,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
     this._setCheckedWithCascade(paths, true);
-    if (!options?.isSilent) this._emitCheckedChange();
+    if (!options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2764,7 +2764,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const newPaths = isFiltered ? new Set(this._checkedPaths) : new Set<string>();
     const traverse = (node: LTreeNode<T>) => {
       if (node.path && node.isSelectable) {
-        const real = this._realNode(node.path) ?? node;
+        const real = this._getRealNode(node.path) ?? node;
         real.isChecked = true;
         if (real.visualState !== VisualState.checked) real.visualState = VisualState.checked;
         real._rev++;
@@ -2776,8 +2776,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._checkedPaths = newPaths;
     // Branches with hidden unchecked children must fall back to [-] in cascade.
     if (isFiltered && this._checkboxMode === 'cascade') this._reconcileVisualStatesForMode();
-    this._syncFilteredCheckState();
-    if (!options?.isSilent) this._emitCheckedChange();
+    this._reconcileFilteredCheckState();
+    if (!options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2786,7 +2786,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   uncheckNode(path: string, options?: TreeMutationOptions): void {
     const changed = this._setCheckedWithCascade([path], false);
-    if (changed && !options?.isSilent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2796,7 +2796,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void {
     if (!paths || paths.length === 0) return;
     const changed = this._setCheckedWithCascade(paths, false);
-    if (changed && !options?.isSilent) this._emitCheckedChange();
+    if (changed && !options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2806,8 +2806,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   uncheckAll(options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
     this._checkedPaths = new Set();
-    this._syncFilteredCheckState();
-    if (!options?.isSilent) this._emitCheckedChange();
+    this._reconcileFilteredCheckState();
+    if (!options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2856,7 +2856,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     let newChecked: boolean;
     const clickedVisible = isFilteredCascade ? visibleDescendants(node.path) : [];
     if (clickedVisible.length > 0) {
-      newChecked = !clickedVisible.every((p) => this._realNode(p)?.isChecked);
+      newChecked = !clickedVisible.every((p) => this._getRealNode(p)?.isChecked);
     } else {
       // In cascade mode, indeterminate → check all (not fully checked yet).
       newChecked =
@@ -2894,7 +2894,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (!options?.skipFocus) this._focusedNode = node;
 
     // A checkbox toggle is not a node click — `checked-change` reports it.
-    this._emitCheckedChange();
+    this._dispatchCheckedChange();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -2948,9 +2948,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     for (const child of this.tree.root.children) visit(child);
     if (checkedChanged) this._checkedPaths = newPaths;
     if (anyChanged) {
-      this._syncFilteredCheckState();
+      this._reconcileFilteredCheckState();
       this.tree.refresh();
-      if (checkedChanged) this._emitCheckedChange();
+      if (checkedChanged) this._dispatchCheckedChange();
       this._scheduleNotify();
     }
   }
@@ -2962,16 +2962,16 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * child of) the real node, or a parent with one visible match reads as fully
    * checked. (svelte-treeview parity)
    */
-  private _realNode(path: string): LTreeNode<T> | null {
+  private _getRealNode(path: string): LTreeNode<T> | null {
     return this.tree?.getNodeByPath(path, this.tree.root) ?? null;
   }
 
   /** Mirror isChecked/visualState from the real nodes onto the filtered copies
    *  (bumping `_rev` so the reconciler re-syncs them). No-op when unfiltered. */
-  private _syncFilteredCheckState(): void {
+  private _reconcileFilteredCheckState(): void {
     if (!this.tree?.isFiltered) return;
     const visit = (copy: LTreeNode<T>) => {
-      const real = this._realNode(copy.path);
+      const real = this._getRealNode(copy.path);
       if (real && real !== copy && (copy.isChecked !== real.isChecked || copy.visualState !== real.visualState)) {
         copy.isChecked = real.isChecked;
         copy.visualState = real.visualState;
@@ -2989,7 +2989,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _withCascadeDescendants(paths: string[], isVisibleOnly = false): string[] {
     const expanded = new Set(paths);
     for (const path of paths) {
-      const n = isVisibleOnly ? (this.tree?.getNodeByPath(path) ?? null) : this._realNode(path);
+      const n = isVisibleOnly ? (this.tree?.getNodeByPath(path) ?? null) : this._getRealNode(path);
       if (n) for (const dp of getDescendantPaths(n)) expanded.add(dp);
     }
     return [...expanded];
@@ -3010,11 +3010,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const affected = new Set(paths);
     const nodes = new Map<string, LTreeNode<T>>();
     for (const path of affected) {
-      let n = this._realNode(path);
+      let n = this._getRealNode(path);
       // A collected node's ancestors are collected already — stop climbing there.
       while (n && !nodes.has(n.path)) {
         nodes.set(n.path, n);
-        n = n.parentPath ? this._realNode(n.parentPath) : null;
+        n = n.parentPath ? this._getRealNode(n.parentPath) : null;
       }
     }
     const ordered = [...nodes.values()].sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
@@ -3211,7 +3211,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
           return;
         }
         // Expanding goes through beforeExpandCallback (may be async — lazy load).
-        const gated = this._gateExpand(node, () => this._expandWithEvents([node.path]));
+        const gated = this._checkBeforeExpand(node, () => this._expandWithEvents([node.path]));
         if (gated instanceof Promise) gated.then((isExpanded) => { if (isExpanded) moveIn(); });
         else if (gated) moveIn();
       },
@@ -3322,7 +3322,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (this._selectionMode !== 'multiple') return;
     const focused = this._focusedNode;
     if (this._selection.anchor === null && focused) this._selection.setAnchor(focused.path);
-    this._applySelection(path, { ctrl: false, shift: true });
+    this._applySelection(path, { isCtrlPressed: false, isShiftPressed: true });
     this.revealNode(path);
   }
 
@@ -3685,7 +3685,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /**
    * Programmatic removal of nodes (and their descendants): top-level subtrees only,
    * selection + focus are cleared when anything was removed. No `beforeDeleteCallback`,
-   * no `node-delete` (that is the user Delete command, {@link runDeleteCommand}).
+   * no `node-delete` (that is the user Delete command, {@link deleteNodes}).
    */
   removeNodes(paths: string[]): { removed: number; failed: number } {
     const targets = getTopLevelPaths(paths ?? [], this._treePathSeparator);
@@ -3712,7 +3712,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * focus of anything removed, and fires `onDelete` (`node-delete`) with PRE-REMOVAL
    * node snapshots. Programmatic removal is {@link removeNodes} (no veto, no event).
    */
-  runDeleteCommand(paths?: string[]): { removed: number; blocked: number } {
+  deleteNodes(paths?: string[]): { removed: number; blocked: number } {
     let targets = getTopLevelPaths(paths ?? this._shortcutSelectionPaths(), this._treePathSeparator);
     if (targets.length === 0) return { removed: 0, blocked: 0 };
 
@@ -3754,7 +3754,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /**
-   * Built-in keyboard shortcuts, gated by `shouldHandleKeyboardShortcuts` (default
+   * Built-in keyboard shortcuts, gated by `isKeyboardShortcutsEnabled` (default
    * on). Returns true when it consumed the event (caller should preventDefault +
    * stop). A consumer `onTreeKeydown` runs BEFORE this, so it can override/suppress.
    * Matched with core `/actions` `matchesShortcut()` ({@link TREE_SHORTCUTS}: exact
@@ -3762,7 +3762,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * never taken — it keeps its native text editing.
    */
   handleShortcutKeydown(event: KeyboardEvent): boolean {
-    if (!this._shouldHandleKeyboardShortcuts || isTypingTarget(event)) return false;
+    if (!this._isKeyboardShortcutsEnabled || isTypingTarget(event)) return false;
     const is = (command: TreeShortcutCommand) => TREE_SHORTCUTS[command].some((s) => matchesShortcut(event, s));
 
     if (is('copy')) {
@@ -3786,7 +3786,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     }
     if (is('delete')) {
       if (!this._shortcutSelectionPaths().length) return false;
-      this.runDeleteCommand();
+      this.deleteNodes();
       return true;
     }
     if (is('cancelCut') && getClipboardOp() === 'cut') {
@@ -3896,13 +3896,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._contextMenuNode = node;
     this._contextMenuX = screenX;
     this._contextMenuY = screenY;
-    this._contextMenuVisible = true;
+    this._isContextMenuOpen = true;
     this._scheduleNotify();
   }
 
   closeContextMenu() {
-    if (!this._contextMenuVisible && !this._contextMenuNode) return;
-    this._contextMenuVisible = false;
+    if (!this._isContextMenuOpen && !this._contextMenuNode) return;
+    this._isContextMenuOpen = false;
     this._contextMenuNode = null;
     this._scheduleNotify();
   }
@@ -4117,13 +4117,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── setOptions / getOptions (rulebook C-CA-39) ──────────────────────
 
-  /** Apply `shouldUseInternalSearchIndex` (null → default true) / `initializeIndexCallback`
+  /** Apply `isInternalSearchIndexEnabled` (null → default true) / `initializeIndexCallback`
    *  (null clears; undefined = unchanged). True when either changed — the LTree is rebuilt. */
   private _applyIndexProps(updates: Partial<TreeViewStateOptions<T>>): boolean {
     let isChanged = false;
-    if (updates.shouldUseInternalSearchIndex !== undefined) {
-      const next = updates.shouldUseInternalSearchIndex ?? true;
-      if (next !== this._shouldUseInternalSearchIndex) { this._shouldUseInternalSearchIndex = next; isChanged = true; }
+    if (updates.isInternalSearchIndexEnabled !== undefined) {
+      const next = updates.isInternalSearchIndexEnabled ?? true;
+      if (next !== this._isInternalSearchIndexEnabled) { this._isInternalSearchIndexEnabled = next; isChanged = true; }
     }
     if (updates.initializeIndexCallback !== undefined) {
       const next = updates.initializeIndexCallback ?? undefined;
@@ -4267,7 +4267,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       const nextPolicy = updates.cascadeCheckPolicy ?? 'rolled-up';
       if (nextPolicy !== this._cascadeCheckPolicy) {
         this._cascadeCheckPolicy = nextPolicy;
-        this._emitCheckedChange(); // re-project the unchanged canonical set
+        this._dispatchCheckedChange(); // re-project the unchanged canonical set
       }
     }
     if (updates.shouldClickToggleCheckbox !== undefined)
@@ -4277,7 +4277,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (updates.onIndexProgress !== undefined) this.indexProgressCb = updates.onIndexProgress;
     if (updates.onSearchStatusChange !== undefined) this.searchStatusCb = updates.onSearchStatusChange;
     // Filter settings first (each re-applies the active filter), then a new term.
-    if (updates.searchResultLimit !== undefined) this.searchResultLimit = updates.searchResultLimit ?? undefined;
+    if (updates.maxSearchResultCount !== undefined) this.maxSearchResultCount = updates.maxSearchResultCount ?? undefined;
     if (updates.filterScope !== undefined) this.filterScope = updates.filterScope ?? 'matches';
     if (updates.filterDescendantDepth !== undefined) this.filterDescendantDepth = updates.filterDescendantDepth ?? 1;
     if (updates.shouldExpandFilterDescendants !== undefined)
@@ -4335,8 +4335,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._shouldAutoHandleMove = updates.shouldAutoHandleMove ?? true;
     if (updates.shouldAutoHandlePaste !== undefined)
       this._shouldAutoHandlePaste = updates.shouldAutoHandlePaste ?? true;
-    if (updates.shouldHandleKeyboardShortcuts !== undefined)
-      this._shouldHandleKeyboardShortcuts = updates.shouldHandleKeyboardShortcuts ?? true;
+    if (updates.isKeyboardShortcutsEnabled !== undefined)
+      this._isKeyboardShortcutsEnabled = updates.isKeyboardShortcutsEnabled ?? true;
     if (updates.isReadonly !== undefined)
       this._isReadonly = updates.isReadonly ?? false;
     if (updates.touchDragDelay !== undefined)
@@ -4361,7 +4361,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._flatIndentSize = updates.flatIndentSize ?? 'var(--wtv-indent-size)';
     if (updates.initialBatchSize !== undefined) this._initialBatchSize = updates.initialBatchSize ?? 20;
     if (updates.maxBatchSize !== undefined) this._maxBatchSize = updates.maxBatchSize ?? 500;
-    if (updates.rowAnimationLimit !== undefined) this._rowAnimationLimit = updates.rowAnimationLimit ?? 50;
+    if (updates.maxAnimatedRowCount !== undefined) this._maxAnimatedRowCount = updates.maxAnimatedRowCount ?? 50;
     const nextProgressive = updates.isProgressiveRenderEnabled !== undefined ? (updates.isProgressiveRenderEnabled ?? true) : this._isProgressiveRenderEnabled;
     if (nextProgressive !== this._isProgressiveRenderEnabled) {
       this._isProgressiveRenderEnabled = nextProgressive;
@@ -4374,7 +4374,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this.flatRenderQueue = [];
       this.flatRenderedIds = new Set((this.tree?.visibleFlatNodes ?? []).map((n) => n.path));
       this.lastFlatNodesTracker = this.tree?.changeTracker;
-      this._finishRenderPass();
+      this._completeRenderPass();
     }
 
     // Display-value fallback — mutable on the tree (member → callback → fallback).
@@ -4488,7 +4488,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         this._treeId,
         this._treePathSeparator,
         this._expandLevel,
-        this._shouldUseInternalSearchIndex,
+        this._isInternalSearchIndexEnabled,
         this._initializeIndexCallback,
         this._indexerBatchSize,
         this._indexerTimeout,
@@ -4558,7 +4558,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       hoveredNodeForDropPath: this._hoveredNodeForDrop?.path ?? null,
       activeDropPosition: this._activeDropPosition,
       currentDropOperation: this._currentDropOperation,
-      isContextMenuVisible: this._contextMenuVisible,
+      isContextMenuOpen: this._isContextMenuOpen,
       contextMenuX: this._contextMenuX,
       contextMenuY: this._contextMenuY,
       contextMenuXOffset: this._contextMenuXOffset,
@@ -4594,7 +4594,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * tree, expansion, selection, checks, focus and search are untouched.
    */
   deactivate(): void {
-    if (this._contextMenuVisible) this.closeContextMenu();
+    if (this._isContextMenuOpen) this.closeContextMenu();
     if (typeof document !== 'undefined' && this._pointerDragState.node) this.pointerDragCancel();
     unregisterClipboardTree(this._treeId, this);
   }
@@ -4811,7 +4811,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     }
     if (pending.length === 0) {
       this.flatRenderQueue = [];
-      if (!this.flatRenderAnimationFrame) this._finishRenderPass();
+      if (!this.flatRenderAnimationFrame) this._completeRenderPass();
       return;
     }
 
@@ -4831,13 +4831,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     }
     this.flatRenderQueue = rest;
     if (rest.length > 0) {
-      this._beginRenderPass(pending.length - rest.length);
+      this._startRenderPass(pending.length - rest.length);
       this.scheduleFlatRenderBatch();
     }
   }
 
   /** A progressive (rAF-batched) render pass began: `isRendering` + `render-start`. */
-  private _beginRenderPass(processed: number): void {
+  private _startRenderPass(processed: number): void {
     if (this._isRendering) return;
     this._isRendering = true;
     this._renderProcessed = processed;
@@ -4845,7 +4845,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** The progressive pass ended (queue drained or cancelled): `render-complete`. */
-  private _finishRenderPass(): void {
+  private _completeRenderPass(): void {
     if (!this._isRendering) return;
     this._isRendering = false;
     this.renderCompleteCb?.({ pending: 0, processed: this._renderProcessed });
@@ -4857,7 +4857,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this.flatRenderAnimationFrame = requestAnimationFrame(() => {
       this.flatRenderAnimationFrame = null;
       if (this.flatRenderQueue.length === 0) {
-        this._finishRenderPass();
+        this._completeRenderPass();
         return;
       }
 
@@ -4882,7 +4882,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         queueMicrotask(() => {
           if (!this._isRendering) return;
           this.renderProgressCb?.({ pending: pendingCount, processed });
-          if (pendingCount === 0 && this.flatRenderQueue.length === 0) this._finishRenderPass();
+          if (pendingCount === 0 && this.flatRenderQueue.length === 0) this._completeRenderPass();
         });
       }
     });
@@ -4940,7 +4940,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   // ── Internal event handlers ─────────────────────────────────────────
 
   private _nodeClickedCallback(node: LTreeNode<T>, modifiers?: SelectionModifiers) {
-    if (this._contextMenuVisible) {
+    if (this._isContextMenuOpen) {
       this.closeContextMenu();
     }
 
@@ -4949,8 +4949,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this.log.UI.debug(`Node clicked: ${node.path}`, {
       newPath: node.path,
       id: node.id,
-      ctrl: modifiers?.ctrl,
-      shift: modifiers?.shift,
+      ctrl: modifiers?.isCtrlPressed,
+      shift: modifiers?.isShiftPressed,
       selectedCount: this._selectedPaths.size
     });
 
@@ -5064,8 +5064,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._syncSelection();
     // When the snapshot was empty, focus also belonged to nobody — clear it.
     if (prior.size === 0) this._focusedNode = null;
-    this._emitSelectionChange();
-    this._mirrorSelectedToChecked();
+    this._dispatchSelectionChange();
+    this._reconcileCheckedFromSelection();
     this.tree.refresh();
     this._scheduleNotify();
   }
@@ -5117,7 +5117,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
     // One fire path for every branch: `dropped` = the nodes the library actually
     // placed (null when it didn't — cross-tree/consumer-owned or auto-handle off).
-    const fireDrop = (dropped: LTreeNode<T>[] | null) => {
+    const dispatchDrop = (dropped: LTreeNode<T>[] | null) => {
       this._fireNodeDrop(dropNode, draggedNodeRef, draggedRefs, dropped, position, operation, event);
     };
 
@@ -5134,7 +5134,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         // Content-addressed routing: fan the drop out to the returned groups.
         // Same-tree nodes are moved by the library; cross-tree nodes are left for
         // the consumer's onNodeDrop. Paths in no group aren't placed.
-        return this._executeDropGroups(result, fireDrop);
+        return this._processDropGroups(result, dispatchDrop);
       }
       if (result && typeof result === 'object') {
         if ('position' in result && result.position) position = result.position;
@@ -5172,9 +5172,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       // A curated override IS the manifest as-is (its omissions are holes moveNodes
       // leaves behind); a plain selected set has no holes, so complete it → whole
       // subtrees move.
-      const manifest = dragSetOverride ? topLevelPaths : this._completeManifest(topLevelPaths);
+      const manifest = dragSetOverride ? topLevelPaths : this._getPathsWithDescendants(topLevelPaths);
       const result = this.moveNodes(manifest, dropNode!.path, position);
-      fireDrop(result.movedNodes);
+      dispatchDrop(result.movedNodes);
       return result.success;
     }
 
@@ -5182,11 +5182,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       if (this._shouldAutoHandleMove) {
         const result = this.moveNode(draggedNodeRef.path, dropNode.path, position);
         // moveNode mutates in place → draggedNodeRef IS the landed node.
-        fireDrop(result.success ? [draggedNodeRef] : null);
+        dispatchDrop(result.success ? [draggedNodeRef] : null);
         return result.success;
       }
       // shouldAutoHandleMove=false: don't mutate the tree, just notify the consumer
-      fireDrop(null);
+      dispatchDrop(null);
       return true;
     }
 
@@ -5202,13 +5202,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       const manifest = dragSetOverride
         ? dragSetOverride
         : isMulti
-          ? this._completeManifest(this._getDraggableTopLevelSelection(dropNode.path))
-          : this._completeManifest([draggedNodeRef.path]);
+          ? this._getPathsWithDescendants(this._getDraggableTopLevelSelection(dropNode.path))
+          : this._getPathsWithDescendants([draggedNodeRef.path]);
       const result = this.duplicateNodes(
         manifest, dropNode.path, position, transform, undefined,
         this.outputTransformCb ? (d, ctx) => this.transformOutgoing(d, ctx) : undefined
       );
-      fireDrop(result.copiedNodes);
+      dispatchDrop(result.copiedNodes);
       return result.success;
     }
 
@@ -5239,14 +5239,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
             ? (d, ctx) => sourceCtrl.transformOutgoing!(d, ctx) as T | null
             : undefined
         );
-        fireDrop(result.copiedNodes);
+        dispatchDrop(result.copiedNodes);
         return result.success;
       }
     }
 
     // Cross-tree without a reachable source (or copy without shouldAutoHandleCopy):
     // the consumer performs the insertion, so dropped is null.
-    fireDrop(null);
+    dispatchDrop(null);
     return true;
   }
 
@@ -5295,7 +5295,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._pointerDragState = { node, isDragging: false, isDenied: false, ghostLayer: null };
     if (!this.getNodeIsDraggable(node)) {
       this._pointerDragState.isDenied = true;
-      this._indicateDragDenied(node);
+      this._showDragBlockedIndicator(node);
       return true;
     }
     this.log.DRAG.debug(`Drag started: ${node.path}`, { pointerType: event.pointerType, treeId: this._treeId });
@@ -5310,7 +5310,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (this.beforeDragStartCb) {
       const decision = this.beforeDragStartCb({
         lead: this.nodeRef(node),
-        dragged: this._completeDraggedRefs(draggedRefs),
+        dragged: this._getDraggedRefsWithDescendants(draggedRefs),
         event
       });
       if (decision === false) {
@@ -5319,7 +5319,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         return false;
       }
       if (Array.isArray(decision)) {
-        this._dragSetOverride = this._normalizeDragManifest(decision, node.path);
+        this._dragSetOverride = this._validateDragManifest(decision, node.path);
         draggedRefs = this._draggedRefs(node); // republish through the override
       }
     }
@@ -5328,7 +5328,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     // cross-tree auto-copy feeds to duplicateNodes: a curated override keeps its holes; a plain drag
     // is completed so whole subtrees copy. Every TRAVELING node dims, not just the roots.
     const placementManifest =
-      this._dragSetOverride ?? this._completeManifest(draggedRefs.map((r) => r.path));
+      this._dragSetOverride ?? this._getPathsWithDescendants(draggedRefs.map((r) => r.path));
     this._draggedPaths = placementManifest;
     setDragSet(this._treeId, draggedRefs.map((r) => r.path), placementManifest);
     this._pointerDragState.isDragging = true;
@@ -5345,8 +5345,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._selection.setAnchor(node.path);
       this._syncSelection();
       this._focusedNode = node;
-      this._emitSelectionChange();
-      this._mirrorSelectedToChecked();
+      this._dispatchSelectionChange();
+      this._reconcileCheckedFromSelection();
       this.tree.refresh();
     }
 
@@ -5443,7 +5443,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       drop = hit.state._handleDrop(null, dragged, 'child', event);
     } else if (hit.node && hit.node !== dragged && !hit.node.isDropAllowed && this._isDropAllowedFrom(hit.state)) {
       // The target refused the drop: flash the 🚫 on it + fire onNodeDropDenied (NOTES #22).
-      hit.state._indicateDropDenied(hit.node);
+      hit.state._showDropBlockedIndicator(hit.node);
     } else {
       this.log.DRAG.debug(`Drag ended on no target: ${dragged.path}`);
     }
@@ -5569,7 +5569,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** "Can't move this" — a locked node was long-pressed. Fires onNodeDragDenied
    *  always; the built-in held 🚫 badge + double-buzz only when
    *  shouldIndicateUndraggable. Torn down on release via _clearDragDenied. */
-  private _indicateDragDenied(node: LTreeNode<any>) {
+  private _showDragBlockedIndicator(node: LTreeNode<any>) {
     this.log.DRAG.debug('[drag-denied] locked node long-pressed', { path: node?.path });
 
     this.nodeDragDeniedCb?.(this.nodeRef(node));
@@ -5615,7 +5615,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  built-in indicator (haptic + a brief 🚫 flash on the refusing target) only
    *  when shouldIndicateUndraggable. Transient (a drop is a discrete moment), so
    *  it auto-clears after a short beat. */
-  private _indicateDropDenied(node: LTreeNode<any>) {
+  private _showDropBlockedIndicator(node: LTreeNode<any>) {
     this.log.DRAG.debug('[drop-denied] target refused drop', { path: node?.path });
 
     this.nodeDropDeniedCb?.(this.nodeRef(node));

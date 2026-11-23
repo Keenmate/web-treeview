@@ -4,14 +4,14 @@ import { test, expect, type Page, nodeByPath, nodeContent } from './fixtures';
  * Event semantics (svelte-treeview parity, docs/parity.md §9). Fixture: test/events.html.
  *  - assigning selectedPaths / checkedPaths / expandedPaths is silent (element, controller, pre-build replay)
  *  - methods / interaction keep firing; expand / collapse methods fire `expanded-change` synchronously
- *  - `tree-change` = data / structure changes only, one per change
+ *  - `nodes-change` = data / structure changes only, one per change
  *  - keyboard: Enter = expand / collapse; Space = checkbox / selection toggle
  *
  * Data: 1 Alpha (1.1, 1.2), 2 Beta (2.1), 3 Gamma.
  */
 
 const PAGE = '/test/events.html';
-const STATE_EVENTS = ['selection-change', 'checked-change', 'expanded-change', 'focus-change', 'tree-change'];
+const STATE_EVENTS = ['selection-change', 'checked-change', 'expanded-change', 'focus-change', 'nodes-change'];
 
 async function make(page: Page, opts: Record<string, unknown> = {}) {
   await page.goto(PAGE);
@@ -84,38 +84,38 @@ test.describe('expanded-change from methods is synchronous', () => {
   });
 });
 
-test.describe('tree-change = structure only', () => {
-  test('expand / select / check / focus fire no tree-change', async ({ page }) => {
+test.describe('nodes-change = structure only', () => {
+  test('expand / select / check / focus fire no nodes-change', async ({ page }) => {
     await make(page, { attrs: { 'selection-mode': 'multiple', 'show-checkboxes': '' } });
     const r = await track(page, `t.expandNodes('1'); t.selectNodes(['1.1']); t.checkNodes(['3']); t.focusNode('2'); t.expandAll();`);
-    expect(r.all).not.toContain('tree-change');
+    expect(r.all).not.toContain('nodes-change');
     await nodeContent(nodeByPath(page, '1.2')).click();
     await page.waitForTimeout(50);
-    expect(await log(page)).not.toContain('tree-change');
+    expect(await log(page)).not.toContain('nodes-change');
   });
 
-  test('each mutation fires exactly one tree-change', async ({ page }) => {
+  test('each mutation fires exactly one nodes-change', async ({ page }) => {
     await make(page);
     const ops = [
       `t.addNode('3', { id: 31, path: '3.1', name: 'G child' });`,
       `t.updateNode('3', { name: 'Gamma 2' });`,
       `t.moveNode('3', '1', 'before');`,
       `t.removeNode('2');`,
-      `t.applyChanges([{ type: 'add', parentPath: '1', data: { id: 13, path: '1.3', name: 'x' } }, { type: 'update', path: '1.1', data: { name: 'y' } }]);`,
+      `t.processChanges([{ type: 'add', parentPath: '1', data: { id: 13, path: '1.3', name: 'x' } }, { type: 'update', path: '1.1', data: { name: 'y' } }]);`,
       `t.addBranch('1', [{ id: 14, path: '1.4', name: 'b' }]);`,
       `t.sortAll();`,
     ];
     for (const op of ops) {
       const r = await track(page, op);
-      expect(r.all.filter((e) => e === 'tree-change'), op).toEqual(['tree-change']);
-      expect(r.sync, op).not.toContain('tree-change'); // on the microtask after the change
+      expect(r.all.filter((e) => e === 'nodes-change'), op).toEqual(['nodes-change']);
+      expect(r.sync, op).not.toContain('nodes-change'); // on the microtask after the change
     }
   });
 
-  test('loading nodes fires no tree-change', async ({ page }) => {
+  test('loading nodes fires no nodes-change', async ({ page }) => {
     await make(page);
     const r = await track(page, `t.nodes = window.baseNodes().slice(0, 3);`);
-    expect(r.all).not.toContain('tree-change');
+    expect(r.all).not.toContain('nodes-change');
   });
 });
 

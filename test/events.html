@@ -12,7 +12,7 @@
 <body>
     <main>
         <h1>Events Fixture</h1>
-        <p>Silent state assignment, structure-only <code>tree-change</code>, synchronous
+        <p>Silent state assignment, structure-only <code>nodes-change</code>, synchronous
             <code>expanded-change</code>, WAI-ARIA Enter / Space. <code>window.make({ attrs, props, state })</code>
             builds a fresh tree (<code>state</code> is assigned before the first build); <code>window.__log</code>
             records every event name in order.</p>
@@ -31,7 +31,7 @@
             { id: 3, path: '3', name: 'Gamma' },
         ];
 
-        const EVENTS = ['selection-change', 'checked-change', 'expanded-change', 'focus-change', 'tree-change',
+        const EVENTS = ['selection-change', 'checked-change', 'expanded-change', 'focus-change', 'nodes-change',
             'node-expand', 'node-collapse'];
 
         window.make = async ({ attrs = {}, props = {}, state = {} } = {}) => {

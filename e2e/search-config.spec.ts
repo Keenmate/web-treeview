@@ -74,7 +74,7 @@ test.describe('filterNodes()', () => {
   });
 });
 
-test.describe('use-internal-search-index="false"', () => {
+test.describe('enable-internal-search-index="false"', () => {
   test('searchNodes returns nothing and filterNodes leaves the tree alone', async ({ page }) => {
     await load(page, 'off');
     await page.waitForTimeout(200);

@@ -56,7 +56,7 @@ export function fmtDetail(type, d) {
         case 'node-click':
         case 'node-double-click':
             return d.node?.path ?? d.path ?? '';
-        case 'tree-change':
+        case 'nodes-change':
             return '';
         default:
             return d.node?.path ?? d.path ?? '';

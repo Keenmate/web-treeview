@@ -687,8 +687,8 @@ function restoreFromUrl(nodePath) {
                 ? `(${in6src.selectedPaths.length || '?'} entries)` : '';
         }
         in6src.addEventListener('selection-change', updateClipboardStatus);
-        in6src.addEventListener('tree-change', updateClipboardStatus);
-        in6tgt.addEventListener('tree-change', updateClipboardStatus);
+        in6src.addEventListener('nodes-change', updateClipboardStatus);
+        in6tgt.addEventListener('nodes-change', updateClipboardStatus);
         for (const ev of ["node-copy", "node-cut", "node-paste"]) {
             in6src.addEventListener(ev, updateClipboardStatus);
             in6tgt.addEventListener(ev, updateClipboardStatus);
@@ -726,7 +726,7 @@ function restoreFromUrl(nodePath) {
                 data.map(d => ({ id: d.id, path: d.path, name: d.name })), null, 2);
         }
         updateBulkOutput();
-        in6bulk.addEventListener('tree-change', updateBulkOutput);
+        in6bulk.addEventListener('nodes-change', updateBulkOutput);
 
         function showBulkResult(result, isError) {
             const el = document.getElementById('in6-bulk-result');

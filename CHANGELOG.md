@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — public names follow the BlissFramework naming guideline (2026-11-23)
+
+- Renamed, same as svelte-treeview: `applyChanges` → `processChanges` (+ `ApplyChangesResult` → `ProcessChangesResult`), `shouldHandleKeyboardShortcuts` / `handle-keyboard-shortcuts` → `isKeyboardShortcutsEnabled` / `enable-keyboard-shortcuts`, `shouldUseInternalSearchIndex` / `use-internal-search-index` → `isInternalSearchIndexEnabled` / `enable-internal-search-index`, `searchResultLimit` / `search-result-limit` → `maxSearchResultCount` / `max-search-result-count`, `rowAnimationLimit` / `row-animation-limit` → `maxAnimatedRowCount` / `max-animated-row-count`, events `tree-change` → `nodes-change` (`onNodesChange`) and `nodes-reorder` → `nodes-sort` (`onNodesSort`, `NodesSortContext` / `NodesSortEventDetail`), `SelectionModifiers.ctrl` / `.shift` → `isCtrlPressed` / `isShiftPressed`, state `isContextMenuVisible` → `isContextMenuOpen`, engine `runDeleteCommand` → `deleteNodes`.
+
+### Added — `deleteNodes(paths?)` on the element and the controller (2026-11-23)
+
+- The user's Delete command (as the Delete key / the `delete` menu action): `beforeDeleteCallback` may narrow or block it, `node-delete` fires with the pre-removal nodes; default = the selection, else the focused node. Was engine-only (`runDeleteCommand`); svelte-treeview has it on `<Tree>`.
+
+### Internal — private names follow the BlissFramework verb registry (2026-11-23)
+
+- Same renames as svelte-treeview: `_dispatchSelectionChange` / `_dispatchCheckedChange` (were `_emit*Change`), `dispatchDrop`, `_reconcileFilteredCheckState`, `_reconcileCheckedFromSelection`, `_computeEmittedCheckedPaths`, `_expandFromToggle`, `_animateExpand`, `_commitPendingCollapses`, `_checkBeforeExpand`, `_isRowAnimationEnabled`, `_getPathsWithDescendants`, `_validateDragManifest`, `_processDropGroups`, `_show*BlockedIndicator`, `_searchWithLimit`, `_getRealNode`, `_startRenderPass` / `_completeRenderPass`; the ltree's `_emitTreeChanged` folded into `refresh()`.
+
 ### Fixed — a copy placed between two adjacent order values no longer duplicates one (2026-11-23)
 
 - With `orderMember`, `duplicateNode(…, siblingPath, position)` gave the copy `floor((prev + sibling) / 2)`: between siblings ordered 3 and 4 that is 3 again. It now places through the same `_placeRelative` rule as `moveNode` / `insertNode` (whole numbers while the gap allows, else a fraction — 3.5). Same fix in svelte-treeview's `moveNode`.

@@ -17,7 +17,7 @@
         <p>Targeted by <code>e2e/row-animation.spec.ts</code> (mirror of svelte-treeview's
            <code>/test/row-animation</code>). On by default (part of core <code>motion</code>, no on/off
            attribute): rows an expand reveals get <code>wtv__node--opening</code> (capped by
-           <code>row-animation-limit</code>); never on first render, a re-render or a data reload.</p>
+           <code>max-animated-row-count</code>); never on first render, a re-render or a data reload.</p>
         <div data-scenario="off">
             <p><code>--wtv-row-animation-duration: 0s</code> → just the rows are off.</p>
             <web-treeview id="off" expand-level="0"></web-treeview>
@@ -30,7 +30,7 @@
             <button data-testid="collapse-all">collapseAll</button>
             <output data-testid="collapse-log"></output>
             <output data-testid="await-result"></output>
-            <web-treeview id="on" expand-level="0" row-animation-limit="3"></web-treeview>
+            <web-treeview id="on" expand-level="0" max-animated-row-count="3"></web-treeview>
         </div>
         <div data-scenario="pinned">
             <p>Root 1 is not collapsible (svelte-treeview B11).</p>

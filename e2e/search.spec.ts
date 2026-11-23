@@ -160,3 +160,34 @@ test.describe('Search folding (core normalizeSearchText)', () => {
     expect(out.accentedQuery).toEqual(['Český Krumlov']);
   });
 });
+
+test.describe('Search value resolution', () => {
+  test('a row without the searchValueMember field is indexed through getSearchValueCallback', async ({ page }) => {
+    await gotoSearch(page);
+    const out = await page.evaluate(async () => {
+      const el = document.createElement('web-treeview') as any;
+      el.setAttribute('use-internal-search-index', 'true');
+      el.displayValueMember = 'name';
+      el.searchValueMember = 'keywords';
+      el.getSearchValueCallback = (node: any) => `${node.data?.name} callback`;
+      el.nodes = [
+        { id: 1, path: '1', name: 'alpha' },
+        { id: 2, path: '2', name: 'bravo' },
+        { id: 3, path: '3', name: 'delta', keywords: 'kilo' },
+      ];
+      const indexed = new Promise<void>((resolve) => el.addEventListener('index-progress', (e: CustomEvent) => {
+        if (e.detail.isComplete) resolve();
+      }));
+      document.body.appendChild(el);
+      await indexed;
+      const names = (q: string) => el.searchNodes(q).map((n: any) => n.data.name).sort();
+      const result = { kilo: names('kilo'), callback: names('callback') };
+      el.remove();
+      return result;
+    });
+    // the member wins when present; the indexer used to skip the callback whenever a member was set
+    expect(out.kilo).toEqual(['delta']);
+    expect(out.callback).toEqual(['alpha', 'bravo']);
+  });
+});
+

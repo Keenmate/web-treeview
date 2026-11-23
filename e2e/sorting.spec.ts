@@ -180,3 +180,26 @@ test.describe('sort menu built-ins', () => {
     expect(await children(page, '')).toEqual(['Item 1', 'Item 2', 'Item 10']);
   });
 });
+
+test.describe('order values between adjacent neighbours', () => {
+  test('duplicateNode before a node uses the moveNode rule: a fraction between 3 and 4, never a duplicate 3', async ({ page }) => {
+    await make(page, {
+      props: { orderMember: 'order' },
+      nodes: [
+        { id: 1, path: '1', name: 'A', order: 3 },
+        { id: 2, path: '2', name: 'B', order: 4 },
+        { id: 3, path: '3', name: 'C', order: 10 },
+      ],
+    });
+    const out = await page.evaluate(async () => {
+      const t = (window as any).tree;
+      const res = t.duplicateNode(t.getNodeByPath('3'), '', ({ data }: any) => ({ ...data, id: 9, path: '9', name: 'C copy' }), '2', 'before');
+      await t.whenSettled();
+      return { success: res.success, order: res.rootNode?.data.order };
+    });
+    expect(out.success).toBe(true);
+    expect(out.order).toBe(3.5);
+    expect(await children(page, '')).toEqual(['A', 'C copy', 'B', 'C']);
+  });
+});
+

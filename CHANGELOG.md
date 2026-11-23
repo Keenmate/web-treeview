@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — a copy placed between two adjacent order values no longer duplicates one (2026-11-23)
+
+- With `orderMember`, `duplicateNode(…, siblingPath, position)` gave the copy `floor((prev + sibling) / 2)`: between siblings ordered 3 and 4 that is 3 again. It now places through the same `_placeRelative` rule as `moveNode` / `insertNode` (whole numbers while the gap allows, else a fraction — 3.5). Same fix in svelte-treeview's `moveNode`.
+
+### Fixed — the search index falls back to `getSearchValueCallback` (2026-11-23)
+
+- With a `searchValueMember` set, the indexer read only that field, so a row without it was never searchable even when a `getSearchValueCallback` was given. The indexer and `getNodeSearchValue` now share one resolver: the member when the row has it, else the callback. Same fix in svelte-treeview.
+
 ### Fixed — a non-collapsible node stays open on collapse (2026-11-23)
 - `collapseAll()` under a node that `getIsCollapsibleCallback` / `isCollapsibleMember` keeps open animated that node's rows out, and then they snapped back. Now only the rows that really hide animate: below a non-collapsible node, the search goes on to its expanded children.
 - `collapseNodes()` collapsed a non-collapsible node. The toggle and `collapseAll()` never did. Now it stays open: nothing animates and no `node-collapse` fires. Same in svelte-treeview (B11 there).

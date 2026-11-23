@@ -180,6 +180,15 @@ export function createLTree<T>(
 	let cachedVisibleFlatNodesTracker: Symbol | null = null;
 
 	// Async search indexing infrastructure
+	/** The search text of a node: member (when set and present) → `getSearchValueCallback`; else none. */
+	function resolveSearchValue(node: LTreeNode<T>): string | null | undefined {
+		if (!shouldCalculateSearchValue && node.data) {
+			const value = getField(node.data, _searchValueMember!);
+			if (value != null) return String(value);
+		}
+		return _getSearchValueCallback?.(node);
+	}
+
 	let indexer: Indexer<T> | null = null;
 
 	// Initialize indexer when search index is available
@@ -187,9 +196,7 @@ export function createLTree<T>(
 		indexer = new Indexer<T>(
 			_treeId || 'unknown',
 			searchIndex,
-			shouldCalculateSearchValue,
-			_searchValueMember,
-			_getSearchValueCallback,
+			resolveSearchValue,
 			_indexerBatchSize || DEFAULT_INDEXER_BATCH_SIZE, // batch size with fallback
 			_indexerTimeout || 50, // timeout with fallback
 			opts?.log ?? defaultTreeLoggers
@@ -1004,16 +1011,8 @@ export function createLTree<T>(
 		},
 
 		getNodeSearchValue(node: LTreeNode<T>): string {
-			// Same member → callback → fallback guard as getNodeDisplayValue; a
-			// missing search member must not return undefined into the indexer.
-			if (!shouldCalculateSearchValue && node.data) {
-				const value = getField(node.data, _searchValueMember!);
-				if (value != null) return value;
-			}
-
-			if (this.getSearchValueCallback) return this.getSearchValueCallback(node);
-
-			return '[N/A]';
+			// The indexer uses the same resolver (member → callback); '[N/A]' only here.
+			return resolveSearchValue(node) ?? '[N/A]';
 		},
 
 		getNodeAllowedDropPositions(node: LTreeNode<T>): import('./types').DropPosition[] | null | undefined {
@@ -1581,38 +1580,8 @@ export function createLTree<T>(
 				const siblingNode = index.get(siblingPath);
 				if (siblingNode) {
 					const parent = nodeAt(targetParentPath);
-					if (parent) {
-						if (this.orderMember) {
-							// orderMember mode: calculate order value, then let refreshSiblings sort
-							const siblings = parent.children;
-							const oKey = this.orderMember!;
-							const siblingOrder = (siblingNode.data as any)?.[oKey] ?? 0;
-
-							if (position === 'before') {
-								const siblingOrders = siblings
-									.filter(s => s !== rootNode && (s.data as any)?.[oKey] !== undefined)
-									.map(s => (s.data as any)[oKey] as number)
-									.filter(o => o < siblingOrder)
-									.sort((a, b) => b - a);
-								const prevOrder = siblingOrders[0] ?? siblingOrder - 20;
-								(rootNode.data as any)[oKey] = Math.floor((prevOrder + siblingOrder) / 2);
-							} else {
-								const siblingOrders = siblings
-									.filter(s => s !== rootNode && (s.data as any)?.[oKey] !== undefined)
-									.map(s => (s.data as any)[oKey] as number)
-									.filter(o => o > siblingOrder)
-									.sort((a, b) => a - b);
-								const nextOrder = siblingOrders[0] ?? siblingOrder + 20;
-								(rootNode.data as any)[oKey] = Math.floor((siblingOrder + nextOrder) / 2);
-							}
-						}
-						if (this.orderMember && this.isSortingEnabled) {
-							this.refreshSiblings(targetParentPath);
-						} else {
-							// No orderMember: position it directly next to the sibling
-							this._placeRelative(targetParentPath, [rootNode], siblingNode, position);
-						}
-					}
+					// Same rule as moveNode / insertNode (order values between the neighbours, or direct)
+					if (parent) this._placeRelative(targetParentPath, [rootNode], siblingNode, position);
 				}
 			}
 

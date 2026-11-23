@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Removing nodes (`removeNode`, `removeBranch`, `replaceBranch`, `applyChanges`, the source of a cut-paste — same tree or another one) now drops them from the selection, the checked set and the cut set, and unfocuses a removed focused node; `selectedPaths` / `checkedPaths` / `focusedNode` used to keep reporting deleted nodes. In cascade mode the parents re-derive after any change to the tree: removing a checked child clears the parent's [-], removing the last unchecked one checks the parent, and `moveNode` updates both the old and the new parent. `selection-change` / `checked-change` / `focus-change` fire for what changed. Guarded by `e2e/regressions.spec.ts` "B2" (svelte-treeview REVIEW-2026-11-19 B2).
 
+### Internal — one set of path + walk helpers (2026-11-23)
+
+- `helpers/ltree-helpers.ts` gains `getAncestorPaths`, `getPathChain`, `isSelfOrDescendant`, `getTopLevelPaths`, `forEachDescendant`, `getDescendantPaths` and `bumpRev`; `TreeViewState` and the ltree use them instead of their own copies (ancestor loops, `startsWith(path + sep)` tests, `_topLevelOf` / `_getTopLevelSelectedPaths`, `_getDescendantPaths`, `_rev` bumps). No behaviour change. Same as svelte-treeview.
+
 ### Internal — one bracket around every tree mutation (2026-11-23)
 
 - Every `TreeViewState` method that changes the tree (move / add / remove / insert / branch / paste / duplicate / sort / `applyChanges`) runs inside `_mutate(run)`: it announces the change (`tree-change`) and, after the outermost one, reconciles the path-keyed state (`_reconcileAfterMutation`). The mutations no longer set `_skipInsertArray` (a `TreeViewState.data` assigned right after one was ignored until the next microtask; the element was not affected — it batches `nodes`). Same as svelte-treeview.

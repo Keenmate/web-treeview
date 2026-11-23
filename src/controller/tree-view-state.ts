@@ -90,6 +90,15 @@ import { defaultTreeLoggers, type TreeLoggers } from '../logger';
 import type { TreeNavigation, TreeNavigationOverrides } from '../navigation';
 import { perf } from '../perf-logger';
 import { rowDomId } from '../helpers/string-helpers';
+import {
+  bumpRev,
+  getAncestorPaths,
+  getDescendantPaths,
+  getParentPath,
+  getPathChain,
+  getTopLevelPaths,
+  isSelfOrDescendant,
+} from '../helpers/ltree-helpers';
 
 // ─── TreeViewState ───────────────────────────────────────────────────────
 
@@ -1367,9 +1376,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const sep = this._treePathSeparator;
     const changing = new Map<string, LTreeNode<T>>();
     for (const p of paths) {
-      const segs = p.split(sep);
-      for (let i = 1; i <= segs.length; i++) {
-        const prefix = segs.slice(0, i).join(sep);
+      for (const prefix of getPathChain(p, sep)) {
         if (changing.has(prefix)) continue;
         const n = this.tree?.getNodeByPath(prefix);
         if (!n) break;
@@ -1583,11 +1590,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     }
     const sep = this._treePathSeparator || '.';
     const targetSet = new Set(targets);
-    const isUnderTarget = (path: string): boolean => {
-      for (let i = path.lastIndexOf(sep); i > 0; i = path.lastIndexOf(sep, i - 1))
-        if (targetSet.has(path.slice(0, i))) return true;
-      return false;
-    };
+    const isUnderTarget = (path: string): boolean =>
+      getAncestorPaths(path, sep).some((a) => targetSet.has(a));
     const limit = Math.max(0, this._rowAnimationLimit ?? 50);
     const hiding: string[] = [];
     for (const n of this.tree.visibleFlatNodes ?? []) {
@@ -1632,7 +1636,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _settleClosing(paths: readonly string[] | null): boolean {
     const sep = this._treePathSeparator || '.';
     const isRelated = (t: string) =>
-      paths == null || paths.some((p) => p === t || p.startsWith(t + sep) || t.startsWith(p + sep));
+      paths == null || paths.some((p) => isSelfOrDescendant(p, t, sep) || isSelfOrDescendant(t, p, sep));
     const entries = new Set(this._closingHandles.values());
     let isCancelled = false;
     for (const entry of entries) {
@@ -1844,7 +1848,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       const collect = (paths: Set<string>): Map<string, string> => {
         const m = new Map<string, string>();
         for (const p of paths) {
-          if (p === sourcePath || p.startsWith(sourcePath + sep)) {
+          if (isSelfOrDescendant(p, sourcePath, sep)) {
             m.set(p, p.substring(sourcePath.length));
           }
         }
@@ -1859,8 +1863,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
           : undefined;
       const focusedAffectedSuffix =
         this._focusedNode &&
-        (this._focusedNode.path === sourcePath ||
-          this._focusedNode.path.startsWith(sourcePath + sep))
+        isSelfOrDescendant(this._focusedNode.path, sourcePath, sep)
           ? this._focusedNode.path.substring(sourcePath.length)
           : undefined;
 
@@ -1989,7 +1992,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const set = new Set<string>(paths);
     for (const p of paths) {
       const n = this.tree.getNodeByPath(p);
-      if (n) for (const dp of this._getDescendantPaths(n)) set.add(dp);
+      if (n) for (const dp of getDescendantPaths(n)) set.add(dp);
     }
     return [...set];
   }
@@ -2042,9 +2045,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const holes: { node: LTreeNode<T>; toParent: string }[] = [];
     for (const root of roots) {
       const oldParent = root.parentPath ?? '';
-      for (const dp of this._getDescendantPaths(root)) {
+      for (const dp of getDescendantPaths(root)) {
         if (manifest.has(dp)) continue;
-        const parent = dp.substring(0, dp.lastIndexOf(this._treePathSeparator));
+        const parent = getParentPath(dp, this._treePathSeparator) ?? '';
         if (!manifest.has(parent)) continue; // parent is also a hole → rides inside it
         const node = tree.getNodeByPath(dp);
         if (node) holes.push({ node, toParent: oldParent });
@@ -2790,7 +2793,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const isFilteredCascade = this._checkboxMode === 'cascade' && !!this.tree?.isFiltered;
     const visibleDescendants = (path: string): string[] => {
       const copy = this.tree?.getNodeByPath(path);
-      return copy ? this._getDescendantPaths(copy) : [];
+      return copy ? getDescendantPaths(copy) : [];
     };
 
     let newChecked: boolean;
@@ -2879,7 +2882,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       }
       if (node.visualState !== vs || checkedTouched) {
         node.visualState = vs;
-        node._rev = (node._rev || 0) + 1;
+        bumpRev(node);
         anyChanged = true;
         if (checkedTouched) checkedChanged = true;
       }
@@ -2915,25 +2918,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       if (real && real !== copy && (copy.isChecked !== real.isChecked || copy.visualState !== real.visualState)) {
         copy.isChecked = real.isChecked;
         copy.visualState = real.visualState;
-        copy._rev = (copy._rev || 0) + 1;
+        bumpRev(copy);
       }
       for (const child of copy.children) visit(child);
     };
     for (const node of this.tree.tree) visit(node);
   }
 
-  /** Collect every descendant path of a node (depth-first). */
-  private _getDescendantPaths(node: LTreeNode<T>): string[] {
-    const result: string[] = [];
-    const traverse = (n: LTreeNode<T>) => {
-      for (const child of n.children) {
-        result.push(child.path);
-        traverse(child);
-      }
-    };
-    traverse(node);
-    return result;
-  }
 
   /** `paths` plus every descendant (the cascade set of a check / uncheck). `isVisibleOnly`
    *  (a cascade click while filtered) takes the descendants of the filtered COPY — the
@@ -2942,7 +2933,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const expanded = new Set(paths);
     for (const path of paths) {
       const n = isVisibleOnly ? (this.tree?.getNodeByPath(path) ?? null) : this._realNode(path);
-      if (n) for (const dp of this._getDescendantPaths(n)) expanded.add(dp);
+      if (n) for (const dp of getDescendantPaths(n)) expanded.add(dp);
     }
     return [...expanded];
   }
@@ -3623,7 +3614,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         // Per-entry self-paste guard: skip (don't abort the batch) an entry whose
         // destination is itself or its own descendant.
         if (sameTree && !isRootPaste &&
-          (destParentPath === entry.sourcePath || destParentPath.startsWith(entry.sourcePath + sep))) {
+          isSelfOrDescendant(destParentPath, entry.sourcePath, sep)) {
           skipped++;
           continue;
         }
@@ -3747,27 +3738,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return this._focusedNode ? [this._focusedNode.path] : [];
   }
 
-  /** Keep only top-level paths — a path whose ancestor is also present is dropped. */
-  private _topLevelOf(paths: string[]): string[] {
-    const set = new Set(paths);
-    const sep = this._treePathSeparator;
-    return paths.filter((p) => {
-      let cursor = p;
-      while (cursor.includes(sep)) {
-        cursor = cursor.substring(0, cursor.lastIndexOf(sep));
-        if (set.has(cursor)) return false;
-      }
-      return true;
-    });
-  }
-
   /**
    * Programmatic removal of nodes (and their descendants): top-level subtrees only,
    * selection + focus are cleared when anything was removed. No `beforeDeleteCallback`,
    * no `node-delete` (that is the user Delete command, {@link runDeleteCommand}).
    */
   removeNodes(paths: string[]): { removed: number; failed: number } {
-    const targets = this._topLevelOf(paths ?? []);
+    const targets = getTopLevelPaths(paths ?? [], this._treePathSeparator);
     let removed = 0;
     let failed = 0;
     // One bracket: the clear runs before the reconcile, so selection-change fires once.
@@ -3792,7 +3769,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * node snapshots. Programmatic removal is {@link removeNodes} (no veto, no event).
    */
   runDeleteCommand(paths?: string[]): { removed: number; blocked: number } {
-    let targets = this._topLevelOf(paths ?? this._shortcutSelectionPaths());
+    let targets = getTopLevelPaths(paths ?? this._shortcutSelectionPaths(), this._treePathSeparator);
     if (targets.length === 0) return { removed: 0, blocked: 0 };
 
     if (this.beforeDeleteCb) {
@@ -3801,7 +3778,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         .filter((n): n is LTreeNode<T> => n !== null);
       const result = this.beforeDeleteCb({ paths: targets, nodes });
       if (result === false) return { removed: 0, blocked: targets.length };
-      if (Array.isArray(result)) targets = this._topLevelOf(result);
+      if (Array.isArray(result)) targets = getTopLevelPaths(result, this._treePathSeparator);
     }
 
     // Snapshot targets BEFORE removal so onDelete can hand back resolved nodes.
@@ -4430,7 +4407,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       const nextFallback = updates.displayValueFallback ?? '[N/A]';
       if (this.tree.displayValueFallback !== nextFallback) {
         this.tree.displayValueFallback = nextFallback;
-        for (const n of this.tree.visibleFlatNodes ?? []) n._rev = (n._rev || 0) + 1;
+        for (const n of this.tree.visibleFlatNodes ?? []) bumpRev(n);
       }
     }
 
@@ -5071,23 +5048,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Descendants whose ancestor is also selected are absorbed — they
    *  ride along inside the ancestor's subtree during multi-drag. */
   private _getTopLevelSelectedPaths(): string[] {
-    const paths = this._selectedPaths;
-    if (paths.size === 0) return [];
-    const sep = this._treePathSeparator;
-    const result: string[] = [];
-    for (const p of paths) {
-      let cursor = p;
-      let absorbed = false;
-      while (cursor.includes(sep)) {
-        cursor = cursor.substring(0, cursor.lastIndexOf(sep));
-        if (paths.has(cursor)) {
-          absorbed = true;
-          break;
-        }
-      }
-      if (!absorbed) result.push(p);
-    }
-    return result;
+    return getTopLevelPaths(this._selectedPaths, this._treePathSeparator);
   }
 
   /**

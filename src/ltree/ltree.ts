@@ -7,7 +7,9 @@ import {
 	getLevel,
 	getParentPath,
 	getPathSegments,
-	getRelativePath
+	getRelativePath,
+	bumpRev,
+	isSelfOrDescendant
 } from '../helpers/ltree-helpers';
 
 import type { Ltree, FilterScope, ExpandOptions, SortOptions, NodesReorderContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './types';
@@ -794,7 +796,7 @@ export function createLTree<T>(
 			function setExpandedRecursive(node: LTreeNode<T>, value: boolean) {
 				if (node.isExpanded !== value) {
 					node.isExpanded = value;
-					node._rev = (node._rev || 0) + 1;
+					bumpRev(node);
 				}
 				for (const child of node.children) setExpandedRecursive(child, value);
 			}
@@ -829,7 +831,7 @@ export function createLTree<T>(
 								trim(child);
 							} else if (self.getNodeIsCollapsible(child)) {
 								child.isExpanded = false;
-								child._rev = (child._rev || 0) + 1;
+								bumpRev(child);
 								trim(child);
 							}
 						}
@@ -842,7 +844,7 @@ export function createLTree<T>(
 					for (const node of chainTo(p, index, this.treePathSeparator)) {
 						if (!node.isExpanded) {
 							node.isExpanded = true;
-							node._rev = (node._rev || 0) + 1;
+							bumpRev(node);
 						}
 					}
 					const target = index.get(p);
@@ -865,7 +867,7 @@ export function createLTree<T>(
 			function collapseRecursive(node: LTreeNode<T>) {
 				if (node.isExpanded && self.getNodeIsCollapsible(node)) {
 					node.isExpanded = false;
-					node._rev = (node._rev || 0) + 1;
+					bumpRev(node);
 				}
 				for (const child of node.children) collapseRecursive(child);
 			}
@@ -917,7 +919,7 @@ export function createLTree<T>(
 							trim(child);
 						} else if (self.getNodeIsCollapsible(child)) {
 							child.isExpanded = false;
-							child._rev = (child._rev || 0) + 1;
+							bumpRev(child);
 							hasChanges = true;
 							trim(child);
 						}
@@ -931,7 +933,7 @@ export function createLTree<T>(
 				for (const node of chainTo(p, idx, this.treePathSeparator)) {
 					if (!node.isExpanded) {
 						node.isExpanded = true;
-						node._rev = (node._rev || 0) + 1;
+						bumpRev(node);
 						hasChanges = true;
 					}
 				}
@@ -961,7 +963,7 @@ export function createLTree<T>(
 					// data-expanded directly so it doesn't strictly need this,
 					// but custom renderers may key off _rev (parity with
 					// svelte-treeview, which does require the bump).
-					node._rev = (node._rev || 0) + 1;
+					bumpRev(node);
 					hasChanges = true;
 				}
 			}
@@ -1125,7 +1127,7 @@ export function createLTree<T>(
 			}
 
 			// Prevent moving a node into itself or its descendants
-			if (targetPath.startsWith(sourcePath + sep) || targetPath === sourcePath) {
+			if (isSelfOrDescendant(targetPath, sourcePath, sep)) {
 				return { success: false, error: 'Cannot move a node into itself or its descendants' };
 			}
 
@@ -1420,7 +1422,7 @@ export function createLTree<T>(
 
 			// Merge updates into existing data
 			node.data = { ...node.data, ...dataUpdates };
-			node._rev = (node._rev || 0) + 1;
+			bumpRev(node);
 
 			// Re-index for search if needed
 			if (indexer && _shouldUseInternalSearchIndex) {
@@ -1724,7 +1726,7 @@ export function createLTree<T>(
 				let ancestor = pp ? index.get(pp) : undefined;
 				while (ancestor && !bumpedPaths.has(ancestor.path)) {
 					bumpedPaths.add(ancestor.path);
-					ancestor._rev = (ancestor._rev || 0) + 1;
+					bumpRev(ancestor);
 					ancestor = ancestor.parentPath ? index.get(ancestor.parentPath) : undefined;
 				}
 			}
@@ -1807,7 +1809,7 @@ export function createLTree<T>(
 			if (_hasChildrenMember && parentNode.data) {
 				(parentNode.data as any)[_hasChildrenMember] = false;
 			}
-			parentNode._rev = (parentNode._rev || 0) + 1;
+			bumpRev(parentNode);
 			nodeCount -= removedCount;
 
 			// Delegate to addBranch for the new data (it emits unless there is nothing to insert)
@@ -1966,7 +1968,7 @@ export function createLTree<T>(
 			if (children.length === 0) return;
 			const sorted = this._sortSiblings(children, options);
 			parent.children = sorted;
-			parent._rev = (parent._rev || 0) + 1;
+			bumpRev(parent);
 			// A custom compare / reversed order no longer matches the orderMember values —
 			// rewrite them (10, 20, 30…) so the new order persists.
 			const om = this.orderMember;

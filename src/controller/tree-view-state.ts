@@ -1344,9 +1344,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (now.length) this._expandWithEvents(now, options);
   }
 
-  /** Collapse nodes; fires `node-collapse` for every node that actually collapsed (unless `isSilent`). */
-  /** Collapse the nodes. The rows they hide animate out first (motion); the Promise settles
-   *  once the collapse applied (`node-collapse` fires then). */
+  /** Collapse the nodes; a non-collapsible node (`getNodeIsCollapsible`) stays open. The rows
+   *  they hide animate out first (motion); the Promise settles once the collapse applied
+   *  (`node-collapse` fires then for every node that actually collapsed, unless `isSilent`). */
   collapseNodes(
     nodePath: string | string[],
     options?: ExpandOptions
@@ -1354,7 +1354,10 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const paths = Array.isArray(nodePath) ? nodePath : [nodePath];
     const wereExpanded = paths
       .map((p) => this.tree?.getNodeByPath(p))
-      .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren);
+      .filter(
+        (n): n is LTreeNode<T> =>
+          !!n && !!n.isExpanded && !!n.hasChildren && this.tree.getNodeIsCollapsible(n)
+      );
     // Already animating out (a second collapse) → wait for that one.
     const running = wereExpanded.filter((n) => this._closingHandles.has(n.path));
     const fresh = wereExpanded.filter((n) => !this._closingHandles.has(n.path));
@@ -1572,13 +1575,20 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._scheduleNotify();
     };
     if (!this.tree) return Promise.resolve();
-    // The nodes whose rows disappear: every expanded root (whole tree) or the given ones.
-    const targets = (nodePath == null
+    // The nodes whose rows disappear: from every root (whole tree) or the given nodes, the
+    // topmost expanded nodes that really collapse — a non-collapsible one stays open, so its
+    // rows stay and the search goes on below it (svelte-treeview B11).
+    const starts = (nodePath == null
       ? (this.tree.visibleFlatNodes ?? []).filter((n) => !n.parentPath)
       : (Array.isArray(nodePath) ? nodePath : [nodePath]).map((p) => this.tree.getNodeByPath(p))
-    )
-      .filter((n): n is LTreeNode<T> => !!n && !!n.isExpanded && !!n.hasChildren)
-      .map((n) => n.path);
+    ).filter((n): n is LTreeNode<T> => !!n);
+    const targets: string[] = [];
+    const collectCollapsing = (node: LTreeNode<T>) => {
+      if (!node.isExpanded || !node.hasChildren) return;
+      if (this.tree.getNodeIsCollapsible(node)) targets.push(node.path);
+      else for (const child of node.children) collectCollapsing(child);
+    };
+    for (const node of starts) collectCollapsing(node);
     return this._animateCollapse(targets, apply);
   }
 

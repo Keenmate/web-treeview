@@ -8,6 +8,7 @@
         /* A 1s duration so the test can see the reveal (custom properties pierce the shadow root). */
         #on { --wtv-row-animation-duration: 1s; }
         #off { --wtv-row-animation-duration: 0s; }
+        #pinned { --wtv-row-animation-duration: 1s; }
     </style>
 </head>
 <body>
@@ -31,6 +32,13 @@
             <output data-testid="await-result"></output>
             <web-treeview id="on" expand-level="0" row-animation-limit="3"></web-treeview>
         </div>
+        <div data-scenario="pinned">
+            <p>Root 1 is not collapsible (svelte-treeview B11).</p>
+            <button data-testid="pinned-collapse-all">collapseAll</button>
+            <button data-testid="pinned-collapse-root">collapseNodes('1')</button>
+            <output data-testid="pinned-log"></output>
+            <web-treeview id="pinned" expand-level="0"></web-treeview>
+        </div>
         <div data-scenario="none">
             <p>motion="none" → 0s → no reveal.</p>
             <web-treeview id="none" expand-level="0" motion="none"></web-treeview>
@@ -53,7 +61,7 @@
             { id: 31, path: '3.1', name: 'C 1' }
         ];
         const sortByPath = (items) => [...items].sort((a, b) => a.path.localeCompare(b.path));
-        for (const tree of document.querySelectorAll('web-treeview')) {
+        for (const tree of document.querySelectorAll('web-treeview:not(#pinned)')) {
             tree.idMember = 'id';
             tree.pathMember = 'path';
             tree.displayValueMember = 'name';
@@ -61,6 +69,29 @@
             tree.nodes = make();
             tree.expandedPaths = ['3'];
         }
+        // B11: a root that never collapses — collapseAll / collapseNodes must animate (and hide)
+        // only what really collapses under it.
+        const pinned = document.getElementById('pinned');
+        pinned.idMember = 'id';
+        pinned.pathMember = 'path';
+        pinned.displayValueMember = 'name';
+        pinned.sortCallback = ({ nodes }) => sortByPath(nodes);
+        pinned.getIsCollapsibleCallback = ({ node }) => node.path !== '1';
+        pinned.nodes = [
+            { id: 1, path: '1', name: 'Pinned root' },
+            { id: 11, path: '1.1', name: 'Folder' },
+            { id: 111, path: '1.1.1', name: 'Leaf' },
+            { id: 12, path: '1.2', name: 'Item' }
+        ];
+        pinned.expandedPaths = ['1', '1.1'];
+        const pinnedLog = [];
+        pinned.addEventListener('node-collapse', (e) => {
+            pinnedLog.push(e.detail.path);
+            document.querySelector('[data-testid="pinned-log"]').textContent = pinnedLog.join(',');
+        });
+        document.querySelector('[data-testid="pinned-collapse-all"]').addEventListener('click', () => pinned.collapseAll());
+        document.querySelector('[data-testid="pinned-collapse-root"]').addEventListener('click', () => pinned.collapseNodes('1'));
+
         const on = document.getElementById('on');
         document.querySelector('[data-testid="expand-all"]').addEventListener('click', () => on.expandAll());
         document.querySelector('[data-testid="reload"]').addEventListener('click', () => { on.nodes = make(); });

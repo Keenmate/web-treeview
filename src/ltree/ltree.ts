@@ -957,7 +957,8 @@ export function createLTree<T>(
 
 			for (const p of paths) {
 				const node = idx.get(p);
-				if (node && node.isExpanded) {
+				// A non-collapsible node stays open (as with the toggle and collapseAll).
+				if (node && node.isExpanded && this.getNodeIsCollapsible(node)) {
 					node.isExpanded = false;
 					// Bump _rev to match expandNodes — the DOM renderer reads
 					// data-expanded directly so it doesn't strictly need this,

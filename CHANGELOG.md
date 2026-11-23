@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   LO07 announces a search in Czech plural forms ("1 výsledek / 3 výsledky / 5 výsledků") via the tree's own
   `translateCallback` — asserted in `e2e/examples.spec.ts`.
 
+### Fixed — state follows a removal or move (2026-11-23)
+
+- Removing nodes (`removeNode`, `removeBranch`, `replaceBranch`, `applyChanges`, the source of a cut-paste — same tree or another one) now drops them from the selection, the checked set and the cut set, and unfocuses a removed focused node; `selectedPaths` / `checkedPaths` / `focusedNode` used to keep reporting deleted nodes. In cascade mode the parents re-derive after any change to the tree: removing a checked child clears the parent's [-], removing the last unchecked one checks the parent, and `moveNode` updates both the old and the new parent. `selection-change` / `checked-change` / `focus-change` fire for what changed. Guarded by `e2e/regressions.spec.ts` "B2" (svelte-treeview REVIEW-2026-11-19 B2).
+
+### Internal — one bracket around every tree mutation (2026-11-23)
+
+- Every `TreeViewState` method that changes the tree (move / add / remove / insert / branch / paste / duplicate / sort / `applyChanges`) runs inside `_mutate(run)`: it announces the change (`tree-change`) and, after the outermost one, reconciles the path-keyed state (`_reconcileAfterMutation`). The mutations no longer set `_skipInsertArray` (a `TreeViewState.data` assigned right after one was ignored until the next microtask; the element was not affected — it batches `nodes`). Same as svelte-treeview.
+
 ### Fixed — a tree renamed after setup is found by a drag from another tree (2026-11-22)
 - `el.treeId = …` (or `setOptions({ treeId })`) after construction left the tree in the cross-tree registry under
   its generated id, and its nodes kept the old `treeId`. With the pointer drag (which finds the target tree by its

@@ -415,7 +415,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  can't parse a CSS length such as `30rem` or `50vh` itself. */
   private _vsViewportHeight: number | null = null;
 
-  // Skip insertArray flag
+  /** updateProps rebuilt the tree and inserted `data` itself — a `data` set in the same batch
+   *  must not insert it again. (Mutations no longer set it: a `data` assigned right after a
+   *  move / remove used to be ignored until the next microtask.) */
   private _skipInsertArray = false;
 
   // Progressive flat rendering tracker
@@ -451,6 +453,122 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._treeChangePending = false;
       this.emit('tree-change', undefined);
     });
+  }
+
+  /** Nesting depth of `_mutate` — the state reconcile runs once, after the outermost. */
+  private _mutationDepth = 0;
+
+  /**
+   * THE bracket around every change to the tree's structure or data (move / add / remove /
+   * paste / branch ops / applyChanges…): announces it (`tree-change`, microtask) and, after
+   * the outermost one, brings the path-keyed state back in line with the tree
+   * (_reconcileAfterMutation). Nested calls (moveNodes → moveNode, a cross-tree cut-paste
+   * removing its sources) reconcile once. (svelte-treeview REVIEW-2026-11-19 §3.3)
+   */
+  private _mutate<R>(run: () => R): R {
+    this._markStructureChanged();
+    this._mutationDepth++;
+    try {
+      return run();
+    } finally {
+      if (--this._mutationDepth === 0) this._reconcileAfterMutation();
+    }
+  }
+
+  /**
+   * After a mutation (see _mutate): the path-keyed state follows the tree.
+   * (svelte-treeview REVIEW-2026-11-19 B2)
+   * - Paths of nodes no longer in the tree leave the selection (+ anchor), the checked set and
+   *   the cut set — removeNode / removeBranch / a cut-paste source used to leave them behind.
+   * - A removed focused node is unfocused.
+   * - Cascade mode re-derives the branch states: a removed / moved / added child changes its
+   *   parent's [✓] / [-] (_rederiveCascadeStates).
+   * Fires selection-change / checked-change only for what changed (focus-change follows
+   * from the snapshot).
+   */
+  private _reconcileAfterMutation(): void {
+    if (!this.tree?.root) return;
+    const isLive = (path: string) => this._realNode(path) !== null;
+
+    const selected = this._selection.values();
+    const liveSelected = selected.filter(isLive);
+    const isSelectionChanged = liveSelected.length !== selected.length;
+    if (isSelectionChanged) {
+      this._selection.set(liveSelected, { isSilent: true });
+      this._syncSelection();
+    }
+    const anchor = this._selection.anchor;
+    if (anchor && !isLive(anchor)) this._selection.setAnchor(null);
+
+    const isFocusRemoved = !!this._focusedNode && !isLive(this._focusedNode.path);
+    if (isFocusRemoved) this._focusedNode = null;
+
+    if (this._cutPaths.size > 0) {
+      const cut = [...this._cutPaths].filter(isLive);
+      if (cut.length !== this._cutPaths.size) this._cutPaths = new Set(cut);
+    }
+
+    const prevChecked = this._checkedPaths;
+    const checked = new Set([...prevChecked].filter(isLive));
+    // No checkboxes = the checked set is the selection mirror (_mirrorSelectedToChecked),
+    // which has no cascade.
+    const isCascade = this._checkboxMode === 'cascade' && this._shouldShowCheckboxes;
+    if (isCascade && prevChecked.size > 0) this._rederiveCascadeStates(checked);
+    const isCheckedChanged =
+      checked.size !== prevChecked.size || [...checked].some((p) => !prevChecked.has(p));
+    if (isCheckedChanged) {
+      this._checkedPaths = checked;
+      this._syncFilteredCheckState();
+    }
+
+    if (isSelectionChanged) {
+      this._emitSelectionChange();
+      this._mirrorSelectedToChecked();
+    }
+    if (isCheckedChanged) this._emitCheckedChange();
+    if (isSelectionChanged || isCheckedChanged || isFocusRemoved) {
+      this.tree.refresh();
+      this._scheduleNotify();
+    }
+  }
+
+  /**
+   * Cascade mode: re-derive every branch's visualState + isChecked from its descendants in
+   * ONE bottom-up pass over the real tree (O(n)), writing membership changes into `checked`.
+   * Same rule as _reconcileCascadeStates: all descendants checked → checked, none →
+   * unchecked, else [-] (not in the canonical set). Leaves keep their own isChecked.
+   */
+  private _rederiveCascadeStates(checked: Set<string>): void {
+    // Returns whether the node's whole subtree (itself included) is checked / unchecked.
+    const visit = (n: LTreeNode<T>): { isAll: boolean; isNone: boolean } => {
+      let isAll = true;
+      let isNone = true;
+      const children = n.children as LTreeNode<T>[];
+      for (const child of children) {
+        const sub = visit(child);
+        isAll &&= sub.isAll;
+        isNone &&= sub.isNone;
+      }
+      let vs: VisualState;
+      if (children.length === 0) {
+        vs = n.isChecked ? VisualState.checked : VisualState.unchecked;
+      } else {
+        vs = isAll ? VisualState.checked : isNone ? VisualState.unchecked : VisualState.indeterminate;
+        const shouldBeChecked = vs === VisualState.checked;
+        if (n.isChecked !== shouldBeChecked) {
+          n.isChecked = shouldBeChecked;
+          n._rev++;
+        }
+        if (shouldBeChecked) checked.add(n.path);
+        else checked.delete(n.path);
+      }
+      if (n.visualState !== vs) {
+        n.visualState = vs;
+        n._rev++;
+      }
+      return { isAll: isAll && n.isChecked, isNone: isNone && !n.isChecked };
+    };
+    for (const child of this.tree.root.children as LTreeNode<T>[]) visit(child);
   }
 
   /** Synchronously emit state-change snapshot, bypassing microtask batching.
@@ -1541,16 +1659,12 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** Sort the children of each node (one level; '' = root). Returns the orderMember rewrites
    *  (the facade fires `nodes-reorder` for them). */
   sortNodes(paths: string | string[], options?: SortOptions<T>): NodesReorderContext<T>[] {
-    const reorders = this.tree?.sortNodes(paths, options) ?? [];
-    this._markStructureChanged();
-    return reorders;
+    return this._mutate(() => this.tree?.sortNodes(paths, options) ?? []);
   }
 
   /** Sort whole subtrees (`null` / omitted = the whole tree). Returns the orderMember rewrites. */
   sortAll(paths?: string | string[] | null, options?: SortOptions<T>): NodesReorderContext<T>[] {
-    const reorders = this.tree?.sortAll(paths, options) ?? [];
-    this._markStructureChanged();
-    return reorders;
+    return this._mutate(() => this.tree?.sortAll(paths, options) ?? []);
   }
 
   filterNodes(term: string, searchOptions?: SearchOptions): void {
@@ -1718,88 +1832,86 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     targetPath: string,
     position: DropPosition
   ): { success: boolean; error?: string } {
-    this._skipInsertArray = true;
-    // Capture the affected path set BEFORE the move: any selected /
-    // checked path that is the source itself or a descendant of it needs
-    // to be remapped onto the new location. Without this the path Sets
-    // keep stale strings after a multi-drag, so the next plain click leaves
-    // visually-selected ghosts in the old positions and downstream
-    // operations work on dangling paths.
-    const sourceNode = this.tree?.getNodeByPath(sourcePath);
-    const sep = this._treePathSeparator;
-    const collect = (paths: Set<string>): Map<string, string> => {
-      const m = new Map<string, string>();
-      for (const p of paths) {
-        if (p === sourcePath || p.startsWith(sourcePath + sep)) {
-          m.set(p, p.substring(sourcePath.length));
+    return this._mutate(() => {
+      // Capture the affected path set BEFORE the move: any selected /
+      // checked path that is the source itself or a descendant of it needs
+      // to be remapped onto the new location. Without this the path Sets
+      // keep stale strings after a multi-drag, so the next plain click leaves
+      // visually-selected ghosts in the old positions and downstream
+      // operations work on dangling paths.
+      const sourceNode = this.tree?.getNodeByPath(sourcePath);
+      const sep = this._treePathSeparator;
+      const collect = (paths: Set<string>): Map<string, string> => {
+        const m = new Map<string, string>();
+        for (const p of paths) {
+          if (p === sourcePath || p.startsWith(sourcePath + sep)) {
+            m.set(p, p.substring(sourcePath.length));
+          }
         }
-      }
-      return m;
-    };
-    const selectionAffected = collect(this._selectedPaths);
-    const checkedAffected = collect(this._checkedPaths);
-    const anchorPath = this._selection.anchor;
-    const lastSelectedSuffix =
-      anchorPath && selectionAffected.has(anchorPath)
-        ? selectionAffected.get(anchorPath)
-        : undefined;
-    const focusedAffectedSuffix =
-      this._focusedNode &&
-      (this._focusedNode.path === sourcePath ||
-        this._focusedNode.path.startsWith(sourcePath + sep))
-        ? this._focusedNode.path.substring(sourcePath.length)
-        : undefined;
-
-    const result = this.tree?.moveNode(sourcePath, targetPath, position) || {
-      success: false,
-      error: 'Tree not initialized'
-    };
-
-    if (result.success && sourceNode) {
-      const newPath = sourceNode.path; // tree.moveNode mutates this in place
-      const remap = (paths: Set<string>, affected: Map<string, string>) => {
-        if (affected.size === 0) return;
-        for (const [oldP, suffix] of affected) {
-          paths.delete(oldP);
-          paths.add(newPath + suffix);
-        }
+        return m;
       };
-      if (selectionAffected.size > 0) {
-        const next = new Set(this._selection.values());
-        remap(next, selectionAffected);
-        this._selection.set(next, { isSilent: true });
-        // The moved nodes keep their own `isSelected` flags (same objects, new paths).
-        this._syncSelection(false);
-      }
-      remap(this._checkedPaths, checkedAffected);
-      if (lastSelectedSuffix !== undefined) {
-        this._selection.setAnchor(newPath + lastSelectedSuffix);
-      }
-      if (focusedAffectedSuffix !== undefined && this._focusedNode) {
-        // _focusedNode is the same node reference; its .path was already
-        // updated by tree.moveNode. Nothing extra to do here — the suffix
-        // capture above is just a witness that focus belongs to the moved
-        // subtree, so we don't need to clear it.
-      }
-    }
+      const selectionAffected = collect(this._selectedPaths);
+      const checkedAffected = collect(this._checkedPaths);
+      const anchorPath = this._selection.anchor;
+      const lastSelectedSuffix =
+        anchorPath && selectionAffected.has(anchorPath)
+          ? selectionAffected.get(anchorPath)
+          : undefined;
+      const focusedAffectedSuffix =
+        this._focusedNode &&
+        (this._focusedNode.path === sourcePath ||
+          this._focusedNode.path.startsWith(sourcePath + sep))
+          ? this._focusedNode.path.substring(sourcePath.length)
+          : undefined;
 
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+      const result = this.tree?.moveNode(sourcePath, targetPath, position) || {
+        success: false,
+        error: 'Tree not initialized'
+      };
+
+      if (result.success && sourceNode) {
+        const newPath = sourceNode.path; // tree.moveNode mutates this in place
+        const remap = (paths: Set<string>, affected: Map<string, string>) => {
+          if (affected.size === 0) return;
+          for (const [oldP, suffix] of affected) {
+            paths.delete(oldP);
+            paths.add(newPath + suffix);
+          }
+        };
+        if (selectionAffected.size > 0) {
+          const next = new Set(this._selection.values());
+          remap(next, selectionAffected);
+          this._selection.set(next, { isSilent: true });
+          // The moved nodes keep their own `isSelected` flags (same objects, new paths).
+          this._syncSelection(false);
+        }
+        remap(this._checkedPaths, checkedAffected);
+        if (lastSelectedSuffix !== undefined) {
+          this._selection.setAnchor(newPath + lastSelectedSuffix);
+        }
+        if (focusedAffectedSuffix !== undefined && this._focusedNode) {
+          // _focusedNode is the same node reference; its .path was already
+          // updated by tree.moveNode. Nothing extra to do here — the suffix
+          // capture above is just a witness that focus belongs to the moved
+          // subtree, so we don't need to clear it.
+        }
+      }
+
+      return result;
+    });
   }
 
   removeNode(
     path: string,
     includeDescendants: boolean = true
   ): { success: boolean; node?: LTreeNode<T>; error?: string } {
-    this._skipInsertArray = true;
-    const result = this.tree?.removeNode(path, includeDescendants) || {
-      success: false,
-      error: 'Tree not initialized'
-    };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.removeNode(path, includeDescendants) || {
+        success: false,
+        error: 'Tree not initialized'
+      };
+      return result;
+    });
   }
 
   addNode(
@@ -1807,14 +1919,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     nodeData: T,
     pathSegment?: string
   ): { success: boolean; node?: LTreeNode<T>; error?: string } {
-    this._skipInsertArray = true;
-    const result = this.tree?.addNode(parentPath, nodeData, pathSegment) || {
-      success: false,
-      error: 'Tree not initialized'
-    };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.addNode(parentPath, nodeData, pathSegment) || {
+        success: false,
+        error: 'Tree not initialized'
+      };
+      return result;
+    });
   }
 
   insertNode(
@@ -1822,36 +1933,33 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     nodeData: T,
     position: DropPosition
   ): { success: boolean; node?: LTreeNode<T>; error?: string } {
-    this._skipInsertArray = true;
-    const result = this.tree?.insertNode(targetPath, nodeData, position) || {
-      success: false,
-      error: 'Tree not initialized'
-    };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.insertNode(targetPath, nodeData, position) || {
+        success: false,
+        error: 'Tree not initialized'
+      };
+      return result;
+    });
   }
 
   updateNode(
     path: string,
     dataUpdates: Partial<T>
   ): { success: boolean; node?: LTreeNode<T>; error?: string } {
-    this._skipInsertArray = true;
-    const result = this.tree?.updateNode(path, dataUpdates) || {
-      success: false,
-      error: 'Tree not initialized'
-    };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.updateNode(path, dataUpdates) || {
+        success: false,
+        error: 'Tree not initialized'
+      };
+      return result;
+    });
   }
 
   applyChanges(changes: TreeChange<T>[]): ApplyChangesResult {
-    this._skipInsertArray = true;
-    const result = this.tree?.applyChanges(changes) || { successful: 0, failed: [] };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.applyChanges(changes) || { successful: 0, failed: [] };
+      return result;
+    });
   }
 
   duplicateNode(
@@ -1861,13 +1969,12 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     siblingPath?: string,
     position?: 'before' | 'after'
   ): { success: boolean; rootNode?: LTreeNode<T>; count: number; error?: string } {
-    this._skipInsertArray = true;
-    const result = this.tree?.duplicateNode(
-      sourceNode, targetParentPath, transformData, siblingPath, position
-    ) || { success: false, count: 0, error: 'Tree not initialized' };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.duplicateNode(
+        sourceNode, targetParentPath, transformData, siblingPath, position
+      ) || { success: false, count: 0, error: 'Tree not initialized' };
+      return result;
+    });
   }
 
   /**
@@ -1906,6 +2013,14 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * the rest 'after'. (svelte-treeview rc13)
    */
   moveNodes(
+    paths: string[],
+    targetPath: string,
+    position: DropPosition
+  ): { success: boolean; movedNodes: LTreeNode<T>[]; leftBehind: LTreeNode<T>[]; error?: string } {
+    return this._mutate(() => this._moveNodes(paths, targetPath, position));
+  }
+
+  private _moveNodes(
     paths: string[],
     targetPath: string,
     position: DropPosition
@@ -2034,47 +2149,45 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       };
     };
 
-    this._skipInsertArray = true;
     const copiedNodes: LTreeNode<T>[] = [];
     let skipped = 0;
     let lastError: string | undefined;
     let prevRootPath: string | null = null;
 
-    for (let index = 0; index < roots.length; index++) {
-      const root = roots[index];
-      const siblingPath =
-        prevRootPath !== null ? prevRootPath : position !== 'child' ? landTargetPath : undefined;
-      const rootPosition: 'before' | 'after' | undefined =
-        prevRootPath !== null ? 'after' : position !== 'child' ? (position as 'before' | 'after') : undefined;
+    this._mutate(() => {
+      for (let index = 0; index < roots.length; index++) {
+        const root = roots[index];
+        const siblingPath =
+          prevRootPath !== null ? prevRootPath : position !== 'child' ? landTargetPath : undefined;
+        const rootPosition: 'before' | 'after' | undefined =
+          prevRootPath !== null ? 'after' : position !== 'child' ? (position as 'before' | 'after') : undefined;
 
-      // Per-node wrapper: gate on the manifest (an absent descendant is a hole →
-      // NOT copied), then run the caller's input transform with a full context.
-      const wrapped = (data: T, srcNode: LTreeNode<T>): T | null => {
-        if (!manifest.has(srcNode.path)) return null; // hole → skip node + subtree
-        const ctx = ctxFor(srcNode, srcNode === root, index);
-        // Egress first (the SOURCE tree's output transform, phase 'output'), then the
-        // input transform — like the clipboard path (NOTES #21).
-        if (outgoing) {
-          const out = outgoing(JSON.parse(JSON.stringify(data)) as T, { ...ctx, phase: 'output' });
-          if (out == null) return null;
-          data = out;
+        // Per-node wrapper: gate on the manifest (an absent descendant is a hole →
+        // NOT copied), then run the caller's input transform with a full context.
+        const wrapped = (data: T, srcNode: LTreeNode<T>): T | null => {
+          if (!manifest.has(srcNode.path)) return null; // hole → skip node + subtree
+          const ctx = ctxFor(srcNode, srcNode === root, index);
+          // Egress first (the SOURCE tree's output transform, phase 'output'), then the
+          // input transform — like the clipboard path (NOTES #21).
+          if (outgoing) {
+            const out = outgoing(JSON.parse(JSON.stringify(data)) as T, { ...ctx, phase: 'output' });
+            if (out == null) return null;
+            data = out;
+          }
+          if (!transform) return data;
+          return transform(data, ctx);
+        };
+
+        const result = tree.duplicateNode(root, parentPath, wrapped, siblingPath, rootPosition);
+        if (result.success && result.rootNode) {
+          copiedNodes.push(result.rootNode);
+          prevRootPath = result.rootNode.path;
+        } else {
+          lastError = result.error;
+          skipped++;
         }
-        if (!transform) return data;
-        return transform(data, ctx);
-      };
-
-      const result = tree.duplicateNode(root, parentPath, wrapped, siblingPath, rootPosition);
-      if (result.success && result.rootNode) {
-        copiedNodes.push(result.rootNode);
-        prevRootPath = result.rootNode.path;
-      } else {
-        lastError = result.error;
-        skipped++;
       }
-    }
-
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
+    });
 
     return {
       success: copiedNodes.length > 0,
@@ -2118,47 +2231,45 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
     const movedNodes: LTreeNode<T>[] = [];
     let allOk = true;
-    for (const group of resolved) {
-      if (!group.nodes.length) continue;
-      const manifest = this._completeManifest(group.nodes.map((n) => n.path));
-      const r = this.moveNodes(manifest, group.targetNode?.path ?? group.targetPath, group.position);
-      movedNodes.push(...r.movedNodes);
-      if (!r.success) allOk = false;
-    }
+    this._mutate(() => {
+      for (const group of resolved) {
+        if (!group.nodes.length) continue;
+        const manifest = this._completeManifest(group.nodes.map((n) => n.path));
+        const r = this.moveNodes(manifest, group.targetNode?.path ?? group.targetPath, group.position);
+        movedNodes.push(...r.movedNodes);
+        if (!r.success) allOk = false;
+      }
+    });
     fireDrop(movedNodes.length ? movedNodes : null);
     return allOk;
   }
 
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T> {
-    this._skipInsertArray = true;
-    const result = this.tree?.addBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.addBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
+      return result;
+    });
   }
 
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T> {
-    this._skipInsertArray = true;
-    const result = this.tree?.insertBranch(targetPath, data, position) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.insertBranch(targetPath, data, position) || { success: false, count: 0, failed: [], parentNode: null, error: 'Tree not initialized' };
+      return result;
+    });
   }
 
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T> {
-    this._skipInsertArray = true;
-    const result = this.tree?.replaceBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Tree not initialized' };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.replaceBranch(parentPath, data) || { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Tree not initialized' };
+      return result;
+    });
   }
 
   removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
-    this._skipInsertArray = true;
-    const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
-    return result;
+    return this._mutate(() => {
+      const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
+      return result;
+    });
   }
 
   getExpandedPaths(): string[] {
@@ -3464,7 +3575,6 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       return result;
     }
 
-    this._skipInsertArray = true;
     let totalCount = 0;
     let skipped = 0;
     let lastError: string | undefined;
@@ -3506,85 +3616,84 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       };
     };
 
-    for (let index = 0; index < workEntries.length; index++) {
-      const entry = workEntries[index];
+    this._mutate(() => {
+      for (let index = 0; index < workEntries.length; index++) {
+        const entry = workEntries[index];
 
-      // Per-entry self-paste guard: skip (don't abort the batch) an entry whose
-      // destination is itself or its own descendant.
-      if (sameTree && !isRootPaste &&
-        (destParentPath === entry.sourcePath || destParentPath.startsWith(entry.sourcePath + sep))) {
-        skipped++;
-        continue;
-      }
-
-      const rootData = apply(entry.data, ctxFor(targetPath, position, true, index, entry.sourcePath));
-      if (rootData === null) { skipped++; continue; } // transform vetoed this entry
-
-      const addResult =
-        isRootPaste || position === 'child'
-          ? this.tree.addNode(targetPath, rootData)
-          : this.tree.addNode(targetNodeAfter!.parentPath ?? '', rootData);
-
-      if (!addResult.success || !addResult.node) {
-        lastError = addResult.error;
-        skipped++;
-        continue;
-      }
-      totalCount++;
-      pastedSourcePaths.push(entry.sourcePath);
-      firstPasted ??= addResult.node;
-
-      // Descendants (parent-first). A vetoed descendant takes its subtree with it.
-      // Each pasted node's NEW path by its old relative path: addNode names a new segment
-      // after the (possibly re-minted) id, so `<new root> + <old relative path>` didn't
-      // exist from the 3rd level down and every grandchild was skipped.
-      // (svelte-treeview REVIEW-2026-11-19 R2)
-      const skippedDescRel = new Set<string>();
-      const newPathByRel = new Map<string, string>([['', addResult.node.path]]);
-      for (const desc of entry.descendants) {
-        const parentRel = desc.relativePath.substring(0, desc.relativePath.lastIndexOf(sep));
-        if (parentRel && skippedDescRel.has(parentRel)) {
-          skippedDescRel.add(desc.relativePath);
+        // Per-entry self-paste guard: skip (don't abort the batch) an entry whose
+        // destination is itself or its own descendant.
+        if (sameTree && !isRootPaste &&
+          (destParentPath === entry.sourcePath || destParentPath.startsWith(entry.sourcePath + sep))) {
           skipped++;
           continue;
         }
-        const descParentPath = newPathByRel.get(parentRel) ?? addResult.node.path;
-        const descData = apply(
-          desc.data,
-          ctxFor(descParentPath, 'child', false, index, entry.sourcePath + desc.relativePath)
-        );
-        if (descData === null) {
-          skippedDescRel.add(desc.relativePath);
+
+        const rootData = apply(entry.data, ctxFor(targetPath, position, true, index, entry.sourcePath));
+        if (rootData === null) { skipped++; continue; } // transform vetoed this entry
+
+        const addResult =
+          isRootPaste || position === 'child'
+            ? this.tree.addNode(targetPath, rootData)
+            : this.tree.addNode(targetNodeAfter!.parentPath ?? '', rootData);
+
+        if (!addResult.success || !addResult.node) {
+          lastError = addResult.error;
           skipped++;
           continue;
         }
-        const descResult = this.tree.addNode(descParentPath, descData);
-        if (descResult.success && descResult.node) {
-          totalCount++;
-          newPathByRel.set(desc.relativePath, descResult.node.path);
+        totalCount++;
+        pastedSourcePaths.push(entry.sourcePath);
+        firstPasted ??= addResult.node;
+
+        // Descendants (parent-first). A vetoed descendant takes its subtree with it.
+        // Each pasted node's NEW path by its old relative path: addNode names a new segment
+        // after the (possibly re-minted) id, so `<new root> + <old relative path>` didn't
+        // exist from the 3rd level down and every grandchild was skipped.
+        // (svelte-treeview REVIEW-2026-11-19 R2)
+        const skippedDescRel = new Set<string>();
+        const newPathByRel = new Map<string, string>([['', addResult.node.path]]);
+        for (const desc of entry.descendants) {
+          const parentRel = desc.relativePath.substring(0, desc.relativePath.lastIndexOf(sep));
+          if (parentRel && skippedDescRel.has(parentRel)) {
+            skippedDescRel.add(desc.relativePath);
+            skipped++;
+            continue;
+          }
+          const descParentPath = newPathByRel.get(parentRel) ?? addResult.node.path;
+          const descData = apply(
+            desc.data,
+            ctxFor(descParentPath, 'child', false, index, entry.sourcePath + desc.relativePath)
+          );
+          if (descData === null) {
+            skippedDescRel.add(desc.relativePath);
+            skipped++;
+            continue;
+          }
+          const descResult = this.tree.addNode(descParentPath, descData);
+          if (descResult.success && descResult.node) {
+            totalCount++;
+            newPathByRel.set(desc.relativePath, descResult.node.path);
+          } else {
+            // Its subtree has no parent to land in — skip it like a vetoed one.
+            skippedDescRel.add(desc.relativePath);
+            skipped++;
+          }
+        }
+      }
+
+      // Cut = move: remove only the sources we actually pasted. Same-tree removes
+      // directly; cross-tree reaches back to the source tree via the registry.
+      if (operation === 'cut') {
+        if (sameTree) {
+          for (const src of pastedSourcePaths) this.tree.removeNode(src, true);
         } else {
-          // Its subtree has no parent to land in — skip it like a vetoed one.
-          skippedDescRel.add(desc.relativePath);
-          skipped++;
+          const source = getClipboardTree(clip.sourceTreeId);
+          if (source && source !== this) {
+            for (const src of pastedSourcePaths) source.removeNode(src, true);
+          }
         }
       }
-    }
-
-    // Cut = move: remove only the sources we actually pasted. Same-tree removes
-    // directly; cross-tree reaches back to the source tree via the registry.
-    if (operation === 'cut') {
-      if (sameTree) {
-        for (const src of pastedSourcePaths) this.tree.removeNode(src, true);
-      } else {
-        const source = getClipboardTree(clip.sourceTreeId);
-        if (source && source !== this) {
-          for (const src of pastedSourcePaths) source.removeNode(src, true);
-        }
-      }
-    }
-
-    queueMicrotask(() => { this._skipInsertArray = false; });
-    this._markStructureChanged();
+    });
 
     // A CUT is one-shot — clear the clipboard; a COPY stays for repeat pastes.
     this._cutPaths.clear();
@@ -3661,14 +3770,17 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const targets = this._topLevelOf(paths ?? []);
     let removed = 0;
     let failed = 0;
-    for (const p of targets) {
-      if (this.removeNode(p, true).success) removed++;
-      else failed++;
-    }
-    if (removed > 0) {
-      this.clearSelection();
-      this.clearFocus();
-    }
+    // One bracket: the clear runs before the reconcile, so selection-change fires once.
+    this._mutate(() => {
+      for (const p of targets) {
+        if (this.removeNode(p, true).success) removed++;
+        else failed++;
+      }
+      if (removed > 0) {
+        this.clearSelection();
+        this.clearFocus();
+      }
+    });
     return { removed, failed };
   }
 
@@ -3698,14 +3810,18 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     // Collect the paths that were actually removed — a failure in the middle used to shift
     // `targets.slice(0, removed)` onto the wrong paths. (svelte-treeview REVIEW-2026-11-19 B1)
     const removedPaths: string[] = [];
-    for (const p of targets) {
-      if (this.removeNode(p, true).success) removedPaths.push(p);
-    }
+    this._mutate(() => {
+      for (const p of targets) {
+        if (this.removeNode(p, true).success) removedPaths.push(p);
+      }
+      if (removedPaths.length > 0) {
+        this.clearSelection();
+        this.clearFocus();
+      }
+    });
     const removed = removedPaths.length;
     const blocked = targets.length - removed;
     if (removed > 0) {
-      this.clearSelection();
-      this.clearFocus();
       this.onDeleteCb?.({
         paths: removedPaths,
         nodes: removedPaths

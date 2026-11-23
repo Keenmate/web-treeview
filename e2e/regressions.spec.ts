@@ -55,6 +55,63 @@ test.describe('checkbox state', () => {
   });
 });
 
+test.describe('B2: state follows a removal / move', () => {
+  test.beforeEach(({ page }) => load(page));
+  const call = (page: Page, fn: string, ...args: unknown[]) =>
+    page.evaluate(([fn, args]) => (window as any).__main[fn as string](...(args as unknown[])), [fn, args] as const);
+  const read = (page: Page, prop: string) =>
+    page.evaluate((p) => [...(window as any).__main[p]].sort(), prop);
+
+  test('a removed checked node leaves checkedPaths and its parent re-derives', async ({ page }) => {
+    await box(page, '1.1.1').click();
+    await expect(box(page, '1.1')).toHaveClass(/wtv__checkbox--indeterminate/);
+    await call(page, 'removeNode', '1.1.1');
+    await expect(row(page, '1.1.1')).toHaveCount(0);
+    expect(await read(page, 'checkedPaths')).toEqual([]);
+    for (const p of ['1', '1.1']) {
+      await expect(box(page, p), p).not.toHaveClass(/wtv__checkbox--indeterminate/);
+      await expect(box(page, p), p).not.toBeChecked();
+    }
+  });
+
+  test('removing the only unchecked sibling makes the parent checked', async ({ page }) => {
+    await box(page, '1.1.1').click();
+    await call(page, 'removeNode', '1.1.2');
+    await expect(box(page, '1.1')).toBeChecked();
+    await expect(box(page, '1')).toHaveClass(/wtv__checkbox--indeterminate/);
+    expect(await read(page, 'checkedPaths')).toEqual(['1.1']); // rolled-up
+  });
+
+  test('moveNode re-derives the old and the new parent', async ({ page }) => {
+    await box(page, '1.1.1').click();
+    await call(page, 'moveNode', '1.1.2', '2', 'child');
+    await expect(box(page, '1.1')).toBeChecked();
+    await expect(box(page, '2')).not.toBeChecked();
+    await expect(box(page, '2')).not.toHaveClass(/wtv__checkbox--indeterminate/);
+  });
+
+  test('a removed node leaves the selection and the focus', async ({ page }) => {
+    await call(page, 'selectNodes', ['1.1.2', '2']);
+    expect(await read(page, 'selectedPaths')).toEqual(['1.1.2', '2']);
+    await call(page, 'focusNode', '1.1.1');
+    await call(page, 'removeNode', '1.1');
+    await expect.poll(() => read(page, 'selectedPaths')).toEqual(['2']);
+    await expect.poll(() => page.evaluate(() => (window as any).__main.focusedNode?.path ?? null)).toBe(null);
+  });
+
+  test('assigning nodes right after a mutation loads the new data', async ({ page }) => {
+    // Guard: a mutation no longer sets _skipInsertArray (a direct TreeViewState.data set right
+    // after one was ignored; the element batches nodes to a microtask, so it never hit this).
+    await page.evaluate(() => {
+      const t = (window as any).__main;
+      t.removeNode('2');
+      t.nodes = [{ id: 50, path: '1', name: 'Fresh' }];
+    });
+    await expect(label(page, '1')).toHaveText('Fresh');
+    await expect(section(page, 'main').locator('.wtv__node')).toHaveCount(1);
+  });
+});
+
 test('R2: pasting a 3-level subtree with an id-minting transform keeps the grandchildren', async ({ page }) => {
   await load(page);
   const result = await page.evaluate(() => {

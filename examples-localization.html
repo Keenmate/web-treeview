@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Localization">
-<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader twins, <code>locale</code> number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has.">
+<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader twins, <code>locale</code> number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has — plus the search announcement in Czech plural forms (LO07).">
 
 <link rel="stylesheet" href="examples-local.css">
 
@@ -84,8 +84,11 @@ window.components.locale = {
         <code>{ component, key, template, params, locale }</code> — <code>key</code> is the full
         <code>web-treeview.&lt;elementType&gt;.&lt;name&gt;</code> — and returns the text, or <code>null</code> = not mine. The element's
         own <code>translateCallback</code> is asked first (German, only <code>messages.noData</code> here); its <code>null</code> passes
-        the key on to the page-wide one (a small Slovak i18next-like lookup). A key the instance <code>labels</code> set (the second
-        tree's <code>messages.noData</code>) is never sent to any callback.
+        the key on to the page-wide one — the app's i18next (Slovak, with plural forms for the search announcement
+        <code>ariaLabels.searchResults</code>: the bridge hands i18next <code>params.ctx.count</code> as its <code>count</code> — switch
+        it on and press <em>Search</em> in LO05). The page itself runs without i18next: the same forms are picked with
+        <code>Intl.PluralRules('sk')</code>. A key the instance <code>labels</code> set (the second tree's <code>messages.noData</code>)
+        is never sent to any callback.
     </p>
     <div class="controls">
         <label><input type="checkbox" id="lo03-page"> page-wide <code>translateCallback</code> (Slovak)</label>
@@ -96,13 +99,31 @@ window.components.locale = {
         <div class="tree-container tree-container-sm"><web-treeview id="lo03b" labels='{"messages.noData": "Instance wins"}'></web-treeview></div>
     </div>
     <div class="output"><div class="output-label">rendered strings</div><pre id="lo03-out"></pre></div>
-    <div class="code-block" data-language="js"><pre><code>// an i18next-like lookup: a dictionary + t(key, params)
-const sk = { 'web-treeview.messages.noData': 'Žiadne údaje', 'web-treeview.ariaLabels.tree': 'Strom' };
-const t = (key, params) =&gt; sk[key]?.replace(/\{\{(\w+)\}\}/g, (_, p) =&gt; params?.[p] ?? '');
-const exists = (key) =&gt; key in sk;
+    <div class="code-block" data-language="js" data-kmwc-snippet><pre><code>// the app's own i18next — its JSON, plural forms as i18next's _one / _few / _other suffixes
+i18next.init({
+  lng: 'sk',
+  interpolation: { escapeValue: false },   // the tree writes labels as text, never as HTML
+  resources: { sk: { translation: {
+    'web-treeview': {
+      messages: { noData: 'Žiadne údaje' },
+      ariaLabels: {
+        tree: 'Strom',
+        searchResults_one: '{{count}} výsledok',
+        searchResults_few: '{{count}} výsledky',
+        searchResults_other: '{{count}} výsledkov',
+      },
+    },
+  } } },
+});
 
-// page-wide — every component on the page
-window.components.locale = { translateCallback: ({ key, params }) =&gt; (exists(key) ? t(key, params) : null) };
+// page-wide — ONE generic bridge for every key of every component. params.ctx = the label's context;
+// ctx.count = the number the text's noun agrees with → i18next's `count` (exists() needs it too)
+window.components.locale = {
+  translateCallback: ({ key, params }) =&gt; {
+    const options = { ...params, count: params.ctx?.count };
+    return i18next.exists(key, options) ? i18next.t(key, options) : null;   // null = not mine
+  },
+};
 
 // one element — asked BEFORE the page-wide callback; null = not mine
 el.translateCallback = ({ key }) =&gt; (key === 'web-treeview.messages.noData' ? 'Keine Daten' : null);</code></pre></div>
@@ -177,6 +198,39 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
     </p>
 </div>
 
+<!-- ============================================================= -->
+<!-- LO07 · Search announcement in Czech (plural rules)             -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO07 · Search announcement in Czech (plural rules)</h2>
+    <p>
+        The tree's own <code>translateCallback</code> translates the screen-reader announcement of a settled search,
+        <code>ariaLabels.searchResults</code>. <code>params.ctx</code> is its <code>SearchResultsLabelContext</code>
+        <code>{ count, searchTerm }</code> — <code>ctx.count</code> is the number of matches the noun agrees with, so
+        <code>Intl.PluralRules('cs')</code> picks the form: "1 výsledek / 3 výsledky / 5 výsledků". Search a term that matches
+        1, 3 or 5 nodes; the announcement goes to core's live region (<code>announce()</code>) and the box reads it from there.
+        No i18n library needed; with i18next it is the generic bridge of LO03.
+    </p>
+    <div class="controls">
+        <button type="button" class="btn-outline" data-lo07-term="faktura">Search <code>faktura</code> (1)</button>
+        <button type="button" class="btn-outline" data-lo07-term="smlouva">Search <code>smlouva</code> (3)</button>
+        <button type="button" class="btn-outline" data-lo07-term="objednavka">Search <code>objednavka</code> (5)</button>
+    </div>
+    <div class="tree-container tree-container-sm"><web-treeview id="lo07"></web-treeview></div>
+    <div class="output"><div class="output-label">last screen-reader announcement</div><pre id="lo07-out"></pre></div>
+    <div class="code-block" data-language="js" data-kmwc-snippet><pre><code>const plural = new Intl.PluralRules('cs');
+const forms = { one: 'výsledek', few: 'výsledky', many: 'výsledku', other: 'výsledků' };
+
+el.translateCallback = ({ key, params }) =&gt;
+  key === 'web-treeview.ariaLabels.searchResults'
+    ? `${params.ctx.count} ${forms[plural.select(params.ctx.count)]} pro „${params.ctx.searchTerm}“`
+    : null;   // null = not mine → the next layer / English
+
+el.searchTerm = 'smlouva';   // announces "3 výsledky pro „smlouva“"
+
+// with i18next: the one generic bridge of LO03 (ariaLabels.searchResults_one / _few / _other in the app's JSON)</code></pre></div>
+</div>
+
 <script type="module">
     const $ = (id) => document.getElementById(id);
     const FILES = [
@@ -213,6 +267,9 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
         await Promise.all([...document.querySelectorAll('web-treeview')].map((el) => el.whenSettled?.()));
         await new Promise((r) => requestAnimationFrame(() => r()));
     };
+    // The live region is page-wide — remember what each tree's last search announced (written a moment later).
+    const heard = {};
+    const listen = (id) => $(id).addEventListener('search-status-change', () => setTimeout(() => { heard[id] = announcement(); refreshAll(); }, 150));
     const write = (id, lines) => { $(id).textContent = lines.join('\n'); };
 
     async function refreshAll() {
@@ -230,7 +287,8 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
             `#lo03b  empty: ${empty('lo03b')}   aria-label: ${treeName('lo03b')}`,
         ]);
         write('lo04-out', [`aria-label: ${loaderName('lo04')}`]);
-        write('lo05-out', [`announced: ${announcement()}`]);
+        write('lo05-out', [`announced: ${heard.lo05 ?? '(nothing announced yet)'}`]);
+        write('lo07-out', [`announced: ${heard.lo07 ?? '(nothing announced yet)'}`]);
     }
 
     customElements.whenDefined('web-treeview').then(() => {
@@ -267,9 +325,20 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
         $('lo02-dict').addEventListener('change', (e) => { page.labels = e.target.checked ? CS : null; applyPage(); });
 
         // ── LO03 · translateCallback.
-        const sk = { 'web-treeview.messages.noData': 'Žiadne údaje', 'web-treeview.ariaLabels.tree': 'Strom' };
-        const t = (key, params) => sk[key].replace(/\{\{(\w+)\}\}/g, (_, p) => String(params?.[p] ?? ''));
-        const pageTranslate = ({ key, params }) => (key in sk ? t(key, params) : null);
+        // The snippet's i18next setup without loading i18next: the same Slovak forms, picked with Intl.PluralRules.
+        const skPlural = new Intl.PluralRules('sk');
+        const SK = {
+            'web-treeview.messages.noData': 'Žiadne údaje',
+            'web-treeview.ariaLabels.tree': 'Strom',
+            'web-treeview.ariaLabels.searchResults': { one: '{n} výsledok', few: '{n} výsledky', other: '{n} výsledkov' },
+        };
+        const pageTranslate = ({ key, params }) => {
+            const entry = SK[key];
+            if (entry === undefined) return null;   // not mine
+            if (typeof entry === 'string') return entry;
+            const n = params.ctx?.count;
+            return (entry[skPlural.select(n)] ?? entry.other).replace('{n}', String(n));
+        };
         const ownTranslate = ({ key }) => (key === 'web-treeview.messages.noData' ? 'Keine Daten' : null);
         $('lo03-page').addEventListener('change', (e) => { page.translateCallback = e.target.checked ? pageTranslate : null; applyPage(); });
         $('lo03-own').addEventListener('change', (e) => { $('lo03a').translateCallback = e.target.checked ? ownTranslate : undefined; refreshAll(); });
@@ -287,7 +356,7 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
             await tree.whenSettled();
             tree.searchTerm = 'Item';
         };
-        $('lo05').addEventListener('search-status-change', () => setTimeout(refreshAll, 150));
+        listen('lo05');
         $('lo05-search').addEventListener('click', search);
         for (const radio of document.querySelectorAll('input[name="lo05-locale"]')) {
             radio.addEventListener('change', (e) => { page.locale = e.target.value; applyPage(); search(); });
@@ -298,6 +367,26 @@ el.setAttribute('locale', 'cs');   // announces "Results: 1 234"</code></pre></d
                 else $('lo05').removeAttribute('locale');
                 search();
             });
+        }
+
+        // ── LO07 · Czech plural forms of the search announcement (its own translateCallback).
+        $('lo07').nodes = [
+            { id: 1, path: '1', name: 'Faktura 2026-001' },
+            { id: 2, path: '2', name: 'Smlouva o dílo' },
+            { id: 3, path: '3', name: 'Smlouva o nájmu' },
+            { id: 4, path: '4', name: 'Smlouva kupní' },
+            ...[1, 2, 3, 4, 5].map((n) => ({ id: 10 + n, path: String(10 + n), name: `Objednavka ${n}` })),
+        ];
+        const csPlural = new Intl.PluralRules('cs');
+        const csForms = { one: 'výsledek', few: 'výsledky', many: 'výsledku', other: 'výsledků' };
+        // With i18next: the generic bridge shown in LO03.
+        $('lo07').translateCallback = ({ key, params }) =>
+            key === 'web-treeview.ariaLabels.searchResults'
+                ? `${params.ctx.count} ${csForms[csPlural.select(params.ctx.count)]} pro „${params.ctx.searchTerm}“`
+                : null;
+        listen('lo07');
+        for (const button of document.querySelectorAll('[data-lo07-term]')) {
+            button.addEventListener('click', () => { $('lo07').searchTerm = button.dataset.lo07Term; });
         }
 
         refreshAll();

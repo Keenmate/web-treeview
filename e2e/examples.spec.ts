@@ -6,7 +6,7 @@ import { test, expect } from './fixtures';
  */
 
 test.describe('Localization page (examples-localization.html)', () => {
-  /** The shared LO01–LO06 page: no console errors, every toggle changes the text its readout shows. */
+  /** The shared LO01–LO07 page: no console errors, every toggle changes the text its readout shows. */
   test('every toggle changes the shown text', async ({ page }) => {
     const consoleErrors: string[] = [];
     page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
@@ -54,6 +54,20 @@ test.describe('Localization page (examples-localization.html)', () => {
     await expect(out('lo05-out')).toHaveText('announced: Results: 1.234');
     await page.locator('input[name="lo05-el-locale"][value=""]').check();
     await expect(out('lo05-out')).toHaveText('announced: Results: 1,234');
+
+    // LO03 (page-wide i18next stand-in) — the Slovak plural form of the search announcement.
+    await page.locator('#lo03-page').check();
+    await page.locator('#lo05-search').click();
+    await expect(out('lo05-out')).toHaveText('announced: 1234 výsledkov');
+    await page.locator('#lo03-page').uncheck();
+
+    // LO07 — the tree's own translateCallback: Czech plural forms switch with ctx.count (1 / 3 / 5).
+    await page.locator('[data-lo07-term="faktura"]').click();
+    await expect(out('lo07-out')).toHaveText('announced: 1 výsledek pro „faktura“');
+    await page.locator('[data-lo07-term="smlouva"]').click();
+    await expect(out('lo07-out')).toHaveText('announced: 3 výsledky pro „smlouva“');
+    await page.locator('[data-lo07-term="objednavka"]').click();
+    await expect(out('lo07-out')).toHaveText('announced: 5 výsledků pro „objednavka“');
 
     expect(consoleErrors).toEqual([]);
   });

@@ -358,6 +358,19 @@ tree.translateCallback = ({ key, params }) => {
 Numbers in labels (`{ctx.count}` in "Results: {ctx.count}") follow the tree's `locale` input → `window.components.locale.locale` →
 the browser: `<web-treeview locale="de">` announces "Results: 1.234". Localization page LO05.
 
+The plural forms come from the app's i18n through `params.ctx.count` (core never pluralizes). Localization page LO03 is the
+generic i18next bridge (`ariaLabels.searchResults_one` / `_few` / `_other` in the app's JSON); LO07 picks the Czech forms
+with `Intl.PluralRules` — a search matching 1 / 3 / 5 nodes announces "1 výsledek / 3 výsledky / 5 výsledků":
+
+```js
+const plural = new Intl.PluralRules('cs');
+const forms = { one: 'výsledek', few: 'výsledky', many: 'výsledku', other: 'výsledků' };
+tree.translateCallback = ({ key, params }) =>
+  key === 'web-treeview.ariaLabels.searchResults'
+    ? `${params.ctx.count} ${forms[plural.select(params.ctx.count)]} pro „${params.ctx.searchTerm}“`
+    : null;
+```
+
 ## Rendering modes
 
 | Mode | Config | DOM Nodes | Best For |

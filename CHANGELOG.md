@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Render callbacks keep `ctx.labels` (core `createLabelsView`); its JSDoc shows `ctx.labels.text(key, { ctx })`.
   Guarded by `e2e/announce.spec.ts` "labels read the spot context"; `announce` / `locale-input` / `examples` specs
   assert the new English.
+- Localization page: LO03 is now the generic i18next bridge (`{ ...params, count: params.ctx?.count }`, Slovak
+  `ariaLabels.searchResults_one` / `_few` / `_other`; the page itself picks the forms with `Intl.PluralRules`), and the new
+  LO07 announces a search in Czech plural forms ("1 výsledek / 3 výsledky / 5 výsledků") via the tree's own
+  `translateCallback` — asserted in `e2e/examples.spec.ts`.
 
 ### Fixed — a tree renamed after setup is found by a drag from another tree (2026-11-22)
 - `el.treeId = …` (or `setOptions({ treeId })`) after construction left the tree in the cross-tree registry under

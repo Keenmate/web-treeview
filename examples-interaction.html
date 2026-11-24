@@ -354,7 +354,7 @@ function restoreFromUrl(nodePath) {
         <button id="in6-insert">addBranch('1.1', 3 items)</button>
         <button id="in6-replace">replaceBranch('1.2', 2 items)</button>
         <button class="btn-danger" id="in6-delete">removeBranch('1.3')</button>
-        <button class="btn-danger" id="in6-delete-keep">removeBranch('1.1', keepParent)</button>
+        <button class="btn-danger" id="in6-delete-keep">removeBranch('1.1', { shouldKeepParent: true })</button>
         <button class="btn-outline" id="in6-reset">Reset tree</button>
     </div>
 
@@ -756,7 +756,7 @@ function restoreFromUrl(nodePath) {
             showBulkResult(r, !r.success); updateBulkOutput();
         });
         document.getElementById('in6-delete-keep').addEventListener('click', () => {
-            const r = in6bulk.removeBranch('1.1', true);
+            const r = in6bulk.removeBranch('1.1', { shouldKeepParent: true });
             showBulkResult(r, !r.success); updateBulkOutput();
         });
         document.getElementById('in6-reset').addEventListener('click', () => {

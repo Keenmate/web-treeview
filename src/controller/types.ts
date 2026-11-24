@@ -41,9 +41,9 @@ export interface TreeMutationOptions {
 // ─── Shared interfaces (also used by renderers) ────────────────────────
 
 export interface NodeCallbacks<T> {
-  onNodeClicked: (node: LTreeNode<T>, modifiers?: SelectionModifiers) => void;
-  onNodeRightClicked: (node: LTreeNode<T>, event: MouseEvent) => void;
-  onCheckboxToggle: (node: LTreeNode<T>, options?: { skipFocus?: boolean }) => void;
+  handleNodeSelectClick: (node: LTreeNode<T>, modifiers?: SelectionModifiers) => void;
+  handleNodeContextMenu: (node: LTreeNode<T>, event: MouseEvent) => void;
+  handleCheckboxToggle: (node: LTreeNode<T>, options?: { skipFocus?: boolean }) => void;
 }
 
 export type ToggleIconMode = 'rotate' | 'swap';

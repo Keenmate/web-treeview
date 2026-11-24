@@ -37,7 +37,7 @@ import { createLayer, type Layer, type LayerOptions } from '@keenmate/web-compon
 import { TreeViewEngine, createTreeViewController } from './treeview';
 import type { TreeViewConfig, TreeViewElementConfig, ScrollToPathOptions } from './types';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
-import type { Ltree, ExpandOptions, SortOptions, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './ltree/types';
 import type { TreeViewRenderer } from './renderer/types';
 import type { SelectMode, TreeMutationOptions, NodeRef } from './controller/types';
 import { watchNodeDrag, type PasteResult } from './clipboard';
@@ -551,8 +551,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.moveNode(sourcePath, targetPath, position);
   }
 
-  removeNode(path: string, includeDescendants?: boolean): any {
-    return this.#live?.removeNode(path, includeDescendants);
+  removeNode(path: string): any {
+    return this.#live?.removeNode(path);
   }
 
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any {
@@ -666,8 +666,8 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.replaceBranch(parentPath, data) ?? { success: false, count: 0, failed: [], parentNode: null, removed: 0, added: 0, error: 'Not initialized' };
   }
 
-  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
-    return this.#live?.removeBranch(path, keepParent) ?? { success: false, count: 0, error: 'Not initialized' };
+  removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T> {
+    return this.#live?.removeBranch(path, options) ?? { success: false, count: 0, error: 'Not initialized' };
   }
 
   // ── Selection (focus + multi-select) ────────────────────────────────────────

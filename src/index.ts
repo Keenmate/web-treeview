@@ -15,7 +15,7 @@ export type { TreeViewLabels } from './labels';
 
 // Core LTree (for direct usage without web component)
 export { createLTree } from './ltree/ltree';
-export type { Ltree, ExpandOptions, SortOptions, SortCompareContext, NodesSortContext, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+export type { Ltree, ExpandOptions, SortOptions, SortCompareContext, NodesSortContext, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './ltree/types';
 export type { LTreeNode, NodeId, DropPosition } from './ltree/ltree-node';
 export { VisualState } from './ltree/ltree-node';
 

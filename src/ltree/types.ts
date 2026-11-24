@@ -93,6 +93,12 @@ export interface ReplaceBranchResult<T> extends InsertBranchResult<T> {
 	added: number;
 }
 
+/** Options of `removeBranch`. */
+export interface RemoveBranchOptions {
+	/** Keep the node itself and remove only its descendants (default `false` = the node and its subtree). */
+	shouldKeepParent?: boolean;
+}
+
 /** Result of {@link Ltree.removeBranch}: `count` = nodes removed. */
 export interface RemoveBranchResult<T = any> {
 	success: boolean;
@@ -267,7 +273,7 @@ export interface Ltree<T> {
 
 	// Tree editor mutation methods
 	moveNode(sourcePath: string, targetPath: string, position: DropPosition): { success: boolean; error?: string };
-	removeNode(path: string, includeDescendants?: boolean): { success: boolean; node?: LTreeNode<T>; error?: string };
+	removeNode(path: string): { success: boolean; node?: LTreeNode<T>; error?: string };
 	addNode(parentPath: string, data: T, pathSegment?: string): { success: boolean; node?: LTreeNode<T>; error?: string };
 	insertNode(targetPath: string, data: T, position: DropPosition): { success: boolean; node?: LTreeNode<T>; error?: string };
 	updateNode(path: string, dataUpdates: Partial<T>): { success: boolean; node?: LTreeNode<T>; error?: string };
@@ -286,7 +292,7 @@ export interface Ltree<T> {
 	addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
 	insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
 	replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-	removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
+	removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T>;
 
 	// State persistence methods
 	getExpandedPaths(): string[];

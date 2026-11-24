@@ -40,7 +40,7 @@ test('removeBranch (keepParent) then removeNode keeps every later hit on its own
   await gotoSearch(page);
   await page.evaluate(() => {
     const tree = document.getElementById('tree') as any;
-    tree.removeBranch('1', true);
+    tree.removeBranch('1', { shouldKeepParent: true });
     tree.removeNode('3');
   });
   expect(await hits(page, 'new york')).toEqual([]);

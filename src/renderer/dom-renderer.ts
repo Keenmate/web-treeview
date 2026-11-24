@@ -217,12 +217,12 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.container.classList.toggle('wtv__container--readonly', !!config.isReadonly);
 
     // Subscribe to the state
-    this.unsubState = state.on('state-change', (snapshot) => this._onStateChange(snapshot));
-    this.unsubConfig = state.on('config-change', (nodeConfig) => this._onConfigChange(nodeConfig));
+    this.unsubState = state.on('state-change', (snapshot) => this._handleStateChange(snapshot));
+    this.unsubConfig = state.on('config-change', (nodeConfig) => this._handleConfigChange(nodeConfig));
 
     // Initial render from current state
     this.lastNodeConfig = state.nodeConfig;
-    this._onStateChange(state.getSnapshot());
+    this._handleStateChange(state.getSnapshot());
   }
 
   /** The overlay's loader (core `renderLoader`, SPEC §12.14 — NOTES #19): drawn while
@@ -669,7 +669,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── Event delegation ────────────────────────────────────────────────
 
-  private _onBodyClick = (event: MouseEvent) => {
+  private _handleBodyClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (!this.state) return;
     // Disabled: no interaction — also cancels a native checkbox toggle.
@@ -705,11 +705,11 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           // preventDefault: on a reused input the browser's canceled-activation steps
           // fire LATE (after microtasks) and would restore .checked to its pre-click
           // value, clobbering our write. Letting the native toggle stand means no
-          // cancellation + no restore. The state still owns it — onCheckboxToggle
+          // cancellation + no restore. The state still owns it — handleCheckboxToggle
           // re-syncs the box via its synchronous refresh, and the microtask below
           // re-asserts the authoritative value so a VETOING beforeCheckboxToggleCallback
           // (which refreshes nothing) still snaps the native toggle back.
-          this.state.nodeCallbacks.onCheckboxToggle(node, { skipFocus: false });
+          this.state.nodeCallbacks.handleCheckboxToggle(node, { skipFocus: false });
           queueMicrotask(() => {
             const fresh = this.state?.getNodeByPath(path);
             if (fresh) {
@@ -773,7 +773,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           node.isSelectable &&
           isPlainClick
         ) {
-          this.state.nodeCallbacks.onCheckboxToggle(node, { skipFocus: true });
+          this.state.nodeCallbacks.handleCheckboxToggle(node, { skipFocus: true });
           if (behavior !== 'select' && node.hasChildren) {
             this.state.toggleNodeExpanded(path);
           }
@@ -783,22 +783,22 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         if (behavior === 'expand-and-focus' && isPlainClick && node.hasChildren) {
           // Select + expand/collapse
           this.state.toggleNodeExpanded(path);
-          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.nodeCallbacks.handleNodeSelectClick(node, modifiers);
         } else if (behavior === 'expand' && isPlainClick && node.hasChildren) {
           // Expand/collapse only, no selection
           this.state.toggleNodeExpanded(path);
         } else if (behavior === 'select' || !isPlainClick) {
           // Select only (ctrl/shift always selects regardless of behavior)
-          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.nodeCallbacks.handleNodeSelectClick(node, modifiers);
         } else {
           // expand-and-focus on leaf, or expand on leaf — just select
-          this.state.nodeCallbacks.onNodeClicked(node, modifiers);
+          this.state.nodeCallbacks.handleNodeSelectClick(node, modifiers);
         }
       }
     }
   };
 
-  private _onBodyKeydown = (event: KeyboardEvent) => {
+  private _handleBodyKeydown = (event: KeyboardEvent) => {
     if (!this.state || this._isDisabled) return;
     const shift = event.shiftKey;
 
@@ -869,7 +869,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         const focused = this.state.focusedNode;
         if (!focused || !focused.isSelectable) break;
         if (this.state.isCheckboxesShown) {
-          if (!this._isReadonly) this.state.nodeCallbacks.onCheckboxToggle(focused);
+          if (!this._isReadonly) this.state.nodeCallbacks.handleCheckboxToggle(focused);
         } else if (this.state.selectionMode === 'multiple') {
           this.state.toggleFocusedSelect();
         } else {
@@ -908,7 +908,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   };
 
-  private _onBodyContextMenu = (event: MouseEvent) => {
+  private _handleBodyContextMenu = (event: MouseEvent) => {
     if (!this.state || this._isDisabled) return;
     const target = event.target as HTMLElement;
     const contentEl = target.closest('.wtv__node-content') as HTMLElement;
@@ -917,7 +917,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (path) {
       const node = this.state.getNodeByPath(path);
       if (node) {
-        this.state.nodeCallbacks.onNodeRightClicked(node, event);
+        this.state.nodeCallbacks.handleNodeContextMenu(node, event);
       }
     } else if (this.state.isContextMenuOpen) {
       // The browser's keyboard-initiated `contextmenu` (Shift+F10 / ContextMenu key)
@@ -980,7 +980,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** RAF-throttled virtual scroll handler — uses fast synchronous path */
 
-  private _onVirtualScroll = () => {
+  private _handleVirtualScroll = () => {
     if (!this.bodyEl) return;
     this._vsFrame.schedule();
   };
@@ -1035,20 +1035,20 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Enable keyboard focus
     this.bodyEl.setAttribute('tabindex', '0');
     this.bodyEl.style.outline = 'none';
-    this.bodyEl.addEventListener('click', this._onBodyClick);
-    this.bodyEl.addEventListener('keydown', this._onBodyKeydown);
-    this.bodyEl.addEventListener('contextmenu', this._onBodyContextMenu);
+    this.bodyEl.addEventListener('click', this._handleBodyClick);
+    this.bodyEl.addEventListener('keydown', this._handleBodyKeydown);
+    this.bodyEl.addEventListener('contextmenu', this._handleBodyContextMenu);
     this._attachPointerDrag();
   }
 
   private _detachBodyListeners() {
     if (!this.bodyEl) return;
-    this.bodyEl.removeEventListener('click', this._onBodyClick);
-    this.bodyEl.removeEventListener('keydown', this._onBodyKeydown);
-    this.bodyEl.removeEventListener('contextmenu', this._onBodyContextMenu);
+    this.bodyEl.removeEventListener('click', this._handleBodyClick);
+    this.bodyEl.removeEventListener('keydown', this._handleBodyKeydown);
+    this.bodyEl.removeEventListener('contextmenu', this._handleBodyContextMenu);
     this._pointerDrag?.destroy();
     this._pointerDrag = null;
-    this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
+    this.bodyEl.removeEventListener('scroll', this._handleVirtualScroll);
   }
 
   // ── Virtual scroll structure ───────────────────────────────────────
@@ -1082,14 +1082,14 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       this.bodyEl.appendChild(this.vsSpacerEl);
 
       // Attach scroll listener
-      this.bodyEl.addEventListener('scroll', this._onVirtualScroll, { passive: true });
+      this.bodyEl.addEventListener('scroll', this._handleVirtualScroll, { passive: true });
       this._vsMeasured = false;
       this._vsLastStartIndex = -1;
       this._vsLastEndIndex = -1;
 
     } else if (!snapshot.isVirtualScrollEnabled && this.vsSpacerEl) {
       // Disable virtual scroll: tear down structure
-      this.bodyEl.removeEventListener('scroll', this._onVirtualScroll);
+      this.bodyEl.removeEventListener('scroll', this._handleVirtualScroll);
       this.bodyEl.classList.remove('wtv__virtual-scroll');
       this.bodyEl.style.height = '';
 
@@ -1143,7 +1143,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   // ── State change handler ────────────────────────────────────────────
 
-  private _onStateChange(snapshot: TreeViewStateSnapshot<T>): void {
+  private _handleStateChange(snapshot: TreeViewStateSnapshot<T>): void {
     if (!this.bodyEl || !this.state) return;
 
     // A drag from another tree finds this one under the pointer by the container's tree id
@@ -1209,7 +1209,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.lastSnapshot = snapshot;
   }
 
-  private _onConfigChange(nodeConfig: NodeConfig): void {
+  private _handleConfigChange(nodeConfig: NodeConfig): void {
     this.log.RENDER.debug('config-change → full render, focusedNodeClass =', JSON.stringify(nodeConfig.focusedNodeClass));
     this.lastNodeConfig = nodeConfig;
     // Re-render toggle icons if icon classes changed
@@ -1927,7 +1927,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // The tooltip handle is kept (its content is resolved at show time and refreshed
     // while visible — _refreshVisibleTooltips), so the follow-cursor rect seeded on
     // mouseenter survives a reconcile. Enable/disable, callback, placement and
-    // follow-cursor changes are config-level and go through _onConfigChange →
+    // follow-cursor changes are config-level and go through _handleConfigChange →
     // _fullRender, which rebuilds all tooltips anyway.
   }
 
@@ -2166,7 +2166,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this.nodeElements.clear();
     this._destroyAllTooltips();
     this._closeReveal();
-    this._onStateChange(snapshot);
+    this._handleStateChange(snapshot);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ export type {
   InsertBranchResult,
   ReplaceBranchResult,
   RemoveBranchResult,
+  RemoveBranchOptions,
   TreeChange,
   ProcessChangesResult,
   DragDropMode,
@@ -112,7 +113,7 @@ export type { RenderCoordinator, RenderStats, RenderCoordinatorCallbacks } from 
 
 import type { LTreeNode } from './ltree/ltree-node';
 import type { DropPosition } from './ltree/ltree-node';
-import type { DragDropMode, DropOperation, ExpandOptions, SortOptions, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { DragDropMode, DropOperation, ExpandOptions, SortOptions, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './ltree/types';
 import type {
   ClickBehavior,
   RangeSelectionMode,
@@ -654,7 +655,7 @@ export interface TreeViewMethods<T = any> {
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
+  removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T>;
 
   // Selected set (UI multi-select — Ctrl/Shift+click)
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;

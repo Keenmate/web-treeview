@@ -68,7 +68,7 @@ export function getClipboardOperation(): ClipboardOperation | null {
 // cross-tree CUT (a same-tree cut removes them directly). Kept to a tiny surface
 // (just removeNode) to avoid a circular type dependency on TreeViewState.
 export interface ClipboardSourceTree {
-  removeNode(path: string, includeDescendants?: boolean): unknown;
+  removeNode(path: string): unknown;
   /** The source tree's live Ltree — read by a cross-tree AUTO-copy so the library
    *  can duplicate the source's live nodes into the target. Typed loosely to avoid
    *  a circular dependency on the ltree types. */

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — `removeNode(path)`, `removeBranch(path, { shouldKeepParent })` (2026-11-24)
+
+- `removeNode(path)` — its second parameter `includeDescendants` is gone: it never did anything (the node always left with its whole subtree). `removeBranch(path, options?)` takes `RemoveBranchOptions` `{ shouldKeepParent? }` instead of a bare boolean `keepParent` (no positional booleans — svelte-treeview REVIEW-2026-11-19 §2b); a boolean still works and logs a deprecation warning, so a JS caller passing `true` keeps the node instead of losing it. Same in svelte-treeview.
+
+### Internal — handler names (2026-11-24)
+
+- Private handlers are `_handle*` (`_handleBodyClick` / `_handleBodyKeydown` / `_handleBodyContextMenu`, `_handleVirtualScroll`, `_handleStateChange` / `_handleConfigChange`, `_handleTreeChange` / `_handleDataChange`, `_handleSelectionGesture`, `_handleCheckboxToggle`, `_handleNodeContextMenu`, `_handleNodeSelectClick`); `NodeCallbacks` members `handleNodeSelectClick` / `handleNodeContextMenu` / `handleCheckboxToggle`; `calculateDropPositionFromEvent` → `computeDropPositionFromEvent`. Same as svelte-treeview.
+
 ### Changed — public names follow the BlissFramework naming guideline (2026-11-23)
 
 - Renamed, same as svelte-treeview: `applyChanges` → `processChanges` (+ `ApplyChangesResult` → `ProcessChangesResult`), `shouldHandleKeyboardShortcuts` / `handle-keyboard-shortcuts` → `isKeyboardShortcutsEnabled` / `enable-keyboard-shortcuts`, `shouldUseInternalSearchIndex` / `use-internal-search-index` → `isInternalSearchIndexEnabled` / `enable-internal-search-index`, `searchResultLimit` / `search-result-limit` → `maxSearchResultCount` / `max-search-result-count`, `rowAnimationLimit` / `row-animation-limit` → `maxAnimatedRowCount` / `max-animated-row-count`, events `tree-change` → `nodes-change` (`onNodesChange`) and `nodes-reorder` → `nodes-sort` (`onNodesSort`, `NodesSortContext` / `NodesSortEventDetail`), `SelectionModifiers.ctrl` / `.shift` → `isCtrlPressed` / `isShiftPressed`, state `isContextMenuVisible` → `isContextMenuOpen`, engine `runDeleteCommand` → `deleteNodes`.

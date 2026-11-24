@@ -264,7 +264,7 @@ Both trees, same shape (svelte `TreeController`, web `TreeViewState`):
   cause — this is the one new field.
 - **Core:** bump to core rc24 (tarball `_core-tarballs/keenmate-web-components-core-1.0.0-rc24-pre.4.tgz`
   until it's published) and import `animateOut` / `readAnimationMs`.
-- **Renderer:** apply `--opening` / `--closing` only from `_onStateChange` (not from
+- **Renderer:** apply `--opening` / `--closing` only from `_handleStateChange` (not from
   `_performScrollUpdate`, the scroll-window path ~1000-1038) and only for paths in the field; stamp
   rows with the generation (`data-motion-gen`) so a reused row doesn't replay.
 - **Progressive render** (engine `_updateProgressiveRendering`, initial batch 20): same rule as svelte —

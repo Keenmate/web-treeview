@@ -8,7 +8,7 @@ import type { RenderStats } from './renderer/render-coordinator';
 import { DomRenderer } from './renderer/dom-renderer';
 import type { LTreeNode } from './ltree/ltree-node';
 import type { IndexProgress, SearchStatus } from './ltree/types';
-import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, DropPosition, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, DropPosition, TreeChange, ProcessChangesResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './ltree/types';
 import type { SelectMode, TreeMutationOptions } from './controller/types';
 import type { PasteResult } from './clipboard';
 import type { TreeViewEngineOptions, ScrollToPathOptions } from './types';
@@ -649,8 +649,8 @@ export class TreeViewEngine<T = any> {
     return this.engine.moveNode(sourcePath, targetPath, position);
   }
 
-  removeNode(path: string, includeDescendants?: boolean) {
-    return this.engine.removeNode(path, includeDescendants);
+  removeNode(path: string) {
+    return this.engine.removeNode(path);
   }
 
   addNode(parentPath: string, nodeData: T, pathSegment?: string) {
@@ -710,8 +710,8 @@ export class TreeViewEngine<T = any> {
     return this.engine.replaceBranch(parentPath, data);
   }
 
-  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
-    return this.engine.removeBranch(path, keepParent);
+  removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T> {
+    return this.engine.removeBranch(path, options);
   }
 
   /** The expanded set; assigning replaces it (branches not listed collapse) silently — no

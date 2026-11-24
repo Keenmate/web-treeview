@@ -12,7 +12,7 @@ import {
 	isSelfOrDescendant
 } from '../helpers/ltree-helpers';
 
-import type { Ltree, FilterScope, ExpandOptions, SortOptions, NodesSortContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './types';
+import type { Ltree, FilterScope, ExpandOptions, SortOptions, NodesSortContext, Tuple, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './types';
 import { createSearchIndex } from './flex';
 import { Indexer, DEFAULT_INDEXER_BATCH_SIZE } from './indexer';
 
@@ -1278,12 +1278,11 @@ export function createLTree<T>(
 		},
 
 		/**
-		 * Remove a node from the tree
+		 * Remove a node and its whole subtree from the tree
 		 * @param path - Path of the node to remove
-		 * @param includeDescendants - If true, removes all descendants (default: true)
 		 * @returns Object with success status and the removed node
 		 */
-		removeNode(path: string, includeDescendants: boolean = true): { success: boolean; node?: LTreeNode<T>; error?: string } {
+		removeNode(path: string): { success: boolean; node?: LTreeNode<T>; error?: string } {
 			this._scheduleRefilter();
 			const node = index.get(path);
 			if (!node) {
@@ -1302,7 +1301,7 @@ export function createLTree<T>(
 			detachChild(parent, node);
 
 			// The whole subtree leaves the tree either way (the node keeps its children), so the
-			// count drops by all of it — `includeDescendants=false` used to subtract just 1.
+			// count drops by all of it — the old `includeDescendants=false` subtracted just 1.
 			// (svelte-treeview REVIEW-2026-11-19 B20)
 			nodeCount -= removedPaths.size;
 
@@ -1795,10 +1794,16 @@ export function createLTree<T>(
 		/**
 		 * Delete a branch (node and/or its descendants)
 		 * @param path - Path of the node
-		 * @param keepParent - If true, only remove children, keep the parent node
+		 * @param options - `shouldKeepParent`: only remove the children, keep the node itself
 		 * @returns Object with success status and count of removed nodes
 		 */
-		removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
+		removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T> {
+			// The pre-rc07 boolean `keepParent` still works — a JS caller passing `true` must not lose the node too.
+			if (typeof options === 'boolean') {
+				dataLog().warn('removeBranch(path, boolean) is deprecated — use removeBranch(path, { shouldKeepParent })');
+				options = { shouldKeepParent: options };
+			}
+			const shouldKeepParent = !!options?.shouldKeepParent;
 			this._scheduleRefilter();
 			const node = index.get(path);
 			if (!node) {
@@ -1807,11 +1812,11 @@ export function createLTree<T>(
 
 			let removedCount = 0;
 
-			if (keepParent) {
+			if (shouldKeepParent) {
 				// Remove only children
 				const children = this.getChildren(path);
 				for (let i = children.length - 1; i >= 0; i--) {
-					const result = this.removeNode(children[i].path, true);
+					const result = this.removeNode(children[i].path);
 					if (result.success) {
 						removedCount++;
 					}
@@ -1826,7 +1831,7 @@ export function createLTree<T>(
 					return count;
 				};
 				removedCount = countDescendants(node);
-				this.removeNode(path, true);
+				this.removeNode(path);
 			}
 
 			this.refresh();

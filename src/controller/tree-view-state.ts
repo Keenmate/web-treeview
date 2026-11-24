@@ -23,6 +23,7 @@ import {
   type InsertBranchResult,
   type ReplaceBranchResult,
   type RemoveBranchResult,
+  type RemoveBranchOptions,
   type DropPosition,
   type DragDropMode,
   type DropOperation,
@@ -237,7 +238,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     mode: () => (this._selectionMode === 'multiple' ? 'multi' : 'single'),
     getOrderedKeys: () => this._selectionOrder(),
     isSelectable: (path) => this.tree?.getNodeByPath(path)?.isSelectable === true,
-    onChange: () => this._onSelectionGesture(),
+    onChange: () => this._handleSelectionGesture(),
   });
   /** A gesture-path write (`_applySelection`) that must not emit. */
   private _isSelectionSilent = false;
@@ -625,7 +626,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   get data() { return this._data; }
   set data(v: T[]) {
     this._data = v;
-    this._onDataChanged();
+    this._handleDataChange();
   }
 
   /** The focused node — always the REAL node: focus made while filtered lands on the filtered
@@ -1258,7 +1259,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
 
     // Wire tree change notifications
-    this.tree.onChange = () => this._onTreeChanged();
+    this.tree.onChange = () => this._handleTreeChange();
     this._wireTreeSearch();
 
     // ── Create render coordinator ───────────────────────────────────
@@ -1280,9 +1281,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
     // ── Create stable nodeCallbacks ─────────────────────────────────
     this.nodeCallbacks = {
-      onNodeClicked: this._nodeClickedCallback.bind(this),
-      onNodeRightClicked: this._onNodeRightClicked.bind(this),
-      onCheckboxToggle: this._onCheckboxToggle.bind(this)
+      handleNodeSelectClick: this._handleNodeSelectClick.bind(this),
+      handleNodeContextMenu: this._handleNodeContextMenu.bind(this),
+      handleCheckboxToggle: this._handleCheckboxToggle.bind(this)
     };
 
     // ── Initial nodeConfig ──────────────────────────────────────────
@@ -1920,12 +1921,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
   }
 
-  removeNode(
-    path: string,
-    includeDescendants: boolean = true
-  ): { success: boolean; node?: LTreeNode<T>; error?: string } {
+  removeNode(path: string): { success: boolean; node?: LTreeNode<T>; error?: string } {
     return this._mutate(() => {
-      const result = this.tree?.removeNode(path, includeDescendants) || {
+      const result = this.tree?.removeNode(path) || {
         success: false,
         error: 'Tree not initialized'
       };
@@ -2325,9 +2323,9 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
   }
 
-  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T> {
+  removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T> {
     return this._mutate(() => {
-      const result = this.tree?.removeBranch(path, keepParent) || { success: false, count: 0, error: 'Tree not initialized' };
+      const result = this.tree?.removeBranch(path, options) || { success: false, count: 0, error: 'Tree not initialized' };
       return result;
     });
   }
@@ -2538,7 +2536,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Core `onChange` (a gesture changed the selection): sync, then report — unless silent. */
-  private _onSelectionGesture(): void {
+  private _handleSelectionGesture(): void {
     this._syncSelection();
     if (this._isSelectionSilent) return;
     this._dispatchSelectionChange();
@@ -2838,7 +2836,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** Handle checkbox toggle. Honors checkboxMode (cascade/independent),
    *  multi-selection bulk toggle, beforeCheckboxToggleCallback interceptor.
    *  Mirrors svelte-treeview rc06+ flow. */
-  private _onCheckboxToggle(
+  private _handleCheckboxToggle(
     node: LTreeNode<T>,
     options?: { skipFocus?: boolean }
   ): void {
@@ -3616,11 +3614,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       // directly; cross-tree reaches back to the source tree via the registry.
       if (operation === 'cut') {
         if (sameTree) {
-          for (const src of pastedSourcePaths) this.tree.removeNode(src, true);
+          for (const src of pastedSourcePaths) this.tree.removeNode(src);
         } else {
           const source = getClipboardTree(clip.sourceTreeId);
           if (source && source !== this) {
-            for (const src of pastedSourcePaths) source.removeNode(src, true);
+            for (const src of pastedSourcePaths) source.removeNode(src);
           }
         }
       }
@@ -3694,7 +3692,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     // One bracket: the clear runs before the reconcile, so selection-change fires once.
     this._mutate(() => {
       for (const p of targets) {
-        if (this.removeNode(p, true).success) removed++;
+        if (this.removeNode(p).success) removed++;
         else failed++;
       }
       if (removed > 0) {
@@ -3733,7 +3731,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const removedPaths: string[] = [];
     this._mutate(() => {
       for (const p of targets) {
-        if (this.removeNode(p, true).success) removedPaths.push(p);
+        if (this.removeNode(p).success) removedPaths.push(p);
       }
       if (removedPaths.length > 0) {
         this.clearSelection();
@@ -3931,7 +3929,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** Calculate drop position from cursor location within an element */
-  calculateDropPositionFromEvent(
+  computeDropPositionFromEvent(
     event: MouseEvent,
     element: HTMLElement,
     allowedPositions?: DropPosition[] | null
@@ -4500,7 +4498,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
           displayValueFallback: updates.displayValueFallback ?? this.tree.displayValueFallback
         }
       );
-      this.tree.onChange = () => this._onTreeChanged();
+      this.tree.onChange = () => this._handleTreeChange();
       this._wireTreeSearch();
 
       // Insert data into the new tree
@@ -4624,7 +4622,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── Internal: data changed ──────────────────────────────────────────
 
-  private _onDataChanged() {
+  private _handleDataChange() {
     if (this.tree && this._data) {
       if (this._skipInsertArray) {
         this._skipInsertArray = false;
@@ -4683,7 +4681,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return isFirst ? null : paths;
   }
 
-  private _onTreeChanged() {
+  private _handleTreeChange() {
     // Keep the internal focus on the node of the CURRENT view (the filtered copy while
     // filtered, the real node otherwise): a copy kept after the filter cleared carried stale
     // flags (isExpanded of the filtered view) into keyboard navigation. (REVIEW-2026-11-19 R5)
@@ -4939,7 +4937,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
 
   // ── Internal event handlers ─────────────────────────────────────────
 
-  private _nodeClickedCallback(node: LTreeNode<T>, modifiers?: SelectionModifiers) {
+  private _handleNodeSelectClick(node: LTreeNode<T>, modifiers?: SelectionModifiers) {
     if (this._isContextMenuOpen) {
       this.closeContextMenu();
     }
@@ -4996,7 +4994,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     return false;
   }
 
-  private _onNodeRightClicked(node: LTreeNode<T>, event: MouseEvent) {
+  private _handleNodeContextMenu(node: LTreeNode<T>, event: MouseEvent) {
     this.log.UI.debug(`Right-click on node: ${node.path}`, {
       hasContextMenuRenderer: this._hasContextMenuRenderer,
       hasContextMenuCallback: !!this.contextMenuCallbackCb,
@@ -5524,7 +5522,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       hit.el?.closest('.wtv__node')?.querySelector('.wtv__node-content')) as HTMLElement | null;
     if (!content) return 'child';
     const positions = hit.state.getNodeAllowedDropPositions(node);
-    return hit.state.calculateDropPositionFromEvent({ clientX: x, clientY: y } as MouseEvent, content, positions);
+    return hit.state.computeDropPositionFromEvent({ clientX: x, clientY: y } as MouseEvent, content, positions);
   }
 
   /** Light up `target`'s hover visuals (and clear the previous tree's, cross-tree). */

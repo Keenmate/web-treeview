@@ -471,7 +471,7 @@ All methods are available on the element **and** on `el.controller`.
 | `openContextMenu` | `(path, x, y)` | Open the context menu for a node at viewport coordinates |
 | `closeContextMenu` | `()` | Close the context menu |
 | `activateMenuItem` | `(item, ctx, trigger?, event?) => Promise<boolean>` | Run a menu item like the built-in menu (`beforeActionCallback` veto → `onClick` → built-in → `action`) — for a [custom menu renderer](#custom-menu-renderer) |
-| `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path, includeDescendants?)` | Single-node mutations |
+| `addNode` / `updateNode` / `removeNode` | `(parentPath, data, segment?)` / `(path, updates)` / `(path)` (the node and its subtree) | Single-node mutations |
 | `insertNode` | `(targetPath, data, position)` | Insert one node `'before' \| 'after'` the target (as its sibling) or as its `'child'`; positioned like `moveNode` (with `orderMember`: an order value between the neighbours) |
 | `moveNode` / `moveNodes` | `(path \| paths[], targetPath, position)` | Move node(s) `'before' \| 'after' \| 'child'` |
 | `duplicateNodes` | `(paths[], targetPath, position, transform?, sourceTree?)` | Copy node(s) with descendants; `transform({ data, … })` |
@@ -514,7 +514,7 @@ All methods are available on the element **and** on `el.controller`.
 | `addBranch` | `(parentPath, data[]): InsertBranchResult` | Add a batch under `parentPath`, each item placed by its own path (whole subtrees OK). Returns `{ success, count, failed: [{ data, error }], parentNode }` — an item with a missing/empty path, a path not under `parentPath`, a duplicate path or a missing parent is skipped into `failed` (one `console.warn`) |
 | `insertBranch` | `(targetPath, data[], position): InsertBranchResult` | Insert a batch before / after `targetPath` (items' paths under the target's parent) or under it (`'child'` = `addBranch(targetPath, …)`). The block's top-level nodes keep their order from `data`; with `orderMember` they get order values spread between the target and its neighbour |
 | `replaceBranch` | `(parentPath, data[]): ReplaceBranchResult` | Replace all descendants of a node (same rules as `addBranch`); adds `removed` / `added` |
-| `removeBranch` | `(path, keepParent?): RemoveBranchResult` | Remove a node and its descendants (or only the descendants with `keepParent`); `{ success, count, error? }` |
+| `removeBranch` | `(path, options?: RemoveBranchOptions): RemoveBranchResult` | Remove a node and its descendants (or only the descendants with `{ shouldKeepParent: true }`); `{ success, count, error? }` |
 | `getTree` | `(): Ltree<T>` | Access the underlying LTree |
 | `setAttributes` | `(props: Partial<TreeViewConfig<T>>): InputRejection[]` | Core (element only): write many inputs (by config key or attribute name) as one validated batch — one engine update; returns the refused values (each also fires `input-rejected`). Replaces the old public `el.update(props)` (2.0.0-rc07) |
 | `release` / `whenReady` | `()` / `(): Promise<void>` | Core lifecycle (element only): build a `defer`-held tree now / await the first build |

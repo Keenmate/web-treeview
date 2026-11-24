@@ -118,7 +118,7 @@ tree.nodes = [
 <!-- DS04 · Branch Operations -->
 <div class="card">
     <h2>DS04 · Branch Operations</h2>
-    <p><code>addBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>removeBranch(path, keepParent?)</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
+    <p><code>addBranch(parentPath, data[])</code>, <code>replaceBranch(parentPath, data[])</code>, and <code>removeBranch(path, { shouldKeepParent? })</code> bulk-mutate a whole subtree in one call, each emitting a single change. Ideal for server-driven moves: snapshot a branch, send it off for path/ID recalculation, then delete the old branch and insert the recalculated one.</p>
 
     <div class="controls">
         <button onclick="insertTeam()">Insert branch under "Engineering"</button>
@@ -142,21 +142,21 @@ tree.nodes = [
 //   every item is placed by its own path (whole subtrees OK); an item with a
 //   missing/empty path, a duplicate path, or a path not under parentPath is in `failed`
 // replaceBranch(parentPath, data) → the same + { removed, added }
-// removeBranch(path, keepParent?) → { success, count }
+// removeBranch(path, { shouldKeepParent? }) → { success, count }
 
 const res = tree.addBranch('1.1', [
   { id: 101, path: '1.1.9',   name: 'New Team' },
   { id: 102, path: '1.1.9.1', name: 'Member A' }
 ]);
 // removeBranch('3')          → remove "Sales" and all descendants
-// removeBranch('1.2', true)  → clear children, keep the "Design" node</code></pre>
+// removeBranch('1.2', { shouldKeepParent: true })  → clear children, keep the "Design" node</code></pre>
     </div>
 </div>
 
 <!-- DS05 · Add / Remove / Update Nodes -->
 <div class="card">
     <h2>DS05 · Add / Remove / Update Nodes</h2>
-    <p>Single-node mutations: <code>addNode(parentPath, data, pathSegment?)</code>, <code>removeNode(path, includeDescendants?)</code>, and <code>updateNode(path, dataUpdates)</code>. Each patches the tree in place.</p>
+    <p>Single-node mutations: <code>addNode(parentPath, data, pathSegment?)</code>, <code>removeNode(path)</code>, and <code>updateNode(path, dataUpdates)</code>. Each patches the tree in place.</p>
 
     <div class="controls">
         <button onclick="addTask()">Add Task</button>
@@ -178,7 +178,7 @@ const res = tree.addBranch('1.1', [
 <pre><code>tree.addNode('1', { id: 9, path: '1.9', name: 'New Task' });
 tree.updateNode('1', { name: 'Renamed Root' });
 tree.removeNode('1.3');                 // remove a single leaf
-tree.removeNode('1', true);             // remove a node and its descendants</code></pre>
+tree.removeNode('1');             // remove a node and its descendants</code></pre>
     </div>
 </div>
 
@@ -426,8 +426,8 @@ tree.displayValueMember = 'label';</code></pre>
         };
 
         window.clearDesign = () => {
-            const res = ds04.removeBranch('1.2', true);
-            logBranch(`removeBranch('1.2', keepParent=true) → ${JSON.stringify(res)}`);
+            const res = ds04.removeBranch('1.2', { shouldKeepParent: true });
+            logBranch(`removeBranch('1.2', { shouldKeepParent: true }) → ${JSON.stringify(res)}`);
         };
 
         window.deleteSales = () => {

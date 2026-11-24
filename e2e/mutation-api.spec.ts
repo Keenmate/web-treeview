@@ -72,7 +72,7 @@ test('updateNode re-renders the label', async ({ page }) => {
 test('removeNode with descendants removes the subtree', async ({ page }) => {
   await load(page);
   const before = await treeChanges(page);
-  const r = await run(page, `tree.removeNode('2', true)`);
+  const r = await run(page, `tree.removeNode('2')`);
   expect(r.success).toBe(true);
   await expect.poll(() => domOutline(page)).toEqual(['Fruits', '  Apple', '  Banana', 'Nuts']);
   await expectTreeChanges(page, before, 1);

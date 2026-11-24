@@ -498,7 +498,7 @@ Original report:
 **Where:** `src/web-component.ts` `update()` (~384-396) sends the FULL config
 (incl. `data`) on every batch; `tree-view-state.ts` `updateProps()` applies
 `searchText` (~3348 → `tree.filterNodes`) and later, because `updates.data`
-is always present, `this.data = updates.data` (~3575) → `_onDataChanged()`
+is always present, `this.data = updates.data` (~3575) → `_handleDataChange()`
 (~3648) → `insertArray()`, which rebuilds the tree and drops the filter.
 
 **Symptom:** `el.setAttribute('search-text', 'sushi')` / `el.searchText = …`
@@ -586,7 +586,7 @@ transform over each manifest node before the input transform (phase
 
 Original report:
 
-**Where:** `src/renderer/dom-renderer.ts` `_onBodyDrop` (~576-586) routes a
+**Where:** `src/renderer/dom-renderer.ts` `_handleBodyDrop` (~576-586) routes a
 node drop to the engine's public `drop()` (`tree-view-state.ts` ~2986), which
 silently skips a node with `isDropAllowed=false`. The reject feedback
 (`_showDropBlockedIndicator` → `onNodeDropDenied` → `node-drop-reject`, 🚫 flash)
@@ -638,7 +638,7 @@ Original report:
   and the core logger persists that level to `localStorage`
   (`km-log:TREEVIEW:INIT`), so it sticks even after a later default change.
 - Raw `console.log` calls bypassing `/logging`: `renderer/dom-renderer.ts`
-  ~458, 506, 511, 521, 593, 1005 (`[DomRenderer] _onBodyDragOver/…/renderEmpty`)
+  ~458, 506, 511, 521, 593, 1005 (`[DomRenderer] _handleBodyDragOver/…/renderEmpty`)
   and `controller/tree-view-state.ts` ~4930, 4942, 4973, 4990 (`[Controller]
   handleTree*Drag*`), plus `[wtv:cfg]` ones gated by `globalThis.__WTV_DEBUG`.
 

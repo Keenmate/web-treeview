@@ -301,11 +301,11 @@ test('B19: insertArray reports duplicate paths as failures with their own row', 
 test.describe('B20: statistics', () => {
   test.beforeEach(({ page }) => load(page));
 
-  test('removeNode(path, false) still drops the whole subtree from nodeCount', async ({ page }) => {
+  test('removeNode(path) still drops the whole subtree from nodeCount', async ({ page }) => {
     const counts = await page.evaluate(() => {
       const lt = (window as any).__main.getTree();
       const before = lt.statistics.nodeCount;
-      lt.removeNode('1.1', false);
+      lt.removeNode('1.1');
       return [before, lt.statistics.nodeCount];
     });
     expect(counts).toEqual([7, 4]);

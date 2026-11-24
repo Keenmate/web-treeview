@@ -200,7 +200,7 @@
 
             // ── Delete ──
             wire('btn-delete-2.1', () => recordDelete(tree, 'removeBranch', tree.removeBranch('2.1')));
-            wire('btn-delete-2.1-keepParent', () => recordDelete(tree, 'removeBranch(keepParent)', tree.removeBranch('2.1', true)));
+            wire('btn-delete-2.1-keepParent', () => recordDelete(tree, 'removeBranch(keepParent)', tree.removeBranch('2.1', { shouldKeepParent: true })));
             wire('btn-delete-3', () => recordDelete(tree, 'removeBranch', tree.removeBranch('3')));
 
             // ── Cut / Paste ──

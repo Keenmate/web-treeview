@@ -13,7 +13,7 @@ import type { LabelsView } from '@keenmate/web-components-core/locale';
 import type { TreeViewLabels } from './labels';
 import type { LTreeNode, DropPosition } from './ltree/ltree-node';
 import type { FilterScope, IndexProgress, SearchStatus } from './ltree/types';
-import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, TreeChange, ProcessChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult } from './ltree/types';
+import type { Ltree, ExpandOptions, SortOptions, NodesSortContext, TreeChange, ProcessChangesResult, InsertArrayResult, InsertBranchResult, ReplaceBranchResult, RemoveBranchResult, RemoveBranchOptions } from './ltree/types';
 import type {
   NodeRef,
   NodeRenderContext,
@@ -91,7 +91,7 @@ export interface TreeViewController<T = any> {
   addNode(parentPath: string, nodeData: T, pathSegment?: string): any;
   insertNode(targetPath: string, nodeData: T, position: DropPosition): any;
   updateNode(path: string, dataUpdates: Partial<T>): any;
-  removeNode(path: string, includeDescendants?: boolean): any;
+  removeNode(path: string): any;
   moveNode(sourcePath: string, targetPath: string, position: DropPosition): any;
   moveNodes(paths: string[], targetPath: string, position: DropPosition): any;
   duplicateNode(sourceNode: LTreeNode<T>, targetParentPath: string, transform: (ctx: { data: T; node: LTreeNode<T>; targetParentPath: string } & TreeViewContext<T>) => T | null, siblingPath?: string, position?: 'before' | 'after'): any;
@@ -100,7 +100,7 @@ export interface TreeViewController<T = any> {
   addBranch(parentPath: string, data: T[]): InsertBranchResult<T>;
   insertBranch(targetPath: string, data: T[], position: DropPosition): InsertBranchResult<T>;
   replaceBranch(parentPath: string, data: T[]): ReplaceBranchResult<T>;
-  removeBranch(path: string, keepParent?: boolean): RemoveBranchResult<T>;
+  removeBranch(path: string, options?: RemoveBranchOptions): RemoveBranchResult<T>;
   // selection
   selectNode(path: string, mode?: SelectMode, options?: TreeMutationOptions): void;
   selectNodes(paths: string[], options?: TreeMutationOptions): void;

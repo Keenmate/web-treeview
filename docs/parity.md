@@ -139,7 +139,8 @@ web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte c
 | `messages.noData`, `messages.noResults`, `labels.noDisplayValue`, `messages.loading` / `ariaLabels.loading`, `messages.dropHere` | ✓ | ✓ | same |
 | `menuItems.*`: `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
 | `ariaLabels.showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
-| `ariaLabels.tree` ("Tree" — aria-label of the `role="tree"` body) | ✓ | — | gap — svelte has no tree roles yet |
+| `ariaLabels.tree` ("Tree" — aria-label of the `role="tree"` body) | ✓ | ✓ (2026-11-24; on `.stv__container`, svelte's focus owner) | same |
+| `ariaLabels.searchResults*`, `ariaLabels.moved*` / `copied*`, `ariaLabels.drop*` (screen-reader announcements, core `announce()`) | ✓ — templates `{ctx.count}` / `{ctx.name}` / `{ctx.target}` / `{ctx.searchTerm}` | ✓ (2026-11-24) — templates `{count}` / `{name}` / … (its vendored core `/locale` predates `{ctx.*}`); the same values go as `params.ctx` to a `translateCallback` | to align on svelte's core `/locale` re-sync |
 | `labels.dropBefore`, `labels.dropAfter`, `labels.dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
 | page-wide flat `window.components.locale.labels['web-treeview.<key>']` + `translateCallback` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |
@@ -160,6 +161,7 @@ web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte c
 ## 9. Behaviour notes
 
 - Keyboard (WAI-ARIA, both): `Enter` = the node's default action (expand / collapse); `Space` = toggle selection — the checkbox when checkboxes are shown, the focused node in the selection in `multiple` mode, selects the focused node in `single` mode; `Space` never expands / collapses — same.
+- ARIA tree (svelte since 2026-11-24): the element that holds focus is `role="tree"` and owns `aria-activedescendant` (core `createActiveDescendant`, ARIA-only) — web: the tree body, svelte: `.stv__container` (intentional); rows `role="treeitem"` + `aria-level` / `-posinset` / `-setsize` (every visible sibling) / `-expanded` / `-selected` / `-checked`; row ids `{treeId}-{path}` (`rowDomId`); announcements for a settled search, a placed drop, a refused drop — same (svelte e2e `aria-tree`).
 - Assigning the expanded / selected / checked set (`expandedPaths` / `selectedPaths` / `checkedPaths`; web: also the values held before the first build) is silent in both — no `expanded-change` / `selection-change` / `checked-change` / `focus-change` / `nodes-change`. The methods (`expandNodes`, `selectNodes`, `checkNodes`, …) and user interaction announce (unless `{ isSilent: true }`) — same.
 - `expanded-change` / `onExpandedChange` from the expand / collapse methods (and toggle / keyboard) fires synchronously, after that call's `node-expand` / `node-collapse`; after a data change it follows on the next microtask — same.
 - `nodes-change` / `onNodesChange`: only after data / structure mutations (add / insert / update / move / remove / `processChanges` / branch ops / paste / drop / duplicate / sort), one per change (coalesced on a microtask), never for expand / select / check / focus nor for loading `nodes` — same.

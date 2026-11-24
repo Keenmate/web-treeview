@@ -125,9 +125,14 @@ export interface TreeViewController<T = any> {
   uncheckNode(path: string, options?: TreeMutationOptions): void;
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
   uncheckAll(options?: TreeMutationOptions): void;
+  /** The nodes of `checkedPaths` (folded by `cascadeCheckPolicy`). */
   getCheckedNodes(): LTreeNode<T>[];
-  /** The checked set as emitted (assign `el.checkedPaths` to replace it). */
+  /** Every node that shows a tick, folders and their children — never folded. */
+  getAllCheckedNodes(): LTreeNode<T>[];
+  /** The checked set as the tree reports it — folded by `cascadeCheckPolicy` (assign `el.checkedPaths` to replace it). */
   readonly checkedPaths: string[];
+  /** Every ticked path, never folded. */
+  readonly allCheckedPaths: string[];
   isNodeChecked(path: string): boolean;
   // focus
   focusNode(path: string, options?: TreeMutationOptions): void;

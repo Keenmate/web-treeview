@@ -234,6 +234,7 @@ you need: `tree.getIconCallback = ({ node }) => …`.
 | `expandedPaths` | `string[]` | The expanded set. Assigning replaces it (branches not listed collapse) **silently** (no `expanded-change`) — save / restore a view |
 | `selectedPaths` | `string[]` | The selected (Ctrl/Shift-click) set, a snapshot. Assigning (any iterable) replaces it **silently** (no `selection-change` / `checked-change` / `focus-change`; use `selectNodes` / `clearSelection` to announce) |
 | `checkedPaths` | `string[]` | The checked (checkbox) set as emitted — projected through `cascadeCheckPolicy`. Assigning replaces it **silently** (no `checked-change`; use `checkNodes` / `uncheckAll` to announce) |
+| `allCheckedPaths` | `string[]` (read-only) | Every node that shows a tick, folders and their children — never folded (equals `checkedPaths` in independent mode or under `all`) |
 | `focusedNode` | `LTreeNode \| null` | The focused node (read-only; `focusNode(path)` / `clearFocus()` move it) |
 | `selectionAnchor` | `string \| null` | The Shift-range anchor (Shift+click / Shift+Arrow extend from it). Writable on the element and the controller — e.g. an alternative renderer keeping its own range selection in sync |
 | `isRendering` | `boolean` | Read-only: `true` while a progressive (batched) render is in flight (`render-start` … `render-complete`) |
@@ -489,7 +490,8 @@ All methods are available on the element **and** on `el.controller`.
 | `uncheckNode` | `(path, options?)` | Uncheck one node (cascades in cascade mode) |
 | `uncheckNodes` | `(paths[], options?)` | Uncheck nodes (cascades in cascade mode) |
 | `uncheckAll` | `(options?)` | Uncheck every node |
-| `getCheckedNodes` | `(): LTreeNode[]` | All checked nodes |
+| `getCheckedNodes` | `(): LTreeNode[]` | The nodes of `checkedPaths` — folded by `cascade-check-policy` |
+| `getAllCheckedNodes` | `(): LTreeNode[]` | Every node that shows a tick, folders and their children — never folded |
 | `isNodeChecked` | `(path): boolean` | Check checked-set membership |
 | `focusNode` | `(path, options?)` | Move focus to a node |
 | `clearFocus` | `(options?)` | Clear the focused node |

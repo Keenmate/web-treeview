@@ -688,7 +688,9 @@ export interface TreeViewMethods<T = any> {
   uncheckNodes(paths: string[], options?: TreeMutationOptions): void;
   uncheckAll(options?: TreeMutationOptions): void;
   getCheckedNodes(): LTreeNode<T>[];
+  getAllCheckedNodes(): LTreeNode<T>[];
   checkedPaths: string[];
+  readonly allCheckedPaths: string[];
   isNodeChecked(path: string): boolean;
 
   // Focus (single cursor)

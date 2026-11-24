@@ -693,7 +693,8 @@ export interface TreeViewStateSnapshot<T> {
   flatIndentSize: string;
   focusedNode: LTreeNode<T> | null | undefined;
   selectedPaths: Set<string>;
-  checkedPaths: Set<string>;
+  /** Every node that shows a tick (never folded by `cascadeCheckPolicy`) — what a renderer draws. */
+  allCheckedPaths: Set<string>;
   cutPaths: Set<string>;
 
   // Virtual scroll

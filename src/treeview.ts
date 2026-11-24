@@ -46,7 +46,7 @@ const CONTROLLER_METHODS = [
   'addNode', 'insertNode', 'updateNode', 'removeNode', 'moveNode', 'moveNodes', 'duplicateNode', 'duplicateNodes',
   'processChanges', 'addBranch', 'insertBranch', 'replaceBranch', 'removeBranch', 'selectNode', 'selectNodes',
   'selectAll', 'clearSelection', 'getSelectedNodes', 'isNodeSelected', 'toggleFocusedSelect',
-  'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes',
+  'checkNode', 'checkNodes', 'checkAll', 'uncheckNode', 'uncheckNodes', 'uncheckAll', 'getCheckedNodes', 'getAllCheckedNodes',
   'isNodeChecked', 'focusNode', 'clearFocus', 'focusAndSelectNode', 'focusNext', 'focusPrevious', 'focusNextAtLevel',
   'focusPreviousAtLevel', 'focusFirstChild', 'focusParent', 'collapseParent', 'toggleFocusedNodeExpanded', 'focusFirst', 'focusLast', 'focusNextPage', 'focusPreviousPage',
   'extendSelectionNext', 'extendSelectionPrevious', 'extendSelectionToFirst', 'extendSelectionToLast', 'extendSelectionNextPage', 'extendSelectionPreviousPage', 'copyNodes', 'cutNodes',
@@ -59,7 +59,7 @@ const EMPTY_RESULTS: Partial<Record<keyof TreeViewController, () => unknown>> = 
   searchNodes: () => [], getNodeByPath: () => null, getChildren: () => [],
   getSiblings: () => [], getNodeRef: () => ({ path: '', node: null, parent: null, siblings: [] }),
   getVisibleFlatNodes: () => [], getSelectedNodes: () => [],
-  isNodeSelected: () => false, isNodeDropAllowed: () => false, getCheckedNodes: () => [],
+  isNodeSelected: () => false, isNodeDropAllowed: () => false, getCheckedNodes: () => [], getAllCheckedNodes: () => [],
   isNodeChecked: () => false, hasClipboardContent: () => false,
   getClipboardOperation: () => null, scrollToPath: () => Promise.resolve(false),
   pasteNodes: () => ({ success: false, count: 0, skipped: 0, error: 'Not initialized' }),
@@ -82,7 +82,7 @@ export function createTreeViewController<T>(
   return createControllerFacade<TreeViewController<T>>(getTarget, {
     methods: CONTROLLER_METHODS,
     state: {
-      expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], focusedNode: null,
+      expandedPaths: () => [], selectedPaths: () => [], checkedPaths: () => [], allCheckedPaths: () => [], focusedNode: null,
       insertResult: undefined, nodes: () => [], isRendering: false, containerSize: null,
       ...fallback,
     },
@@ -802,6 +802,16 @@ export class TreeViewEngine<T = any> {
 
   getCheckedNodes(): LTreeNode<T>[] {
     return this.engine.getCheckedNodes();
+  }
+
+  /** Every node that shows a tick, folders and their children — never folded by `cascadeCheckPolicy`. */
+  getAllCheckedNodes(): LTreeNode<T>[] {
+    return this.engine.getAllCheckedNodes();
+  }
+
+  /** Every ticked path, never folded (read-only; `checkedPaths` is the folded set). */
+  get allCheckedPaths(): string[] {
+    return [...this.engine.allCheckedPaths];
   }
 
   /** The checked set as emitted (projected through `cascadeCheckPolicy`); assigning replaces it

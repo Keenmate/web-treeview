@@ -11,7 +11,7 @@ import { test, expect, Page, Locator } from './fixtures';
  * change re-inserts the data (fresh node objects), `_reapplyRuntimeChecked()`
  * re-applies the surviving `_checkedPaths` onto the fresh nodes and recomputes
  * visualState after every insertArray. The renderer reads `checked` straight from
- * `snapshot.checkedPaths` (web-grid-style state-off-nodes), so selection is
+ * `snapshot.allCheckedPaths` (web-grid-style state-off-nodes), so selection is
  * rebuild-proof and the mode switch sticks.
  */
 

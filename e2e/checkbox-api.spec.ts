@@ -26,6 +26,35 @@ const lastChecked = async (page: Page) =>
   (await logLines(page, LOG)).filter((l) => l.startsWith('checked-change:')).pop();
 
 test.describe('checked-set API (cascade)', () => {
+  test('checkedPaths / getCheckedNodes are folded; allCheckedPaths / getAllCheckedNodes list every ticked node (D-NC-14)', async ({ page }) => {
+    await load(page);
+    await call(page, 'checkNode', '2');
+    const r = await page.evaluate(() => {
+      const t = (window as any).tree;
+      const ctl = t.controller;
+      const paths = (ns: any[]) => ns.map((n) => n.path).sort();
+      return {
+        checked: [...t.checkedPaths].sort(),
+        all: [...t.allCheckedPaths].sort(),
+        nodes: paths(t.getCheckedNodes()),
+        allNodes: paths(t.getAllCheckedNodes()),
+        ctlChecked: [...ctl.checkedPaths].sort(),
+        ctlAll: [...ctl.allCheckedPaths].sort(),
+        ctlNodes: paths(ctl.getCheckedNodes()),
+        ctlAllNodes: paths(ctl.getAllCheckedNodes()),
+      };
+    });
+    // rolled-up (default): the fully-checked B folds to itself; its children only show in the all* pair.
+    expect(r.checked).toEqual(['2']);
+    expect(r.nodes).toEqual(['2']);
+    expect(r.ctlChecked).toEqual(['2']);
+    expect(r.ctlNodes).toEqual(['2']);
+    expect(r.all).toEqual(['2', '2.1', '2.2']);
+    expect(r.allNodes).toEqual(['2', '2.1', '2.2']);
+    expect(r.ctlAll).toEqual(['2', '2.1', '2.2']);
+    expect(r.ctlAllNodes).toEqual(['2', '2.1', '2.2']);
+  });
+
   test('checkNode cascades to descendants and ticks their boxes', async ({ page }) => {
     await load(page);
     await call(page, 'checkNode', '1');

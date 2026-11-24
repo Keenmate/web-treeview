@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — `getCheckedNodes()` is the folded set; new `allCheckedPaths` / `getAllCheckedNodes()` (2026-11-24)
+
+- **One name per meaning for the checked set (REVIEW-2026-11-19 D-NC-14).** `checkedPaths` / `getCheckedNodes()` are the checked set as the tree reports it — folded by `cascadeCheckPolicy` — on every surface; the new read-only `allCheckedPaths` / `getAllCheckedNodes()` list every node that shows a tick (folders and their children), never folded. Before, `checkedPaths` was folded but `getCheckedNodes()` returned every ticked node. The element and the controller gain `allCheckedPaths` (read-only) and `getAllCheckedNodes()`. Engine: `checkedPaths` getter = folded, `allCheckedPaths` = unfolded (`_allCheckedPaths`; the `emittedPaths` getter is gone); the render snapshot field is `allCheckedPaths` (was `checkedPaths` — custom renderers read it to draw ticks). Same in svelte-treeview.
+
 ### Changed — one context type per event; `VisualState` values (2026-11-24)
 
 - `VisualState` values are `'checked'` / `'unchecked'` / `'indeterminate'` (were `'true'` / `'false'`, which read like the node's `isChecked` boolean in a log). It is the checkbox look the tree computes — data still feeds `isChecked` through `isCheckedMember`, so a `true` / `false` / `null` column is unaffected; only code comparing `node.visualState` to the raw strings `'true'` / `'false'` needs `VisualState.checked` / `.unchecked`. Same in svelte-treeview.

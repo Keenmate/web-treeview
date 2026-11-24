@@ -1393,7 +1393,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     setAttr(
       el,
       'aria-checked',
-      !hasCheckbox ? null : node.visualState === 'indeterminate' ? 'mixed' : String(snapshot.checkedPaths.has(node.path))
+      !hasCheckbox ? null : node.visualState === 'indeterminate' ? 'mixed' : String(snapshot.allCheckedPaths.has(node.path))
     );
   }
 
@@ -1643,7 +1643,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (nodeConfig?.isCheckboxesShown && node.isSelectable) {
       row.appendChild(
         this._buildCheckbox(
-          snapshot.checkedPaths.has(node.path),
+          snapshot.allCheckedPaths.has(node.path),
           node.visualState === 'indeterminate'
         )
       );
@@ -1743,7 +1743,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       deviceClass: this._deviceClass,
       container: { width: this._containerBox.width, height: this._containerBox.height },
       isExpanded: !!node.isExpanded,
-      isChecked: snapshot.checkedPaths.has(node.path),
+      isChecked: snapshot.allCheckedPaths.has(node.path),
       isSelected: snapshot.selectedPaths.has(node.path),
       isFocused: snapshot.focusedNode?.path === node.path,
       level: node.level ?? 0,
@@ -1880,7 +1880,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       }
       this._syncCheckboxState(
         cb,
-        snapshot.checkedPaths.has(node.path),
+        snapshot.allCheckedPaths.has(node.path),
         node.visualState === 'indeterminate'
       );
     } else {

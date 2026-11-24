@@ -745,6 +745,16 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
     return this.#live?.getCheckedNodes() ?? [];
   }
 
+  /** Every node that shows a tick, folders and their children — never folded by `cascade-check-policy`. */
+  getAllCheckedNodes(): LTreeNode<T>[] {
+    return this.#live?.getAllCheckedNodes() ?? [];
+  }
+
+  /** Every ticked path, never folded (read-only; `checkedPaths` is the folded set). */
+  get allCheckedPaths(): string[] {
+    return this.#live?.allCheckedPaths ?? [];
+  }
+
   isNodeChecked(path: string): boolean {
     return this.#live?.isNodeChecked(path) ?? false;
   }

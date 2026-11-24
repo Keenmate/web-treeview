@@ -246,7 +246,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   });
   /** A gesture-path write (`_applySelection`) that must not emit. */
   private _isSelectionSilent = false;
-  private _checkedPaths: Set<string> = new Set();
+  private _allCheckedPaths: Set<string> = new Set();
   private _rangeSelectionMode: import('./types').RangeSelectionMode = 'visual';
   private _selectionMode: 'single' | 'multiple' = 'single';
   // Keyboard navigation: the defaults merged with the consumer's navigationOverrides.
@@ -255,7 +255,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _shouldShowCheckboxes: boolean = false;
   private _checkboxMode: import('./types').CheckboxMode = 'independent';
   // Which paths the selection EMITS in cascade mode (a projection of the canonical
-  // _checkedPaths). Only applies when checkboxMode === 'cascade'. rc14.
+  // _allCheckedPaths). Only applies when checkboxMode === 'cascade'. rc14.
   private _cascadeCheckPolicy: import('./types').CascadeCheckPolicy = 'rolled-up';
   private _shouldClickToggleCheckbox: boolean = false;
   private beforeCheckboxToggleCb: TreeViewStateOptions<T>['beforeCheckboxToggleCallback'];
@@ -526,7 +526,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       if (cut.length !== this._cutPaths.size) this._cutPaths = new Set(cut);
     }
 
-    const prevChecked = this._checkedPaths;
+    const prevChecked = this._allCheckedPaths;
     const checked = new Set([...prevChecked].filter(isLive));
     // No checkboxes = the checked set is the selection mirror (_reconcileCheckedFromSelection),
     // which has no cascade.
@@ -535,7 +535,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const isCheckedChanged =
       checked.size !== prevChecked.size || [...checked].some((p) => !prevChecked.has(p));
     if (isCheckedChanged) {
-      this._checkedPaths = checked;
+      this._allCheckedPaths = checked;
       this._reconcileFilteredCheckState();
     }
 
@@ -684,16 +684,16 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._scheduleNotify();
   }
 
-  /** The emitted (policy-projected) selection — what `getCheckedPaths()` and the
-   *  `checked-change` event expose. Equals the canonical set in independent mode
-   *  or under the 'all' policy. */
-  get emittedPaths(): Set<string> { return this._computeEmittedCheckedPaths(this._checkedPaths); }
 
   /** Bindable: the multi-select selected set. */
   get selectedPaths(): Set<string> { return this._selectedPaths; }
 
-  /** Bindable: the checkbox / data-state checked set. */
-  get checkedPaths(): Set<string> { return this._checkedPaths; }
+  /** The checked set as the tree reports it — folded by `cascadeCheckPolicy` (what `checked-change`
+   *  carries). Equals `allCheckedPaths` in independent mode or under the 'all' policy. */
+  get checkedPaths(): Set<string> { return this._computeEmittedCheckedPaths(this._allCheckedPaths); }
+
+  /** Every node that shows a tick, folders AND their children — never folded. */
+  get allCheckedPaths(): Set<string> { return this._allCheckedPaths; }
 
   get cutPaths(): Set<string> { return this._cutPaths; }
 
@@ -1876,7 +1876,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         return m;
       };
       const selectionAffected = collect(this._selectedPaths);
-      const checkedAffected = collect(this._checkedPaths);
+      const checkedAffected = collect(this._allCheckedPaths);
       const anchorPath = this._selection.anchor;
       const lastSelectedSuffix =
         anchorPath && selectionAffected.has(anchorPath)
@@ -1909,7 +1909,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
           // The moved nodes keep their own `isSelected` flags (same objects, new paths).
           this._syncSelection(false);
         }
-        remap(this._checkedPaths, checkedAffected);
+        remap(this._allCheckedPaths, checkedAffected);
         if (lastSelectedSuffix !== undefined) {
           this._selection.setAnchor(newPath + lastSelectedSuffix);
         }
@@ -2589,7 +2589,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   /** Emit the `checkedChangeCallback` callback (checkbox state). */
   private _dispatchCheckedChange(): void {
     if (!this.checkedChangeCb) return;
-    const paths = this._computeEmittedCheckedPaths(this._checkedPaths);
+    const paths = this._computeEmittedCheckedPaths(this._allCheckedPaths);
     const nodes: LTreeNode<T>[] = [];
     for (const p of paths) {
       const n = this.tree?.getNodeByPath(p);
@@ -2634,37 +2634,45 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   }
 
   /** When `isCheckboxesShown` is false, the selected set IS the checked set —
-   *  mirror it onto `_checkedPaths` so consumers reading the bindable
+   *  mirror it onto `_allCheckedPaths` so consumers reading the bindable
    *  checkbox state see what the user picked via the mouse. With checkboxes
    *  visible the two sets stay independent. Mirrors svelte-treeview rc09. */
   private _reconcileCheckedFromSelection(isSilent = false): void {
     if (this._shouldShowCheckboxes) return;
-    this._checkedPaths = new Set(this._selectedPaths);
+    this._allCheckedPaths = new Set(this._selectedPaths);
     if (!isSilent) this._dispatchCheckedChange();
   }
 
   // ── Checked API (checkbox / data state) ────────────────────────────
 
-  /** Get all checked nodes. */
+  /** The nodes of `checkedPaths` — the checked set as reported, folded by `cascadeCheckPolicy`. */
   getCheckedNodes(): LTreeNode<T>[] {
+    return this._getNodesOf(this.checkedPaths);
+  }
+
+  /** The nodes of `allCheckedPaths` — every node that shows a tick, never folded. */
+  getAllCheckedNodes(): LTreeNode<T>[] {
+    return this._getNodesOf(this._allCheckedPaths);
+  }
+
+  private _getNodesOf(paths: Iterable<string>): LTreeNode<T>[] {
     const nodes: LTreeNode<T>[] = [];
-    for (const path of this._checkedPaths) {
+    for (const path of paths) {
       const node = this.tree?.getNodeByPath(path);
       if (node) nodes.push(node);
     }
     return nodes;
   }
 
-  /** The EMITTED (policy-projected) checkbox set — the minimal cover in cascade
-   *  'rolled-up' mode, the leaves in 'leaves', or the full canonical set in 'all' /
-   *  independent mode. Use the `checkedPaths` getter for the raw canonical set. */
+  /** The folded checked set (`checkedPaths`) — the minimal cover in cascade 'rolled-up', the
+   *  leaves in 'leaves', every ticked node in 'all' / independent mode. */
   getCheckedPaths(): Set<string> {
-    return this._computeEmittedCheckedPaths(this._checkedPaths);
+    return this.checkedPaths;
   }
 
-  /** Check if a node is in the checked set. */
+  /** Whether the node shows a tick (fully checked; an indeterminate branch is not). */
   isNodeChecked(path: string): boolean {
-    return this._checkedPaths.has(path);
+    return this._allCheckedPaths.has(path);
   }
 
   /** checkNode(s) / uncheckNode(s) / an assigned checkedPaths: `paths` plus (cascade
@@ -2682,7 +2690,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    * set changed. No event, no refresh. (svelte-treeview parity)
    */
   private _setChecked(paths: string[], isChecked: boolean, isAffectedSynced = false): boolean {
-    const prev = this._checkedPaths;
+    const prev = this._allCheckedPaths;
     const next = new Set(prev);
     for (const path of paths) {
       const n = this._getRealNode(path);
@@ -2701,7 +2709,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       }
     }
     const isChanged = next.size !== prev.size || [...next].some((p) => !prev.has(p));
-    this._checkedPaths = next;
+    this._allCheckedPaths = next;
     this._reconcileFilteredCheckState();
     return isChanged;
   }
@@ -2751,7 +2759,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  Pass `{ isSilent: true }` to skip `checkedChangeCallback`. */
   setCheckedPaths(paths: string[], options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
-    this._checkedPaths = new Set();
+    this._allCheckedPaths = new Set();
     this._setCheckedWithCascade(paths, true);
     if (!options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
@@ -2763,7 +2771,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   checkAll(options?: TreeMutationOptions): void {
     // While filtered only the visible matches are checked — keep hidden checks.
     const isFiltered = !!this.tree?.isFiltered;
-    const newPaths = isFiltered ? new Set(this._checkedPaths) : new Set<string>();
+    const newPaths = isFiltered ? new Set(this._allCheckedPaths) : new Set<string>();
     const traverse = (node: LTreeNode<T>) => {
       if (node.path && node.isSelectable) {
         const real = this._getRealNode(node.path) ?? node;
@@ -2775,7 +2783,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       for (const child of node.children) traverse(child);
     };
     for (const root of this.tree?.tree ?? []) traverse(root);
-    this._checkedPaths = newPaths;
+    this._allCheckedPaths = newPaths;
     // Branches with hidden unchecked children must fall back to [-] in cascade.
     if (isFiltered && this._checkboxMode === 'cascade') this._reconcileVisualStatesForMode();
     this._reconcileFilteredCheckState();
@@ -2807,7 +2815,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
    *  `checkedChangeCallback`. */
   uncheckAll(options?: TreeMutationOptions): void {
     this._clearCheckedFlags();
-    this._checkedPaths = new Set();
+    this._allCheckedPaths = new Set();
     this._reconcileFilteredCheckState();
     if (!options?.isSilent) this._dispatchCheckedChange();
     this.tree.refresh();
@@ -2910,7 +2918,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _reconcileVisualStatesForMode(): void {
     if (!this.tree?.root) return;
     const cascade = this._checkboxMode === 'cascade';
-    const newPaths = new Set<string>(this._checkedPaths);
+    const newPaths = new Set<string>(this._allCheckedPaths);
     let anyChanged = false;
     let checkedChanged = false;
     const visit = (node: LTreeNode<T>) => {
@@ -2948,7 +2956,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       for (const child of node.children) visit(child);
     };
     for (const child of this.tree.root.children) visit(child);
-    if (checkedChanged) this._checkedPaths = newPaths;
+    if (checkedChanged) this._allCheckedPaths = newPaths;
     if (anyChanged) {
       this._reconcileFilteredCheckState();
       this.tree.refresh();
@@ -4247,7 +4255,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this._syncSelection();
     }
     if (updates.checkedPaths !== undefined)
-      this._checkedPaths = new Set(updates.checkedPaths);
+      this._allCheckedPaths = new Set(updates.checkedPaths);
     if (updates.selectionMode !== undefined)
       this._selectionMode = updates.selectionMode ?? 'single';
     if (updates.navigationOverrides !== undefined && (updates.navigationOverrides ?? null) !== this._navigationOverrides)
@@ -4511,7 +4519,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
         this._skipInsertArray = true;
         queueMicrotask(() => { this._skipInsertArray = false; });
         this._insertResult = this.tree.insertArray(data);
-        if (isCheckedReseeded) this._checkedPaths = new Set();
+        if (isCheckedReseeded) this._allCheckedPaths = new Set();
         this._seedCheckedPathsFromTree();
         this._reapplyRuntimeChecked();
         if (!expandLevelChanged) this._reapplyExpanded(preservedExpanded);
@@ -4575,7 +4583,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       flatIndentSize: this._flatIndentSize,
       focusedNode: this.focusedNode,
       selectedPaths: this._selectedPaths,
-      checkedPaths: this._checkedPaths,
+      allCheckedPaths: this._allCheckedPaths,
       cutPaths: this._cutPaths,
 
       // Virtual scroll
@@ -4699,16 +4707,16 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._scheduleNotify();
   }
 
-  /** Pre-populate `_checkedPaths` from any nodes whose `isChecked` was set
+  /** Pre-populate `_allCheckedPaths` from any nodes whose `isChecked` was set
    *  at insert time (via `isCheckedMember` or `getIsCheckedCallback`). Runs
    *  after every `insertArray` so consumers reading `getCheckedPaths()`
    *  immediately reflect server-side initial checked state.
    *  Mirrors svelte-treeview rc07's post-insert seeding walk. */
   /** Re-apply the controller-owned runtime checked state onto freshly (re)inserted
-   *  nodes. `_checkedPaths` is the source of truth and survives a data re-insert;
+   *  nodes. `_allCheckedPaths` is the source of truth and survives a data re-insert;
    *  the per-node `isChecked` flag does NOT (fresh nodes default to false), and
    *  the cascade `visualState` is derived. So after every insertArray we push
-   *  `_checkedPaths` back onto `node.isChecked` and recompute `visualState` from
+   *  `_allCheckedPaths` back onto `node.isChecked` and recompute `visualState` from
    *  it — otherwise a config-triggered re-insert silently drops the checkbox
    *  state + indeterminate dashes. (web-grid-style: primary state lives off
    *  the nodes; derived state is recomputed.) The renderer reads `checked` straight
@@ -4719,7 +4727,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     const cascade = this._checkboxMode === 'cascade';
     // Pass 1: primary state — isChecked from the surviving set.
     const applyChecked = (node: LTreeNode<T>) => {
-      node.isChecked = this._checkedPaths.has(node.path);
+      node.isChecked = this._allCheckedPaths.has(node.path);
       for (const child of node.children) applyChecked(child);
     };
     for (const child of this.tree.root.children) applyChecked(child);
@@ -4774,7 +4782,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     // reflected in checkedPaths so the checkbox state is correct when the
     // user later expands them.
     const visit = (node: LTreeNode<T>) => {
-      if (node.isChecked) this._checkedPaths.add(node.path);
+      if (node.isChecked) this._allCheckedPaths.add(node.path);
       for (const child of node.children) visit(child);
     };
     const root = this.tree.root;

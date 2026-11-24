@@ -147,6 +147,8 @@ web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte c
 
 ## 8. Exports
 
+Event ctx types (2026-11-24, both): one type per event — `SelectionChangeContext` / `CheckedChangeContext`, `BeforeCopyContext` / `BeforeCutContext`, `NodeCopyContext` / `NodeCutContext` / `NodeDeleteContext` (no shared `ClipboardEventContext`); web adds the `…EventDetail` / `…CallbackContext` twins (`& { controller, element }`).
+
 | web | svelte | status |
 |---|---|---|
 | `createMenuDivider`, `DEFAULT_LABELS`, `RemoveBranchResult`, `ReplaceBranchResult`, `InsertBranchResult`, `NodeTitleOverflow`, `RenderStats`, `ScrollToPathOptions` | same | same |

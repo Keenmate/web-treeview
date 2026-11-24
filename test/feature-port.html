@@ -70,7 +70,7 @@
             // Double-click event (ctx = NodeRef)
             tree.onNodeDoubleClick = (ctx) => dbl(`dblclick "${ctx.node?.data?.name}"`);
 
-            // Clipboard events (ctx = ClipboardEventContext { operation, paths, nodes })
+            // Clipboard events (ctx = NodeCopyContext / NodeCutContext { operation, paths, nodes })
             tree.onNodeCopy = (ctx) => clip(`copy ${ctx.paths.join(',')}`);
             tree.onNodeCut = (ctx) => clip(`cut ${ctx.paths.join(',')}`);
             tree.onNodePaste = (result) => clip(`paste ${result.count}`);

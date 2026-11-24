@@ -19,10 +19,14 @@ import type {
   NodeRenderContext,
   NodeDragContext,
   NodeDropContext,
-  ClipboardEventContext,
+  NodeCopyContext,
+  NodeCutContext,
+  NodeDeleteContext,
   SelectionChangeContext,
+  CheckedChangeContext,
   NodeTransformContext,
   BeforeCopyContext,
+  BeforeCutContext,
   BeforeDeleteContext,
   BeforePasteContext,
   BeforeDropContext,
@@ -302,6 +306,7 @@ export interface NodeTransformCallbackContext<T = any> extends NodeTransformCont
 export type NodeTransformCallback<T = any> = (ctx: NodeTransformCallbackContext<T>) => T | null;
 
 export type BeforeCopyCallbackContext<T = any> = BeforeCopyContext<T> & TreeViewContext<T>;
+export type BeforeCutCallbackContext<T = any> = BeforeCutContext<T> & TreeViewContext<T>;
 export type BeforeDeleteCallbackContext<T = any> = BeforeDeleteContext<T> & TreeViewContext<T>;
 export type BeforePasteCallbackContext<T = any> = BeforePasteContext<T> & TreeViewContext<T>;
 export type BeforeDropCallbackContext<T = any> = BeforeDropContext<T> & TreeViewContext<T>;
@@ -315,12 +320,18 @@ export type NodeEventDetail<T = any> = NodeRef<T> & TreeViewContext<T>;
 export type NodeDragEventDetail<T = any> = NodeDragContext<T> & TreeViewContext<T>;
 /** `node-drop`. */
 export type NodeDropEventDetail<T = any> = NodeDropContext<T> & TreeViewContext<T>;
-/** `node-copy` / `node-cut` / `node-delete`. */
-export type NodeClipboardEventDetail<T = any> = ClipboardEventContext<T> & TreeViewContext<T>;
+/** `node-copy`. */
+export type NodeCopyEventDetail<T = any> = NodeCopyContext<T> & TreeViewContext<T>;
+/** `node-cut`. */
+export type NodeCutEventDetail<T = any> = NodeCutContext<T> & TreeViewContext<T>;
+/** `node-delete` (no `operation`). */
+export type NodeDeleteEventDetail<T = any> = NodeDeleteContext<T> & TreeViewContext<T>;
 /** `node-paste`: the paste result (not fired when `beforePasteCallback` blocked it). */
 export type NodePasteEventDetail<T = any> = PasteResult<T> & TreeViewContext<T>;
-/** `selection-change` / `checked-change`. */
+/** `selection-change`. */
 export type SelectionChangeEventDetail<T = any> = SelectionChangeContext<T> & TreeViewContext<T>;
+/** `checked-change`. */
+export type CheckedChangeEventDetail<T = any> = CheckedChangeContext<T> & TreeViewContext<T>;
 /** `focus-change`. */
 export interface FocusChangeEventDetail<T = any> extends TreeViewContext<T> {
   focusedNode: LTreeNode<T> | null;

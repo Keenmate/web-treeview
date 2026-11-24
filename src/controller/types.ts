@@ -248,26 +248,36 @@ export interface NodeDropContext<T> {
   event: PointerEvent;
 }
 
-/**
- * Context for the set-oriented clipboard/delete events (onCopy / onCut /
- * onDelete), mirroring the BeforeCopyContext/BeforeDeleteContext shape of their
- * before* twins. `nodes` are the resolved live nodes for `paths`; for
- * onCut/onDelete they are pre-removal snapshots captured before the nodes left
- * the tree (the tree no longer holds them by the time the event fires).
- */
-export interface ClipboardEventContext<T> {
-  /** Present for copy/cut; omitted for delete (which has no copy/cut operation). */
-  operation?: ClipboardOperation;
+/** ctx of `onCopy` (`node-copy`) — fires after a copy; `nodes` are the live nodes of `paths`. */
+export interface NodeCopyContext<T> {
+  operation: 'copy';
   paths: string[];
   nodes: LTreeNode<T>[];
 }
 
-/**
- * Context for the selection-change / checked-change events (onSelectionChange = UI
- * multi-select set; onCheckedChange = checkbox set). `paths` is the new set, `nodes` its
- * resolved live nodes.
- */
+/** ctx of `onCut` (`node-cut`) — fires after a cut; `nodes` are still live (a cut only dims until the paste). */
+export interface NodeCutContext<T> {
+  operation: 'cut';
+  paths: string[];
+  nodes: LTreeNode<T>[];
+}
+
+/** ctx of `onDelete` (`node-delete`) — fires after the Delete command; `nodes` are PRE-REMOVAL
+ *  snapshots (the tree no longer holds them by the time the event fires). */
+export interface NodeDeleteContext<T> {
+  paths: string[];
+  nodes: LTreeNode<T>[];
+}
+
+/** ctx of `onSelectionChange` (`selection-change`) — the new selected set and its live nodes. */
 export interface SelectionChangeContext<T> {
+  paths: string[];
+  nodes: LTreeNode<T>[];
+}
+
+/** ctx of `onCheckedChange` (`checked-change`) — the new checked set as emitted (projected
+ *  through `cascade-check-policy`) and its live nodes. */
+export interface CheckedChangeContext<T> {
   paths: string[];
   nodes: LTreeNode<T>[];
 }
@@ -345,13 +355,21 @@ export interface NodeTransformContext<T> {
 }
 
 /**
- * Context for beforeCopyCallback / beforeCutCallback — batch policy, runs before
- * the snapshot is taken. Return a new path list to rewrite the set, false to
- * block, or nothing to proceed.
+ * ctx of `beforeCopyCallback` — batch policy, runs before the snapshot is taken.
+ * Return a new path list to rewrite the set, false to block, or nothing to proceed.
  */
 export interface BeforeCopyContext<T> {
-  operation: ClipboardOperation;
-  /** The paths about to be copied/cut (the selected set, or the explicit paths arg). */
+  operation: 'copy';
+  /** The paths about to be copied (the selected set, or the explicit paths arg). */
+  paths: string[];
+  /** The resolved live nodes for those paths (missing paths are dropped). */
+  nodes: LTreeNode<T>[];
+}
+
+/** ctx of `beforeCutCallback` — same as `BeforeCopyContext`, for a cut. */
+export interface BeforeCutContext<T> {
+  operation: 'cut';
+  /** The paths about to be cut (the selected set, or the explicit paths arg). */
   paths: string[];
   /** The resolved live nodes for those paths (missing paths are dropped). */
   nodes: LTreeNode<T>[];
@@ -360,7 +378,7 @@ export interface BeforeCopyContext<T> {
 /**
  * Context for beforeDeleteCallback — batch policy before the built-in Delete
  * removes nodes. Return a narrowed path list to delete only those, false to block
- * entirely, or nothing to proceed. Mirrors BeforeCopyContext's paths/nodes shape
+ * entirely, or nothing to proceed. Same paths/nodes shape as BeforeCopyContext
  * (delete has no copy/cut operation).
  */
 export interface BeforeDeleteContext<T> {
@@ -528,7 +546,7 @@ export interface TreeViewStateOptions<T> {
     affectedPaths: string[];
   }) => boolean | string[] | void;
   /** Fires on changes to the checkbox / data-state checked set (checkedPaths). */
-  onCheckedChange?: (ctx: SelectionChangeContext<T>) => void;
+  onCheckedChange?: (ctx: CheckedChangeContext<T>) => void;
   /** Fires on changes to the selected set (Ctrl/Shift+click, arrow keys). */
   onSelectionChange?: (ctx: SelectionChangeContext<T>) => void;
 
@@ -547,7 +565,7 @@ export interface TreeViewStateOptions<T> {
   onNodeCollapse?: (ctx: NodeEventContext<T>) => void;
   /** Clipboard interceptors — return `false` to block, a `string[]` to override the paths. */
   beforeCopyCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;
-  beforeCutCallback?: (ctx: BeforeCopyContext<T>) => string[] | false | void;
+  beforeCutCallback?: (ctx: BeforeCutContext<T>) => string[] | false | void;
   /** Batch policy — return `false` to block the paste, or `{ targetPath?, position? }` to redirect. */
   beforePasteCallback?: (
     ctx: BeforePasteContext<T>
@@ -555,11 +573,11 @@ export interface TreeViewStateOptions<T> {
   /** Narrow (return path[]) or block (false) the built-in Delete set. */
   beforeDeleteCallback?: (ctx: BeforeDeleteContext<T>) => string[] | false | void;
   /** Post-operation clipboard events (symmetric with the controller's clipboard methods). */
-  onCopy?: (ctx: ClipboardEventContext<T>) => void;
-  onCut?: (ctx: ClipboardEventContext<T>) => void;
+  onCopy?: (ctx: NodeCopyContext<T>) => void;
+  onCut?: (ctx: NodeCutContext<T>) => void;
   onPaste?: (result: PasteResult<T>) => void;
   /** Fires after the user Delete command (Delete key / context-menu delete); nodes are pre-removal snapshots. */
-  onDelete?: (ctx: ClipboardEventContext<T>) => void;
+  onDelete?: (ctx: NodeDeleteContext<T>) => void;
   /** OUTPUT (egress) transform — per-node clean/redact at snapshot time (copy/cut
    *  and the capture side of a copy-drop), before data hits the shared clipboard. */
   nodeOutputTransformationCallback?: (data: T, ctx: NodeTransformContext<T>) => T;

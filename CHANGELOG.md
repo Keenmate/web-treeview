@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — one context type per event (2026-11-24)
+
+- One context type per event, no shared names: `onCheckedChange` takes `CheckedChangeContext` (was `SelectionChangeContext`, which stays for `onSelectionChange`), `beforeCutCallback` takes `BeforeCutContext` (was `BeforeCopyContext`, which now says `operation: 'copy'`), `onNodeCopy` / `onNodeCut` / `onNodeDelete` (`node-copy` / `node-cut` / `node-delete`) take `NodeCopyContext` / `NodeCutContext` / `NodeDeleteContext` (`ClipboardEventContext` is gone; delete's ctx has no `operation`). Same fields as before — only the type names change. Public twins: `NodeCopyEventDetail` / `NodeCutEventDetail` / `NodeDeleteEventDetail` (were `NodeClipboardEventDetail`), `CheckedChangeEventDetail` (`checked-change`), `BeforeCutCallbackContext`. Same in svelte-treeview.
+
 ### Changed — `removeNode(path)`, `removeBranch(path, { shouldKeepParent })` (2026-11-24)
 
 - `removeNode(path)` — its second parameter `includeDescendants` is gone: it never did anything (the node always left with its whole subtree). `removeBranch(path, options?)` takes `RemoveBranchOptions` `{ shouldKeepParent? }` instead of a bare boolean `keepParent` (no positional booleans — svelte-treeview REVIEW-2026-11-19 §2b); a boolean still works and logs a deprecation warning, so a JS caller passing `true` keeps the node instead of losing it. Same in svelte-treeview.

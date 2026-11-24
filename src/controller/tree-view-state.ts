@@ -59,10 +59,14 @@ import type {
   NodeRef,
   NodeDragContext,
   NodeDropContext,
-  ClipboardEventContext,
+  NodeCopyContext,
+  NodeCutContext,
+  NodeDeleteContext,
   SelectionChangeContext,
+  CheckedChangeContext,
   NodeTransformContext,
   BeforeCopyContext,
+  BeforeCutContext,
   BeforeDeleteContext,
   BeforePasteContext,
   BeforeDropContext,
@@ -3457,12 +3461,12 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       list.map((p) => this.tree.getNodeByPath(p)).filter((n): n is LTreeNode<T> => n !== null);
 
     // Interceptor: can modify paths (return string[]) or block (false).
-    const before = operation === 'copy' ? this.beforeCopyCb : this.beforeCutCb;
-    if (before) {
-      const result = before({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) });
-      if (result === false) return;
-      if (Array.isArray(result)) pathsToUse = result;
-    }
+    const result =
+      operation === 'copy'
+        ? this.beforeCopyCb?.({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) })
+        : this.beforeCutCb?.({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) });
+    if (result === false) return;
+    if (Array.isArray(result)) pathsToUse = result;
 
     const entries: ClipboardEntry<T>[] = [];
     const cutSet = new Set<string>();
@@ -3482,8 +3486,8 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this.tree.refresh();
     this._scheduleNotify();
     // Cut only dims — nodes aren't removed until paste — so they're still live here.
-    const handler = operation === 'copy' ? this.onCopyCb : this.onCutCb;
-    handler?.({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) });
+    if (operation === 'copy') this.onCopyCb?.({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) });
+    else this.onCutCb?.({ operation, paths: pathsToUse, nodes: nodesOf(pathsToUse) });
   }
 
   /**

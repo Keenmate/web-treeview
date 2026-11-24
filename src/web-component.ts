@@ -50,9 +50,12 @@ import type {
   NodeEventDetail,
   NodeDragEventDetail,
   NodeDropEventDetail,
-  NodeClipboardEventDetail,
+  NodeCopyEventDetail,
+  NodeCutEventDetail,
+  NodeDeleteEventDetail,
   NodePasteEventDetail,
   SelectionChangeEventDetail,
+  CheckedChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
   NodesSortEventDetail,
@@ -79,17 +82,17 @@ type TreeViewEvents = {
   'node-double-click': NodeEventDetail;
   'node-expand': NodeEventDetail;
   'node-collapse': NodeEventDetail;
-  'node-copy': NodeClipboardEventDetail;
-  'node-cut': NodeClipboardEventDetail;
+  'node-copy': NodeCopyEventDetail;
+  'node-cut': NodeCutEventDetail;
   'node-paste': NodePasteEventDetail;
-  'node-delete': NodeClipboardEventDetail;
+  'node-delete': NodeDeleteEventDetail;
   'node-drag-start': NodeDragEventDetail;
   'node-drag-over': NodeDragEventDetail;
   'node-drop': NodeDropEventDetail;
   'node-drag-reject': NodeEventDetail;
   'node-drop-reject': NodeEventDetail;
   'selection-change': SelectionChangeEventDetail;
-  'checked-change': SelectionChangeEventDetail;
+  'checked-change': CheckedChangeEventDetail;
   'focus-change': FocusChangeEventDetail;
   'expanded-change': ExpandedChangeEventDetail;
   'nodes-sort': NodesSortEventDetail;
@@ -150,17 +153,17 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   declare onNodeDoubleClick: ((detail: NodeEventDetail<T>) => void) | null;
   declare onNodeExpand: ((detail: NodeEventDetail<T>) => void) | null;
   declare onNodeCollapse: ((detail: NodeEventDetail<T>) => void) | null;
-  declare onNodeCopy: ((detail: NodeClipboardEventDetail<T>) => void) | null;
-  declare onNodeCut: ((detail: NodeClipboardEventDetail<T>) => void) | null;
+  declare onNodeCopy: ((detail: NodeCopyEventDetail<T>) => void) | null;
+  declare onNodeCut: ((detail: NodeCutEventDetail<T>) => void) | null;
   declare onNodePaste: ((detail: NodePasteEventDetail<T>) => void) | null;
-  declare onNodeDelete: ((detail: NodeClipboardEventDetail<T>) => void) | null;
+  declare onNodeDelete: ((detail: NodeDeleteEventDetail<T>) => void) | null;
   declare onNodeDragStart: ((detail: NodeDragEventDetail<T>) => void) | null;
   declare onNodeDragOver: ((detail: NodeDragEventDetail<T>) => void) | null;
   declare onNodeDrop: ((detail: NodeDropEventDetail<T>) => void) | null;
   declare onNodeDragReject: ((detail: NodeEventDetail<T>) => void) | null;
   declare onNodeDropReject: ((detail: NodeEventDetail<T>) => void) | null;
   declare onSelectionChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
-  declare onCheckedChange: ((detail: SelectionChangeEventDetail<T>) => void) | null;
+  declare onCheckedChange: ((detail: CheckedChangeEventDetail<T>) => void) | null;
   declare onFocusChange: ((detail: FocusChangeEventDetail<T>) => void) | null;
   declare onExpandedChange: ((detail: ExpandedChangeEventDetail<T>) => void) | null;
   declare onNodesSort: ((detail: NodesSortEventDetail<T>) => void) | null;

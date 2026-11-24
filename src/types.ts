@@ -43,6 +43,7 @@ export type {
   NodeTransformCallbackContext,
   NodeTransformCallback,
   BeforeCopyCallbackContext,
+  BeforeCutCallbackContext,
   BeforeDeleteCallbackContext,
   BeforePasteCallbackContext,
   BeforeDropCallbackContext,
@@ -50,9 +51,12 @@ export type {
   NodeEventDetail,
   NodeDragEventDetail,
   NodeDropEventDetail,
-  NodeClipboardEventDetail,
+  NodeCopyEventDetail,
+  NodeCutEventDetail,
+  NodeDeleteEventDetail,
   NodePasteEventDetail,
   SelectionChangeEventDetail,
+  CheckedChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
   NodesSortEventDetail,
@@ -86,11 +90,15 @@ export type {
   NodeEventContext,
   NodeDragContext,
   NodeDropContext,
-  ClipboardEventContext,
+  NodeCopyContext,
+  NodeCutContext,
+  NodeDeleteContext,
   SelectionChangeContext,
+  CheckedChangeContext,
   TreeKeydownContext,
   NodeTransformContext,
   BeforeCopyContext,
+  BeforeCutContext,
   BeforeDeleteContext,
   BeforePasteContext,
   BeforeDropContext,
@@ -146,6 +154,7 @@ import type {
   NodeTransformCallbackContext,
   NodeTransformCallback,
   BeforeCopyCallbackContext,
+  BeforeCutCallbackContext,
   BeforeDeleteCallbackContext,
   BeforePasteCallbackContext,
   BeforeDropCallbackContext,
@@ -153,9 +162,12 @@ import type {
   NodeEventDetail,
   NodeDragEventDetail,
   NodeDropEventDetail,
-  NodeClipboardEventDetail,
+  NodeCopyEventDetail,
+  NodeCutEventDetail,
+  NodeDeleteEventDetail,
   NodePasteEventDetail,
   SelectionChangeEventDetail,
+  CheckedChangeEventDetail,
   FocusChangeEventDetail,
   ExpandedChangeEventDetail,
   NodesSortEventDetail,
@@ -416,7 +428,7 @@ export interface TreeViewConfig<T = any> {
   beforeCheckboxToggleCallback?: (ctx: BeforeCheckboxToggleContext<T>) => string[] | false | void;
   rangeSelectionMode?: RangeSelectionMode;
   /** Twin of `checked-change` (engine use; on the element assign `el.onCheckedChange`). */
-  onCheckedChange?: (detail: SelectionChangeEventDetail<T>) => void;
+  onCheckedChange?: (detail: CheckedChangeEventDetail<T>) => void;
   /** Twin of `selection-change`. */
   onSelectionChange?: (detail: SelectionChangeEventDetail<T>) => void;
 
@@ -462,7 +474,7 @@ export interface TreeViewConfig<T = any> {
   beforeCopyCallback?: (ctx: BeforeCopyCallbackContext<T>) => string[] | false | void;
   /** Runs before `cutNodes` (synchronous). Return `false` to block, or a `string[]` to
    *  override which paths are cut. */
-  beforeCutCallback?: (ctx: BeforeCopyCallbackContext<T>) => string[] | false | void;
+  beforeCutCallback?: (ctx: BeforeCutCallbackContext<T>) => string[] | false | void;
   /** Runs before `pasteNodes` (synchronous). Return `false` to block (no `node-paste`
    *  event), or `{ targetPath?, position? }` to redirect the paste target / position. */
   beforePasteCallback?: (
@@ -478,13 +490,13 @@ export interface TreeViewConfig<T = any> {
    *  a copy-drop); derive ids/values/names from `ctx.data`; return null to SKIP a node (+ subtree). */
   nodeInputTransformationCallback?: NodeTransformCallback<T>;
   /** Twin of `node-copy`: `{ operation: 'copy', paths, nodes }`. */
-  onNodeCopy?: (detail: NodeClipboardEventDetail<T>) => void;
+  onNodeCopy?: (detail: NodeCopyEventDetail<T>) => void;
   /** Twin of `node-cut`. */
-  onNodeCut?: (detail: NodeClipboardEventDetail<T>) => void;
+  onNodeCut?: (detail: NodeCutEventDetail<T>) => void;
   /** Twin of `node-paste`: the paste result. */
   onNodePaste?: (detail: NodePasteEventDetail<T>) => void;
   /** Twin of `node-delete`; nodes are pre-removal snapshots. */
-  onNodeDelete?: (detail: NodeClipboardEventDetail<T>) => void;
+  onNodeDelete?: (detail: NodeDeleteEventDetail<T>) => void;
   onNodeDragStart?: (detail: NodeDragEventDetail<T>) => void;
   onNodeDragOver?: (detail: NodeDragEventDetail<T>) => void;
   /** Intercept — modify/block/route a drop. `false` blocks, `{ position?, operation? }`
@@ -731,17 +743,17 @@ export interface TreeEventMap<T = any> {
   'node-double-click': CustomEvent<NodeEventDetail<T>>;
   'node-expand': CustomEvent<NodeEventDetail<T>>;
   'node-collapse': CustomEvent<NodeEventDetail<T>>;
-  'node-copy': CustomEvent<NodeClipboardEventDetail<T>>;
-  'node-cut': CustomEvent<NodeClipboardEventDetail<T>>;
+  'node-copy': CustomEvent<NodeCopyEventDetail<T>>;
+  'node-cut': CustomEvent<NodeCutEventDetail<T>>;
   'node-paste': CustomEvent<NodePasteEventDetail<T>>;
-  'node-delete': CustomEvent<NodeClipboardEventDetail<T>>;
+  'node-delete': CustomEvent<NodeDeleteEventDetail<T>>;
   'node-drag-start': CustomEvent<NodeDragEventDetail<T>>;
   'node-drag-over': CustomEvent<NodeDragEventDetail<T>>;
   'node-drop': CustomEvent<NodeDropEventDetail<T>>;
   'node-drag-reject': CustomEvent<NodeEventDetail<T>>;
   'node-drop-reject': CustomEvent<NodeEventDetail<T>>;
   'selection-change': CustomEvent<SelectionChangeEventDetail<T>>;
-  'checked-change': CustomEvent<SelectionChangeEventDetail<T>>;
+  'checked-change': CustomEvent<CheckedChangeEventDetail<T>>;
   'focus-change': CustomEvent<FocusChangeEventDetail<T>>;
   'expanded-change': CustomEvent<ExpandedChangeEventDetail<T>>;
   'nodes-sort': CustomEvent<NodesSortEventDetail<T>>;

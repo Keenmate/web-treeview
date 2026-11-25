@@ -111,7 +111,7 @@ let _dragSet: { sourceTreeId: string; paths: string[]; manifest: string[] } | nu
 // drag events for core watchPageDrag to see, so the drag set itself is the signal.
 const _dragSetListeners = new Set<(isActive: boolean) => void>();
 
-function notifyDragSet(isActive: boolean): void {
+function dispatchDragSet(isActive: boolean): void {
   for (const listener of _dragSetListeners) {
     try {
       listener(isActive);
@@ -131,7 +131,7 @@ export function watchNodeDrag(listener: (isActive: boolean) => void): () => void
 export function setDragSet(sourceTreeId: string, paths: string[], manifest: string[] = paths): void {
   const wasActive = _dragSet !== null;
   _dragSet = { sourceTreeId, paths, manifest };
-  if (!wasActive) notifyDragSet(true);
+  if (!wasActive) dispatchDragSet(true);
 }
 
 export function getDragSet(): { sourceTreeId: string; paths: string[]; manifest: string[] } | null {
@@ -141,7 +141,7 @@ export function getDragSet(): { sourceTreeId: string; paths: string[]; manifest:
 export function clearDragSet(): void {
   if (_dragSet === null) return;
   _dragSet = null;
-  notifyDragSet(false);
+  dispatchDragSet(false);
 }
 
 /**

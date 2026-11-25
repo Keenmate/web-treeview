@@ -919,7 +919,7 @@
             },
             {
               "kind": "method",
-              "name": "syncVirtualScrollTop",
+              "name": "reconcileVirtualScrollTop",
               "return": {
                 "type": {
                   "text": "void"

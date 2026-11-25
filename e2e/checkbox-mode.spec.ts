@@ -8,7 +8,7 @@ import { test, expect, Page, Locator } from './fixtures';
  *
  * Two-part fix: (1) the controller reconcile (_reconcileVisualStatesForMode)
  * promotes indeterminate→checked into `_checkedPaths`; (2) because every config
- * change re-inserts the data (fresh node objects), `_reapplyRuntimeChecked()`
+ * change re-inserts the data (fresh node objects), `_restoreRuntimeChecked()`
  * re-applies the surviving `_checkedPaths` onto the fresh nodes and recomputes
  * visualState after every insertArray. The renderer reads `checked` straight from
  * `snapshot.allCheckedPaths` (web-grid-style state-off-nodes), so selection is

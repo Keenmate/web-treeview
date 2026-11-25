@@ -165,7 +165,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Build skeleton
     this.container.innerHTML = '';
     this.container.classList.add('wtv__container');
-    this._applyTitleOverflow(config.nodeTitleOverflow);
+    this._setTitleOverflow(config.nodeTitleOverflow);
 
     // Header
     this.headerEl = document.createElement('div');
@@ -213,7 +213,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       shouldScroll: false,
     });
     this._isDisabled = false;
-    this._applyDisabled(!!config.isDisabled);
+    this._setDisabled(!!config.isDisabled);
     this.container.classList.toggle('wtv__container--readonly', !!config.isReadonly);
 
     // Subscribe to the state
@@ -231,7 +231,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _removeLoader: (() => void) | null = null;
   private _loaderDrawer: unknown = undefined;
   private _loaderLabel = '';
-  private _syncLoader(isLoading: boolean): void {
+  private _reconcileLoader(isLoading: boolean): void {
     const draw = this.config.renderLoadingCallback;
     const label = this._label('ariaLabels.loading');
     const isStale = draw !== this._loaderDrawer || label !== this._loaderLabel;
@@ -290,7 +290,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
       if (!node || !row) continue;
       const ctx = this._buildRenderContext(node, snapshot);
-      if (isIconsChanged) this._applyNodeIcon(row, node, ctx);
+      if (isIconsChanged) this._renderNodeIcon(row, node, ctx);
       const content = hasNodeCb ? row.querySelector(':scope > .wtv__node-content') as HTMLElement | null : null;
       if (content) this._renderNodeContent(content, node, ctx);
     }
@@ -372,7 +372,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // version): re-run them in place, same elements. Anything else they don't receive never re-runs them.
     const isCtxChanged = 'renderContextVersion' in config && config.renderContextVersion !== prevCtxVersion;
     if ('labels' in config) this._refreshLabels();
-    if (this.lastSnapshot) this._syncLoader(!!this.lastSnapshot.isLoading);
+    if (this.lastSnapshot) this._reconcileLoader(!!this.lastSnapshot.isLoading);
     if (this.config.renderEmptyZoneCallback !== this._emptyZoneCb) {
       const zone = this._renderTarget?.querySelector('.wtv__empty-zone');
       if (zone && this.state) {
@@ -389,10 +389,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
       if (emptyState) this._renderEmptyState(emptyState);
     }
     if ('openLayer' in config && this.state) this.state.layerOpener = config.openLayer ?? null;
-    if ('isDisabled' in config) this._applyDisabled(!!config.isDisabled);
+    if ('isDisabled' in config) this._setDisabled(!!config.isDisabled);
     if ('isReadonly' in config) this.container?.classList.toggle('wtv__container--readonly', !!config.isReadonly);
     if ('nodeTitleOverflow' in config && (config.nodeTitleOverflow ?? 'ellipsis') !== this._titleOverflow) {
-      this._applyTitleOverflow(config.nodeTitleOverflow);
+      this._setTitleOverflow(config.nodeTitleOverflow);
     }
     // `<web-treeview>` re-sends its full config on every batch (callbacks keep their identity — TreeViewEngine
     // memoizes the adapters), so the regions and rows are redrawn only on an ACTUAL callback change: an unrelated
@@ -529,7 +529,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _labelObserver: ElementSizeObserver | null = null;
   private _reveal: { handle: PopoverHandle; button: HTMLElement } | null = null;
 
-  private _applyTitleOverflow(mode: NodeTitleOverflow | null | undefined): void {
+  private _setTitleOverflow(mode: NodeTitleOverflow | null | undefined): void {
     this._titleOverflow = mode ?? 'ellipsis';
     if (!this.container) return;
     this.container.setAttribute('data-node-title-overflow', this._titleOverflow);
@@ -633,7 +633,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * and gets `aria-disabled="true"`, the info buttons / empty drop zone stop being focusable, and an
    * open context menu, full-label popover or tooltip closes. Re-enabling restores all of it.
    */
-  private _applyDisabled(isDisabled: boolean): void {
+  private _setDisabled(isDisabled: boolean): void {
     if (isDisabled === this._isDisabled) return;
     this._isDisabled = isDisabled;
     this.container?.classList.toggle('wtv__container--disabled', isDisabled);
@@ -713,7 +713,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
           queueMicrotask(() => {
             const fresh = this.state?.getNodeByPath(path);
             if (fresh) {
-              this._syncCheckboxState(
+              this._setCheckboxState(
                 checkbox,
                 fresh.isChecked,
                 fresh.visualState === 'indeterminate'
@@ -1005,7 +1005,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Early exit — window hasn't changed
     if (startIndex === this._vsLastStartIndex && endIndex === this._vsLastEndIndex) {
-      ctrl.syncVirtualScrollTop(scrollTop);
+      ctrl.reconcileVirtualScrollTop(scrollTop);
       return;
     }
     this._vsLastStartIndex = startIndex;
@@ -1027,7 +1027,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     this._reconcileNodes(this.lastSnapshot);
 
     // Sync the state silently (so next getSnapshot() has correct scrollTop)
-    ctrl.syncVirtualScrollTop(scrollTop);
+    ctrl.reconcileVirtualScrollTop(scrollTop);
   }
 
   private _attachBodyListeners() {
@@ -1186,7 +1186,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     if (this.loadingEl) {
       this.loadingEl.style.display = snapshot.isLoading ? 'flex' : 'none';
     }
-    this._syncLoader(!!snapshot.isLoading);
+    this._reconcileLoader(!!snapshot.isLoading);
 
     // Body class
     if (this.bodyEl) {
@@ -1235,7 +1235,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // Handle empty tree
     if (nodes.length === 0) {
       this._renderEmpty(snapshot);
-      this._syncActiveDescendant(snapshot);
+      this._reconcileActiveDescendant(snapshot);
       return;
     }
 
@@ -1307,7 +1307,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this.nodeOfElement.set(el, node);
       }
 
-      this._applyRowAria(el, node, snapshot, positions);
+      this._updateRowAria(el, node, snapshot, positions);
 
       // Ensure correct order — ensure the element is parented to the render target
       const currentChild = target.children[i];
@@ -1324,7 +1324,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         this._destroyTooltip(key);
       }
     }
-    this._syncActiveDescendant(snapshot);
+    this._reconcileActiveDescendant(snapshot);
   }
 
   // ── ARIA tree ───────────────────────────────────────────────────────
@@ -1342,7 +1342,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** `aria-activedescendant` follows the focused node's row; none when it isn't rendered
    *  (a virtual row scrolled out, a collapsed branch, the empty tree). */
-  private _syncActiveDescendant(snapshot: TreeViewStateSnapshot<T>): void {
+  private _reconcileActiveDescendant(snapshot: TreeViewStateSnapshot<T>): void {
     const ad = this._activeDescendant;
     if (!ad) return;
     const path = snapshot.focusedNode?.path;
@@ -1376,7 +1376,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
   /** The row's `role="treeitem"` + state: level, set position, expanded (parents only),
    *  selected, checked (`mixed` = indeterminate; only on a row with a checkbox). */
-  private _applyRowAria(
+  private _updateRowAria(
     el: HTMLElement,
     node: LTreeNode<T>,
     snapshot: TreeViewStateSnapshot<T>,
@@ -1482,8 +1482,8 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * classes.
    */
   /** Row-level loading state while an async beforeExpandCallback is pending: `aria-busy` +
-   *  `data-loading` on the row (the toggle shows the spinner, see _applyToggleClasses). */
-  private _applyExpandPending(el: HTMLElement, node: LTreeNode<T>): void {
+   *  `data-loading` on the row (the toggle shows the spinner, see _updateToggleClasses). */
+  private _updateExpandPending(el: HTMLElement, node: LTreeNode<T>): void {
     if (this.state?.isExpandPending(node.path)) {
       el.setAttribute('aria-busy', 'true');
       el.setAttribute('data-loading', '');
@@ -1493,7 +1493,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
   }
 
-  private _applyToggleClasses(toggle: HTMLElement, node: LTreeNode<T>): void {
+  private _updateToggleClasses(toggle: HTMLElement, node: LTreeNode<T>): void {
     const nodeConfig = this.lastNodeConfig;
     toggle.className = 'wtv__toggle-icon';
     if (node.hasChildren) {
@@ -1511,7 +1511,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     } else {
       // Leaf node: just the leaf spacer/marker. The per-node icon is NO LONGER folded
       // into the toggle slot — it renders as a dedicated .wtv__node-icon element on every
-      // node (branch + leaf), via _applyNodeIcon. See iconMember / renderIconCallback.
+      // node (branch + leaf), via _renderNodeIcon. See iconMember / renderIconCallback.
       addClasses(toggle, nodeConfig?.leafIconClass || 'wtv__toggle-icon--leaf-none');
     }
   }
@@ -1527,7 +1527,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * iconColorCallback on the wrapper. No icon → no wrapper, unless shouldAlignNodeIcons reserves
    * the column. Sits between the toggle/checkbox and content.
    */
-  private _applyNodeIcon(row: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
+  private _renderNodeIcon(row: HTMLElement, node: LTreeNode<T>, ctx: NodeRenderContext): void {
     const cfg = this.lastNodeConfig;
     const hasSupport = !!this.state?.hasIconSupport;
     const value = hasSupport ? this.state!.getNodeIcon(node) : null;
@@ -1573,7 +1573,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     input.type = 'checkbox';
     input.className = 'wtv__checkbox';
     input.tabIndex = -1;
-    this._syncCheckboxState(input, checked, indeterminate);
+    this._setCheckboxState(input, checked, indeterminate);
     return input;
   }
 
@@ -1582,7 +1582,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    * it shows the dash (modifier class + aria-checked="mixed") and leaves the native
    * `checked` false so the dash glyph, not the tick, renders.
    */
-  private _syncCheckboxState(
+  private _setCheckboxState(
     input: HTMLInputElement,
     checked: boolean,
     indeterminate: boolean
@@ -1604,7 +1604,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     el.setAttribute('data-tree-path', node.path);
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
-    this._applyExpandPending(el, node);
+    this._updateExpandPending(el, node);
     // hasChildren is a DERIVED visual property not captured by _rev — adding/
     // removing a child doesn't bump the parent's _rev. Track it like data-expanded
     // so the reconcile-skip check (see updateNodes) re-renders a node that crossed
@@ -1634,7 +1634,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
 
     // Toggle icon
     const toggle = document.createElement('span');
-    this._applyToggleClasses(toggle, node);
+    this._updateToggleClasses(toggle, node);
 
     row.appendChild(toggle);
 
@@ -1706,9 +1706,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     el.appendChild(row);
 
     // Per-node icon element (between toggle/checkbox and content — inserts before content).
-    this._applyNodeIcon(row, node, ctx);
-    this._applyCustomNodeClasses(el, content, node);
-    this._applyTooltip(content, node);
+    this._renderNodeIcon(row, node, ctx);
+    this._updateCustomNodeClasses(el, content, node);
+    this._installTooltip(content, node);
     return el;
   }
 
@@ -1716,7 +1716,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    *  Tracks the previously-applied classes in `data-*` attributes so a
    *  re-render removes stale classes before adding the new ones (the diff
    *  reconciler reuses row elements rather than recreating them). */
-  private _applyCustomNodeClasses(el: HTMLElement, content: HTMLElement | null, node: LTreeNode<T>): void {
+  private _updateCustomNodeClasses(el: HTMLElement, content: HTMLElement | null, node: LTreeNode<T>): void {
     const cfg = this.lastNodeConfig;
     // Outer .wtv__node
     const prevNodeCls = el.dataset.wtvNodeClass;
@@ -1758,7 +1758,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
    *  callback at each show (`_fillTooltip`), so it reflects the node's live state.
    *  Empty content ⇒ the tooltip doesn't stay up. Mounts into the shadow container so
    *  it inherits the injected --wtv-tooltip-* tokens + data-theme. */
-  private _applyTooltip(triggerEl: HTMLElement | null, node: LTreeNode<T>): void {
+  private _installTooltip(triggerEl: HTMLElement | null, node: LTreeNode<T>): void {
     const key = this._nodeKey(node);
     this._destroyTooltip(key);
     const cfg = this.lastNodeConfig;
@@ -1824,7 +1824,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
   private _updateNodeElement(el: HTMLElement, node: LTreeNode<T>, snapshot: TreeViewStateSnapshot<T>): void {
     el.setAttribute('data-rev', String(node._rev));
     el.setAttribute('data-expanded', String(!!node.isExpanded));
-    this._applyExpandPending(el, node);
+    this._updateExpandPending(el, node);
     el.setAttribute('data-has-children', String(!!node.hasChildren));
     el.setAttribute('data-tree-path', node.path);
     el.setAttribute('data-cut', String(snapshot.cutPaths.has(node.path)));
@@ -1878,7 +1878,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         const toggle = el.querySelector('.wtv__toggle-icon');
         toggle?.after(cb);
       }
-      this._syncCheckboxState(
+      this._setCheckboxState(
         cb,
         snapshot.allCheckedPaths.has(node.path),
         node.visualState === 'indeterminate'
@@ -1893,7 +1893,7 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // correctly, not just the `expanded` state of an already-a-folder node.
     const toggle = el.querySelector('.wtv__toggle-icon') as HTMLElement;
     if (toggle) {
-      this._applyToggleClasses(toggle, node);
+      this._updateToggleClasses(toggle, node);
     }
 
     // Update content
@@ -1920,10 +1920,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     }
 
     // Re-apply data-driven nodeClass / nodeContentClass (removes stale classes)
-    this._applyCustomNodeClasses(el, content, node);
+    this._updateCustomNodeClasses(el, content, node);
     // Refresh the per-node icon (value/color track the node's data).
     const row = el.querySelector(':scope > .wtv__node-row') as HTMLElement | null;
-    if (row) this._applyNodeIcon(row, node, ctx);
+    if (row) this._renderNodeIcon(row, node, ctx);
     // The tooltip handle is kept (its content is resolved at show time and refreshed
     // while visible — _refreshVisibleTooltips), so the follow-cursor rect seeded on
     // mouseenter survives a reconcile. Enable/disable, callback, placement and

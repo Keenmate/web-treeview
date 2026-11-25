@@ -165,10 +165,10 @@ export class Indexer<T> {
 			this.onProgressCallback?.(this.totalItemsProcessed, this.totalItemsAdded);
 			this.processNextBatch();
 		} else {
-			// Queue drained — release it and finish (finishProcessing reports completion)
+			// Queue drained — release it and finish (completeProcessing reports completion)
 			this.processingQueue = [];
 			this.queueHead = 0;
-			this.finishProcessing();
+			this.completeProcessing();
 		}
 	}
 
@@ -188,7 +188,7 @@ export class Indexer<T> {
 	}
 
 	// Finish processing
-	private finishProcessing(): void {
+	private completeProcessing(): void {
 		this.isProcessing = false;
 		this.log.INDEX.info(`[${this.treeId}] Indexing complete. Processed ${this.totalItemsProcessed} items.`);
 

@@ -253,7 +253,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   protected override update(partial: Record<string, unknown>): void {
     if ('getCustomStylesCallback' in partial || 'customStyles' in partial) this.#customStyles?.refresh();
-    if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial || 'isReadonly' in partial) this.#syncPageDrag();
+    if ('shouldHighlightOnPageDrag' in partial || 'dragDropMode' in partial || 'isReadonly' in partial) this.#reconcilePageDrag();
     if (!this.#treeview) return;
     const keys = Object.keys(partial);
     if (!(keys.length > 0 && keys.every((key) => NON_ENGINE_KEYS.has(key)))) this.#treeview.setOptions(this.#assembleConfig());
@@ -270,7 +270,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   protected override connect(): void {
     if (!this.#treeview) this.#buildEngine();
     else this.#treeview.activate();
-    this.#syncPageDrag();
+    this.#reconcilePageDrag();
   }
 
   /**
@@ -281,7 +281,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    */
   protected override disconnect(): void {
     this.#treeview?.deactivate();
-    this.#syncPageDrag();
+    this.#reconcilePageDrag();
   }
 
   /** The page-wide `window.components.locale` changed (core `/locale`): re-apply every built-in
@@ -299,7 +299,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
   /** The effective disabled state flipped on the built tree (core SPEC §6.4): apply it in place. */
   protected override disabledChanged(isDisabled: boolean): void {
     this.#treeview?.setDisabled(isDisabled);
-    this.#syncArmed();
+    this.#reconcileArmed();
   }
 
   // ── armed (highlight-on-page-drag) ───────────────────────────────────────
@@ -323,23 +323,23 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * tree's pointer drag publishes) per `highlight-on-page-drag` and the connection state, then
    * re-derive the armed state.
    */
-  #syncPageDrag(): void {
+  #reconcilePageDrag(): void {
     const shouldTrack = this.isConnected && !!(this.config as { shouldHighlightOnPageDrag?: boolean }).shouldHighlightOnPageDrag;
     if (shouldTrack && !this.#unsubscribePageDrag) {
       this.#unsubscribePageDrag = watchNodeDrag((isActive) => {
         this.#isNodeDragOverPage = isActive;
-        this.#syncArmed();
+        this.#reconcileArmed();
       });
     } else if (!shouldTrack && this.#unsubscribePageDrag) {
       this.#unsubscribePageDrag();
       this.#unsubscribePageDrag = undefined;
       this.#isNodeDragOverPage = false;
     }
-    this.#syncArmed();
+    this.#reconcileArmed();
   }
 
   /** Armed = tracking + a node drag over the page + the tree accepts drops. */
-  #syncArmed(): void {
+  #reconcileArmed(): void {
     const isArmed = !!this.#unsubscribePageDrag
       && this.#isNodeDragOverPage
       && (this.config as { dragDropMode?: string | null }).dragDropMode !== 'none'
@@ -382,7 +382,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
 
     this.#isRendering = false;
     this.#treeview = new TreeViewEngine<T>(this.#container!, config, this.#renderer, this.#treeLoggers());
-    this.#applyCustomStyles();
+    this.#reconcileCustomStyles();
     // State sets assigned before the build (property or attribute); a set never assigned leaves the tree's own.
     for (const key of STATE_KEYS) {
       const paths = this.config[key];
@@ -459,7 +459,7 @@ export class WebTreeViewElement<T = any> extends BlissElement<TreeViewEvents, Tr
    * which comes after it and overrides. Core links each `@import` in the document head too, so an
    * imported icon font's `@font-face` registers (Chromium ignores it inside a shadow root).
    */
-  #applyCustomStyles(): void {
+  #reconcileCustomStyles(): void {
     if (this.#customStyles) return this.#customStyles.refresh();
     this.#customStyles = createCustomStyles<TreeViewContext<T>>(this, this.#shadow, this.#customStylesOptions()); // writes both layers now
   }

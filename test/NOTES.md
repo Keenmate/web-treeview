@@ -471,11 +471,11 @@ is-sorted keeps every node" was `test.fail`.
 
 ## 17. ~~Reassigning `data` re-expands branches the user collapsed (when none were open)~~ — fixed
 
-**Fixed 2026-10-25:** `_collectExpandedPaths()` returns `null` when there was no previous tree content (the first insert keeps the expand-level seed) and an EMPTY set when the user had everything collapsed, which is now restored as such. `_reapplyExpanded()` also calls `tree.refresh()` — it mutates `isExpanded` outside the LTree API, and the cached `visibleFlatNodes` kept listing the re-collapsed branch's rows. The `test.fail` in `data-members.spec.ts` passes.
+**Fixed 2026-10-25:** `_collectExpandedPaths()` returns `null` when there was no previous tree content (the first insert keeps the expand-level seed) and an EMPTY set when the user had everything collapsed, which is now restored as such. `_restoreExpanded()` also calls `tree.refresh()` — it mutates `isExpanded` outside the LTree API, and the cached `visibleFlatNodes` kept listing the re-collapsed branch's rows. The `test.fail` in `data-members.spec.ts` passes.
 
 Original report:
 
-**Where:** `src/controller/tree-view-state.ts` `_reapplyExpanded()` (~3726):
+**Where:** `src/controller/tree-view-state.ts` `_restoreExpanded()` (~3726):
 `if (... expanded.size === 0) return;` — an EMPTY preserved set is treated as
 "nothing to restore", so the fresh insert's `expand-level` seed stands.
 
@@ -491,7 +491,7 @@ expansion" is `test.fail`.
 
 ## 18. ~~Every config update re-inserts `data` — `search-text` is wiped immediately~~ — fixed
 
-**Fixed 2026-10-25:** `updateProps()` re-inserts only when `data` is a NEW array (identity), applies `searchText` only when it changed, and every re-insert (data change or tree recreation) re-applies the active search filter (`_reapplySearchFilter()`). Both `test.fail`s in `search-config.spec.ts` pass; added "an unrelated attribute change does not re-insert the data" (`attr-reactivity.spec.ts`).
+**Fixed 2026-10-25:** `updateProps()` re-inserts only when `data` is a NEW array (identity), applies `searchText` only when it changed, and every re-insert (data change or tree recreation) re-applies the active search filter (`_restoreSearchFilter()`). Both `test.fail`s in `search-config.spec.ts` pass; added "an unrelated attribute change does not re-insert the data" (`attr-reactivity.spec.ts`).
 
 Original report:
 
@@ -516,7 +516,7 @@ re-insert (or re-apply the active filter after `insertArray`).
 
 ## 19. ~~`renderLoadingCallback` is never called~~ — fixed
 
-**Fixed 2026-10-25:** the renderer fills the loading overlay through `_renderLoadingContent()`: `renderLoadingCallback(container)` when set, else the built-in spinner; re-run when the callback changes. The `test.fail` passes. **2026-10-29:** the overlay now draws through core `renderLoader` (SPEC §12.14) — instance `renderLoadingCallback` (ctx = core `LoaderRenderContext`) → page `window.components.renderLoadingCallback` → default `.wtv__loader`; drawn while `isLoading`, removed after (`_syncLoader`).
+**Fixed 2026-10-25:** the renderer fills the loading overlay through `_renderLoadingContent()`: `renderLoadingCallback(container)` when set, else the built-in spinner; re-run when the callback changes. The `test.fail` passes. **2026-10-29:** the overlay now draws through core `renderLoader` (SPEC §12.14) — instance `renderLoadingCallback` (ctx = core `LoaderRenderContext`) → page `window.components.renderLoadingCallback` → default `.wtv__loader`; drawn while `isLoading`, removed after (`_reconcileLoader`).
 
 Original report:
 

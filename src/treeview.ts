@@ -324,8 +324,8 @@ export class TreeViewEngine<T = any> {
     return this.wrap(src, 'node', (f) => (node: LTreeNode<T>) => f(this.nodeCtx(node)));
   }
 
-  /** A sync before-hook `(ctx)` → the engine's `(engineCtx) => false | value | undefined`. */
-  private syncGate(src: ((ctx: any) => unknown) | null | undefined, name: string): any {
+  /** An eager (synchronous) before-hook `(ctx)` → the engine's `(engineCtx) => false | value | undefined`. */
+  private eagerGate(src: ((ctx: any) => unknown) | null | undefined, name: string): any {
     return this.wrap(src, 'gate', (f) => (engineCtx: object) => internalGate(runBeforeCallbackSync(f, this.ctx(engineCtx), name)));
   }
 
@@ -1055,10 +1055,10 @@ export class TreeViewEngine<T = any> {
         const result = runBeforeCallbackEager(f as (c: unknown) => unknown, this.ctx(engineCtx), 'beforeExpandCallback');
         return result instanceof Promise ? result.then(internalGate) : internalGate(result);
       }),
-      beforeCopyCallback: this.syncGate(o.beforeCopyCallback, 'beforeCopyCallback'),
-      beforeCutCallback: this.syncGate(o.beforeCutCallback, 'beforeCutCallback'),
-      beforePasteCallback: this.syncGate(o.beforePasteCallback, 'beforePasteCallback'),
-      beforeDeleteCallback: this.syncGate(o.beforeDeleteCallback, 'beforeDeleteCallback'),
+      beforeCopyCallback: this.eagerGate(o.beforeCopyCallback, 'beforeCopyCallback'),
+      beforeCutCallback: this.eagerGate(o.beforeCutCallback, 'beforeCutCallback'),
+      beforePasteCallback: this.eagerGate(o.beforePasteCallback, 'beforePasteCallback'),
+      beforeDeleteCallback: this.eagerGate(o.beforeDeleteCallback, 'beforeDeleteCallback'),
       nodeOutputTransformationCallback: this.transform(o.nodeOutputTransformationCallback),
       nodeInputTransformationCallback: this.transform(o.nodeInputTransformationCallback),
       onCopy: this.event(o.onNodeCopy),
@@ -1070,7 +1070,7 @@ export class TreeViewEngine<T = any> {
       onNodeDragOver: this.event(o.onNodeDragOver),
       beforeDropCallback: this.wrap(o.beforeDropCallback, 'drop', (f) => async (engineCtx: object) =>
         internalGate(await runBeforeCallback(f, this.ctx(engineCtx), 'beforeDropCallback'))),
-      beforeDragStartCallback: this.syncGate(o.beforeDragStartCallback, 'beforeDragStartCallback'),
+      beforeDragStartCallback: this.eagerGate(o.beforeDragStartCallback, 'beforeDragStartCallback'),
       onNodeDrop: this.nodeDropBridge,
       onNodeDragDenied: this.event(o.onNodeDragReject),
       onNodeDropDenied: this.nodeDropDeniedBridge,
@@ -1078,7 +1078,7 @@ export class TreeViewEngine<T = any> {
       onTreeKeydown: this.wrap(o.beforeKeydownCallback, 'keydown', (f) => (engineCtx: object) =>
         runBeforeCallbackSync(f, this.ctx(engineCtx), 'beforeKeydownCallback').isRejected ? true : undefined),
       // Scroll gate: `false` skips the scroll, an object replaces the defaults (merged by the engine).
-      beforeScrollCallback: this.syncGate(o.beforeScrollCallback, 'beforeScrollCallback'),
+      beforeScrollCallback: this.eagerGate(o.beforeScrollCallback, 'beforeScrollCallback'),
       contextMenuCallback: this.wrap(o.getContextMenuItemsCallback, 'menu', (f) => (node: LTreeNode<T>) => f(this.menuCtx(node)) ?? []),
       hasContextMenuRenderer: !!(o.getContextMenuItemsCallback || o.renderContextMenuCallback),
 

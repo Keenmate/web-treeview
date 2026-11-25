@@ -455,7 +455,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._dirty = true;
     queueMicrotask(() => {
       this._dirty = false;
-      this.emit('state-change', this.getSnapshot());
+      this.dispatch('state-change', this.getSnapshot());
     });
   }
 
@@ -469,7 +469,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     this._nodesChangePending = true;
     queueMicrotask(() => {
       this._nodesChangePending = false;
-      this.emit('nodes-change', undefined);
+      this.dispatch('nodes-change', undefined);
     });
   }
 
@@ -589,11 +589,11 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     for (const child of this.tree.root.children as LTreeNode<T>[]) visit(child);
   }
 
-  /** Synchronously emit state-change snapshot, bypassing microtask batching.
+  /** Synchronously dispatch the state-change snapshot, bypassing microtask batching.
    *  Used when the DOM must be updated before the caller continues (e.g. scrollToPath). */
   private _flushNotify() {
     this._dirty = false;
-    this.emit('state-change', this.getSnapshot());
+    this.dispatch('state-change', this.getSnapshot());
   }
 
   // ── Property accessors ──────────────────────────────────────────────
@@ -4674,7 +4674,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     } else {
       this._expandedDirty = true;
       const paths = this.takeExpandedChange();
-      if (paths) this.emit('expanded-change', paths);
+      if (paths) this.dispatch('expanded-change', paths);
     }
   }
 
@@ -4944,7 +4944,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if ((Object.keys(next) as (keyof NodeConfig)[]).every(isSame)) return;
     this._nodeConfig = next;
     this.log.RENDER.debug('config-change, focusedNodeClass =', JSON.stringify(this._focusedNodeClass));
-    this.emit('config-change', this._nodeConfig);
+    this.dispatch('config-change', this._nodeConfig);
   }
 
   // ── Internal event handlers ─────────────────────────────────────────

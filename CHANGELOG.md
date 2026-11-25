@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed — BREAKING (renames, no aliases): internal verbs per rulebook D-NC-30 (2026-11-26)
 
-- `TreeViewState.syncVirtualScrollTop(scrollTop)` → `reconcileVirtualScrollTop(scrollTop)` (the renderer's silent scroll-position write; only a custom renderer calls it). The rest of the C-NC-16 pass renamed private methods only.
+- `TreeViewState.syncVirtualScrollTop(scrollTop)` → `reconcileVirtualScrollTop(scrollTop)` (the renderer's silent scroll-position write; only a custom renderer calls it).
+- `EventEmitter.emit(event, data)` → `dispatch(event, data)` (also on `TreeViewState`, which extends it; D-NC-30: no `emit*` method names — the element's core `emit()` is unchanged). Subscribing with `on()` is unchanged; only code that fires events on a state / emitter itself needs the new name.
+- The rest of the C-NC-16 pass renamed private methods only.
 
 ### Changed — one context type per event; `VisualState` values (2026-11-24)
 

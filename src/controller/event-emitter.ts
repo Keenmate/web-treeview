@@ -27,9 +27,9 @@ export class EventEmitter<TEvents extends Record<string, any>> {
   }
 
   /**
-   * Emit an event to all registered listeners.
+   * Dispatch an event to all registered listeners.
    */
-  emit<K extends keyof TEvents>(event: K, data: TEvents[K]): void {
+  dispatch<K extends keyof TEvents>(event: K, data: TEvents[K]): void {
     const set = this._listeners.get(event);
     if (!set) return;
     for (const listener of set) {

@@ -339,7 +339,7 @@
             },
             {
               "kind": "method",
-              "name": "emit",
+              "name": "dispatch",
               "return": {
                 "type": {
                   "text": "void"
@@ -359,7 +359,7 @@
                   }
                 }
               ],
-              "description": "Emit an event to all registered listeners."
+              "description": "Dispatch an event to all registered listeners."
             },
             {
               "kind": "method",
@@ -3138,7 +3138,7 @@
             },
             {
               "kind": "method",
-              "name": "emit",
+              "name": "dispatch",
               "return": {
                 "type": {
                   "text": "void"
@@ -3158,7 +3158,7 @@
                   }
                 }
               ],
-              "description": "Emit an event to all registered listeners.",
+              "description": "Dispatch an event to all registered listeners.",
               "inheritedFrom": {
                 "name": "EventEmitter",
                 "module": "src/controller/event-emitter.ts"

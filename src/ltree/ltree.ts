@@ -1161,7 +1161,15 @@ export function createLTree<T>(
 			if (isTaken(newSegment)) {
 				// Segment collision - try the source's ID, then fall back to a timestamp
 				const sourceId = sourceNode.id?.toString();
-				newSegment = sourceId && !isTaken(sourceId) ? sourceId : `${newSegment}_${Date.now()}`;
+				if (sourceId && !isTaken(sourceId)) newSegment = sourceId;
+				else {
+					// A timestamp, checked again: two moves in the same millisecond (a batch) must not land
+					// on the same path and overwrite each other (svelte-treeview REVIEW "plausible" list).
+					const base = `${newSegment}_${Date.now()}`;
+					let candidate = base;
+					for (let n = 2; isTaken(candidate); n++) candidate = `${base}_${n}`;
+					newSegment = candidate;
+				}
 			}
 
 			const newPath = join(newSegment);

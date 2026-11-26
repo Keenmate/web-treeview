@@ -341,3 +341,43 @@ test.describe('options after setup (svelte §3.1)', () => {
     await expect(row(page, '1.1.1')).toHaveCount(0);
   });
 });
+
+test.describe('moveNode segment fallback (svelte-treeview REVIEW "plausible" list)', () => {
+  test('two moves whose segment AND id collide in the same millisecond do not overwrite each other', async ({ page }) => {
+    await load(page);
+    const names = await page.evaluate(async () => {
+      const el = document.createElement('web-treeview') as any;
+      el.displayValueMember = 'name';
+      // Target 1 already holds segments '1' and 's'; both movers have segment '1' and the
+      // duplicated id 's' (a pasted copy keeps its source id) → both fall back to the timestamp.
+      el.nodes = [
+        { id: 't', path: '1', name: 'Target' },
+        { id: 'k1', path: '1.1', name: 'Existing one' },
+        { id: 's', path: '1.s', name: 'Existing s' },
+        { id: 'p2', path: '2', name: 'Source parent 2' },
+        { id: 's', path: '2.1', name: 'Mover A' },
+        { id: 'p3', path: '3', name: 'Source parent 3' },
+        { id: 's', path: '3.1', name: 'Mover B' },
+      ];
+      document.body.appendChild(el);
+      await el.whenReady();
+      const lt = el.getTree();
+      const realNow = Date.now;
+      Date.now = () => 1700000000000; // both moves in the same millisecond
+      try {
+        lt.moveNode('2.1', '1', 'child');
+        lt.moveNode('3.1', '1', 'child');
+      } finally {
+        Date.now = realNow;
+      }
+      const kids = lt.getNodeByPath('1').children;
+      const out = { names: kids.map((n: any) => n.data.name).sort(), paths: kids.map((n: any) => n.path) };
+      el.remove();
+      return out;
+    });
+    expect(names.names).toEqual(['Existing one', 'Existing s', 'Mover A', 'Mover B']);
+    // every moved node got its own path (web keeps children in an array, so a duplicate path
+    // doesn't drop a node — it makes two nodes answer to one path)
+    expect(new Set(names.paths).size).toBe(names.paths.length);
+  });
+});

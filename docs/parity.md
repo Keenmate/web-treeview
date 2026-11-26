@@ -92,7 +92,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | web | svelte | status |
 |---|---|---|
 | `beforeCopyCallback`, `beforeCutCallback`, `beforePasteCallback`, `beforeDeleteCallback`, `beforeDropCallback`, `beforeDragStartCallback`, `beforeCheckboxToggleCallback`, `beforeKeydownCallback`, `beforeExpandCallback`, `beforeActionCallback` | same | same |
-| `beforeScrollCallback({ node, path, source: 'keyboard' \| 'scroll-to-path' \| 'paste', container, options: { block, inline, behavior, shouldRevealContainer } })` → `false` skips / partial replaces the defaults; sync, no event (web 2026-11-02, core §12.15) | — | **to mirror** (2026-11-02): same prop + ctx; svelte has no core dependency, so its copy must follow core's `scrollIntoContainer` algorithm exactly |
+| `beforeScrollCallback({ node, path, source: 'keyboard' \| 'scroll-to-path' \| 'paste', container, options: { block, inline, behavior, shouldRevealContainer } })` → `false` skips / partial replaces the defaults; sync, no event (web 2026-11-02, core §12.15) | same (2026-11-24, REVIEW §4): every self-initiated scroll (keyboard move, `scrollToPath`, the paste reveal) goes through one gate + vendored core `scrollIntoContainer` / `scrollContainerToBox` | same |
 
 ## 5. get* callbacks / render hooks
 
@@ -113,7 +113,7 @@ Every web event has an `on<Name>` twin receiving the detail; every detail / ctx 
 | `expandAll`, `sortNodes`, `sortAll` | same | same |
 | `filterNodes(term, searchOptions?)`, `searchNodes(term, searchOptions?)` | same | same |
 | `scrollToPath(path, { shouldExpandAncestors = true, shouldHighlight = false, behavior?, block?, inline? }): Promise<boolean>` | same | same |
-| `scrollToPath` option `shouldRevealContainer` (default `true`): first scroll the page to an off-screen tree (web 2026-11-02) | — | **to mirror** (2026-11-02) |
+| `scrollToPath` option `shouldRevealContainer` (default `true`): first scroll the page to an off-screen tree (web 2026-11-02) | same (2026-11-24) — `scrollToPath` now scrolls the row's scroll container (core `scrollIntoContainer`; the page when there's none), no longer `scrollIntoView` | same |
 | `getNodeByPath`, `getChildren`, `getSiblings`, `getNodeRef(path)`, `getVisibleFlatNodes()`, `getTree()` | same | same |
 | `refreshNode(path)`, `refreshSiblings(parentPath)` | same | same |
 | `isNodeDropAllowed(path): boolean` | same | same |
@@ -140,7 +140,7 @@ web keys are flat `<elementType>.<name>` (core `/locale`, D-NC-24); the svelte c
 | `menuItems.*`: `copy`, `cut`, `paste`, `delete`, `expand`, `collapse`, `expandSubtree`, `collapseSubtree`, `expandAll`, `collapseAll`, `sort`, `sortSubtree`, `sortAll` | ✓ | ✓ | same |
 | `ariaLabels.showFullLabel` ("Show full label" — aria-label of the `nodeTitleOverflow: 'info'` button) | ✓ | ✓ | same |
 | `ariaLabels.tree` ("Tree" — aria-label of the `role="tree"` body) | ✓ | ✓ (2026-11-24; on `.stv__container`, svelte's focus owner) | same |
-| `ariaLabels.searchResults*`, `ariaLabels.moved*` / `copied*`, `ariaLabels.drop*` (screen-reader announcements, core `announce()`) | ✓ — templates `{ctx.count}` / `{ctx.name}` / `{ctx.target}` / `{ctx.searchTerm}` | ✓ (2026-11-24) — templates `{count}` / `{name}` / … (its vendored core `/locale` predates `{ctx.*}`); the same values go as `params.ctx` to a `translateCallback` | to align on svelte's core `/locale` re-sync |
+| `ariaLabels.searchResults*`, `ariaLabels.moved*` / `copied*`, `ariaLabels.drop*` (screen-reader announcements, core `announce()`) | ✓ — templates `{ctx.count}` / `{ctx.name}` / `{ctx.target}` / `{ctx.searchTerm}` | ✓ (2026-11-24) — same `{ctx.*}` templates and `params.ctx` | same |
 | `labels.dropBefore`, `labels.dropAfter`, `labels.dropChild` (floating drop pads) | ✓ | — | gap — svelte pads still hard-coded |
 | page-wide flat `window.components.locale.labels['web-treeview.<key>']` + `translateCallback` (core `/locale`, `localeChanged()` re-render) | ✓ | — | intentional — core element feature |
 | export `DEFAULT_LABELS`, type `TreeViewLabels` | ✓ | `DEFAULT_LABELS`, type `TreeLabels` | intentional — type named after each library's component |

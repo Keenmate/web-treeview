@@ -25,6 +25,29 @@ import { defaultTreeLoggers } from '../logger';
 /** Display-value comparator of the default sibling rule (numeric-aware: "Item 2" < "Item 10"). */
 const displayCollator = new Intl.Collator(undefined, { numeric: true });
 
+/**
+ * The default sibling rule — `orderMember` (both nodes need data), then the display value with
+ * `Intl.Collator(numeric)`. Each node's keys are read ONCE (decorate-sort): reading them inside the
+ * comparator did it 2 · k · log k times. Stable, returns a new array.
+ */
+function sortByKeys<T>(
+	nodes: LTreeNode<T>[],
+	orderMember: string | null | undefined,
+	getDisplayValue: (node: LTreeNode<T>) => string
+): LTreeNode<T>[] {
+	const keyed = nodes.map((node) => ({
+		node,
+		hasOrder: !!orderMember && !!node.data,
+		order: orderMember && node.data ? ((getField(node.data, orderMember) as number | undefined) ?? 0) : 0,
+		display: getDisplayValue(node)
+	}));
+	keyed.sort((a, b) => {
+		if (a.hasOrder && b.hasOrder && a.order !== b.order) return a.order - b.order;
+		return displayCollator.compare(a.display, b.display);
+	});
+	return keyed.map((k) => k.node);
+}
+
 /** Helper to safely access a property on a generic data item using a string member name */
 function getField(item: unknown, member: string): any {
 	return (item as Record<string, unknown>)[member];
@@ -1913,9 +1936,6 @@ export function createLTree<T>(
 			items: LTreeNode<T>[],
 			options?: Pick<SortOptions<T>, 'compareCallback' | 'direction'>
 		): LTreeNode<T>[] {
-			const byDisplay = (a: LTreeNode<T>, b: LTreeNode<T>) =>
-				displayCollator.compare(this.getNodeDisplayValue(a), this.getNodeDisplayValue(b));
-			const om = this.orderMember;
 			let sorted: LTreeNode<T>[];
 			if (items.length < 2) {
 				sorted = [...items];
@@ -1924,17 +1944,8 @@ export function createLTree<T>(
 				sorted = [...items].sort((a, b) => cb({ a, b }));
 			} else if (this.sortCallback) {
 				sorted = [...this.sortCallback([...items])];
-			} else if (om) {
-				sorted = [...items].sort((a, b) => {
-					if (a.data && b.data) {
-						const aOrder = getField(a.data, om) ?? 0;
-						const bOrder = getField(b.data, om) ?? 0;
-						if (aOrder !== bOrder) return aOrder - bOrder;
-					}
-					return byDisplay(a, b);
-				});
 			} else {
-				sorted = [...items].sort(byDisplay);
+				sorted = sortByKeys(items, this.orderMember, (node) => this.getNodeDisplayValue(node));
 			}
 			if (options?.direction === 'desc') sorted.reverse();
 			return sorted;

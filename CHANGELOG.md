@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — faster built-in sibling sort (2026-11-26)
+
+- The built-in sibling rule (`orderMember`, then the display value) reads each node's order / display value once per sort instead of in every comparison. svelte-treeview now also calls `sortCallback` once per parent on the initial load (as this library always did) and shares the same code.
+
 ### Fixed — Enter / Space on the ⓘ full-label button (2026-11-25)
 
 - The tree's keydown took Enter / Space on a focused ⓘ (or a button / link a `renderNodeCallback` draws) as its own expand / select and swallowed it, so keyboard users couldn't open the full label. They go to the control now. Same fix in svelte-treeview. (e2e/parity.spec.ts.)

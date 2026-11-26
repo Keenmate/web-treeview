@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Fixed — Enter / Space on the ⓘ full-label button (2026-11-25)
+
+- The tree's keydown took Enter / Space on a focused ⓘ (or a button / link a `renderNodeCallback` draws) as its own expand / select and swallowed it, so keyboard users couldn't open the full label. They go to the control now. Same fix in svelte-treeview. (e2e/parity.spec.ts.)
+
 ### Fixed — `moveNode` gave two batched moves the same path (2026-11-25)
 
 - When both the segment and the id collided under the new parent, the `<segment>_<timestamp>` fallback wasn't re-checked, so two moves in the same millisecond got the same path (two nodes answering to one path). It now counts up until free. (svelte-treeview REVIEW "plausible" list; e2e/regressions.spec.ts.)

@@ -43,6 +43,12 @@ import { openTreeLayer } from './layers';
 import { rowDomId } from '../helpers/string-helpers';
 import type { Layer } from '@keenmate/web-components-core/positioning';
 
+/** A keydown from a button / link inside the tree (the ⓘ, a renderNodeCallback control) — Enter / Space are its. */
+function isRowControlTarget(event: Event): boolean {
+  const t = (event.composedPath?.()[0] ?? event.target) as Element | null;
+  return t instanceof Element && !!t.closest('button, a[href], [role="button"]');
+}
+
 /** The drop pad a position shows (`labels.dropBefore` / `labels.dropAfter` / `labels.dropChild` keys). */
 const DROP_PAD_LABEL = { before: 'labels.dropBefore', after: 'labels.dropAfter', child: 'labels.dropChild' } as const satisfies Record<DropPosition, keyof TreeViewLabels>;
 
@@ -815,6 +821,9 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
     // The built-in clipboard / Delete shortcuts were already guarded (handleShortcutKeydown).
     // (svelte-treeview REVIEW-2026-11-19 B18)
     if (isTypingTarget(event)) return;
+    // Enter / Space on a focused control inside a row (the ⓘ full-label button, a button or link
+    // a renderNodeCallback drew) activate THAT control — not the tree's expand / select.
+    if ((event.key === 'Enter' || event.key === ' ') && isRowControlTarget(event)) return;
 
     // Shift+F10 / the ContextMenu key open the focused node's context menu.
     if (matchesShortcut(event, 'ContextMenu') || matchesShortcut(event, 'Shift+F10')) {

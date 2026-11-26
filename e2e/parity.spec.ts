@@ -204,6 +204,22 @@ test.describe('node-title-overflow', () => {
     await expect(info).toHaveCount(0);
   });
 
+  test('info: Enter / Space on the focused info button open the popover (the tree keydown leaves them to it)', async ({ page }) => {
+    await make(page, { nodes: longNodes, attrs: { 'node-title-overflow': 'info' } });
+    const info = nodeByPath(page, '1').locator('.wtv__node-info');
+    const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');
+    const before = await rows(page);
+    await info.focus();
+    await page.keyboard.press('Enter');
+    await expect(reveal).toHaveText(LONG);
+    expect(await rows(page)).toEqual(before); // not the tree's expand / collapse
+    await page.keyboard.press('Escape');
+    await expect(reveal).toHaveCount(0);
+    await info.focus();
+    await page.keyboard.press(' ');
+    await expect(reveal).toHaveText(LONG);
+  });
+
   test('info: a click on a node checkbox closes the popover (the tree stops that click; core rc20)', async ({ page }) => {
     await make(page, { nodes: longNodes, attrs: { 'node-title-overflow': 'info', 'show-checkboxes': '' } });
     const reveal = page.locator('#tree').locator('.wtv__node-info-reveal');

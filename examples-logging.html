@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Logging &amp; Debugging">
-<meta name="kmwc:subtitle" content="The global <code>window.components</code> registry, category logging controls, performance timings, and the in-tree debug overlay">
+<meta name="kmwc:subtitle" content="The global <code>window.components</code> registry, category logging controls and performance timings — the same entry shape and logger every Keenmate web component has">
 
 <link rel="stylesheet" href="examples-local.css">
 
@@ -65,8 +65,8 @@
         buttons call it directly (e.g.
         <code>window.components['web-treeview'].logging.setCategoryLevel('DATA','debug')</code>).
         The active category level is reflected in the registry panel above. Interact
-        with the trees — click, expand/collapse, or right-click a node (UI), or drag
-        a node in the second tree (DRAG) — to produce logs.
+        with the trees — click, expand / collapse (UI), or drag a node in the second
+        tree (DRAG) — to produce logs.
     </p>
 
     <div class="controls">
@@ -149,13 +149,14 @@
 <!-- ── Reference ───────────────────────────────────────────────────── -->
 <div class="card">
     <h2>LG05 · Log categories</h2>
+    <p>Printed as <code>TREEVIEW:&lt;CATEGORY&gt;</code>; the page-wide default level is <code>warn</code>.</p>
     <ul>
-        <li><strong>INIT</strong> — component initialization, configuration parsing, destruction</li>
+        <li><strong>INIT</strong> — component initialization, configuration, destruction</li>
         <li><strong>DATA</strong> — data insertion, tree building, node updates</li>
         <li><strong>INDEX</strong> — search indexing operations</li>
-        <li><strong>UI</strong> — DOM rendering, node reconciliation, context menu</li>
-        <li><strong>DRAG</strong> — drag start/over/leave/drop, cross-tree detection, touch drag</li>
-        <li><strong>RENDER</strong> — progressive rendering batches, render-coordinator timing</li>
+        <li><strong>UI</strong> — rendering, clicks, keyboard, context menu</li>
+        <li><strong>DRAG</strong> — drag start / over / leave / drop, cross-tree detection, touch drag</li>
+        <li><strong>RENDER</strong> — progressive rendering batches, render timing</li>
     </ul>
 </div>
 
@@ -166,16 +167,20 @@
 // moment the component module is loaded anywhere on the page.
 const tv = window.components['web-treeview'];
 
-tv.version();                       // "2.0.0-rc08"
+tv.version();                       // the package version
 tv.config;                          // { name, version, author, license, … }
 tv.getInstances();                  // live &lt;web-treeview&gt; elements
 
-// Logging (a flattened view of the core logger bundle)
-tv.logging.getCategories();         // ["INIT","DATA","INDEX","UI","DRAG","RENDER"]
+// Logging (the tree's logger bundle — every tree on the page)
+tv.logging.getCategories();         // ["TREEVIEW:INIT","TREEVIEW:DATA","TREEVIEW:INDEX","TREEVIEW:UI","TREEVIEW:DRAG","TREEVIEW:RENDER"]
 tv.logging.enableLogging();         // all categories → debug
 tv.logging.setLogLevel('info');     // all → info
 tv.logging.setCategoryLevel('INDEX', 'debug');
-tv.logging.disableLogging();        // silence everything (production default)
+tv.logging.disableLogging();        // silence everything
+tv.logging.resetLogging();          // follow the page-wide level again
+
+// Page-wide — every Keenmate component on the page
+window.components.logging.enableLogging('debug');
 
 // Fan out across instances
 for (const el of tv.getInstances()) console.log(el.id, [...el.expandedPaths]);
@@ -369,7 +374,7 @@ setPerfThreshold(5);                // only log operations taking &gt; 5ms</code
         treeCfg(document.getElementById('tree-b'), sampleData, { dragDropMode: 'both' });
         treeCfg(document.getElementById('tree-perf'), [], { expandLevel: 0 });
 
-        // Start silent (production default), then paint the panel.
+        // Start silent (the default level is warn) so the console only shows what you turn on.
         reg().logging.disableLogging();
         refreshRegistry();
 

@@ -3,6 +3,11 @@
 
 <link rel="stylesheet" href="examples-local.css">
 
+<style>
+    button.perf-logging-on { background: var(--kmwc-success-color); }
+    .node-path { color: var(--kmwc-text-color-3); font-family: var(--kmwc-mono-font-family); font-size: 0.8em; }
+</style>
+
 <!-- Rendering Mode -->
 <div class="card">
     <h2>PF01 · Rendering Mode</h2>
@@ -38,7 +43,7 @@
     <div class="controls">
         <label>Node Count: <input type="number" id="cfg-node-count" value="5000" min="100" max="50000" step="1000"></label>
         <label>Expand Level: <input type="number" id="cfg-expand-level" value="1" min="0" max="10"></label>
-        <label title="sorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (sorted)</label>
+        <label title="isSorted: the generated data is already in insert order — skip sorting"><input type="checkbox" id="cfg-sorted" checked> Data pre-sorted (isSorted)</label>
         <label><input type="checkbox" id="cfg-search-index" checked> Search Index</label>
         <span id="indexer-opts">
             <label>Index Batch: <input type="number" id="cfg-indexer-batch" value="1000" min="5" max="5000" step="5"></label>
@@ -50,6 +55,7 @@
         <button class="secondary" id="btn-redraw" onclick="redraw()" disabled>Redraw</button>
         <button class="secondary" id="btn-clear" onclick="clearData()" disabled>Clear</button>
         <button class="secondary" onclick="resetConfig()">Reset Config</button>
+        <button id="btn-perf-logging" aria-pressed="false" onclick="togglePerfLogging()">Perf Logging OFF</button>
     </div>
 </div>
 
@@ -75,8 +81,6 @@
         <span class="muted">|</span>
         <button class="secondary" onclick="timedExpandAll()">Expand All (timed)</button>
         <button class="secondary" onclick="timedCollapseAll()">Collapse All (timed)</button>
-        <button class="secondary" onclick="document.getElementById('perf-tree').expandAll()">Expand All</button>
-        <button class="secondary" onclick="document.getElementById('perf-tree').collapseAll()">Collapse All</button>
     </div>
 
     <div class="controls">
@@ -115,22 +119,25 @@
     <div class="description">
         <ol>
             <li><strong>Initial render:</strong> Generate data with different node counts and expand levels. Compare render times between modes.</li>
-            <li><strong>Expand/Collapse ONE node:</strong> The key test! Use "Expand One" and "Collapse One" buttons. This is the typical user interaction.</li>
-            <li><strong>Expand/Collapse ALL:</strong> Bulk operations - compare performance between flat and virtual scroll.</li>
+            <li><strong>Expand/Collapse ONE node:</strong> The key test! Use "Expand One" and "Collapse One" buttons. This is the typical user interaction - expanding a single node.</li>
+            <li><strong>Expand/Collapse ALL:</strong> Bulk operations - compare flat (mounts every visible row) with virtual scroll (stays windowed).</li>
             <li><strong>Search/Filter:</strong> Toggle between filter mode (live) and search mode (Enter to navigate between matches).</li>
+            <li><strong>Perf Logging:</strong> Turn it on to see detailed timings in the console.</li>
         </ol>
     </div>
     <div class="note">
         <div class="note-title">Expected Results</div>
         <ul>
-            <li><strong>Flat mode:</strong> All visible nodes rendered to the DOM. Fast expand/collapse for single nodes.</li>
-            <li><strong>Virtual Scroll:</strong> Only ~50 nodes in the DOM regardless of tree size. Near-instant rendering for any dataset size.</li>
-            <li>Virtual scroll should shine on initial render and expand all. Single-node expand may be similar.</li>
+            <li><strong>Expand One - Flat:</strong> Only adds the new children (~10 nodes)</li>
+            <li><strong>Expand One - Virtual:</strong> Re-windows the visible rows; DOM size stays ~constant</li>
+            <li>Expand All: flat mounts every visible row (use Progressive Render to spread it over frames); virtual stays windowed</li>
         </ul>
     </div>
 </div>
 
 <script type="module">
+    // Perf logging is a separate free-function API (not part of .logging).
+    import { enablePerfLogging, disablePerfLogging } from '/src/index.ts';
 
     // ─── State ───────────────────────────────────────────────────────────
     const STORAGE_KEY = 'web-treeview-perf-config';
@@ -191,7 +198,7 @@
         $('cfg-sorted').checked = true;
         $('cfg-node-count').value = 5000;
         $('cfg-search-index').checked = true;
-        $('cfg-indexer-batch').value = 25;
+        $('cfg-indexer-batch').value = 1000;
         $('opt-progressive').checked = false;
         $('opt-initial-batch').value = 20;
         $('opt-max-batch').value = 500;
@@ -238,7 +245,7 @@
     function updateMetricsUI() {
         $('m-nodes').textContent = metrics.nodeCount.toLocaleString();
         $('m-generate').textContent = metrics.generateTime !== null ? metrics.generateTime.toFixed(2) + ' ms' : '-';
-        $('m-render').textContent = metrics.renderTime !== null ? metrics.renderTime.toFixed(2) + ' ms' : 'measuring...';
+        $('m-render').textContent = metrics.renderTime !== null ? metrics.renderTime.toFixed(2) + ' ms' : metrics.nodeCount ? 'measuring...' : '-';
         $('m-total').textContent = metrics.renderTime !== null
             ? ((metrics.generateTime || 0) + metrics.renderTime).toFixed(2) + ' ms'
             : '-';
@@ -253,7 +260,26 @@
         }
         el.className = 'pill ' + (cls === 'search-time' ? 'pill--warn' : 'pill--info');
         el.innerHTML = `${label}:&nbsp;${value}`;
+        // Keep a fixed order (Expand/Collapse, Update Node, Search/Filter, Progressive).
+        for (const known of EXTRA_ORDER) { const k = $(known); if (k) $('metrics-extra').appendChild(k); }
     }
+    const EXTRA_ORDER = ['m-expand', 'm-update', 'm-search', 'm-progressive'];
+
+    function updateProgressiveMetric(text) {
+        const isShown = renderMode !== 'virtual' && $('opt-progressive').checked && metrics.nodeCount > 0;
+        if (!isShown) { $('m-progressive')?.remove(); return; }
+        showExtraMetric('m-progressive', 'Progressive', text, 'progressive');
+    }
+
+    let isPerfLoggingOn = false;
+    window.togglePerfLogging = function() {
+        isPerfLoggingOn = !isPerfLoggingOn;
+        isPerfLoggingOn ? enablePerfLogging() : disablePerfLogging();
+        const btn = $('btn-perf-logging');
+        btn.textContent = isPerfLoggingOn ? 'Perf Logging ON' : 'Perf Logging OFF';
+        btn.setAttribute('aria-pressed', String(isPerfLoggingOn));
+        btn.classList.toggle('perf-logging-on', isPerfLoggingOn);
+    };
 
     function buildTreeConfig() {
         const isVirtual = renderMode === 'virtual';
@@ -267,8 +293,8 @@
             displayValueMember: 'name',
             searchValueMember: 'name',
             expandLevel: +$('cfg-expand-level').value,
-            isSorted: $('cfg-sorted').checked || undefined,
-            isInternalSearchIndexEnabled: $('cfg-search-index').checked || undefined,
+            isSorted: $('cfg-sorted').checked,
+            isInternalSearchIndexEnabled: $('cfg-search-index').checked,
             indexerBatchSize: +$('cfg-indexer-batch').value,
             isVirtualScrollEnabled: isVirtual,
         };
@@ -286,8 +312,22 @@
         return cfg;
     }
 
+    // A fresh element per render, so every Generate / Redraw / mode switch measures a
+    // first render (nothing expanded or filtered from the previous run).
+    function createTree() {
+        const fresh = document.createElement('web-treeview');
+        fresh.id = 'perf-tree';
+        // Progressive render progress (render-start / -progress / -complete events)
+        fresh.addEventListener('render-start', () => updateProgressiveMetric('0 pending'));
+        fresh.addEventListener('render-progress', (e) => updateProgressiveMetric(`${e.detail.pending} pending`));
+        fresh.addEventListener('render-complete', () => updateProgressiveMetric('Done'));
+        $('perf-tree').replaceWith(fresh);
+        return fresh;
+    }
+
     function initTree() {
-        tree = $('perf-tree');
+        $('m-progressive')?.remove(); // render-start re-adds it when progressive render is on
+        tree = createTree();
         metrics.renderStart = performance.now();
         metrics.renderTime = null;
         tree.setAttributes(buildTreeConfig());
@@ -296,7 +336,7 @@
         $('btn-clear').disabled = false;
         const modeLabel = renderMode === 'virtual' ? 'Virtual Scroll' : 'Flat Mode';
         const srcLabel = dataSource === 'countries' ? 'Countries + States' : 'Synthetic Data';
-        $('tree-title').textContent = `${srcLabel} (${metrics.nodeCount.toLocaleString()} nodes) - ${modeLabel}`;
+        $('tree-title').textContent = `PF04 · ${srcLabel} (${metrics.nodeCount.toLocaleString()} nodes) - ${modeLabel}`;
         // Measure render time after paint
         requestAnimationFrame(() => requestAnimationFrame(() => {
             if (metrics.renderStart && metrics.renderTime === null) {
@@ -570,11 +610,13 @@
         navigateToResult((currentSearchIdx - 1 + searchResults.length) % searchResults.length);
     };
     window.clearSearch = function() {
+        clearTimeout(_filterTimer);
         $('search-input').value = '';
         searchResults = [];
         currentSearchIdx = -1;
         tree?.filterNodes('');
         $('search-time-display').textContent = '';
+        $('m-search')?.remove();
         updateSearchUI();
     };
 
@@ -586,6 +628,7 @@
             saveConfig();
             if (treeData.length > 0) {
                 metrics.generateTime = null;
+                $('m-expand')?.remove();
                 initTree();
             }
         });

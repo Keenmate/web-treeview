@@ -491,7 +491,17 @@
             return;
         }
 
-        // Cross-tree drags - use duplicateNode to include children.
+        // A cross-tree COPY (Ctrl+drag) is placed by the library itself (cross-tree auto-copy,
+        // ids minted by nodeInputTransformationCallback) — ctx.dropped lists the copies. Copying
+        // again here would insert every node twice.
+        if (ctx.dropped) {
+            addLog(`[CROSS-TREE] Copied ${ctx.dropped.length} node(s) to "${dropNode?.data?.name || 'root'}"`);
+            document.getElementById('target-label').textContent = 'Target Tree';
+            return;
+        }
+
+        // A cross-tree MOVE is left to the consumer (dropped = null) — this demo copies the
+        // dragged subtrees in with duplicateNode, so the source tree keeps its nodes.
         let parentPath, siblingPath, copyPosition;
         if (dropNode === null) {
             parentPath = '';
@@ -503,8 +513,8 @@
             copyPosition = position;
         }
 
-        // Cross-tree multi-drag isn't auto-handled (the library only auto-places
-        // the lead node), but ctx.dragged carries the FULL top-level dragged set,
+        // A cross-tree move isn't placed by the library, but ctx.dragged carries the
+        // FULL top-level dragged set,
         // so we copy each subtree in turn. The first uses the requested position
         // relative to dropNode; the rest chain as children of dropNode so the set
         // lands together. sortOrder is re-numbered across the batch to preserve

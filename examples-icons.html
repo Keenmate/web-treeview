@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Icons">
-<meta name="kmwc:subtitle" content="Per-node icons on <strong>every</strong> node (branch + leaf) — a dedicated <code>.wtv__node-icon</code> wrapper driven by <code>iconMember</code> / <code>getIconCallback</code> (markup, a built-in name, icon-font classes or text), with per-node color and a <code>renderIconCallback(name, ctx)</code> that maps your own icon names to markup.">
+<meta name="kmwc:subtitle" content="Per-node icons on <strong>every</strong> node (branch + leaf) — a dedicated <code>.wtv__node-icon</code> wrapper driven by <code>iconMember</code> / <code>getIconCallback</code> (markup, a built-in name, icon-font classes or text), with per-node color and a <code>renderIconCallback(name, ctx)</code> that maps your own icon names to markup (with the node in <code>ctx</code>).">
 
 <link rel="stylesheet" href="examples-local.css">
 
@@ -22,6 +22,10 @@
         <code>custom-styles</code> attribute (<code>customStyles</code> property) enlarges its icons;
         <code>getCustomStylesCallback</code> wins over it when both are set.
     </p>
+    <label class="toggle-label">
+        <input type="checkbox" id="align-toggle" checked> <span><code>shouldAlignNodeIcons</code> (reserve the column)</span>
+    </label>
+
     <div class="tree-container" id="c1"><web-treeview id="tree1" expand-level="4" icon-member="icon" icon-color-member="color" align-node-icons
         custom-styles=".wtv__node-icon { font-size: 1.1em; }"></web-treeview></div>
     <div class="code-block mt-1" data-language="js" data-kmwc-snippet>
@@ -63,9 +67,30 @@ window.components['web-treeview'].customStyles =
         with <code>stroke="currentColor"</code> (so <code>icon-color-member</code> tints each glyph) and answers
         <code>null</code> for any other name &mdash; the page-wide <code>window.components.renderIconCallback</code>
         or the icon-font rule decides then. Built-in names (<code>user</code>, <code>check</code>, &hellip;) never reach
-        the hook, hence the prefix. Icons from the <a href="https://icons.pureadmin.io" target="_blank" rel="noopener"><code>pure-admin</code></a> Lucide set.
+        the hook, hence the prefix. <code>ctx</code> carries <code>node</code>, the render state and
+        <code>controller</code>. Icons from the <a href="https://icons.pureadmin.io" target="_blank" rel="noopener"><code>pure-admin</code></a> Lucide set.
     </p>
     <div class="tree-container" id="c4"><web-treeview id="tree4" expand-level="4" icon-member="lucide" icon-color-member="color" align-node-icons></web-treeview></div>
+    <div class="code-block" data-language="js">
+        <pre><code>tree.iconMember = 'lucide';
+tree.renderIconCallback = (name, ctx) =>
+    name.startsWith('lucide-') ? lucideSvg(name.slice(7)) : null;
+
+// or once for every Keenmate component on the page:
+window.components.renderIconCallback = (name, ctx) => …</code></pre>
+    </div>
+</div>
+
+<!-- IC05 · Anything via renderIconCallback + ctx.node -->
+<div class="card">
+    <h2>IC05 · Anything via <code>renderIconCallback</code> + <code>ctx.node</code></h2>
+    <p>
+        The hook returns any markup and sees the node in <code>ctx</code>, so the icon can depend on more
+        than its name (svelte-treeview's equivalent is the <code>icon</code> snippet). Color still flows from
+        <code>icon-color-member</code> onto the wrapper (so <code>currentColor</code> tints the SVG). Here it
+        draws the same Lucide names plus a child count on branches.
+    </p>
+    <div class="tree-container" id="c5"><web-treeview id="tree5" expand-level="4" icon-member="lucide" icon-color-member="color" align-node-icons></web-treeview></div>
 </div>
 
 <script type="module">
@@ -94,7 +119,8 @@ window.components['web-treeview'].customStyles =
         `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${LUCIDE[key] ?? ''}</svg>`;
 
     customElements.whenDefined('web-treeview').then(() => {
-        const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', nodes: data };
+        // isSorted: the data is already in tree order (= the svelte-treeview page).
+        const common = { idMember: 'id', pathMember: 'path', displayValueMember: 'name', isSorted: true, nodes: data };
 
         // IC01 — FA classes. The page layer of custom CSS puts FontAwesome into every tree's shadow
         // root (core also links the @import in <head> so the font registers); tree1's own
@@ -121,6 +147,20 @@ window.components['web-treeview'].customStyles =
         // IC04 — Lucide SVGs keyed off iconMember: the hook owns the `lucide-*` names, `null` for the rest.
         Object.assign(document.getElementById('tree4'), common, {
             renderIconCallback: (name) => (name.startsWith('lucide-') ? lucideSvg(name.slice('lucide-'.length)) : null)
+        });
+
+        // IC05 — the same names, plus a child-count badge on branches from ctx.node.
+        Object.assign(document.getElementById('tree5'), common, {
+            renderIconCallback: (name, ctx) => {
+                if (!name.startsWith('lucide-')) return null;
+                const count = Object.keys(ctx.node.children ?? {}).length;
+                const badge = count ? `<sup style="font-size: 0.6rem; margin-left: 1px">${count}</sup>` : '';
+                return lucideSvg(name.slice('lucide-'.length)) + badge;
+            }
+        });
+
+        document.getElementById('align-toggle').addEventListener('change', (e) => {
+            document.getElementById('tree1').shouldAlignNodeIcons = e.target.checked;
         });
     });
 </script>

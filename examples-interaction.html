@@ -38,8 +38,8 @@
         <label>
             Selection mode:
             <select id="in1-selection-mode">
-                <option value="single">single (plain click only)</option>
-                <option value="multiple" selected>multiple (Ctrl-toggle, Shift-range)</option>
+                <option value="single">single (one node; Ctrl+click deselects)</option>
+                <option value="multiple" selected>multiple (Ctrl-toggle, Shift-range, Ctrl+Shift adds)</option>
             </select>
         </label>
         <label>
@@ -58,6 +58,7 @@
             <select id="in1-focus-class">
                 <option value="" selected>Default (ring)</option>
                 <option value="demo-focused-ring">Ring (inset)</option>
+                <option value="demo-focused-underline">Underline</option>
                 <option value="demo-focus-none">None</option>
             </select>
         </label>
@@ -107,6 +108,16 @@
                 <pre id="in1-checked">(none)</pre>
             </div>
         </div>
+    </div>
+
+    <div class="note">
+        <div class="note-title">Selection rules (the same in svelte-treeview and web-treeview)</div>
+        <ul>
+            <li><strong>Click</strong> selects only that node; <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click toggles it &mdash; both move the range anchor there.</li>
+            <li><kbd>Shift</kbd>+click selects anchor &hellip; node (the anchor stays); <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+click <em>adds</em> that range to the selection.</li>
+            <li><strong>About.tsx (locked)</strong> is not selectable: a click focuses it but keeps the selection, and ranges skip it.</li>
+            <li><strong>single</strong> mode holds one node whoever writes it &mdash; <em>Select 1.1.1, 1.1.3, 1.2.1</em> selects only 1.1.1, <kbd>Ctrl+A</kbd> does nothing.</li>
+        </ul>
     </div>
 
     <div class="note">
@@ -501,11 +512,13 @@ function restoreFromUrl(nodePath) {
     // via focused-node-class. Because the focused row lives inside the Shadow DOM,
     // the rule must be injected there (a page <style> wouldn't reach it).
     //   • demo-focused-ring — an INSET ring (stays inside the pill, no spill)
+    //   • demo-focused-underline — underlines the label only (same options as svelte-treeview's IN01)
     //   • demo-focus-none   — a no-op class that suppresses the built-in ring
     //   • demo-focused-outline — inset left bar (kept for the Keyboard Navigation tree)
     const focusStyles = () => `
         .demo-focused-outline { box-shadow: inset 3px 0 0 0 var(--wtv-accent-color, #3b82f6); }
         .demo-focused-ring { box-shadow: inset 0 0 0 2px var(--wtv-accent-color, #3b82f6); border-radius: var(--wtv-border-radius-sm, 4px); }
+        .demo-focused-underline .wtv__node-label { text-decoration: underline; text-decoration-color: var(--wtv-accent-color, #3b82f6); text-decoration-thickness: 2px; text-underline-offset: 0.4em; text-decoration-skip-ink: none; }
         .demo-focus-none { /* suppresses the built-in focus ring */ }
     `;
 
@@ -514,7 +527,11 @@ function restoreFromUrl(nodePath) {
         const in1 = document.getElementById('in1-tree');
         Object.assign(in1, treeConfig);
         in1.getCustomStylesCallback = focusStyles;
-        in1.nodes = fileTree;
+        // The same tree as svelte-treeview's /examples/interaction IN01, so both demos can be tested
+        // step by step. About.tsx is locked = not selectable.
+        in1.getIsSelectableCallback = ({ node }) => !node.data?.isLocked;
+        in1.nodes = fileTree.map((item) =>
+            item.path === '1.2.2' ? { ...item, name: 'About.tsx (locked)', isLocked: true } : item);
 
         in1.addEventListener('focus-change', (e) => {
             const { focusedNode: n } = e.detail;
@@ -564,7 +581,8 @@ function restoreFromUrl(nodePath) {
             in1.clearSelection();
         });
         document.getElementById('in1-select-specific').addEventListener('click', () => {
-            in1.selectedPaths = ['1.1.1', '1.1.3', '1.2.1'];
+            in1.clearSelection();
+            in1.selectNodes(['1.1.1', '1.1.3', '1.2.1']);
         });
         document.getElementById('in1-clear').addEventListener('click', () => {
             in1.clearSelection();

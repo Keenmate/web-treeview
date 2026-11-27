@@ -9,8 +9,8 @@
     <p>
         Set <code>show-node-tooltips</code> and a <code>getNodeTooltipCallback</code> that
         returns a <strong>string</strong>. The tooltip is portaled out of the tree, positioned
-        with Floating UI, and shows on hover <em>and</em> keyboard focus. Rows whose callback
-        returns an empty string get no tooltip.
+        with Floating UI, and shows on hover <em>and</em> keyboard focus. A row whose callback
+        returns an empty string (here, <em>Lemon</em>) gets no tooltip.
     </p>
 
     <!-- Same controls, same order as svelte-treeview's TT01. -->
@@ -88,7 +88,7 @@
     </div>
 
     <div class="tree-container" id="tree4-container">
-        <web-treeview id="tree4" expand-level="3" show-node-tooltips tooltip-delay="150"></web-treeview>
+        <web-treeview id="tree4" expand-level="3" show-node-tooltips></web-treeview>
     </div>
 
     <div class="code-block" data-language="css"><pre><code>/* fixed box — disable shrink */
@@ -124,7 +124,7 @@ web-treeview { --wtv-tooltip-min-width: 24rem; }</code></pre></div>
 <div class="card">
     <h2>TT05 · Tooltip CSS variables</h2>
     <p>
-        All chain to the shared <code>--base-tooltip-*</code> contract (so a KeenMate theme retints
+        All chain to the shared <code>--base-tooltip-*</code> contract (so a Keenmate theme retints
         the tooltip), each with a fallback. Sizes are <code>calc(N × --wtv-rem)</code>.
     </p>
     <table class="reference-table">
@@ -179,7 +179,6 @@ web-treeview { --wtv-tooltip-min-width: 24rem; }</code></pre></div>
         // TT01 — plain text (empty desc → no tooltip)
         Object.assign(tree1, common, {
             nodes: data,
-            tooltipDelay: 150,
             getNodeTooltipCallback: ({ node }) => node.data?.desc ?? null
         });
 

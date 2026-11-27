@@ -201,7 +201,7 @@ Set `highlight-on-page-drag` to arm a tree as soon as a node is dragged anywhere
 
 ## Per-node icons
 
-The toggle/icon column is unified (`--wtv-toggle-icon-width`, default 24px) and shared by toggle arrows, leaf icons, and per-node icons. The indent step equals `--wtv-toggle-icon-width` too, so labels at every depth align vertically.
+Every row reserves the toggle column (`--wtv-toggle-icon-width`, default 24px — `0` hides the chevrons) and, with `align-node-icons` (default on), the per-node icon column (`--wtv-node-icon-width`), so labels at the same depth align whether a node has children or an icon. The indent per level is its own knob (`--wtv-indent-size`, 16px).
 
 ### Via data field
 

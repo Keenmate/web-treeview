@@ -119,6 +119,21 @@ test.describe('nodes-change = structure only', () => {
   });
 });
 
+test.describe('click event order', () => {
+  test('node-click, then selection-change (+ checked-change), then focus-change — all synchronous (= svelte-treeview)', async ({ page }) => {
+    // The state is already applied when node-click runs; the change events follow it, like
+    // native click → change. focus-change used to arrive on the microtask, after the click.
+    await make(page);
+    const row = `t.shadowRoot.querySelector('.wtv__node[data-tree-path="1"] > .wtv__node-row .wtv__node-content').click();`;
+    const r = await track(page, `t.addEventListener('node-click', () => window.__log.push('node-click'), { once: true }); ${row}`);
+    const order = r.sync.filter((name) => name !== 'checked-change'); // the no-checkbox mirror of the selection
+    // Default click-behavior expand-and-focus: the expand follows the click's events.
+    expect(order).toEqual(['node-click', 'selection-change', 'focus-change', 'node-expand', 'expanded-change']);
+    expect(r.sync.indexOf('checked-change')).toBe(r.sync.indexOf('selection-change') + 1);
+    expect(r.all).toEqual(r.sync); // nothing left for the microtask
+  });
+});
+
 test.describe('keyboard (WAI-ARIA)', () => {
   const press = async (page: Page, path: string, key: string) => {
     await nodeContent(nodeByPath(page, path)).click();

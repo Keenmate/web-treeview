@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0-rc07] - 2026-11-03
 
+### Changed — the event order of a click (2026-11-27, = svelte-treeview)
+
+- A node click now fires, synchronously and in this order: `node-click` → `selection-change` (+ `checked-change` without checkboxes) → `focus-change` → with `click-behavior="expand-and-focus"`, `node-expand` / `node-collapse` + `expanded-change`. Before, `selection-change` came before `node-click`, `focus-change` arrived on a microtask after the click, and the expand events came first of all. The state (focus, selection) is applied before any of them, so every handler reads the new values — like a native click → change. Guarded by e2e/events.spec.ts.
+
+### Documented — `--wtv-toggle-icon-width: 0` hides the chevrons (2026-11-27)
+
+- A zero toggle column is a supported look (navigation-style trees): the chevrons disappear, labels stay aligned, a row click and Enter still toggle (with `click-behavior="select"` only a double-click or the keyboard expands). docs/theming.md, examples BU01; guarded by e2e/basic.spec.ts. Same in svelte-treeview.
+
 ### Changed — faster built-in sibling sort (2026-11-26)
 
 - The built-in sibling rule (`orderMember`, then the display value) reads each node's order / display value once per sort instead of in every comparison. svelte-treeview now also calls `sortCallback` once per parent on the initial load (as this library always did) and shares the same code.

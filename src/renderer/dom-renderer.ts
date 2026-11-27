@@ -787,9 +787,10 @@ export class DomRenderer<T = any> implements TreeViewRenderer<T> {
         }
 
         if (behavior === 'expand-and-focus' && isPlainClick && node.hasChildren) {
-          // Select + expand/collapse
-          this.state.toggleNodeExpanded(path);
+          // Select, then expand/collapse — the click's events (node-click, selection-change,
+          // focus-change) come before node-expand / -collapse (= svelte-treeview).
           this.state.nodeCallbacks.handleNodeSelectClick(node, modifiers);
+          this.state.toggleNodeExpanded(path);
         } else if (behavior === 'expand' && isPlainClick && node.hasChildren) {
           // Expand/collapse only, no selection
           this.state.toggleNodeExpanded(path);

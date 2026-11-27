@@ -150,7 +150,7 @@ Every color fallback in `variables.css` uses `light-dark(<light>, <dark>)`. The 
 | `--wtv-spacing-md` | `8px` | Medium spacing |
 | `--wtv-spacing-lg` | `12px` | Large spacing |
 | `--wtv-spacing-xl` | `16px` | Extra large spacing |
-| `--wtv-toggle-icon-width` | `calc(--wtv-rem * 2.4)` | Toggle / icon column width (24px) |
+| `--wtv-toggle-icon-width` | `calc(--wtv-rem * 2.4)` | Toggle column width (24px); `0` hides the chevrons — labels stay aligned, a row click / Enter still toggle (with `click-behavior="select"` only a double-click or the keyboard expands) |
 | `--wtv-indent-size` | `calc(--base-tree-indent` \| `1.6` `* --wtv-rem)` | Indent per level (16px) — its own knob; `--base-tree-indent` is a unitless page-wide multiplier |
 | `--wtv-node-padding` | `--wtv-spacing-sm --wtv-spacing-md` | Node content padding (4px 8px) |
 | `--wtv-node-height` | `calc(--wtv-rem * 2.4)` | Minimum row height (24px) |

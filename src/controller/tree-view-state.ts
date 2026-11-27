@@ -454,6 +454,7 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     if (this._dirty) return;
     this._dirty = true;
     queueMicrotask(() => {
+      if (!this._dirty) return; // a _flushNotify() already sent it
       this._dirty = false;
       this.dispatch('state-change', this.getSnapshot());
     });
@@ -2543,9 +2544,18 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
   private _handleSelectionGesture(): void {
     this._reconcileSelection();
     if (this._isSelectionSilent) return;
+    if (this._isClickNotifyDeferred) {
+      // A UI click: the state now, the events after `node-click` (_handleNodeSelectClick).
+      this._isSelectionChangePending = true;
+      this._reconcileCheckedFromSelection(true);
+      return;
+    }
     this._dispatchSelectionChange();
     this._reconcileCheckedFromSelection();
   }
+  /** Set while a UI click runs: selection-change / checked-change wait for `node-click`. */
+  private _isClickNotifyDeferred = false;
+  private _isSelectionChangePending = false;
 
   /** Internal: do the click-driven selection work. Called by both the
    *  click handler (with `modifiers` from the event) and the public
@@ -4954,7 +4964,16 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
       this.closeContextMenu();
     }
 
-    this._processSelectionClick(node.path, modifiers);
+    // Event order of a click (= svelte-treeview): the state first (focus + selection, so every
+    // handler reads the new values), then node-click, then selection-change (+ checked-change
+    // without checkboxes), then focus-change — all synchronous, like native click → change.
+    this._isClickNotifyDeferred = true;
+    this._isSelectionChangePending = false;
+    try {
+      this._processSelectionClick(node.path, modifiers);
+    } finally {
+      this._isClickNotifyDeferred = false;
+    }
 
     this.log.UI.debug(`Node clicked: ${node.path}`, {
       newPath: node.path,
@@ -4965,6 +4984,13 @@ export class TreeViewState<T> extends EventEmitter<TreeViewStateEvents<T>> {
     });
 
     this.nodeClickedCb?.(this.nodeRef(node));
+    if (this._isSelectionChangePending) {
+      this._isSelectionChangePending = false;
+      this._dispatchSelectionChange();
+      if (!this._shouldShowCheckboxes) this._dispatchCheckedChange();
+    }
+    // focus-change comes from the state-change snapshot — send it now, not on the microtask.
+    this._flushNotify();
   }
 
   /**
